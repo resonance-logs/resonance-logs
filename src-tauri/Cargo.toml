@@ -19,17 +19,18 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-#tauri-plugin-log = {version = "2.7.0", features = ["colored"] }
 tauri-plugin-single-instance = "2.3.4"
+tauri-plugin-log = { version = "2.7.0", features = ["colored"] }
 chrono = "0.4.41"
 windivert = {version = "0.6.0", features = ["vendored"] }
 etherparse = "0.18.2"
 hex = "0.4.3"
 tokio = "1.47.1"
-tracing-subscriber = "0.3.20"
-tracing = "0.1.41"
 log = "0.4.28"
 flexi_logger = {version = "0.31.2", features = ["async"] }
+bytes = "1.10.1"
+zstd = "0.13.3"
+byteorder = "1.5.0"
+bpsr-protobuf = { git = "https://github.com/winjwinj/bpsr-protobuf" }

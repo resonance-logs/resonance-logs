@@ -1,23 +1,24 @@
-use crate::packets::opcodes::Pkt;
-
-use crate::packets::utils::Server;
+use std::io::{Cursor};
+use bytes::Bytes;
+use crate::packets::utils::{BinaryReader, Server};
 
 use etherparse::NetSlice::Ipv4;
 use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
 use log::{debug, info, trace, warn};
-use tokio::sync::mpsc::{channel, Receiver};
 use windivert::prelude::WinDivertFlags;
 use windivert::WinDivert;
-use crate::packets::tcp_reassembler::TCPReassembler;
+use crate::packets;
+use crate::packets::packet_process::process_packet;
+use crate::packets::utils::TCPReassembler;
 
-pub fn start_capture() -> Receiver<(Pkt, Vec<u8>)> {
-    let (_packet_sender, packet_receiver) = channel::<(Pkt, Vec<u8>)>(1);
-    tauri::async_runtime::spawn(async move { read_packets() });
+pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
+    let (packet_sender, packet_receiver) = tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(1);
+    tauri::async_runtime::spawn(async move { read_packets(packet_sender).await });
     packet_receiver
 }
 
-fn read_packets() {
+async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>) {
     let windivert = WinDivert::network(
         "!loopback && ip && tcp", // todo: idk why but filtering by port just crashes the program, investigate?
         0,
@@ -54,7 +55,7 @@ fn read_packets() {
         // 1. Try to identify game server via small packets
         if known_server != Some(curr_server) {
             // let mut tcp_payload_bytes = tcp_packet.payload().to_vec();
-            let mut offset = 10; // Start at offset 10 instead of slicing
+            let mut offset = 10; // Start at offset 10
             let tcp_payload = tcp_packet.payload();
 
             // 1. 5th byte from offset = Scene change?
@@ -63,7 +64,7 @@ fn read_packets() {
                 const SIGNATURE: [u8; 6] = [0x00, 0x63, 0x33, 0x53, 0x42, 0x00];
 
                 let tcp_payload_len = tcp_payload.len();
-                while offset + FRAG_LENGTH_SIZE <= tcp_payload_len {
+                while offset + FRAG_LENGTH_SIZE <= tcp_payload_len { // todo: optimize: probs can use .chunks() https://users.rust-lang.org/t/best-option-to-read-from-slices-with-eof-cursor-is-bad-i-guess/68156
                     // Read fragment length
                     let tcp_frag_payload_len = u32::from_be_bytes(
                         tcp_payload[offset..offset + FRAG_LENGTH_SIZE].try_into().unwrap()
@@ -110,11 +111,11 @@ fn read_packets() {
             }
         }
 
-        // 3. TCP Packet Reconstruction todo: clean up?
-        if let Some((seq_num, data)) = tcp_reassembler.push_segment(tcp_packet.clone()) {
-            trace!("Reassembled: Seq - {} - {}", seq_num, hex::encode(data)); // todo: comment for trace
-            // let mut processor = PacketProcessor::new();
-            // processor.process_packet_init(data, packet_sender.clone(), src_server);
+        // 2. TCP Packet Reconstruction todo: clean up? there's some stuff in the original about _data.length > 4 that i dont think is needed?
+        // todo: tbh idk why in original meter this isnt done before finding the server address
+        if let Some((seq_num, tcp_payload)) = tcp_reassembler.push_segment(tcp_packet.clone()) {
+            trace!("Reassembled: Seq - {} - {}", seq_num, hex::encode(tcp_payload.clone())); // todo: comment for trace
+            process_packet(BinaryReader::new(tcp_payload), packet_sender.clone()).await; // todo: optimize: instead of cloning, is it better to just move it to the function and return?
         }
     } // todo: if it errors, it breaks out of the loop but will it ever error?
 }

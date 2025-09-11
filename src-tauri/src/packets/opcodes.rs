@@ -1,21 +1,21 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PktParseError;
+pub struct ParseError;
 
 #[repr(u32)] // ensures the enum is stored as an u32
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)] // todo: do we need all these?
 pub enum Pkt {
     // TODO: change all these names
-    SyncNearEntities,            // NPCNearbyNotify SyncNearEntities
-    DataNotifySyncContainerData, // Container DataNotifySyncContainerData - similar to DirtyData, but has detailed like level, curr hp, max hp
-    SyncContainerDirtyData,      // DirtyDataNotify SyncContainerDirtyData - Name, AP, Class, SubClass
-    SyncServerTime,              // ServerTimeNotify SyncServerTime
-    SyncToMeDeltaInfo,           // PlayerSelfNotify SyncToMeDeltaInfo
-    SyncNearDeltaInfo,           // PlayerNearbyNotify SyncNearDeltaInfo
+    SyncNearEntities = 0x00000006,            // NPCNearbyNotify SyncNearEntities
+    DataNotifySyncContainerData = 0x00000015, // Container DataNotifySyncContainerData - similar to DirtyData, but has detailed like level, curr hp, max hp
+    SyncContainerDirtyData = 0x00000016,      // DirtyDataNotify SyncContainerDirtyData - Name, AP, Class, SubClass
+    SyncServerTime = 0x0000002b,              // ServerTimeNotify SyncServerTime
+    SyncToMeDeltaInfo = 0x0000002e,           // PlayerSelfNotify SyncToMeDeltaInfo
+    SyncNearDeltaInfo = 0x0000002d,           // PlayerNearbyNotify SyncNearDeltaInfo
 }
 
 impl TryFrom<u32> for Pkt {
-    type Error = PktParseError;
+    type Error = ParseError;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
@@ -26,7 +26,34 @@ impl TryFrom<u32> for Pkt {
             0x0000002b => Ok(Pkt::SyncServerTime),
             0x0000002e => Ok(Pkt::SyncToMeDeltaInfo),
             0x0000002d => Ok(Pkt::SyncNearDeltaInfo),
-            _ => Err(PktParseError),
+            _ => Err(ParseError),
+        }
+    }
+}
+
+#[repr(u16)] // ensures the enum is stored as an u16
+#[non_exhaustive]
+pub enum FragmentType {
+    None = 0,
+    Call = 1,
+    Notify = 2,
+    Return = 3,
+    Echo = 4,
+    FrameUp = 5,
+    FrameDown = 6,
+}
+
+impl From<u16> for FragmentType {
+    fn from(value: u16) -> Self {
+        match value {
+            0 => FragmentType::None,
+            1 => FragmentType::Call,
+            2 => FragmentType::Notify,
+            3 => FragmentType::Return,
+            4 => FragmentType::Echo,
+            5 => FragmentType::FrameUp,
+            6 => FragmentType::FrameDown,
+            _ => FragmentType::None,
         }
     }
 }
