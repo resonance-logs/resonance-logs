@@ -1,5 +1,7 @@
-use log::info;
+use bpsr_protobuf::blueprotobuf;
+use log::{info, trace};
 use crate::packets;
+use prost::Message;
 
 pub async fn start() { // todo: add app_handle?
     // https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html
@@ -10,21 +12,26 @@ pub async fn start() { // todo: add app_handle?
     while let Some((op, data)) = rx.recv().await {
         match op {
             packets::opcodes::Pkt::SyncNearEntities => {
-                info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
+                trace!("Received NotifyMsg with opcode {op:?}");
+                // info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
             }
             packets::opcodes::Pkt::DataNotifySyncContainerData => {
-                info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
+                trace!("Received NotifyMsg with opcode {op:?}");
+                // info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
             }
             packets::opcodes::Pkt::SyncContainerDirtyData => {
-                info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
+                trace!("Received NotifyMsg with opcode {op:?}");
+                // info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
             }
             packets::opcodes::Pkt::SyncServerTime => {
-                info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
+                trace!("Received NotifyMsg with opcode {op:?}");
+                // info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
             }
             packets::opcodes::Pkt::SyncToMeDeltaInfo => {
-                info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
+                trace!("Received NotifyMsg with opcode {op:?}");
+                // info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
                 // let sync_to_me_delta_info =
-                //     blueprotobuf::SyncToMeDeltaInfo::decode(bytes::Bytes::from(data))?;
+                //     blueprotobuf::SyncToMeDeltaInfo::decode(bytes::Bytes::from(data));
                 // let aoi_sync_to_me_delta = sync_to_me_delta_info.delta_info.unwrap_or_default();
                 // let other_uuid = aoi_sync_to_me_delta.uuid.unwrap_or_default();
                 // if my_uuid == 0 || my_uuid != other_uuid {
@@ -37,7 +44,8 @@ pub async fn start() { // todo: add app_handle?
                 // }
             }
             packets::opcodes::Pkt::SyncNearDeltaInfo => {
-                info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
+                trace!("Received NotifyMsg with opcode {op:?}");
+                // info!("Received NotifyMsg with opcode {op:?} and data {data:?}");
                 // let sync_near_delta_info =
                 //     blueprotobuf::SyncNearDeltaInfo::decode(bytes::Bytes::from(data))?;
                 // let aoi_sync_delta_vec = sync_near_delta_info.delta_infos;

@@ -34,3 +34,4 @@ bytes = "1.10.1"
 zstd = "0.13.3"
 byteorder = "1.5.0"
 bpsr-protobuf = { git = "https://github.com/winjwinj/bpsr-protobuf" }
+prost = "0.14.1"

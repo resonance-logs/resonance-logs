@@ -1,4 +1,4 @@
-use std::{fmt, io};
+use std::{fmt, io, ptr};
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read};
 use etherparse::TcpSlice;
@@ -36,8 +36,8 @@ fn ip_to_str(ip: &[u8; 4]) -> String {
 
 
 pub struct TCPReassembler {
-    cache: BTreeMap<u32, Vec<u8>>, // sequence -> payload
-    next_seq: Option<u32>,          // next expected sequence
+    cache: BTreeMap<usize, Vec<u8>>, // sequence -> payload
+    next_seq: Option<usize>,          // next expected sequence
 }
 
 impl TCPReassembler {
@@ -50,9 +50,9 @@ impl TCPReassembler {
 
     // Push a TCP segment and try to reassemble contiguous data.
     /// Returns Some(Vec<u8>) if contiguous data is available, None otherwise.
-    pub fn push_segment(&mut self, packet: TcpSlice) -> Option<(u32, Vec<u8>)> {
+    pub fn push_segment(&mut self, packet: TcpSlice) -> Option<(usize, Vec<u8>)> {
         let payload = packet.payload().to_vec();
-        let seq = packet.sequence_number();
+        let seq = packet.sequence_number() as usize;
         if payload.is_empty() {
             return None;
         }
@@ -72,7 +72,7 @@ impl TCPReassembler {
         while let Some(next) = self.next_seq {
             if let Some(segment) = self.cache.remove(&next) {
                 // advance next_seq only when we actually use this segment
-                self.next_seq = Some(next.wrapping_add(segment.len() as u32));
+                self.next_seq = Some(next.wrapping_add(segment.len()));
                 output.extend(segment);
             } else {
                 break;
@@ -86,7 +86,7 @@ impl TCPReassembler {
         }
     }
 
-    pub fn clear_reassembler(&mut self, seq_number: u32) {
+    pub fn clear_reassembler(&mut self, seq_number: usize) {
         self.cache = BTreeMap::new();
         self.next_seq = Some(seq_number)
     }
@@ -98,7 +98,7 @@ pub struct BinaryReader {
 }
 
 impl BinaryReader {
-    pub fn new(data: Vec<u8>) -> Self {
+    pub fn from(data: Vec<u8>) -> Self {
         Self {
             cursor: Cursor::new(data),
         }
@@ -110,6 +110,10 @@ impl BinaryReader {
 
     pub fn read_u32(&mut self) -> io::Result<u32> {
         self.cursor.read_u32::<BigEndian>()
+    }
+
+    pub fn read_u64(&mut self) -> io::Result<u64> {
+        self.cursor.read_u64::<BigEndian>()
     }
 
     pub fn read_bytes(&mut self, count: usize) -> io::Result<Vec<u8>> {
@@ -128,6 +132,10 @@ impl BinaryReader {
         let total_len = self.cursor.get_ref().len() as u64;
         let current_pos = self.cursor.position();
         (total_len.saturating_sub(current_pos)) as usize
+    }
+
+    pub const fn len(&self) -> usize {
+        self.cursor.get_ref().len()
     }
 
     pub fn splice_remaining(&mut self, data: &[u8]) {

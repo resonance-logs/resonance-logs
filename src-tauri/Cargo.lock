@@ -391,6 +391,7 @@ dependencies = [
  "flexi_logger",
  "hex",
  "log",
+ "prost",
  "serde",
  "serde_json",
  "tauri",

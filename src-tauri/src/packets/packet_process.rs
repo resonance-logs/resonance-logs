@@ -1,5 +1,4 @@
-use std::io::Write;
-use log::{debug, info};
+use log::{debug, info, trace};
 use crate::packets;
 use crate::packets::utils::BinaryReader;
 
@@ -12,23 +11,19 @@ pub async fn process_packet(
         let _ = tcp_fragments.read_bytes(4); // bytes 1-4 are ignored - frag_len
 
         let (is_zstd, frag_type) = {
-            let temp = tcp_fragments.read_u16().unwrap();
+            let temp = tcp_fragments.read_u16().unwrap(); // todo: fix all these unwraps properly
             ((temp & 0x8000) != 0, packets::opcodes::FragmentType::from(temp & 0x7fff)) // get bit 1 and bits 2-16
         };
 
         match frag_type {
-            packets::opcodes::FragmentType::FrameDown => {
-                let _ = tcp_fragments.read_bytes(4).unwrap(); // bytes 1-4 are ignored
-                let tcp_fragment = tcp_fragments.read_remaining();
-                if is_zstd {
-                    let Ok(tcp_fragment_decompressed) = zstd::decode_all(tcp_fragment) else {return};
-                    tcp_fragments.splice_remaining(&tcp_fragment_decompressed);
-                }
-                // recursively process the packet
-            }
             packets::opcodes::FragmentType::Notify => {
-                let _ = tcp_fragments.read_bytes(8); // service_uuid?
+                let service_uuid = tcp_fragments.read_u64().unwrap(); // service_uuid?
                 let _ = tcp_fragments.read_bytes(4);
+
+                if (service_uuid == 63_335_342) {
+                    trace!("Skipping FragmentType with service_uuid: {service_uuid}");
+                    return;
+                }
 
                 let Ok(method_id) = packets::opcodes::Pkt::try_from(tcp_fragments.read_u32().unwrap()) else {
                     return;
@@ -48,6 +43,15 @@ pub async fn process_packet(
                 {
                     debug!("Failed to send packet: {err}");
                 }
+            }
+            packets::opcodes::FragmentType::FrameDown => {
+                let _ = tcp_fragments.read_bytes(4).unwrap(); // bytes 1-4 are ignored
+                let tcp_fragment = tcp_fragments.read_remaining();
+                if is_zstd {
+                    let Ok(tcp_fragment_decompressed) = zstd::decode_all(tcp_fragment) else {return};
+                    tcp_fragments.splice_remaining(&tcp_fragment_decompressed);
+                }
+                // recursively process the packet
             }
             _ => return,
         }
