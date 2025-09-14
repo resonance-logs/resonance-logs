@@ -1,10 +1,11 @@
 use etherparse::NetSlice::Ipv4;
 use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
-use log::{info, trace, warn};
+use log::{debug, info, trace};
 use windivert::prelude::WinDivertFlags;
 use windivert::WinDivert;
 use crate::packets;
+use crate::packets::opcodes::Pkt;
 use crate::packets::packet_process::process_packet;
 use crate::packets::utils::{TCPReassembler, BinaryReader, Server};
 
@@ -68,7 +69,10 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
                             info!("Got Scene Server Address (by change): {curr_server}");
                             known_server = Some(curr_server);
                             tcp_reassembler.clear_reassembler(tcp_packet.sequence_number() as usize + tcp_payload_reader.len());
-                            // todo: clearDataOnServerChange();
+                            if let Err(err) = packet_sender.send((Pkt::ServerChangeInfo, Vec::new())).await
+                            {
+                                debug!("Failed to send packet: {err}");
+                            }
                         }
                     }
                 }
@@ -91,7 +95,10 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
                     info!("Got Scene Server Address by Login Return Packet: {curr_server}");
                     known_server = Some(curr_server);
                     tcp_reassembler.clear_reassembler(tcp_packet.sequence_number() as usize + tcp_payload.len());
-                    // todo: clearDataOnServerChange();
+                    if let Err(err) = packet_sender.send((Pkt::ServerChangeInfo, Vec::new())).await
+                    {
+                        debug!("Failed to send packet: {err}");
+                    }
                 }
             }
         }

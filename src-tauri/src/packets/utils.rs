@@ -1,11 +1,11 @@
-use std::{fmt, io, ptr};
+use byteorder::{BigEndian, ReadBytesExt};
+use etherparse::TcpSlice;
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read};
-use etherparse::TcpSlice;
-use byteorder::{BigEndian, ReadBytesExt};
+use std::{fmt, io};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub(crate) struct Server {
+pub struct Server {
     src_addr: [u8; 4],
     src_port: u16,
     dst_addr: [u8; 4],
@@ -110,6 +110,13 @@ impl BinaryReader {
 
     pub fn read_u32(&mut self) -> io::Result<u32> {
         self.cursor.read_u32::<BigEndian>()
+    }
+
+    pub fn peek_u32(&mut self) -> io::Result<u32> {
+        let pos = self.cursor.position();
+        let value = self.cursor.read_u32::<BigEndian>()?;
+        self.cursor.set_position(pos);
+        Ok(value)
     }
 
     pub fn read_u64(&mut self) -> io::Result<u64> {

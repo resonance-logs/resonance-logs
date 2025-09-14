@@ -5,9 +5,10 @@ pub struct ParseError;
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)] // todo: do we need all these?
 pub enum Pkt {
+    ServerChangeInfo,
     // TODO: change all these names
     SyncNearEntities = 0x00000006,            // NPCNearbyNotify SyncNearEntities
-    DataNotifySyncContainerData = 0x00000015, // Container DataNotifySyncContainerData - similar to DirtyData, but has detailed like level, curr hp, max hp
+    SyncContainerData = 0x00000015,           // Container DataNotifySyncContainerData - similar to DirtyData, but has detailed like level, curr hp, max hp
     SyncContainerDirtyData = 0x00000016,      // DirtyDataNotify SyncContainerDirtyData - Name, AP, Class, SubClass
     SyncServerTime = 0x0000002b,              // ServerTimeNotify SyncServerTime
     SyncToMeDeltaInfo = 0x0000002e,           // PlayerSelfNotify SyncToMeDeltaInfo
@@ -17,11 +18,10 @@ pub enum Pkt {
 impl TryFrom<u32> for Pkt {
     type Error = ParseError;
 
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        match value {
-            // Can change these to use const mapping if we ever need the reverse mapping Pkt -> bytes
+    fn try_from(pkt: u32) -> Result<Self, Self::Error> {
+        match pkt {
             0x00000006 => Ok(Pkt::SyncNearEntities),
-            0x00000015 => Ok(Pkt::DataNotifySyncContainerData),
+            0x00000015 => Ok(Pkt::SyncContainerData),
             0x00000016 => Ok(Pkt::SyncContainerDirtyData),
             0x0000002b => Ok(Pkt::SyncServerTime),
             0x0000002e => Ok(Pkt::SyncToMeDeltaInfo),
@@ -44,8 +44,8 @@ pub enum FragmentType {
 }
 
 impl From<u16> for FragmentType {
-    fn from(value: u16) -> Self {
-        match value {
+    fn from(fragment_type: u16) -> Self {
+        match fragment_type {
             0 => FragmentType::None,
             1 => FragmentType::Call,
             2 => FragmentType::Notify,
