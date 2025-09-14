@@ -1,16 +1,14 @@
 mod live;
 mod packets;
 
-use blueprotobuf_lib::blueprotobuf::EEntityType;
-use log::{info};
-use tauri::{Manager};
+use crate::live::opcodes_models::EncounterMutex;
+use tauri::Manager;
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
-use crate::live::models::{Encounter, EncounterInner};
+
+use specta_typescript::{BigIntExportBehavior, Typescript};
+use tauri_specta::{collect_commands, Builder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-/// # Panics
-///
-/// Will panic if todo:
 pub fn run() {
     let time_now = Some(format!(
         "{:?}",
@@ -19,10 +17,22 @@ pub fn run() {
             .expect("time out of bounds")
     ));
 
+    let builder = Builder::<tauri::Wry>::new()
+        // Then register them (separated by a comma)
+        .commands(collect_commands![live::commands::get_damage_row,]);
+
+
+    #[cfg(debug_assertions)] // <- Only export on non-release builds
+    builder
+        .export(Typescript::new().bigint(BigIntExportBehavior::BigInt), "../src/lib/bindings.ts")
+        .expect("Failed to export typescript bindings");
+
+
     tauri::Builder::default()
+        .invoke_handler(builder.invoke_handler())
         .setup(|app| {
-            info!("starting app v{}", app.package_info().version);
-            app.manage(Encounter::default()); // todo: maybe use https://github.com/ferreira-tb/tauri-store
+            // info!("starting app v{}", app.package_info().version);
+            app.manage(EncounterMutex::default()); // todo: maybe use https://github.com/ferreira-tb/tauri-store
 
             // TODO: Setup auto updater
 
@@ -32,7 +42,6 @@ pub fn run() {
             tauri::async_runtime::spawn(async move { live::live_main::start(app_handle.clone()).await });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_encounter])
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {})) // https://v2.tauri.app/plugin/single-instance/
         .plugin(
             tauri_plugin_log::Builder::new() // https://v2.tauri.app/plugin/logging/
@@ -47,17 +56,4 @@ pub fn run() {
         )
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[tauri::command]
-fn get_encounter(state: tauri::State<'_, Encounter>) -> EncounterInner {
-    let state = state.lock().unwrap();
-    let mut state_clone = state.clone();
-    state_clone.entities.retain(|_uuid, entity| {
-        let is_player = entity.entity_type == EEntityType::EntChar;
-        let did_damage = entity.damage_stats.damage_dealt > 0;
-        is_player && did_damage
-    });
-
-    state_clone
 }

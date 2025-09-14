@@ -26,11 +26,13 @@ chrono = "0.4.41"
 windivert = {version = "0.6.0", features = ["vendored"] }
 etherparse = "0.18.2"
 hex = "0.4.3"
-tokio = "1.47.1"
+tokio = {version = "1.47.1", features = ["macros"] }
 log = "0.4.28"
 bytes = "1.10.1"
 zstd = "0.13.3"
 byteorder = "1.5.0"
 blueprotobuf-lib = { git = "https://github.com/winjwinj/blueprotobuf-lib" }
 prost = "0.14.1"
-ts-rs = {version = "11.0.1", default-features = false }
+specta = "2.0.0-rc.21"
+specta-typescript = "0.0.9"
+tauri-specta = {version = "2.0.0-rc.21", features = ["typescript"] }

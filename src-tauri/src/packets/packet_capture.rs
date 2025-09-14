@@ -106,7 +106,8 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
         // 2. TCP Packet Reconstruction todo: clean up? there's some stuff in the original about _data.length > 4 that i dont think is needed?
         // todo: tbh idk why in original meter this isnt done before finding the server address
         if let Some((seq_num, tcp_payload)) = tcp_reassembler.push_segment(tcp_packet.clone()) {
-            trace!("Reassembled: Seq - {} - {}", seq_num, hex::encode(tcp_payload.clone())); // todo: comment for trace
+            info!("Reassembled: Seq - {} - {:?}", seq_num, tcp_payload.as_slice()); // todo: comment
+            // trace!("Reassembled: Seq - {} - {}", seq_num, hex::encode(tcp_payload.clone())); // todo: comment for trace
             process_packet(BinaryReader::from(tcp_payload), packet_sender.clone()).await; // todo: optimize: instead of cloning, is it better to just move it to the function and return?
         }
     } // todo: if it errors, it breaks out of the loop but will it ever error?

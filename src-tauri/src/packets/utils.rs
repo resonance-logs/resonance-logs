@@ -112,6 +112,10 @@ impl BinaryReader {
         self.cursor.read_u32::<BigEndian>()
     }
 
+    pub fn read_i32(&mut self) -> io::Result<i32> {
+        self.cursor.read_i32::<BigEndian>()
+    }
+
     pub fn peek_u32(&mut self) -> io::Result<u32> {
         let pos = self.cursor.position();
         let value = self.cursor.read_u32::<BigEndian>()?;
@@ -121,6 +125,12 @@ impl BinaryReader {
 
     pub fn read_u64(&mut self) -> io::Result<u64> {
         self.cursor.read_u64::<BigEndian>()
+    }
+
+    pub fn read_string(&mut self) -> io::Result<String> {
+        let mut s = String::new();
+        self.cursor.read_to_string(&mut s)?;
+        Ok(s)
     }
 
     pub fn read_bytes(&mut self, count: usize) -> io::Result<Vec<u8>> {
