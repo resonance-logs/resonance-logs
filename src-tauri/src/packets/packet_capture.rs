@@ -2,7 +2,7 @@ use std::hash::Hash;
 use etherparse::NetSlice::Ipv4;
 use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
-use log::{debug, info, trace};
+use log::{debug, error, info, trace};
 use windivert::prelude::WinDivertFlags;
 use windivert::WinDivert;
 use crate::packets;
@@ -17,11 +17,20 @@ pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Ve
 }
 
 async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>) {
-    let windivert = WinDivert::network(
+    let windivert = match WinDivert::network(
         "!loopback && ip && tcp", // todo: idk why but filtering by port just crashes the program, investigate?
         0,
         WinDivertFlags::new().set_sniff(),
-    ) // todo: add logs on windivert success
+    ) {
+        Ok(windivert_handle) => {
+            info!("WinDivert handle opened!");
+            Some(windivert_handle)
+        }
+        Err(e) => {
+            error!("Failed to initialize WinDivert: {}", e);
+            return;
+        }
+    }
     .expect("Failed to initialize WinDivert"); // if windivert doesn't work just exit early - todo: maybe we want to log this with a match so its clearer?
     let mut windivert_buffer = vec![0u8; 10 * 1024 * 1024];
     let mut known_server: Option<Server> = None; // nothing at start

@@ -1,9 +1,7 @@
 name: 'publish'
 
 on:
-  push:
-    branches:
-      - release
+  push
 
 # This workflow will trigger on each push to the `release` branch to create or update a GitHub release, build your app, and upload the artifacts to the release.
 
@@ -27,16 +25,52 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
       - name: install frontend dependencies
         run: yarn install # change this to npm, pnpm or bun depending on which one you use.
 
+      - name: Read changelog
+        run: |
+          # Save changelog to a file
+          git log -1 --pretty=%B | Select-Object -Skip 1 | Out-File release_notes.txt -Encoding utf8
+          
+          # Prepare multi-line RELEASE_BODY for GitHub Actions env
+          echo "RELEASE_BODY<<EOF" >> $env:GITHUB_ENV
+          git log -1 --pretty=%B | Select-Object -Skip 1 >> $env:GITHUB_ENV
+          echo "" >> $env:GITHUB_ENV
+          echo "# Installation Instructions" >> $env:GITHUB_ENV
+          echo "1. Download and install [bpsr-logs___VERSION___x64-setup.exe](https://github.com/winjwinj/bpsr-logs/releases/download/app-v__VERSION__/bpsr-logs_v__VERSION___x64-setup.exe)" >> $env:GITHUB_ENV
+          echo "EOF" >> $env:GITHUB_ENV
+
       - uses: tauri-apps/tauri-action@v0
+        id: tauri
         env:
+          # TODO: Add Tauri keys
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
-          releaseName: 'App v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
+          tagName: ${{ github.ref_name == 'release' && 'app-v__VERSION__' || '' }} # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          includeDebug: ${{ github.ref_name != 'release' }}
+          releaseName: ${{ github.ref_name == 'release' && 'v__VERSION__' || '' }}
+          releaseBody: ${{ env.RELEASE_BODY }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bpsr-logs-production-v${{ steps.tauri.outputs.appVersion }}
+          path: src-tauri/target/release/bundle/
+
+      - name: Upload Debug Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bpsr-logs-debug-v${{ steps.tauri.outputs.appVersion }}
+          path: src-tauri/target/debug/bundle/

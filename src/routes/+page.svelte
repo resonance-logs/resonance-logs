@@ -50,7 +50,7 @@
         </thead>
         <tbody>
         {#each dpsRows.damageRows as player, index}
-            <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
+            <tr class="odd:bg-white even:bg-gray-50 hover:bg-g  ray-100">
                 <td class="border border-gray-300 px-2 py-1">{index}</td>
                 <td class="border border-gray-300 px-2 py-1">{player.uid}</td>
                 <td class="border border-gray-300 px-2 py-1">{player.name || '??'}</td>

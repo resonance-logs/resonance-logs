@@ -17,6 +17,9 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2.4.1", features = [] }
 
+[dependencies.blueprotobuf-lib]
+path = "./src/blueprotobuf-lib"
+
 [dependencies]
 tauri = { version = "2.8.5", features = [] }
 serde = { version = "1.0.219", features = ["derive"] }
@@ -31,7 +34,6 @@ log = "0.4.28"
 bytes = "1.10.1"
 zstd = "0.13.3"
 byteorder = "1.5.0"
-blueprotobuf-lib = { git = "https://github.com/winjwinj/blueprotobuf-lib" }
 prost = "0.14.1"
 specta = "2.0.0-rc.21"
 specta-typescript = "0.0.9"
