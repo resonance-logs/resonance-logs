@@ -1,11 +1,11 @@
 import type {
-    DamageRow
+    DPSRow
 } from "$lib/bindings";
 
-export class DamageRows {
-    damageRows: DamageRow[];
+export class DPSRows {
+    damageRows: DPSRow[];
 
-    constructor(initialData: DamageRow[] = []) {
+    constructor(initialData: DPSRow[] = []) {
         this.damageRows = initialData;
     }
 }

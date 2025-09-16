@@ -2,7 +2,7 @@ use crate::live::opcodes_process::{on_server_change, process_aoi_sync_delta, pro
 use crate::packets;
 use blueprotobuf_lib::blueprotobuf;
 use bytes::Bytes;
-use log::{info, warn};
+use log::{error, info, warn};
 use prost::{Message};
 use tauri::{AppHandle, Manager};
 use crate::live::opcodes_models::EncounterMutex;
@@ -14,7 +14,7 @@ pub async fn start(app_handle: AppHandle) { // todo: add app_handle?
 
     // 2. Use the channel to receive packets back and process them
     while let Some((op, data)) = rx.recv().await {
-        // info!("Received {op:?}");
+        // error!("Received Pkt {op:?}");
         match op {
             packets::opcodes::Pkt::ServerChangeInfo => {
                 let encounter_state = app_handle.state::<EncounterMutex>();
@@ -37,8 +37,8 @@ pub async fn start(app_handle: AppHandle) { // todo: add app_handle?
                 process_sync_near_entities(&mut encounter_state, sync_near_entities); // todo: ignore the option, maybe we want to log a trace?
             }
             packets::opcodes::Pkt::SyncContainerData => {
-                // info!("Received {op:?}"); // todo: can't find this???
-                info!("Received {op:?} and data {data:?}");
+                // info!("Received {op:?}");
+                // info!("Received {op:?} and data {data:?}");
                 // trace!("Received {op:?} and data {data:?}");
                 let sync_container_data = match blueprotobuf::SyncContainerData::decode(Bytes::from(data)) {
                     Ok(v) => v,

@@ -25,7 +25,7 @@ pub fn process_sync_near_entities(
 
         match target_entity_type {
             EEntityType::EntChar => {process_player_attrs(target_entity, pkt_entity.attrs?.attrs);}
-            EEntityType::EntMonster => {process_monster_attrs();}
+            // EEntityType::EntMonster => {process_monster_attrs();} // todo
             _ => {}
         }
     }
@@ -42,6 +42,7 @@ pub fn process_sync_container_data(
     let target_entity = encounter.uid_to_entity.entry(player_uid).or_default();
     let char_base = v_data.char_base?;
     target_entity.name = char_base.name?;
+    target_entity.entity_type = EEntityType::EntChar;
     target_entity.class_id = v_data.profession_list?.cur_profession_id?;
     target_entity.ability_score = char_base.fight_point?;
     target_entity.level = v_data.role_level?.level?;
@@ -95,7 +96,7 @@ pub fn process_aoi_sync_delta(
 
     match target_entity_type {
         EEntityType::EntChar => {process_player_attrs(&mut target_entity, aoi_sync_delta.attrs?.attrs);}
-        EEntityType::EntMonster => {process_monster_attrs();}
+        // EEntityType::EntMonster => {process_monster_attrs();} // todo:
         _ => {}
     }
 
@@ -139,22 +140,31 @@ fn process_player_attrs(
     attrs: Vec<Attr>)
 {
     for attr in attrs {
-        let Some(raw_bytes) = attr.raw_data else { continue };
+        let Some(mut raw_bytes) = attr.raw_data else { continue };
         let Some(attr_id) = attr.id else { continue };
 
-        let mut raw_bytes = BinaryReader::from(raw_bytes);
+        // info!("{} {}", attr_type::(attr_id),hex::encode(raw_bytes.read_remaining()));
         match attr_id {
-            attr_type::ATTR_NAME => {
-                player_entity.name = raw_bytes.read_string().unwrap();
+            attr_type::ATTR_NAME => { // todo: fix these brackets
+                player_entity.name = BinaryReader::from(raw_bytes).read_string().unwrap();
             },
-            attr_type::ATTR_PROFESSION_ID => player_entity.class_id = raw_bytes.read_i32().unwrap_or_default(),
-            attr_type::ATTR_FIGHT_POINT => player_entity.ability_score = raw_bytes.read_i32().unwrap_or_default(),
-            attr_type::ATTR_LEVEL => player_entity.level = raw_bytes.read_i32().unwrap_or_default(),
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_PROFESSION_ID => {
+                player_entity.class_id = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+            },
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_FIGHT_POINT => {
+                player_entity.ability_score = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+            },
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_LEVEL => {
+                player_entity.level = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+            },
             _ => ()
         }
     }
 }
 
-fn process_monster_attrs() -> Option<()> {
-    Some(())
-}
+// fn process_monster_attrs() -> Option<()> {
+//     Some(())
+// }

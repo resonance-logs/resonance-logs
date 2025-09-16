@@ -8,9 +8,6 @@ pub struct Encounter {
     pub time_fight_start: u128, // in ms todo:
     pub local_player_uid: i64, // todo: get from SyncToMeDeltaInfo
     pub uid_to_entity: HashMap<i64, Entity>, // k: entity uid
-    // pub current_boss: Option<Entity>, // todo: is there a way to identify the boss?
-    // pub duration: i64,
-    // pub reset: bool
 }
 
 pub type EncounterMutex = Mutex<Encounter>;

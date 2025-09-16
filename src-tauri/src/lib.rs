@@ -2,6 +2,7 @@ mod live;
 mod packets;
 
 use crate::live::opcodes_models::EncounterMutex;
+use log::info;
 use tauri::Manager;
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 
@@ -21,17 +22,18 @@ pub fn run() {
         // Then register them (separated by a comma)
         .commands(collect_commands![live::commands::get_damage_row,]);
 
-
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     builder
-        .export(Typescript::new().bigint(BigIntExportBehavior::BigInt), "../src/lib/bindings.ts")
+        .export(
+            Typescript::new().bigint(BigIntExportBehavior::BigInt),
+            "../src/lib/bindings.ts",
+        )
         .expect("Failed to export typescript bindings");
-
 
     tauri::Builder::default()
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
-            // info!("starting app v{}", app.package_info().version);
+            info!("starting app v{}", app.package_info().version);
             app.manage(EncounterMutex::default()); // todo: maybe use https://github.com/ferreira-tb/tauri-store
 
             // TODO: Setup auto updater
@@ -39,7 +41,9 @@ pub fn run() {
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks
             let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move { live::live_main::start(app_handle.clone()).await });
+            tauri::async_runtime::spawn(
+                async move { live::live_main::start(app_handle.clone()).await },
+            );
             Ok(())
         })
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {})) // https://v2.tauri.app/plugin/single-instance/
@@ -48,9 +52,12 @@ pub fn run() {
                 .clear_targets()
                 .with_colors(ColoredLevelConfig::default())
                 .targets([
+                    #[cfg(debug_assertions)]
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout)
                         .filter(|metadata| metadata.level() <= log::LevelFilter::Info),
-                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir { file_name: time_now }),
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
+                        file_name: time_now,
+                    }),
                 ])
                 .build(),
         )

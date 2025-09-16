@@ -1,4 +1,4 @@
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use etherparse::TcpSlice;
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read};
@@ -36,8 +36,9 @@ fn ip_to_str(ip: &[u8; 4]) -> String {
 
 
 pub struct TCPReassembler {
-    cache: BTreeMap<usize, Vec<u8>>, // sequence -> payload
-    next_seq: Option<usize>,          // next expected sequence
+    pub cache: BTreeMap<usize, Vec<u8>>, // sequence -> payload
+    pub next_seq: Option<usize>,          // next expected sequence
+    pub _data: Vec<u8>,
 }
 
 impl TCPReassembler {
@@ -45,6 +46,7 @@ impl TCPReassembler {
         Self {
             cache: BTreeMap::new(),
             next_seq: None,
+            _data: Vec::new(),
         }
     }
 
@@ -110,10 +112,6 @@ impl BinaryReader {
 
     pub fn read_u32(&mut self) -> io::Result<u32> {
         self.cursor.read_u32::<BigEndian>()
-    }
-
-    pub fn read_i32(&mut self) -> io::Result<i32> {
-        self.cursor.read_i32::<BigEndian>()
     }
 
     pub fn peek_u32(&mut self) -> io::Result<u32> {
