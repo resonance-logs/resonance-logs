@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use once_cell::sync::Lazy;
+
 #[derive(specta::Type)]
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Default, Clone)]
@@ -19,6 +22,19 @@ pub struct DPSRow {
     pub class: String,
     // pub class_style: String,
     pub ability_score: i32,
+    pub total_damage: u128,
+    pub dps: f64,
+    pub skills: SkillRows,
+}
+
+pub type SkillRows = Vec<SkillRow>;
+
+#[derive(specta::Type)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillRow {
+    pub name: String,
     pub total_damage: u128,
     pub dps: f64,
 }

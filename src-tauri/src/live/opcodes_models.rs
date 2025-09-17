@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
+use once_cell::sync::Lazy;
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 
 #[derive(Debug, Default, Clone)]
@@ -7,7 +8,7 @@ pub struct Encounter {
     pub time_last_combat_packet: u128, // in ms todo:
     pub time_fight_start: u128, // in ms todo:
     pub local_player_uid: i64, // todo: get from SyncToMeDeltaInfo
-    pub uid_to_entity: HashMap<i64, Entity>, // k: entity uid
+    pub entity_uid_to_entity: HashMap<i64, Entity>, // k: entity uid
 }
 
 pub type EncounterMutex = Mutex<Encounter>;
@@ -20,12 +21,37 @@ pub struct Entity {
     pub ability_score: i32,
     pub level: i32,
     pub damage_stats: DamageStats,
+    pub skill_uid_to_skill: HashMap<i32, Skill>,
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct DamageStats {
     pub damage_dealt: u128,
 }
+
+#[derive(Debug, Default, Clone)]
+pub struct Skill {
+    pub total_damage: u128,
+    // pub casts: i64,
+    // pub hits: i64,
+    // pub crits: i64,
+}
+
+static SKILL_NAMES: Lazy<HashMap<String, String>> = Lazy::new(|| {
+    let data = include_str!("../../meter-data/SkillName.json");
+    serde_json::from_str(data).expect("invalid skills.json")
+});
+
+impl Skill {
+    pub fn get_skill_name(skill_uid: i32) -> String {
+        SKILL_NAMES
+            .get(&skill_uid.to_string())
+            .cloned()
+            .unwrap_or_else(|| format!("Unknown({})", skill_uid))
+    }
+}
+
+
 
 pub mod attr_type {
     pub const ATTR_NAME: i32 = 0x01;

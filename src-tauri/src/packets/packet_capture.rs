@@ -79,7 +79,7 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
 
                     if tcp_payload_reader.remaining() >= tcp_frag_payload_len {
                         let tcp_frag = tcp_payload_reader.read_bytes(tcp_frag_payload_len).unwrap();
-                        
+
                         if tcp_frag.len() >= 5 + SIGNATURE.len() && tcp_frag[5..5 + SIGNATURE.len()] == SIGNATURE {
                             info!("Got Scene Server Address (by change): {curr_server}");
                             known_server = Some(curr_server);
@@ -93,7 +93,7 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
                 }
             }
             // info!("{}", line!());
-            
+
             // 2. Payload length is 98 = Login packets?
             if tcp_payload.len() == 98 {
                 const SIGNATURE_1: [u8; 10] = [

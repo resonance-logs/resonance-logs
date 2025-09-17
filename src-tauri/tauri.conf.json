@@ -12,9 +12,23 @@
     "app": {
         "windows": [
             {
-                "title": "bpsr-logs",
-                "width": 800,
-                "height": 600
+                "label": "live",
+                "title": "Meter | BPSR Logs",
+                "userAgent": "BPSR Logs App",
+                "url": "live",
+                "fullscreen": false,
+                "width": 500,
+                "height": 350,
+                "resizable": true,
+                "shadow": false,
+                "decorations": true,
+                "transparent": true,
+                "minWidth": 400,
+                "minHeight": 120,
+                "alwaysOnTop": true,
+                "visible": true,
+                "focus": false,
+                "useHttpsScheme": true
             }
         ],
         "security": {
@@ -31,6 +45,6 @@
             "icons/icon.icns",
             "icons/icon.ico"
         ],
-        "resources": ["./WinDivert.dll"]
+        "resources": ["./WinDivert.dll", "./WinDivert64.sys"]
     }
 }

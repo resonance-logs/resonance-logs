@@ -1,6 +1,6 @@
 use std::default::Default;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::live::opcodes_models::{attr_type, DamageStats, Encounter, Entity};
+use crate::live::opcodes_models::{attr_type, DamageStats, Encounter, Entity, Skill};
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EEntityType};
 use log::info;
@@ -20,7 +20,7 @@ pub fn process_sync_near_entities(
         let target_uid = target_uuid >> 16;
         let target_entity_type = EEntityType::from(target_uuid);
 
-        let target_entity = encounter.uid_to_entity.entry(target_uid).or_default();
+        let target_entity = encounter.entity_uid_to_entity.entry(target_uid).or_default();
         target_entity.entity_type = target_entity_type;
 
         match target_entity_type {
@@ -39,7 +39,7 @@ pub fn process_sync_container_data(
     let v_data = sync_container_data.v_data?;
     let player_uid = v_data.char_id?;
 
-    let target_entity = encounter.uid_to_entity.entry(player_uid).or_default();
+    let target_entity = encounter.entity_uid_to_entity.entry(player_uid).or_default();
     let char_base = v_data.char_base?;
     target_entity.name = char_base.name?;
     target_entity.entity_type = EEntityType::EntChar;
@@ -87,7 +87,7 @@ pub fn process_aoi_sync_delta(
 
     // Process attributes
     let target_entity_type = EEntityType::from(target_uuid);
-    let mut target_entity = encounter.uid_to_entity
+    let mut target_entity = encounter.entity_uid_to_entity
         .entry(target_uid)
         .or_insert_with(|| Entity {
             entity_type: target_entity_type,
@@ -117,8 +117,7 @@ pub fn process_aoi_sync_delta(
             .top_summoner_id
             .or(sync_damage_info.attacker_uuid)?;
         let attacker_uid = attacker_uuid >> 16;
-
-        let attacker_entity = encounter.uid_to_entity
+        let attacker_entity = encounter.entity_uid_to_entity
             .entry(attacker_uid)
             .or_insert_with(|| Entity {
                 // name: format!("dummy-name-{attacker_uid}"),
@@ -128,8 +127,14 @@ pub fn process_aoi_sync_delta(
                 },
                 ..Default::default()
             });
-
         attacker_entity.damage_stats.damage_dealt += actual_dmg;
+
+        // Skills
+        let skill_uid = sync_damage_info.owner_id?;
+        let skill = attacker_entity.skill_uid_to_skill.entry(skill_uid).or_insert_with(|| Skill {
+            ..Default::default()
+        });
+        skill.total_damage += actual_dmg;
         // info!("dmgpacket: {attacker_uid} to {target_uuid}: {actual_dmg} dmg {} total dmg", attacker_entity.damage_stats.damage_dealt);
     }
     Some(())
