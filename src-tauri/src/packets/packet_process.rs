@@ -3,6 +3,7 @@ use crate::packets;
 use crate::packets::opcodes::{FragmentType, Pkt};
 use crate::packets::utils::BinaryReader;
 
+// todo: remove this test
 #[cfg(test)]
 mod tests {
     use super::*;

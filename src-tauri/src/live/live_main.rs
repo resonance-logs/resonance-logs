@@ -28,13 +28,15 @@ pub async fn start(app_handle: AppHandle) { // todo: add app_handle?
                 let sync_near_entities = match blueprotobuf::SyncNearEntities::decode(Bytes::from(data)) {
                     Ok(v) => v,
                     Err(e) => {
-                        warn!("Error decoding .. ignoring: {e}");
+                        warn!("Error decoding SyncNearEntities.. ignoring: {e}");
                         continue;
                     }
                 };
                 let encounter_state = app_handle.state::<EncounterMutex>();
                 let mut encounter_state = encounter_state.lock().unwrap();
-                process_sync_near_entities(&mut encounter_state, sync_near_entities); // todo: ignore the option, maybe we want to log a trace?
+                if process_sync_near_entities(&mut encounter_state, sync_near_entities).is_none() {
+                    warn!("Error processing SyncNearEntities.. ignoring.");
+                }
             }
             packets::opcodes::Pkt::SyncContainerData => {
                 // info!("Received {op:?}");
@@ -43,13 +45,15 @@ pub async fn start(app_handle: AppHandle) { // todo: add app_handle?
                 let sync_container_data = match blueprotobuf::SyncContainerData::decode(Bytes::from(data)) {
                     Ok(v) => v,
                     Err(e) => {
-                        warn!("Error decoding .. ignoring: {e}");
+                        warn!("Error decoding SyncContainerData.. ignoring: {e}");
                         continue;
                     }
                 };
                 let encounter_state = app_handle.state::<EncounterMutex>();
                 let mut encounter_state = encounter_state.lock().unwrap();
-                process_sync_container_data(&mut encounter_state, sync_container_data); // todo: ignore the option, maybe we want to log a trace?
+                if process_sync_container_data(&mut encounter_state, sync_container_data).is_none() {
+                    warn!("Error processing SyncContainerData.. ignoring.");
+                }
             }
             packets::opcodes::Pkt::SyncContainerDirtyData => {
                 // info!("Received {op:?}");
@@ -57,13 +61,15 @@ pub async fn start(app_handle: AppHandle) { // todo: add app_handle?
                 let sync_container_dirty_data = match blueprotobuf::SyncContainerDirtyData::decode(Bytes::from(data)) {
                     Ok(v) => v,
                     Err(e) => {
-                        warn!("Error decoding .. ignoring: {e}");
+                        warn!("Error decoding SyncContainerDirtyData.. ignoring: {e}");
                         continue;
                     }
                 };
                 let encounter_state = app_handle.state::<EncounterMutex>();
                 let mut encounter_state = encounter_state.lock().unwrap();
-                process_sync_container_dirty_data(&mut encounter_state, sync_container_dirty_data); // todo: ignore the option, maybe we want to log a trace?
+                if process_sync_container_dirty_data(&mut encounter_state, sync_container_dirty_data).is_none() {
+                    warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
+                }
             }
             packets::opcodes::Pkt::SyncServerTime => {
                 // info!("Received {op:?}");
@@ -71,7 +77,7 @@ pub async fn start(app_handle: AppHandle) { // todo: add app_handle?
                 let _sync_server_time = match blueprotobuf::SyncServerTime::decode(Bytes::from(data)) {
                     Ok(v) => v,
                     Err(e) => {
-                        warn!("Error decoding .. ignoring: {e}");
+                        warn!("Error decoding SyncServerTime.. ignoring: {e}");
                         continue;
                     }
                 };
@@ -83,13 +89,15 @@ pub async fn start(app_handle: AppHandle) { // todo: add app_handle?
                 let sync_to_me_delta_info = match blueprotobuf::SyncToMeDeltaInfo::decode(Bytes::from(data)) {
                     Ok(sync_to_me_delta_info) => sync_to_me_delta_info,
                     Err(e) => {
-                        warn!("Error decoding .. ignoring: {e}");
+                        warn!("Error decoding SyncToMeDeltaInfo.. ignoring: {e}");
                         continue;
                     }
                 };
                 let encounter_state = app_handle.state::<EncounterMutex>();
                 let mut encounter_state = encounter_state.lock().unwrap();
-                process_sync_to_me_delta_info(&mut encounter_state, sync_to_me_delta_info); // todo: ignore the option, maybe we want to log a trace?
+                if process_sync_to_me_delta_info(&mut encounter_state, sync_to_me_delta_info).is_none() {
+                    warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
+                }
             }
             packets::opcodes::Pkt::SyncNearDeltaInfo => {
                 // info!("Received {op:?}");
@@ -97,14 +105,16 @@ pub async fn start(app_handle: AppHandle) { // todo: add app_handle?
                 let sync_near_delta_info = match blueprotobuf::SyncNearDeltaInfo::decode(Bytes::from(data)) {
                     Ok(v) => v,
                     Err(e) => {
-                        warn!("Error decoding .. ignoring: {e}");
+                        warn!("Error decoding SyncNearDeltaInfo.. ignoring: {e}");
                         continue;
                     }
                 };
                 let encounter_state = app_handle.state::<EncounterMutex>();
                 let mut encounter_state = encounter_state.lock().unwrap();
                 for aoi_sync_delta in sync_near_delta_info.delta_infos {
-                    process_aoi_sync_delta(&mut encounter_state, aoi_sync_delta); // todo: ignore the option, maybe we want to log a trace?
+                    if process_aoi_sync_delta(&mut encounter_state, aoi_sync_delta).is_none() {
+                        warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
+                    }
                 }
             }
         }

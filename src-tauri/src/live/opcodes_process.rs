@@ -1,6 +1,6 @@
 use std::default::Default;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::live::opcodes_models::{attr_type, DamageStats, Encounter, Entity, Skill};
+use crate::live::opcodes_models::{attr_type, Encounter, Entity, Skill};
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EEntityType};
 use log::info;
@@ -100,13 +100,16 @@ pub fn process_aoi_sync_delta(
         _ => {}
     }
 
+    let Some(skill_effect) = aoi_sync_delta.skill_effects else {
+        return Some(()); // early return since this variable usually doesn't exist
+    };
 
     // Process Damage
-    for sync_damage_info in aoi_sync_delta.skill_effects?.damages {
+    for sync_damage_info in skill_effect.damages {
         let non_lucky_dmg = sync_damage_info.value;
         let lucky_dmg = sync_damage_info.lucky_value;
 
-        // Check dmg then lucky dmg todo: confused, why is lucky dmg less priority?
+        #[allow(clippy::cast_sign_loss)]
         let actual_dmg = if let Some(actual_dmg) = non_lucky_dmg.or(lucky_dmg) {
             actual_dmg as u128
         } else {
@@ -122,19 +125,30 @@ pub fn process_aoi_sync_delta(
             .or_insert_with(|| Entity {
                 // name: format!("dummy-name-{attacker_uid}"),
                 entity_type: EEntityType::from(attacker_uuid),
-                damage_stats: DamageStats {
-                    ..Default::default()
-                },
                 ..Default::default()
             });
-        attacker_entity.damage_stats.damage_dealt += actual_dmg;
 
         // Skills
         let skill_uid = sync_damage_info.owner_id?;
         let skill = attacker_entity.skill_uid_to_skill.entry(skill_uid).or_insert_with(|| Skill {
             ..Default::default()
         });
-        skill.total_damage += actual_dmg;
+
+        // TODO: from testing, first bit is set when there's crit, 3rd bit for if it causes lucky (no idea what that means), require more testing here
+        const CRIT_BIT: i32 = 0b00000001;   // 1st bit
+        let is_lucky = lucky_dmg.is_some();
+        let flag = sync_damage_info.type_flag.unwrap_or_default();
+        let is_crit = (flag & CRIT_BIT) != 0; // No idea why but SyncDamageInfo.is_crit isn't correct
+        if is_crit {
+            skill.crit_hits += 1;
+            skill.crit_total_dmg += actual_dmg;
+        }
+        if is_lucky {
+            skill.lucky_hits += 1;
+            skill.lucky_total_dmg += actual_dmg;
+        }
+        skill.hits += 1;
+        skill.total_dmg += actual_dmg;
         // info!("dmgpacket: {attacker_uid} to {target_uuid}: {actual_dmg} dmg {} total dmg", attacker_entity.damage_stats.damage_dealt);
     }
     Some(())

@@ -6,8 +6,8 @@ use once_cell::sync::Lazy;
 #[derive(Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DPSWindow {
-    pub damage_rows: DPSRows,
-    pub total_damage: u128,
+    pub dps_rows: DPSRows,
+    pub total_dmg: u128,
 }
 
 pub type DPSRows = Vec<DPSRow>;
@@ -22,8 +22,14 @@ pub struct DPSRow {
     pub class: String,
     // pub class_style: String,
     pub ability_score: i32,
-    pub total_damage: u128,
+    pub total_dmg: u128,
     pub dps: f64,
+    pub crit_rate: f64,
+    pub crit_dmg_rate: f64,
+    pub lucky_rate: f64,
+    pub lucky_dmg_rate: f64,
+    pub hits: u128,
+    pub hits_per_second: f64,
     pub skills: SkillRows,
 }
 
@@ -35,6 +41,12 @@ pub type SkillRows = Vec<SkillRow>;
 #[serde(rename_all = "camelCase")]
 pub struct SkillRow {
     pub name: String,
-    pub total_damage: u128,
+    pub total_dmg: u128,
     pub dps: f64,
+    pub crit_rate: f64,
+    pub crit_dmg_rate: f64,
+    pub lucky_rate: f64,
+    pub lucky_dmg_rate: f64,
+    pub hits: u128,
+    pub hits_per_second: f64,
 }

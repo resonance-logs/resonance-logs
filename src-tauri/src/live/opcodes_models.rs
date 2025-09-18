@@ -20,21 +20,17 @@ pub struct Entity {
     pub class_id: i32,
     pub ability_score: i32,
     pub level: i32,
-    pub damage_stats: DamageStats,
     pub skill_uid_to_skill: HashMap<i32, Skill>,
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct DamageStats {
-    pub damage_dealt: u128,
-}
-
-#[derive(Debug, Default, Clone)]
 pub struct Skill {
-    pub total_damage: u128,
-    // pub casts: i64,
-    // pub hits: i64,
-    // pub crits: i64,
+    pub total_dmg: u128,
+    pub hits: u128,
+    pub crit_total_dmg: u128,
+    pub crit_hits: u128,
+    pub lucky_total_dmg: u128,
+    pub lucky_hits: u128,
 }
 
 static SKILL_NAMES: Lazy<HashMap<String, String>> = Lazy::new(|| {
