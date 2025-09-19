@@ -1,7 +1,6 @@
 {
-  "trailingComma": "none",
   "tabWidth": 2,
-  "printWidth": 120,
+  "printWidth": 100,
   "plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
   "overrides": [
     {
