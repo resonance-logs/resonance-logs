@@ -1,5 +1,12 @@
-use std::collections::HashMap;
-use once_cell::sync::Lazy;
+#[derive(specta::Type)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HeaderInfo {
+    pub total_dps: f64,
+    pub total_dmg: u128,
+    pub elapsed_ms: u128,
+}
 
 #[derive(specta::Type)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -31,7 +38,17 @@ pub struct DPSRow {
     pub lucky_dmg_rate: f64,
     pub hits: u128,
     pub hits_per_second: f64,
-    pub skills: SkillRows,
+}
+
+#[derive(specta::Type)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DPSSkillBreakdownWindow {
+    pub curr_player: DPSRow,
+    pub skill_rows: SkillRows,
+    pub total_dmg: u128,
+    pub elapsed_ms: u128,
 }
 
 pub type SkillRows = Vec<SkillRow>;

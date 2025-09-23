@@ -20,17 +20,23 @@ pub struct Entity {
     pub class_id: i32,
     pub ability_score: i32,
     pub level: i32,
+    pub total_dmg: u128,
+    pub crit_total_dmg: u128,
+    pub crit_hits: u128,
+    pub lucky_total_dmg: u128,
+    pub lucky_hits: u128,
+    pub hits: u128,
     pub skill_uid_to_skill: HashMap<i32, Skill>,
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct Skill {
     pub total_dmg: u128,
-    pub hits: u128,
     pub crit_total_dmg: u128,
     pub crit_hits: u128,
     pub lucky_total_dmg: u128,
     pub lucky_hits: u128,
+    pub hits: u128,
 }
 
 static SKILL_NAMES: Lazy<HashMap<String, String>> = Lazy::new(|| {
@@ -74,7 +80,7 @@ pub mod class {
     pub const HEAVY_GUARDIAN: i32 = 9;
     pub const MARKSMAN: i32 = 11;
     pub const SHIELD_KNIGHT: i32 = 12;
-    pub const SOUL_MUSICIAN: i32 = 13;
+    pub const BEAT_PERFORMER: i32 = 13;
 
     pub fn to_string(id: i32) -> String {
         match id {
@@ -85,7 +91,7 @@ pub mod class {
             HEAVY_GUARDIAN => String::from("Heavy Guardian"),
             MARKSMAN => String::from("Marksman"),
             SHIELD_KNIGHT => String::from("Shield Knight"),
-            SOUL_MUSICIAN => String::from("Soul Musician"),
+            BEAT_PERFORMER => String::from("Beat Performer"),
             _ => String::new(), // empty string for unknown
         }
     }

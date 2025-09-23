@@ -7,6 +7,12 @@
 export const commands = {
 async getDamageRow() : Promise<DPSWindow> {
     return await TAURI_INVOKE("get_damage_row");
+},
+async getSkillRow(playerUidStr: string) : Promise<DPSSkillBreakdownWindow> {
+    return await TAURI_INVOKE("get_skill_row", { playerUidStr });
+},
+async getHeaderInfo() : Promise<HeaderInfo> {
+    return await TAURI_INVOKE("get_header_info");
 }
 }
 
@@ -20,8 +26,10 @@ async getDamageRow() : Promise<DPSWindow> {
 
 /** user-defined types **/
 
-export type DPSRow = { uid: bigint; name: string; class: string; abilityScore: number; totalDmg: bigint; dps: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerSecond: number; skills: SkillRow[] }
+export type DPSRow = { uid: bigint; name: string; class: string; abilityScore: number; totalDmg: bigint; dps: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerSecond: number }
+export type DPSSkillBreakdownWindow = { currPlayer: DPSRow; skillRows: SkillRow[]; totalDmg: bigint; elapsedMs: bigint }
 export type DPSWindow = { dpsRows: DPSRow[]; totalDmg: bigint; elapsedMs: bigint }
+export type HeaderInfo = { totalDps: number; totalDmg: bigint; elapsedMs: bigint }
 export type SkillRow = { name: string; totalDmg: bigint; dps: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerSecond: number }
 
 /** tauri-specta globals **/

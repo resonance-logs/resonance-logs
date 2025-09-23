@@ -2,7 +2,7 @@ use std::default::Default;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::live::opcodes_models::{attr_type, Encounter, Entity, Skill};
 use blueprotobuf_lib::blueprotobuf;
-use blueprotobuf_lib::blueprotobuf::{Attr, EEntityType};
+use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
 use log::info;
 use crate::packets::utils::BinaryReader;
 
@@ -128,22 +128,35 @@ pub fn process_aoi_sync_delta(
             ..Default::default()
         });
 
-        // TODO: from testing, first bit is set when there's crit, 3rd bit for if it causes lucky (no idea what that means), require more testing here
-        const CRIT_BIT: i32 = 0b00000001;   // 1st bit
-        let is_lucky = lucky_dmg.is_some();
-        let flag = sync_damage_info.type_flag.unwrap_or_default();
-        let is_crit = (flag & CRIT_BIT) != 0; // No idea why but SyncDamageInfo.is_crit isn't correct
-        if is_crit {
-            skill.crit_hits += 1;
-            skill.crit_total_dmg += actual_dmg;
+        info!("{:?}", sync_damage_info.r#type);
+
+        let is_heal = sync_damage_info.r#type.unwrap_or(0) == EDamageType::Heal as i32;
+        if is_heal {
+
+        } else {
+            // TODO: from testing, first bit is set when there's crit, 3rd bit for if it causes lucky (no idea what that means), require more testing here
+            const CRIT_BIT: i32 = 0b00000001;   // 1st bit
+            let is_lucky = lucky_dmg.is_some();
+            let flag = sync_damage_info.type_flag.unwrap_or_default();
+            let is_crit = (flag & CRIT_BIT) != 0; // No idea why but SyncDamageInfo.is_crit isn't correct
+            if is_crit {
+                attacker_entity.crit_hits += 1;
+                attacker_entity.crit_total_dmg += actual_dmg;
+                skill.crit_hits += 1;
+                skill.crit_total_dmg += actual_dmg;
+            }
+            if is_lucky {
+                attacker_entity.lucky_hits += 1;
+                attacker_entity.lucky_total_dmg += actual_dmg;
+                skill.lucky_hits += 1;
+                skill.lucky_total_dmg += actual_dmg;
+            }
+            attacker_entity.hits += 1;
+            attacker_entity.total_dmg += actual_dmg;
+            skill.hits += 1;
+            skill.total_dmg += actual_dmg;
+            info!("dmgpacket: {attacker_uid} to {target_uid}: {actual_dmg} dmg {} total dmg", skill.total_dmg);
         }
-        if is_lucky {
-            skill.lucky_hits += 1;
-            skill.lucky_total_dmg += actual_dmg;
-        }
-        skill.hits += 1;
-        skill.total_dmg += actual_dmg;
-        info!("dmgpacket: {attacker_uid} to {target_uid}: {actual_dmg} dmg {} total dmg", skill.total_dmg);
     }
     // Figure out timestamps
     let timestamp_ms = SystemTime::now().duration_since(UNIX_EPOCH)

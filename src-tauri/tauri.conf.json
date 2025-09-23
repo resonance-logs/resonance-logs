@@ -13,22 +13,14 @@
         "windows": [
             {
                 "label": "live",
-                "title": "Meter | BPSR Logs",
-                "userAgent": "BPSR Logs App",
                 "url": "live",
-                "fullscreen": false,
-                "width": 500,
-                "height": 350,
-                "resizable": true,
                 "shadow": false,
-                "decorations": true,
+                "decorations": false,
                 "transparent": true,
                 "minWidth": 400,
                 "minHeight": 120,
                 "alwaysOnTop": true,
-                "visible": true,
-                "focus": false,
-                "useHttpsScheme": true
+                "focus": false
             }
         ],
         "security": {

@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Variable", sans-serif;
+  --font-mono: "Geist Mono Variable", monospace;
+  --text-tiny: 0.625rem;
+}

@@ -405,12 +405,12 @@ dependencies = [
 name = "bpsr-logs"
 version = "0.2.0"
 dependencies = [
+ "anyhow",
  "blueprotobuf-lib",
  "byteorder",
  "bytes",
  "chrono",
  "etherparse 0.18.2",
- "hex",
  "log",
  "once_cell",
  "prost",
