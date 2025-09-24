@@ -2,7 +2,6 @@ mod live;
 mod packets;
 
 use crate::live::opcodes_models::EncounterMutex;
-use anyhow::anyhow;
 use log::info;
 use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size};
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
@@ -106,7 +105,7 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         .text("quit", "Quit")
         .build()?;
 
-    let tray = TrayIconBuilder::new()
+    let _tray = TrayIconBuilder::new()
         .menu(&menu)
         .show_menu_on_left_click(false)
         .icon(app.default_window_icon().unwrap().clone())
