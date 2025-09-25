@@ -45,9 +45,9 @@ https://discord.com/channels/1417447600608510015/1417450802561290280
     ```bash
     npm run tauri dev
     ```
-1. Personally, I use
+1. For IDE, I use
    1. Rust: [Jetbrains RustRover](https://www.jetbrains.com/rust/download/?section=windows)
-   1. Svelte: [Visual Studio Code](https://code.visualstudio.com/) w/ [Svelte plugin](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) and lint with [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) (for .js and .ts) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) (for .svelte)
+   1. Svelte: [Visual Studio Code](https://code.visualstudio.com/) w/ [Svelte plugin](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) and lint with [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) (there's a `.code-workspace` committed to the repo)
 
 # FAQ
 
