@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "bpsr-logs"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "blueprotobuf-lib",
