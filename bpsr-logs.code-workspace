@@ -36,6 +36,7 @@
       "LICENSE": true,
       "package-lock.json": true,
       "README.md": true,
+      "raw-game-files": true,
     },
     "search.exclude": {
       "**/node_modules": true,
