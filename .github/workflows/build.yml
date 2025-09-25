@@ -52,11 +52,12 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         id: tauri
         env:
-          # TODO: Add Tauri keys
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name == 'release' && 'app-v__VERSION__' || '' }} # the action automatically replaces \_\_VERSION\_\_ with the app version.
           includeDebug: ${{ github.ref_name != 'release' }}
+          includeUpdaterJson: true
           releaseName: ${{ github.ref_name == 'release' && 'v__VERSION__' || '' }}
           releaseBody: ${{ env.RELEASE_BODY }}
           releaseDraft: true

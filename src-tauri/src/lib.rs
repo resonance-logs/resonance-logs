@@ -3,14 +3,15 @@ mod packets;
 
 use crate::live::opcodes_models::EncounterMutex;
 use log::info;
-use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size};
-use tauri_plugin_log::fern::colors::ColoredLevelConfig;
-
 use specta_typescript::{BigIntExportBehavior, Typescript};
+use window_vibrancy::apply_blur;
+
 use tauri::menu::{Menu, MenuBuilder, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size};
+use tauri_plugin_log::fern::colors::ColoredLevelConfig;
+use tauri_plugin_updater::UpdaterExt;
 use tauri_specta::{Builder, collect_commands};
-use window_vibrancy::apply_blur;
 
 pub const WINDOW_LIVE_LABEL: &str = "live";
 pub const WINDOW_MAIN_LABEL: &str = "main";
@@ -44,6 +45,14 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
             info!("starting app v{}", app.package_info().version);
+
+            // Check app updates
+            // https://v2.tauri.app/plugin/updater/#checking-for-updates
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                update(handle).await.unwrap();
+            });
+
             let app_handle = app.handle().clone();
 
             // Setup tray icon
@@ -54,16 +63,14 @@ pub fn run() {
 
             app.manage(EncounterMutex::default()); // todo: maybe use https://github.com/ferreira-tb/tauri-store
 
-            // TODO: Setup auto updater
-
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks
-
             tauri::async_runtime::spawn(
                 async move { live::live_main::start(app_handle.clone()).await },
             );
             Ok(())
         })
+        .plugin(tauri_plugin_updater::Builder::new().build()) // used for auto updating the app
         .plugin(tauri_plugin_window_state::Builder::default().build()) // used to remember window size/position https://v2.tauri.app/plugin/window-state/
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {})) // used to enforce only 1 instance of the app https://v2.tauri.app/plugin/single-instance/
         .plugin(
@@ -83,6 +90,27 @@ pub fn run() {
         )
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    if let Some(update) = app.updater()?.check().await? {
+        let mut downloaded = 0;
+        update
+            .download_and_install(
+                |chunk_length, content_length| {
+                    downloaded += chunk_length;
+                    info!("downloaded {downloaded} from {content_length:?}");
+                },
+                || {
+                    info!("download finished");
+                },
+            )
+            .await?;
+
+        info!("update installed");
+        app.restart();
+    }
+    Ok(())
 }
 
 fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
@@ -112,17 +140,25 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         .on_menu_event(|tray_app, event| match event.id.as_ref() {
             "show-settings" => {
                 let tray_app_handle = tray_app.app_handle();
-                let Some(main_meter_window) = tray_app_handle.get_webview_window(WINDOW_LIVE_LABEL) else { return; };
+                let Some(main_meter_window) = tray_app_handle.get_webview_window(WINDOW_LIVE_LABEL)
+                else {
+                    return;
+                };
                 show_window(&main_meter_window);
                 // todo: navigate to /settings/
             }
             "show-live" => {
                 let tray_app_handle = tray_app.app_handle();
-                let Some(live_meter_window) = tray_app_handle.get_webview_window(WINDOW_LIVE_LABEL) else { return; };
+                let Some(live_meter_window) = tray_app_handle.get_webview_window(WINDOW_LIVE_LABEL)
+                else {
+                    return;
+                };
                 show_window(&live_meter_window);
             }
             "reset" => {
-                let Some(live_meter_window) = tray_app.get_webview_window(WINDOW_LIVE_LABEL) else { return; };
+                let Some(live_meter_window) = tray_app.get_webview_window(WINDOW_LIVE_LABEL) else {
+                    return;
+                };
                 live_meter_window
                     .set_size(Size::Logical(LogicalSize {
                         width: 500.0,
@@ -151,7 +187,9 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
             {
                 // Show and focus the live meter window when the tray is clicked
                 let app = tray.app_handle();
-                let Some(live_meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) else { return; };
+                let Some(live_meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) else {
+                    return;
+                };
                 show_window(&live_meter_window);
             }
         })
