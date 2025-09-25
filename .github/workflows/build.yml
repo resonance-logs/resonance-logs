@@ -44,7 +44,7 @@ jobs:
           (git log -1 --pretty=%B | Select-Object -Skip 1)
           ''
           '# Installation Instructions'
-          '1. Download and install [bpsr-logs___VERSION___x64-setup.exe](https://github.com/winjwinj/bpsr-logs/releases/download/app-v__VERSION__/bpsr-logs___VERSION___x64-setup.exe)'
+          '1. Download and install [bpsr-logs___VERSION___x64-setup.exe](https://github.com/winjwinj/bpsr-logs/releases/download/app-v__VERSION__/bpsr-logs___VERSION___x64_en-US.msi)'
           'EOF'
           ) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
