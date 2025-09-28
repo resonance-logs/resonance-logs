@@ -28,8 +28,8 @@ pub fn run() {
     let builder = Builder::<tauri::Wry>::new()
         // Then register them (separated by a comma)
         .commands(collect_commands![
-            live::commands::get_damage_row,
-            live::commands::get_skill_row,
+            live::commands::get_damage_window,
+            live::commands::get_skill_window,
             live::commands::get_header_info,
         ]);
 

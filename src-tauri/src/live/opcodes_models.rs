@@ -1,14 +1,16 @@
+use blueprotobuf_lib::blueprotobuf::EEntityType;
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use once_cell::sync::Lazy;
-use blueprotobuf_lib::blueprotobuf::EEntityType;
+use crate::live::opcodes_models::class::ClassSpec;
 
 #[derive(Debug, Default, Clone)]
 pub struct Encounter {
-    pub time_last_combat_packet: u128, // in ms todo:
-    pub time_fight_start: u128, // in ms todo:
-    pub local_player_uid: i64, // todo: get from SyncToMeDeltaInfo
-    pub entity_uid_to_entity: HashMap<i64, Entity>, // k: entity uid
+    pub time_last_combat_packet_ms: u128,              // in ms
+    pub time_fight_start_ms: u128,                     // in ms
+    pub total_dmg: u128,
+    pub local_player_uid: i64,
+    pub entity_uid_to_entity: HashMap<i64, Entity>, // key: entity uid
 }
 
 pub type EncounterMutex = Mutex<Encounter>;
@@ -18,6 +20,7 @@ pub struct Entity {
     pub name: String,
     pub entity_type: EEntityType,
     pub class_id: i32,
+    pub class_spec: ClassSpec,
     pub ability_score: i32,
     pub level: i32,
     pub total_dmg: u128,
@@ -46,14 +49,9 @@ static SKILL_NAMES: Lazy<HashMap<String, String>> = Lazy::new(|| {
 
 impl Skill {
     pub fn get_skill_name(skill_uid: i32) -> String {
-        SKILL_NAMES
-            .get(&skill_uid.to_string())
-            .cloned()
-            .unwrap_or_else(|| format!("Unknown({})", skill_uid))
+        SKILL_NAMES.get(&skill_uid.to_string()).map_or_else(|| format!("UNKNOWN UNKNOWN ({skill_uid})"), |s| format!("{s} ({skill_uid})"))
     }
 }
-
-
 
 pub mod attr_type {
     pub const ATTR_NAME: i32 = 0x01;
@@ -72,7 +70,9 @@ pub mod attr_type {
     // pub const ATTR_ENERGY_FLAG: i32 = 0x543cd3c6;
 }
 
+// TODO: this logic needs to be severely cleaned up
 pub mod class {
+    pub const UNKNOWN: i32 = 0;
     pub const STORMBLADE: i32 = 1;
     pub const FROST_MAGE: i32 = 2;
     pub const WIND_KNIGHT: i32 = 4;
@@ -82,17 +82,112 @@ pub mod class {
     pub const SHIELD_KNIGHT: i32 = 12;
     pub const BEAT_PERFORMER: i32 = 13;
 
-    pub fn to_string(id: i32) -> String {
-        match id {
-            STORMBLADE => String::from("Stormblade"),
-            FROST_MAGE => String::from("Frost Mage"),
-            WIND_KNIGHT => String::from("Wind Knight"),
-            VERDANT_ORACLE => String::from("Verdant Oracle"),
-            HEAVY_GUARDIAN => String::from("Heavy Guardian"),
-            MARKSMAN => String::from("Marksman"),
-            SHIELD_KNIGHT => String::from("Shield Knight"),
-            BEAT_PERFORMER => String::from("Beat Performer"),
-            _ => String::new(), // empty string for unknown
+    pub fn get_class_name(id: i32) -> String {
+        String::from(match id {
+            STORMBLADE => "Stormblade",
+            FROST_MAGE => "Frost Mage",
+            WIND_KNIGHT => "Wind Knight",
+            VERDANT_ORACLE => "Verdant Oracle",
+            HEAVY_GUARDIAN => "Heavy Guardian",
+            MARKSMAN => "Marksman",
+            SHIELD_KNIGHT => "Shield Knight",
+            BEAT_PERFORMER => "Beat Performer",
+            _ => "", // empty string for unknown
+        })
+    }
+
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+    pub enum ClassSpec {
+        #[default]
+        Unknown,
+        // Stormblade
+        Iaido,
+        Moonstrike,
+        // Frost Mage
+        Icicle,
+        Frostbeam,
+        // Wind Knight
+        Vanguard,
+        Skyward,
+        // Verdant Oracle
+        Smite,
+        Lifebind,
+        // Heavy Guardian
+        Earthfort,
+        Block,
+        // Marksman
+        Wildpack,
+        Falconry,
+        // Shield Knight
+        Recovery,
+        Shield,
+        // Beat Performer
+        Dissonance,
+        Concerto,
+    }
+
+    pub fn get_class_spec_from_skill_id(skill_id: i32) -> ClassSpec {
+        match skill_id {
+            1714 | 1734 => ClassSpec::Iaido,
+            44701 | 179906 => ClassSpec::Moonstrike,
+
+            120901 | 120902 => ClassSpec::Icicle,
+            1241 => ClassSpec::Frostbeam,
+
+            1405 | 1418 => ClassSpec::Vanguard,
+            1419 => ClassSpec::Skyward,
+
+            1518 | 1541 | 21402 => ClassSpec::Smite,
+            20301 => ClassSpec::Lifebind,
+
+            199902 => ClassSpec::Earthfort,
+            1930 | 1931 | 1934 | 1935 => ClassSpec::Block,
+
+            220112 | 2203622 => ClassSpec::Falconry,
+            2292 | 1700820 | 1700825 | 1700827 => ClassSpec::Wildpack,
+
+            2406 => ClassSpec::Recovery,
+            2405 => ClassSpec::Shield,
+
+            2306 => ClassSpec::Dissonance,
+            2307 | 2361 | 55302 => ClassSpec::Concerto,
+            _ => ClassSpec::Unknown,
         }
+    }
+
+    pub fn get_class_id_from_spec(class_spec: ClassSpec) -> i32 {
+        match class_spec {
+            ClassSpec::Iaido | ClassSpec::Moonstrike => STORMBLADE,
+            ClassSpec::Icicle | ClassSpec::Frostbeam => FROST_MAGE,
+            ClassSpec::Vanguard | ClassSpec::Skyward => WIND_KNIGHT,
+            ClassSpec::Smite | ClassSpec::Lifebind => VERDANT_ORACLE,
+            ClassSpec::Earthfort | ClassSpec::Block => HEAVY_GUARDIAN,
+            ClassSpec::Wildpack | ClassSpec::Falconry => MARKSMAN,
+            ClassSpec::Recovery | ClassSpec::Shield => SHIELD_KNIGHT,
+            ClassSpec::Dissonance | ClassSpec::Concerto => BEAT_PERFORMER,
+            ClassSpec::Unknown => UNKNOWN,
+        }
+    }
+
+    pub fn get_class_spec(class_spec: ClassSpec) -> String {
+        String::from(match class_spec {
+            ClassSpec::Unknown => "",
+            ClassSpec::Iaido => "Iaido",
+            ClassSpec::Moonstrike => "Moonstrike",
+            ClassSpec::Icicle => "Icicle",
+            ClassSpec::Frostbeam => "Frostbeam",
+            ClassSpec::Vanguard => "Vanguard",
+            ClassSpec::Skyward => "Skyward",
+            ClassSpec::Smite => "Smite",
+            ClassSpec::Lifebind => "Lifebind",
+            ClassSpec::Earthfort => "Earthfort",
+            ClassSpec::Block => "Block",
+            ClassSpec::Wildpack => "Wildpack",
+            ClassSpec::Falconry => "Falconry",
+            ClassSpec::Recovery => "Recovery",
+            ClassSpec::Shield => "Shield",
+            ClassSpec::Dissonance => "Dissonance",
+            ClassSpec::Concerto => "Concerto",
+        })
     }
 }

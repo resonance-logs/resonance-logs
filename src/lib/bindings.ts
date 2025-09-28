@@ -5,11 +5,16 @@
 
 
 export const commands = {
-async getDamageRow() : Promise<DPSWindow> {
-    return await TAURI_INVOKE("get_damage_row");
+async getDamageWindow() : Promise<DPSWindow> {
+    return await TAURI_INVOKE("get_damage_window");
 },
-async getSkillRow(playerUidStr: string) : Promise<DPSSkillBreakdownWindow> {
-    return await TAURI_INVOKE("get_skill_row", { playerUidStr });
+async getSkillWindow(playerUidStr: string) : Promise<Result<DPSSkillBreakdownWindow, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_skill_window", { playerUidStr }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
 async getHeaderInfo() : Promise<HeaderInfo> {
     return await TAURI_INVOKE("get_header_info");
@@ -26,11 +31,11 @@ async getHeaderInfo() : Promise<HeaderInfo> {
 
 /** user-defined types **/
 
-export type DPSRow = { uid: bigint; name: string; class: string; abilityScore: number; totalDmg: bigint; dps: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerSecond: number }
-export type DPSSkillBreakdownWindow = { currPlayer: DPSRow; skillRows: SkillRow[]; totalDmg: bigint; elapsedMs: bigint }
-export type DPSWindow = { dpsRows: DPSRow[]; totalDmg: bigint; elapsedMs: bigint }
+export type DPSRow = { uid: bigint; name: string; class: string; classSpec: string; abilityScore: number; totalDmg: bigint; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerMinute: number }
+export type DPSSkillBreakdownWindow = { currPlayer: DPSRow; skillRows: SkillRow[] }
+export type DPSWindow = { dpsRows: DPSRow[] }
 export type HeaderInfo = { totalDps: number; totalDmg: bigint; elapsedMs: bigint }
-export type SkillRow = { name: string; totalDmg: bigint; dps: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerSecond: number }
+export type SkillRow = { name: string; totalDmg: bigint; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerMinute: number }
 
 /** tauri-specta globals **/
 

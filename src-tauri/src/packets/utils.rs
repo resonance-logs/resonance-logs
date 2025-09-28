@@ -23,10 +23,16 @@ impl Server {
     }
 }
 
-
 impl fmt::Display for Server {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{} -> {}:{}", ip_to_str(&self.src_addr), self.src_port, ip_to_str(&self.dst_addr), self.dst_port)
+        write!(
+            f,
+            "{}:{} -> {}:{}",
+            ip_to_str(&self.src_addr),
+            self.src_port,
+            ip_to_str(&self.dst_addr),
+            self.dst_port
+        )
     }
 }
 
@@ -34,10 +40,9 @@ fn ip_to_str(ip: &[u8; 4]) -> String {
     format!("{}.{}.{}.{}", ip[0], ip[1], ip[2], ip[3])
 }
 
-
 pub struct TCPReassembler {
     pub cache: BTreeMap<usize, Vec<u8>>, // sequence -> payload
-    pub next_seq: Option<usize>,          // next expected sequence
+    pub next_seq: Option<usize>,         // next expected sequence
     pub _data: Vec<u8>,
 }
 

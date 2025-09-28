@@ -9,13 +9,13 @@
   <span class="flex h-full items-center">
     <!-- TODO: turn this into a loop? -->
     <button
-      class={`rounded-xs cursor-pointer px-1.5 ${page.url.pathname.includes("dps") ? "bg-red-500/40" : ""}`}
+      class={`rounded-xs px-1.5 ${page.url.pathname.includes("dps") ? "bg-red-500/40" : ""}`}
       onclick={() => {
         goto(resolve("/live/dps"));
       }}>DPS</button
     >
     <button
-      class={`rounded-xs cursor-pointer px-1.5 ${page.url.pathname.includes("heal") ? "bg-red-500/40" : ""}`}
+      class={`rounded-xs px-1.5 ${page.url.pathname.includes("heal") ? "bg-red-500/40" : ""}`}
       onclick={() => {
         goto(resolve("/live/heal"));
       }}>HEAL (WIP)</button

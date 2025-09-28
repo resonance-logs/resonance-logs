@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* https://ux.stackexchange.com/questions/105024/why-dont-button-html-elements-have-a-css-cursor-pointer-by-default */
+@layer base {
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+}
+
 @theme {
   --font-sans: "Inter Variable", sans-serif;
   --font-mono: "Geist Mono Variable", monospace;
