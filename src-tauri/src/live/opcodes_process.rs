@@ -111,10 +111,10 @@ pub fn process_aoi_sync_delta(
     // Process Damage
     for sync_damage_info in skill_effect.damages {
         let non_lucky_dmg = sync_damage_info.value;
-        let lucky_dmg = sync_damage_info.lucky_value;
+        let lucky_value = sync_damage_info.lucky_value;
 
         #[allow(clippy::cast_sign_loss)]
-        let actual_dmg = if let Some(actual_dmg) = non_lucky_dmg.or(lucky_dmg) {
+        let actual_value = if let Some(actual_dmg) = non_lucky_dmg.or(lucky_value) {
             actual_dmg as u128
         } else {
             continue; // skip this iteration
@@ -135,13 +135,6 @@ pub fn process_aoi_sync_delta(
 
         // Skills
         let skill_uid = sync_damage_info.owner_id?;
-        let skill = attacker_entity
-            .skill_uid_to_skill
-            .entry(skill_uid)
-            .or_insert_with(|| Skill {
-                ..Default::default()
-            });
-
         if attacker_entity.class_spec == ClassSpec::Unknown {
             let class_spec = get_class_spec_from_skill_id(skill_uid);
             attacker_entity.class_id = get_class_id_from_spec(class_spec);
@@ -149,35 +142,71 @@ pub fn process_aoi_sync_delta(
         }
 
         let is_heal = sync_damage_info.r#type.unwrap_or(0) == EDamageType::Heal as i32;
-        if is_heal {} else {
+        if is_heal {
+            let skill = attacker_entity
+                .skill_uid_to_heal_skill
+                .entry(skill_uid)
+                .or_insert_with(|| Skill::default());
             // TODO: from testing, first bit is set when there's crit, 3rd bit for if it causes lucky (no idea what that means), require more testing here
             const CRIT_BIT: i32 = 0b00_00_00_01; // 1st bit
-            let is_lucky = lucky_dmg.is_some();
+            let is_lucky = lucky_value.is_some();
             let flag = sync_damage_info.type_flag.unwrap_or_default();
             let is_crit = (flag & CRIT_BIT) != 0; // No idea why, but SyncDamageInfo.is_crit isn't correct
             if is_crit {
-                attacker_entity.crit_hits += 1;
-                attacker_entity.crit_total_dmg += actual_dmg;
+                attacker_entity.crit_hits_heal += 1;
+                attacker_entity.crit_total_heal += actual_value;
                 skill.crit_hits += 1;
-                skill.crit_total_dmg += actual_dmg;
+                skill.crit_total_value += actual_value;
             }
             if is_lucky {
-                attacker_entity.lucky_hits += 1;
-                attacker_entity.lucky_total_dmg += actual_dmg;
+                attacker_entity.lucky_hits_heal += 1;
+                attacker_entity.lucky_total_heal += actual_value;
                 skill.lucky_hits += 1;
-                skill.lucky_total_dmg += actual_dmg;
+                skill.lucky_total_value += actual_value;
             }
-            encounter.total_dmg += actual_dmg;
-            attacker_entity.hits += 1;
-            attacker_entity.total_dmg += actual_dmg;
+            encounter.total_heal += actual_value;
+            attacker_entity.hits_heal += 1;
+            attacker_entity.total_heal += actual_value;
             skill.hits += 1;
-            skill.total_dmg += actual_dmg;
+            skill.total_value += actual_value;
             info!(
-                "dmg packet: {attacker_uid} to {target_uid}: {actual_dmg} dmg {} total dmg",
-                skill.total_dmg
+                "heal packet: {attacker_uid} to {target_uid}: {actual_value} heal {} total heal",
+                skill.total_value
+            );
+        } else {
+            let skill = attacker_entity
+                .skill_uid_to_dmg_skill
+                .entry(skill_uid)
+                .or_insert_with(|| Skill::default());
+            // TODO: from testing, first bit is set when there's crit, 3rd bit for if it causes lucky (no idea what that means), require more testing here
+            const CRIT_BIT: i32 = 0b00_00_00_01; // 1st bit
+            let is_lucky = lucky_value.is_some();
+            let flag = sync_damage_info.type_flag.unwrap_or_default();
+            let is_crit = (flag & CRIT_BIT) != 0; // No idea why, but SyncDamageInfo.is_crit isn't correct
+            if is_crit {
+                attacker_entity.crit_hits_dmg += 1;
+                attacker_entity.crit_total_dmg += actual_value;
+                skill.crit_hits += 1;
+                skill.crit_total_value += actual_value;
+            }
+            if is_lucky {
+                attacker_entity.lucky_hits_dmg += 1;
+                attacker_entity.lucky_total_dmg += actual_value;
+                skill.lucky_hits += 1;
+                skill.lucky_total_value += actual_value;
+            }
+            encounter.total_dmg += actual_value;
+            attacker_entity.hits_dmg += 1;
+            attacker_entity.total_dmg += actual_value;
+            skill.hits += 1;
+            skill.total_value += actual_value;
+            info!(
+                "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
+                skill.total_value
             );
         }
     }
+
     // Figure out timestamps
     let timestamp_ms = SystemTime::now().duration_since(UNIX_EPOCH)
         .expect("Time went backwards")

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { commands, type DPSWindow } from "$lib/bindings";
-  import { getClassColor, getClassIcon, getClassSpecIcon, tooltip } from "$lib/utils.svelte";
+  import { getClassColor, getClassIcon, tooltip } from "$lib/utils.svelte";
   import { goto } from "$app/navigation";
   import AbbreviatedNumber from "$lib/components/AbbreviatedNumber.svelte";
 

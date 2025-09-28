@@ -18,7 +18,7 @@
       class={`rounded-xs px-1.5 ${page.url.pathname.includes("heal") ? "bg-red-500/40" : ""}`}
       onclick={() => {
         goto(resolve("/live/heal"));
-      }}>HEAL (WIP)</button
+      }}>HEAL</button
     >
   </span>
   <span class="px-1.5 tracking-tighter">

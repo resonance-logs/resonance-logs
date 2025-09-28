@@ -20,7 +20,7 @@
   async function fetchData() {
     try {
       commands
-        .getSkillWindow(playerUid)
+        .getHealSkillWindow(playerUid)
         .then((message) => {
           dpsSkillBreakdownWindow = message.data;
           console.log("dpsSkillBreakdown", +Date.now(), $state.snapshot(dpsSkillBreakdownWindow));
@@ -28,7 +28,7 @@
         .catch((error) => {
           // Went out of scope
           console.error(error);
-          goto(resolve("/live/dps"));
+          goto(resolve("/live/heal"));
         });
 
       console.log(+Date.now(), $state.snapshot(dpsSkillBreakdownWindow));
@@ -49,13 +49,13 @@
       <tr class="bg-neutral-900">
         <th class="w-5 px-4"><!-- Class Image --></th>
         <th class="w-5/8"><!-- Ability Score + Name --></th>
-        <th class="w-12"><span {@attach tooltip(() => "Damage Dealt")}>DMG</span></th>
-        <th class="w-12"><span {@attach tooltip(() => "Damage per Second")}>DPS</span></th>
-        <th class="w-12"><span {@attach tooltip(() => "Damage %")}>D<span class="text-tiny text-gray-300">%</span></span></th>
+        <th class="w-12"><span {@attach tooltip(() => "Healing Dealt")}>DMG</span></th>
+        <th class="w-12"><span {@attach tooltip(() => "Healing per Second")}>DPS</span></th>
+        <th class="w-12"><span {@attach tooltip(() => "Healing %")}>H<span class="text-tiny text-gray-300">%</span></span></th>
         <th class="w-12"><span {@attach tooltip(() => "Crit Rate %")}>CR<span class="text-tiny text-gray-300">%</span></span></th>
-        <th class="w-13"><span {@attach tooltip(() => "% Damage that Crit")}>CDMG<span class="text-tiny text-gray-300">%</span></span></th>
+        <th class="w-13"><span {@attach tooltip(() => "% Healing that Crit")}>CDMG<span class="text-tiny text-gray-300">%</span></span></th>
         <th class="w-12"><span {@attach tooltip(() => "Lucky Rate %")}>LR<span class="text-tiny text-gray-300">%</span></span></th>
-        <th class="w-13"><span {@attach tooltip(() => "% Damage that was Lucky")}>LDMG<span class="text-tiny text-gray-300">%</span></span></th>
+        <th class="w-13"><span {@attach tooltip(() => "% Healing that was Lucky")}>LDMG<span class="text-tiny text-gray-300">%</span></span></th>
         <th class="w-13"><span {@attach tooltip(() => "Number of hits")}>Hits</span></th>
         <th class="w-13"><span {@attach tooltip(() => "Hits per minute")}>HPM</span></th>
       </tr>

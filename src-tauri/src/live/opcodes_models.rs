@@ -1,7 +1,7 @@
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 use crate::live::opcodes_models::class::ClassSpec;
 
 #[derive(Debug, Default, Clone)]
@@ -9,6 +9,7 @@ pub struct Encounter {
     pub time_last_combat_packet_ms: u128,              // in ms
     pub time_fight_start_ms: u128,                     // in ms
     pub total_dmg: u128,
+    pub total_heal: u128,
     pub local_player_uid: i64,
     pub entity_uid_to_entity: HashMap<i64, Entity>, // key: entity uid
 }
@@ -23,26 +24,35 @@ pub struct Entity {
     pub class_spec: ClassSpec,
     pub ability_score: i32,
     pub level: i32,
+    // Damage
     pub total_dmg: u128,
     pub crit_total_dmg: u128,
-    pub crit_hits: u128,
+    pub crit_hits_dmg: u128,
     pub lucky_total_dmg: u128,
-    pub lucky_hits: u128,
-    pub hits: u128,
-    pub skill_uid_to_skill: HashMap<i32, Skill>,
+    pub lucky_hits_dmg: u128,
+    pub hits_dmg: u128,
+    pub skill_uid_to_dmg_skill: HashMap<i32, Skill>,
+    // Healing
+    pub total_heal: u128,
+    pub crit_total_heal: u128,
+    pub crit_hits_heal: u128,
+    pub lucky_total_heal: u128,
+    pub lucky_hits_heal: u128,
+    pub hits_heal: u128,
+    pub skill_uid_to_heal_skill: HashMap<i32, Skill>,
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct Skill {
-    pub total_dmg: u128,
-    pub crit_total_dmg: u128,
+    pub total_value: u128,
+    pub crit_total_value: u128,
     pub crit_hits: u128,
-    pub lucky_total_dmg: u128,
+    pub lucky_total_value: u128,
     pub lucky_hits: u128,
     pub hits: u128,
 }
 
-static SKILL_NAMES: Lazy<HashMap<String, String>> = Lazy::new(|| {
+static SKILL_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     let data = include_str!("../../meter-data/SkillName.json");
     serde_json::from_str(data).expect("invalid skills.json")
 });
