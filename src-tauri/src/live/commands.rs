@@ -15,18 +15,14 @@ fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -
 }
 
 fn nan_is_zero(value: f64) -> f64 {
-    if value.is_nan() {
-        0.0
-    } else {
-        value
-    }
+    if value.is_nan() { 0.0 } else { value }
 }
 
 // #[tauri::command]
 // #[specta::specta]
 // #[allow(clippy::cast_precision_loss)]
 // #[allow(clippy::too_many_lines)]
-// pub fn test_get_damage_row(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
+// pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
 //     DPSWindow {
 //         dps_rows: vec![
 //             DPSRow {
@@ -37,7 +33,7 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 ability_score: 1500,
 //                 total_dmg: 100_000,
 //                 dps: 10_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 100.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -49,10 +45,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 uid: 10000002,
 //                 name: "Frost Mage".to_string(),
 //                 class: "Frost Mage".to_string(),
+//                 class_spec: "".to_string(),
 //                 ability_score: 1500,
 //                 total_dmg: 90_000,
 //                 dps: 6_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 90.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -64,10 +61,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 uid: 10000003,
 //                 name: "Wind Knight".to_string(),
 //                 class: "Wind Knight".to_string(),
+//                 class_spec: "".to_string(),
 //                 ability_score: 1500,
 //                 total_dmg: 80_000,
 //                 dps: 6_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 80.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -79,10 +77,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 uid: 10000004,
 //                 name: "Verdant Oracle".to_string(),
 //                 class: "Verdant Oracle".to_string(),
+//                 class_spec: "".to_string(),
 //                 ability_score: 1500,
 //                 total_dmg: 70_000,
 //                 dps: 6_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 70.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -94,10 +93,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 uid: 10000005,
 //                 name: "Heavy Guardian".to_string(),
 //                 class: "Heavy Guardian".to_string(),
+//                 class_spec: "".to_string(),
 //                 ability_score: 1500,
 //                 total_dmg: 60_000,
 //                 dps: 6_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 60.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -109,10 +109,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 uid: 10000006,
 //                 name: "Marksman".to_string(),
 //                 class: "Marksman".to_string(),
+//                 class_spec: "".to_string(),
 //                 ability_score: 1500,
 //                 total_dmg: 60_000,
 //                 dps: 6_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 50.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -124,10 +125,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 uid: 10000007,
 //                 name: "Shield Knight".to_string(),
 //                 class: "Shield Knight".to_string(),
+//                 class_spec: "".to_string(),
 //                 ability_score: 1500,
 //                 total_dmg: 50_000,
 //                 dps: 6_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 40.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -139,10 +141,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 uid: 10000008,
 //                 name: "Beat Performer".to_string(),
 //                 class: "Beat Performer".to_string(),
+//                 class_spec: "".to_string(),
 //                 ability_score: 1500,
 //                 total_dmg: 10_000,
 //                 dps: 6_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 30.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -154,10 +157,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //                 uid: 10000009,
 //                 name: "Blank Class".to_string(),
 //                 class: "blank".to_string(),
+//                 class_spec: "".to_string(),
 //                 ability_score: 1500,
 //                 total_dmg: 10_000,
 //                 dps: 6_000.6,
-//                 dmg_pct: 0.0,
+//                 dmg_pct: 20.0,
 //                 crit_rate: 0.25,
 //                 crit_dmg_rate: 2.0,
 //                 lucky_rate: 0.10,
@@ -168,11 +172,11 @@ fn nan_is_zero(value: f64) -> f64 {
 //         ],
 //     }
 // }
-//
+
 // #[tauri::command]
 // #[specta::specta]
 // #[allow(clippy::too_many_lines)]
-// pub fn test_get_skill_row(
+// pub fn get_skill_row(
 //     state: tauri::State<'_, EncounterMutex>,
 //     player_uid: String,
 // ) -> DPSSkillBreakdownWindow {
@@ -334,10 +338,18 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
                 total_dmg: entity.total_dmg,
                 dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs * 100.0),
                 dmg_pct: nan_is_zero(entity.total_dmg as f64 / encounter.total_dmg as f64 * 100.0),
-                crit_rate: nan_is_zero(entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
-                crit_dmg_rate: nan_is_zero(entity.crit_total_dmg as f64 / entity.total_dmg as f64 * 100.0),
-                lucky_rate: nan_is_zero(entity.lucky_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
-                lucky_dmg_rate: nan_is_zero(entity.lucky_total_dmg as f64 / entity.total_dmg as f64 * 100.0),
+                crit_rate: nan_is_zero(
+                    entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0,
+                ),
+                crit_dmg_rate: nan_is_zero(
+                    entity.crit_total_dmg as f64 / entity.total_dmg as f64 * 100.0,
+                ),
+                lucky_rate: nan_is_zero(
+                    entity.lucky_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0,
+                ),
+                lucky_dmg_rate: nan_is_zero(
+                    entity.lucky_total_dmg as f64 / entity.total_dmg as f64 * 100.0,
+                ),
                 hits: entity.hits_dmg,
                 hits_per_minute: nan_is_zero(entity.hits_dmg as f64 / time_elapsed_secs * 60.0),
                 // ..Default:default()
@@ -349,7 +361,10 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
 
     // Sort skills descending by damage dealt
     dps_window.dps_rows.sort_by(|this_row, other_row| {
-        other_row.total_dmg.partial_cmp(&this_row.total_dmg).unwrap_or(std::cmp::Ordering::Equal)
+        other_row
+            .total_dmg
+            .partial_cmp(&this_row.total_dmg)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
 
     dps_window
@@ -388,9 +403,13 @@ pub fn get_skill_window(
             dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs * 100.0),
             dmg_pct: nan_is_zero(entity.total_dmg as f64 / encounter.total_dmg as f64 * 100.0),
             crit_rate: nan_is_zero(entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
-            crit_dmg_rate: nan_is_zero(entity.crit_total_dmg as f64 / entity.total_dmg as f64 * 100.0),
+            crit_dmg_rate: nan_is_zero(
+                entity.crit_total_dmg as f64 / entity.total_dmg as f64 * 100.0,
+            ),
             lucky_rate: nan_is_zero(entity.lucky_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
-            lucky_dmg_rate: nan_is_zero(entity.lucky_total_dmg as f64 / entity.total_dmg as f64 * 100.0),
+            lucky_dmg_rate: nan_is_zero(
+                entity.lucky_total_dmg as f64 / entity.total_dmg as f64 * 100.0,
+            ),
             hits: entity.hits_dmg,
             hits_per_minute: nan_is_zero(entity.hits_dmg as f64 / time_elapsed_secs * 60.0),
             // ..Default::default()
@@ -408,9 +427,13 @@ pub fn get_skill_window(
             dps: nan_is_zero(skill.total_value as f64 / time_elapsed_secs * 100.0),
             dmg_pct: nan_is_zero(skill.total_value as f64 / entity.total_dmg as f64 * 100.0),
             crit_rate: nan_is_zero(skill.crit_hits as f64 / skill.hits as f64 * 100.0),
-            crit_dmg_rate: nan_is_zero(skill.crit_total_value as f64 / skill.total_value as f64 * 100.0),
+            crit_dmg_rate: nan_is_zero(
+                skill.crit_total_value as f64 / skill.total_value as f64 * 100.0,
+            ),
             lucky_rate: nan_is_zero(skill.lucky_hits as f64 / skill.hits as f64 * 100.0),
-            lucky_dmg_rate: nan_is_zero(skill.lucky_total_value as f64 / skill.total_value as f64 * 100.0),
+            lucky_dmg_rate: nan_is_zero(
+                skill.lucky_total_value as f64 / skill.total_value as f64 * 100.0,
+            ),
             hits: skill.hits,
             hits_per_minute: nan_is_zero(skill.hits as f64 / time_elapsed_secs * 60.0),
             // ..Default::default()
@@ -464,11 +487,21 @@ pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
                 ability_score: entity.ability_score,
                 total_dmg: entity.total_heal,
                 dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs * 100.0),
-                dmg_pct: nan_is_zero(entity.total_heal as f64 / encounter.total_heal as f64 * 100.0),
-                crit_rate: nan_is_zero(entity.crit_hits_heal as f64 / entity.hits_heal as f64 * 100.0),
-                crit_dmg_rate: nan_is_zero(entity.crit_total_heal as f64 / entity.total_heal as f64 * 100.0),
-                lucky_rate: nan_is_zero(entity.lucky_hits_heal as f64 / entity.hits_heal as f64 * 100.0),
-                lucky_dmg_rate: nan_is_zero(entity.lucky_total_heal as f64 / entity.total_heal as f64 * 100.0),
+                dmg_pct: nan_is_zero(
+                    entity.total_heal as f64 / encounter.total_heal as f64 * 100.0,
+                ),
+                crit_rate: nan_is_zero(
+                    entity.crit_hits_heal as f64 / entity.hits_heal as f64 * 100.0,
+                ),
+                crit_dmg_rate: nan_is_zero(
+                    entity.crit_total_heal as f64 / entity.total_heal as f64 * 100.0,
+                ),
+                lucky_rate: nan_is_zero(
+                    entity.lucky_hits_heal as f64 / entity.hits_heal as f64 * 100.0,
+                ),
+                lucky_dmg_rate: nan_is_zero(
+                    entity.lucky_total_heal as f64 / entity.total_heal as f64 * 100.0,
+                ),
                 hits: entity.hits_heal,
                 hits_per_minute: nan_is_zero(entity.hits_heal as f64 / time_elapsed_secs * 60.0),
                 // ..Default:default()
@@ -480,7 +513,10 @@ pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
 
     // Sort skills descending by damage dealt
     dps_window.dps_rows.sort_by(|this_row, other_row| {
-        other_row.total_dmg.partial_cmp(&this_row.total_dmg).unwrap_or(std::cmp::Ordering::Equal)
+        other_row
+            .total_dmg
+            .partial_cmp(&this_row.total_dmg)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
 
     dps_window
@@ -519,9 +555,15 @@ pub fn get_heal_skill_window(
             dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs * 100.0),
             dmg_pct: nan_is_zero(entity.total_heal as f64 / encounter.total_heal as f64 * 100.0),
             crit_rate: nan_is_zero(entity.crit_hits_heal as f64 / entity.hits_heal as f64 * 100.0),
-            crit_dmg_rate: nan_is_zero(entity.crit_total_heal as f64 / entity.total_heal as f64 * 100.0),
-            lucky_rate: nan_is_zero(entity.lucky_hits_heal as f64 / entity.hits_heal as f64 * 100.0),
-            lucky_dmg_rate: nan_is_zero(entity.lucky_total_heal as f64 / entity.total_heal as f64 * 100.0),
+            crit_dmg_rate: nan_is_zero(
+                entity.crit_total_heal as f64 / entity.total_heal as f64 * 100.0,
+            ),
+            lucky_rate: nan_is_zero(
+                entity.lucky_hits_heal as f64 / entity.hits_heal as f64 * 100.0,
+            ),
+            lucky_dmg_rate: nan_is_zero(
+                entity.lucky_total_heal as f64 / entity.total_heal as f64 * 100.0,
+            ),
             hits: entity.hits_heal,
             hits_per_minute: nan_is_zero(entity.hits_heal as f64 / time_elapsed_secs * 60.0),
             // ..Default::default()
@@ -539,9 +581,13 @@ pub fn get_heal_skill_window(
             dps: nan_is_zero(skill.total_value as f64 / time_elapsed_secs * 100.0),
             dmg_pct: nan_is_zero(skill.total_value as f64 / entity.total_heal as f64 * 100.0),
             crit_rate: nan_is_zero(skill.crit_hits as f64 / skill.hits as f64 * 100.0),
-            crit_dmg_rate: nan_is_zero(skill.crit_total_value as f64 / skill.total_value as f64 * 100.0),
+            crit_dmg_rate: nan_is_zero(
+                skill.crit_total_value as f64 / skill.total_value as f64 * 100.0,
+            ),
             lucky_rate: nan_is_zero(skill.lucky_hits as f64 / skill.hits as f64 * 100.0),
-            lucky_dmg_rate: nan_is_zero(skill.lucky_total_value as f64 / skill.total_value as f64 * 100.0),
+            lucky_dmg_rate: nan_is_zero(
+                skill.lucky_total_value as f64 / skill.total_value as f64 * 100.0,
+            ),
             hits: skill.hits,
             hits_per_minute: nan_is_zero(skill.hits as f64 / time_elapsed_secs * 60.0),
             // ..Default::default()

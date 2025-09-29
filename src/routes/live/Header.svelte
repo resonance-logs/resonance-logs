@@ -1,9 +1,9 @@
 <script lang="ts">
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-  import { Minus } from "@lucide/svelte";
+  import { Minus, Camera } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { commands, type HeaderInfo } from "$lib/bindings";
-  import { tooltip } from "$lib/utils.svelte";
+  import { takeScreenshot, tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/AbbreviatedNumber.svelte";
 
   onMount(() => {
@@ -12,6 +12,8 @@
 
     return () => clearInterval(interval);
   });
+
+  let { screenshotDiv }: { screenshotDiv?: HTMLElement } = $props();
 
   function formatElapsed(msBigInt: bigint) {
     const totalSeconds = Math.floor(Number(msBigInt) / 1000);
@@ -27,7 +29,7 @@
   async function fetchData() {
     try {
       headerInfo = await commands.getHeaderInfo();
-      console.log("Header", +Date.now(), $state.snapshot(headerInfo));
+      // console.log("Header", +Date.now(), $state.snapshot(headerInfo));
     } catch (e) {
       console.error("Error fetching data:", e);
     }
@@ -37,7 +39,7 @@
 </script>
 
 <!-- justify-between to create left/right sides -->
-<header data-tauri-drag-region class="sticky top-0 flex h-7 w-full items-center justify-between bg-neutral-900/80 px-1">
+<header data-tauri-drag-region class="sticky top-0 flex gap-1 h-7 w-full items-center justify-between bg-neutral-900/80 px-1">
   <!-- Left side -->
   <span>
     <span {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(headerInfo.elapsedMs)}</span>
@@ -45,7 +47,9 @@
     <span><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber val={headerInfo.totalDps} /></span></span>
   </span>
   <!-- Right side -->
-  <span class="items-center">
+  <span class="flex">
+    <!-- TODO: add responsive clicks, toaster -->
+    <button onclick={() => takeScreenshot(screenshotDiv)} {@attach tooltip(() => "Screenshot to Clipboard")}><Camera /></button>
     <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><Minus /></button>
   </span>
 </header>

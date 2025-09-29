@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { commands, type DPSSkillBreakdownWindow } from "$lib/bindings";
-  import { getClassColor, getClassIcon, tooltip } from "$lib/utils.svelte";
+  import { copyToClipboard, getClassColor, getClassIcon, tooltip } from "$lib/utils.svelte";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -19,19 +19,14 @@
 
   async function fetchData() {
     try {
-      commands
-        .getSkillWindow(playerUid)
-        .then((message) => {
-          dpsSkillBreakdownWindow = message.data;
-          console.log("dpsSkillBreakdown", +Date.now(), $state.snapshot(dpsSkillBreakdownWindow));
-        })
-        .catch((error) => {
-          // Went out of scope
-          console.error(error);
-          goto(resolve("/live/dps"));
-        });
-
-      console.log(+Date.now(), $state.snapshot(dpsSkillBreakdownWindow));
+      const result = await commands.getSkillWindow(playerUid);
+      if (result.status !== "ok") {
+        console.warn("Failed to get skill window:", result.error);
+        goto(resolve("/live/dps"));
+      } else {
+        dpsSkillBreakdownWindow = result.data;
+        console.log("dpsSkillBreakdown", +Date.now(), $state.snapshot(dpsSkillBreakdownWindow));
+      }
     } catch (e) {
       console.error("Error fetching data:", e);
     }
@@ -62,8 +57,8 @@
     </thead>
     <tbody>
       <tr class="h-7 px-2 py-1 text-center">
-        <td {@attach tooltip(() => `${dpsSkillBreakdownWindow.currPlayer.class}-${dpsSkillBreakdownWindow.currPlayer.classSpec}`)}><img class="ml-2 size-5 object-contain" src={getClassIcon(dpsSkillBreakdownWindow.currPlayer.class)} alt={`${dpsSkillBreakdownWindow.currPlayer.class} class icon`}/></td>
-        <td><span class="flex"><span class="truncate">{`${dpsSkillBreakdownWindow.currPlayer.abilityScore && dpsSkillBreakdownWindow.currPlayer.abilityScore !== 0 ? dpsSkillBreakdownWindow.currPlayer.abilityScore : "??"} ${dpsSkillBreakdownWindow.currPlayer.name?.trim() ? dpsSkillBreakdownWindow.currPlayer.name : "Unknown"}`}</span></span> </td>
+        <td {@attach tooltip(() => `${dpsSkillBreakdownWindow.currPlayer.class}-${dpsSkillBreakdownWindow.currPlayer.classSpec}`)}><img class="ml-2 size-5 object-contain" src={getClassIcon(dpsSkillBreakdownWindow.currPlayer.class)} alt={`${dpsSkillBreakdownWindow.currPlayer.class} class icon`} /></td>
+        <td><span class="flex"><span class="cursor-pointer truncate" onclick={(error) => copyToClipboard(error, `#${dpsSkillBreakdownWindow.currPlayer.uid}`)} {@attach tooltip(() => `UID: #${dpsSkillBreakdownWindow.currPlayer.uid}`)}>{`${dpsSkillBreakdownWindow.currPlayer.abilityScore && dpsSkillBreakdownWindow.currPlayer.abilityScore !== 0 ? dpsSkillBreakdownWindow.currPlayer.abilityScore : "??"} ${dpsSkillBreakdownWindow.currPlayer.name?.trim() ? dpsSkillBreakdownWindow.currPlayer.name : "Unknown Name"}`}</span></span></td>
         <td><AbbreviatedNumber val={Number(dpsSkillBreakdownWindow.currPlayer.totalDmg)} /></td>
         <td><AbbreviatedNumber val={dpsSkillBreakdownWindow.currPlayer.dps} /></td>
         <td>{dpsSkillBreakdownWindow.currPlayer.dmgPct.toFixed(0)}<span class="text-tiny text-gray-300">%</span></td>
@@ -79,7 +74,7 @@
       <!-- eslint-disable svelte/require-each-key -->
       {#each dpsSkillBreakdownWindow.skillRows as skillRow, i}
         <tr class="h-7 px-2 py-1 text-center">
-          <td colspan="2"><span class="flex ml-2"><span class="truncate">{skillRow.name}</span></span></td>
+          <td colspan="2"><span class="ml-2 flex"><span class="truncate">{skillRow.name}</span></span></td>
           <td><AbbreviatedNumber val={Number(skillRow.totalDmg)} /></td>
           <td><AbbreviatedNumber val={skillRow.dps} /></td>
           <td>{skillRow.dmgPct.toFixed(0)}<span class="text-tiny text-gray-300">%</span></td>

@@ -1,6 +1,6 @@
 {
   "tabWidth": 2,
-  "printWidth": 500,
+  "printWidth": 1000,
   "plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
   "overrides": [
     {

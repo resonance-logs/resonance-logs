@@ -19,18 +19,14 @@
 
   async function fetchData() {
     try {
-      commands
-        .getHealSkillWindow(playerUid)
-        .then((message) => {
-          dpsSkillBreakdownWindow = message.data;
-          console.log("dpsSkillBreakdown", +Date.now(), $state.snapshot(dpsSkillBreakdownWindow));
-        })
-        .catch((error) => {
-          // Went out of scope
-          console.error(error);
-          goto(resolve("/live/heal"));
-        });
-
+      const result = await commands.getSkillWindow(playerUid);
+      if (result.status !== "ok") {
+        console.warn("Failed to get skill window:", result.error);
+        goto(resolve("/live/heal"));
+      } else {
+        dpsSkillBreakdownWindow = result.data;
+        console.log("dpsSkillBreakdown", +Date.now(), $state.snapshot(dpsSkillBreakdownWindow));
+      }
       console.log(+Date.now(), $state.snapshot(dpsSkillBreakdownWindow));
     } catch (e) {
       console.error("Error fetching data:", e);
@@ -63,7 +59,7 @@
     <tbody>
       <tr class="h-7 px-2 py-1 text-center">
         <td {@attach tooltip(() => `${dpsSkillBreakdownWindow.currPlayer.class}-${dpsSkillBreakdownWindow.currPlayer.classSpec}`)}><img class="ml-2 size-5 object-contain" src={getClassIcon(dpsSkillBreakdownWindow.currPlayer.class)} alt={`${dpsSkillBreakdownWindow.currPlayer.class} class icon`}/></td>
-        <td><span class="flex"><span class="truncate">{`${dpsSkillBreakdownWindow.currPlayer.abilityScore && dpsSkillBreakdownWindow.currPlayer.abilityScore !== 0 ? dpsSkillBreakdownWindow.currPlayer.abilityScore : "??"} ${dpsSkillBreakdownWindow.currPlayer.name?.trim() ? dpsSkillBreakdownWindow.currPlayer.name : "Unknown"}`}</span></span> </td>
+        <td><span class="flex"><span class="truncate cursor-pointer" {@attach tooltip(() => `UID: #${dpsSkillBreakdownWindow.currPlayer.uid}`)}>{`${dpsSkillBreakdownWindow.currPlayer.abilityScore && dpsSkillBreakdownWindow.currPlayer.abilityScore !== 0 ? dpsSkillBreakdownWindow.currPlayer.abilityScore : "??"} ${dpsSkillBreakdownWindow.currPlayer.name?.trim() ? dpsSkillBreakdownWindow.currPlayer.name : "Unknown Name"}`}</span></span></td>
         <td><AbbreviatedNumber val={Number(dpsSkillBreakdownWindow.currPlayer.totalDmg)} /></td>
         <td><AbbreviatedNumber val={dpsSkillBreakdownWindow.currPlayer.dps} /></td>
         <td>{dpsSkillBreakdownWindow.currPlayer.dmgPct.toFixed(0)}<span class="text-tiny text-gray-300">%</span></td>

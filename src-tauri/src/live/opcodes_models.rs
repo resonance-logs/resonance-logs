@@ -1,13 +1,13 @@
+use crate::live::opcodes_models::class::ClassSpec;
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
-use crate::live::opcodes_models::class::ClassSpec;
 
 #[derive(Debug, Default, Clone)]
 pub struct Encounter {
-    pub time_last_combat_packet_ms: u128,              // in ms
-    pub time_fight_start_ms: u128,                     // in ms
+    pub time_last_combat_packet_ms: u128, // in ms
+    pub time_fight_start_ms: u128,        // in ms
     pub total_dmg: u128,
     pub total_heal: u128,
     pub local_player_uid: i64,
@@ -59,7 +59,10 @@ static SKILL_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
 
 impl Skill {
     pub fn get_skill_name(skill_uid: i32) -> String {
-        SKILL_NAMES.get(&skill_uid.to_string()).map_or_else(|| format!("UNKNOWN UNKNOWN ({skill_uid})"), |s| format!("{s} ({skill_uid})"))
+        SKILL_NAMES.get(&skill_uid.to_string()).map_or_else(
+            || format!("UNKNOWN UNKNOWN ({skill_uid})"),
+            |s| format!("{s} ({skill_uid})"),
+        )
     }
 }
 

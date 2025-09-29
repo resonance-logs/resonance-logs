@@ -1,3 +1,7 @@
+use crate::live::opcodes_models;
+use crate::live::opcodes_models::class::{
+    ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
+};
 use crate::live::opcodes_models::{Encounter, Entity, Skill, attr_type};
 use crate::packets::utils::BinaryReader;
 use blueprotobuf_lib::blueprotobuf;
@@ -5,8 +9,6 @@ use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
 use log::info;
 use std::default::Default;
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::live::opcodes_models;
-use crate::live::opcodes_models::class::{get_class_id_from_spec, get_class_spec_from_skill_id, ClassSpec};
 
 pub fn on_server_change(encounter: &mut Encounter) {
     info!("on server change");
@@ -208,7 +210,8 @@ pub fn process_aoi_sync_delta(
     }
 
     // Figure out timestamps
-    let timestamp_ms = SystemTime::now().duration_since(UNIX_EPOCH)
+    let timestamp_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
         .expect("Time went backwards")
         .as_millis();
     if encounter.time_fight_start_ms == Default::default() {
@@ -234,15 +237,18 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
             }
             #[allow(clippy::cast_possible_truncation)]
             attr_type::ATTR_PROFESSION_ID => {
-                player_entity.class_id = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                player_entity.class_id =
+                    prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
             }
             #[allow(clippy::cast_possible_truncation)]
             attr_type::ATTR_FIGHT_POINT => {
-                player_entity.ability_score = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                player_entity.ability_score =
+                    prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
             }
             #[allow(clippy::cast_possible_truncation)]
             attr_type::ATTR_LEVEL => {
-                player_entity.level = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                player_entity.level =
+                    prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
             }
             _ => (),
         }

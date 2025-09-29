@@ -1,6 +1,9 @@
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import type { Attachment } from 'svelte/attachments';
+import html2canvas from "html2canvas-pro";
+import { writeText, writeImage } from '@tauri-apps/plugin-clipboard-manager';
+import { image } from '@tauri-apps/api';
 
 export const classColors: Record<string, string> = {
   "Stormblade": "#674598",
@@ -35,4 +38,27 @@ export function tooltip(getContent: () => string): Attachment {
     })
     return tooltip.destroy;
   };
+}
+
+export async function copyToClipboard(error: MouseEvent & { currentTarget: EventTarget & HTMLTableCellElement }, content: string) {
+  // TODO: add a way to simulate a "click" animation
+  error.stopPropagation();
+  await writeText(content);
+}
+
+export function takeScreenshot(target?: HTMLElement) {
+  console.log(target)
+  if (!target) return;
+  setTimeout(async () => {
+    const canvas = await html2canvas(target, { backgroundColor: "#27272A" });
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      try {
+        // TODO: is there a way to avoid image.Image.fromBytes()?
+        await writeImage(await image.Image.fromBytes(await blob.arrayBuffer()));
+      } catch (error) {
+        console.error("Failed to take a screenshot", error)
+      }
+    });
+  }, 100);
 } 

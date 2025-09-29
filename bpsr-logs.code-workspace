@@ -34,7 +34,6 @@
       "app-icon.png": true,
       ".gitignore": true,
       "LICENSE": true,
-      "package-lock.json": true,
       "README.md": true,
       "raw-game-files": true,
     },

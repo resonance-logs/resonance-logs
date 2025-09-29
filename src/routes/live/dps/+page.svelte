@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { commands, type DPSWindow } from "$lib/bindings";
-  import { getClassColor, getClassIcon, tooltip } from "$lib/utils.svelte";
+  import { copyToClipboard, getClassColor, getClassIcon, tooltip } from "$lib/utils.svelte";
   import { goto } from "$app/navigation";
   import AbbreviatedNumber from "$lib/components/AbbreviatedNumber.svelte";
 
@@ -18,7 +18,7 @@
   async function fetchData() {
     try {
       dpsWindow = await commands.getDamageWindow();
-      console.log("dps", +Date.now(), $state.snapshot(dpsWindow));
+      // console.log("dps", +Date.now(), $state.snapshot(dpsWindow));
     } catch (e) {
       console.error("Error fetching data:", e);
     }
@@ -29,7 +29,6 @@
   <table class="w-screen table-fixed">
     <thead class="z-1 sticky top-0 h-6">
       <tr class="bg-neutral-900">
-        <th class="w-3/8 pl-2 text-left"><span>UID</span></th>
         <th class="w-5 px-4"><!-- Class Image --></th>
         <th class="w-5/8"><!-- Ability Score + Name --></th>
         <th class="w-12"><span {@attach tooltip(() => "Damage Dealt")}>DMG</span></th>
@@ -46,9 +45,8 @@
     <tbody>
       {#each dpsWindow.dpsRows as dpsRow (dpsRow.uid)}
         <tr class="h-7 px-2 py-1 text-center" onclick={() => goto(`/live/dps/dpsSkillBreakdown?playerUid=${dpsRow.uid}`)}>
-          <td class="truncate pl-2 text-left">{dpsRow.uid}</td>
-          <td {@attach tooltip(() => `${dpsRow.class}-${dpsRow.classSpec}`)}><img class="ml-2 size-5 object-contain" src={getClassIcon(dpsRow.class)} alt={`${dpsRow.class} class icon`} /></td>
-          <td><span class="flex"><span class="truncate">{`${dpsRow.abilityScore && dpsRow.abilityScore !== 0 ? dpsRow.abilityScore : "??"} ${dpsRow.name?.trim() ? dpsRow.name : "Unknown Name"}`}</span></span></td>
+          <td {@attach tooltip(() => `${dpsRow.class}${dpsRow.classSpec ? "-" : ""}${dpsRow.classSpec}`)}><img class="ml-2 size-5 object-contain" src={getClassIcon(dpsRow.class)} alt={`${dpsRow.class} class icon`} /></td>
+          <td><span class="flex"><span class="truncate cursor-pointer" onclick={(error) => copyToClipboard(error, `#${dpsRow.uid}`)} {@attach tooltip(() => `UID: #${dpsRow.uid}`)}>{`${dpsRow.abilityScore && dpsRow.abilityScore !== 0 ? dpsRow.abilityScore : "??"} ${dpsRow.name?.trim() ? dpsRow.name : "Unknown Name"}`}</span></span></td>
           <td><AbbreviatedNumber val={Number(dpsRow.totalDmg)} /></td>
           <td><AbbreviatedNumber val={dpsRow.dps} /></td>
           <td>{dpsRow.dmgPct.toFixed(0)}<span class="text-tiny text-gray-300">%</span></td>

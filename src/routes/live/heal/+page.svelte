@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { commands, type DPSWindow } from "$lib/bindings";
-  import { getClassColor, getClassIcon, tooltip } from "$lib/utils.svelte";
+  import { copyToClipboard, getClassColor, getClassIcon, tooltip } from "$lib/utils.svelte";
   import { goto } from "$app/navigation";
   import AbbreviatedNumber from "$lib/components/AbbreviatedNumber.svelte";
 
@@ -48,7 +48,7 @@
         <tr class="h-7 px-2 py-1 text-center" onclick={() => goto(`/live/heal/dpsSkillBreakdown?playerUid=${dpsRow.uid}`)}>
           <td class="truncate pl-2 text-left">{dpsRow.uid}</td>
           <td {@attach tooltip(() => `${dpsRow.class}-${dpsRow.classSpec}`)}><img class="ml-2 size-5 object-contain" src={getClassIcon(dpsRow.class)} alt={`${dpsRow.class} class icon`} /></td>
-          <td><span class="flex"><span class="truncate">{`${dpsRow.abilityScore && dpsRow.abilityScore !== 0 ? dpsRow.abilityScore : "??"} ${dpsRow.name?.trim() ? dpsRow.name : "Unknown Name"}`}</span></span></td>
+          <td><span class="flex"><span class="truncate cursor-pointer" onclick={(error) => copyToClipboard(error, `#${dpsRow.uid}`)} {@attach tooltip(() => `UID: #${dpsRow.uid}`)}>{`${dpsRow.abilityScore && dpsRow.abilityScore !== 0 ? dpsRow.abilityScore : "??"} ${dpsRow.name?.trim() ? dpsRow.name : "Unknown Name"}`}</span></span></td>
           <td><AbbreviatedNumber val={Number(dpsRow.totalDmg)} /></td>
           <td><AbbreviatedNumber val={dpsRow.dps} /></td>
           <td>{dpsRow.dmgPct.toFixed(0)}<span class="text-tiny text-gray-300">%</span></td>
