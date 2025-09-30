@@ -44,6 +44,12 @@ async getHealWindow() : Promise<Result<DPSWindow, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async resetEncounter() : Promise<void> {
+    await TAURI_INVOKE("reset_encounter");
+},
+async togglePauseEncounter() : Promise<void> {
+    await TAURI_INVOKE("toggle_pause_encounter");
 }
 }
 

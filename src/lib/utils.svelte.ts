@@ -47,7 +47,6 @@ export async function copyToClipboard(error: MouseEvent & { currentTarget: Event
 }
 
 export function takeScreenshot(target?: HTMLElement) {
-  console.log(target)
   if (!target) return;
   setTimeout(async () => {
     const canvas = await html2canvas(target, { backgroundColor: "#27272A" });

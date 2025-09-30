@@ -1,8 +1,9 @@
 use crate::live::commands_models::{
     DPSRow, DPSRows, DPSSkillBreakdownWindow, DPSWindow, HeaderInfo, SkillRow,
 };
-use crate::live::opcodes_models::{EncounterMutex, Skill, class};
+use crate::live::opcodes_models::{EncounterMutex, Skill, class, Encounter};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
+use log::info;
 
 fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -> String {
     if player_uid == local_player_uid && player_name.is_empty() {
@@ -310,6 +311,21 @@ pub fn get_header_info(state: tauri::State<'_, EncounterMutex>) -> Result<Header
         total_dmg: encounter.total_dmg,
         elapsed_ms: time_elapsed_ms,
     })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn reset_encounter(state: tauri::State<'_, EncounterMutex>) {
+    let mut encounter = state.lock().unwrap();
+    encounter.clone_from(&Encounter::default());
+    info!("encounter reset");
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
+    let mut encounter = state.lock().unwrap();
+    encounter.is_encounter_paused = !encounter.is_encounter_paused;
 }
 
 #[tauri::command]

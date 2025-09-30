@@ -35,6 +35,8 @@ pub fn run() {
             live::commands::get_skill_window,
             live::commands::get_heal_skill_window,
             live::commands::get_heal_window,
+            live::commands::reset_encounter,
+            live::commands::toggle_pause_encounter,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

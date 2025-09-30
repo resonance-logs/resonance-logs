@@ -6,6 +6,7 @@ use std::sync::{LazyLock, Mutex};
 
 #[derive(Debug, Default, Clone)]
 pub struct Encounter {
+    pub is_encounter_paused: bool,
     pub time_last_combat_packet_ms: u128, // in ms
     pub time_fight_start_ms: u128,        // in ms
     pub total_dmg: u128,

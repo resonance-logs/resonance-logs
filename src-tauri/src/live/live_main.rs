@@ -18,6 +18,14 @@ pub async fn start(app_handle: AppHandle) {
 
     // 2. Use the channel to receive packets back and process them
     while let Some((op, data)) = rx.recv().await {
+        {
+            let state = app_handle.state::<EncounterMutex>();
+            let encounter = state.lock().unwrap();
+            if encounter.is_encounter_paused {
+                info!("packet dropped due to encounter paused");
+                continue;
+            }
+        }
         // error!("Received Pkt {op:?}");
         match op {
             packets::opcodes::Pkt::ServerChangeInfo => {
