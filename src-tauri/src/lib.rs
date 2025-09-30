@@ -1,16 +1,18 @@
 mod live;
 mod packets;
 
+use std::process::Command;
 use crate::live::opcodes_models::EncounterMutex;
-use log::info;
+use log::{info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use window_vibrancy::apply_blur;
 
 use tauri::menu::{Menu, MenuBuilder, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size};
+use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, WindowEvent};
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 use tauri_plugin_updater::UpdaterExt;
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tauri_specta::{Builder, collect_commands};
 
 pub const WINDOW_LIVE_LABEL: &str = "live";
@@ -50,10 +52,16 @@ pub fn run() {
 
             // Check app updates
             // https://v2.tauri.app/plugin/updater/#checking-for-updates
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                update(handle).await.unwrap();
-            });
+            #[cfg(not(debug_assertions))] // <- Only check for updates on release builds
+            {
+                unload_and_remove_driver();
+
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    crate::update(handle).await.unwrap();
+                });
+            }
+
 
             let app_handle = app.handle().clone();
 
@@ -72,6 +80,7 @@ pub fn run() {
             );
             Ok(())
         })
+        .on_window_event(on_window_event)
         .plugin(tauri_plugin_clipboard_manager::init()) // used to read/write to the clipboard
         .plugin(tauri_plugin_updater::Builder::new().build()) // used for auto updating the app
         .plugin(tauri_plugin_window_state::Builder::default().build()) // used to remember window size/position https://v2.tauri.app/plugin/window-state/
@@ -93,6 +102,18 @@ pub fn run() {
         )
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn unload_and_remove_driver() {
+    let status = Command::new("sc").args(["stop", "windivert"]).status();
+    if status.is_ok_and(|status| status.success()) {
+        info!("stopped driver");
+    } else {
+        warn!("could not execute command to stop driver");
+    }
+
+    let status = Command::new("sc").args(["delete", "windivert"]).status();
+    status.expect("unable to delete driver");
 }
 
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
@@ -143,12 +164,11 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         .on_menu_event(|tray_app, event| match event.id.as_ref() {
             "show-settings" => {
                 let tray_app_handle = tray_app.app_handle();
-                let Some(main_meter_window) = tray_app_handle.get_webview_window(WINDOW_LIVE_LABEL)
+                let Some(main_meter_window) = tray_app_handle.get_webview_window(WINDOW_MAIN_LABEL)
                 else {
                     return;
                 };
                 show_window(&main_meter_window);
-                // todo: navigate to /settings/
             }
             "show-live" => {
                 let tray_app_handle = tray_app.app_handle();
@@ -205,3 +225,21 @@ fn setup_blur(app: &tauri::AppHandle) {
         apply_blur(&meter_window, Some((10, 10, 10, 50))).ok();
     }
 }
+
+fn on_window_event(window: &Window, event: &WindowEvent) {
+    match event {
+        // when you click the X button to close a window
+        WindowEvent::CloseRequested { api, .. } => {
+            api.prevent_close(); // don't close it, just hide it
+            if window.label() == WINDOW_MAIN_LABEL {
+                window.hide().unwrap();
+            }
+        },
+        WindowEvent::Focused(focused) if !focused => {
+            window.app_handle().save_window_state(StateFlags::all());
+        }
+        _ => {}
+    }
+}
+
+

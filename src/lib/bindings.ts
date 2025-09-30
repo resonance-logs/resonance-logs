@@ -5,11 +5,21 @@
 
 
 export const commands = {
-async getHeaderInfo() : Promise<HeaderInfo> {
-    return await TAURI_INVOKE("get_header_info");
+async getHeaderInfo() : Promise<Result<HeaderInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_header_info") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
-async getDamageWindow() : Promise<DPSWindow> {
-    return await TAURI_INVOKE("get_damage_window");
+async getDamageWindow() : Promise<Result<DPSWindow, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_damage_window") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
 async getSkillWindow(playerUidStr: string) : Promise<Result<DPSSkillBreakdownWindow, string>> {
     try {
@@ -27,8 +37,13 @@ async getHealSkillWindow(playerUidStr: string) : Promise<Result<DPSSkillBreakdow
     else return { status: "error", error: e  as any };
 }
 },
-async getHealWindow() : Promise<DPSWindow> {
-    return await TAURI_INVOKE("get_heal_window");
+async getHealWindow() : Promise<Result<DPSWindow, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_heal_window") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

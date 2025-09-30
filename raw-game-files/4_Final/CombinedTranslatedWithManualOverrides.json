@@ -3955,7 +3955,7 @@
             "ChineseShort": "光能轰炸",
             "AIEnglishShort": "Light energy bombing"
         },
-        "EnglishShortManualOverride": null,
+        "EnglishShortManualOverride": "Radiance barrage",
         "Comment": null
     },
     "2235": {
@@ -4082,7 +4082,7 @@
             "ChineseShort": "光能轰炸",
             "AIEnglishShort": "Light energy bombing"
         },
-        "EnglishShortManualOverride": null,
+        "EnglishShortManualOverride": "Radiance Barrage",
         "Comment": null
     },
     "2289": {
@@ -4173,7 +4173,7 @@
             "ChineseShort": "锐眼·光能巨箭（箭阵伤害）",
             "AIEnglishShort": "Sharp Eyes and Light Energy Giant Arrow (Arrow Array Damage)"
         },
-        "EnglishShortManualOverride": null,
+        "EnglishShortManualOverride": "Luminary Bolt",
         "Comment": null
     },
     "2296": {
@@ -10752,7 +10752,7 @@
             "ChineseShort": "光能轰炸伤害区域BUFF",
             "AIEnglishShort": "Light energy bombing damage area BUFF"
         },
-        "EnglishShortManualOverride": null,
+        "EnglishShortManualOverride": "Radiance Barrage",
         "Comment": null
     },
     "55290": {
@@ -18857,7 +18857,7 @@
             "ChineseShort": "威慑射击",
             "AIEnglishShort": "Deterrent shooting"
         },
-        "EnglishShortManualOverride": null,
+        "EnglishShortManualOverride": "Deter Shot",
         "Comment": null
     },
     "220110": {

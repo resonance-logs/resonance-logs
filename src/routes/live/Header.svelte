@@ -13,6 +13,21 @@
     return () => clearInterval(interval);
   });
 
+  async function fetchData() {
+    try {
+      const result = await await commands.getHeaderInfo();
+      if (result.status !== "ok") {
+        console.warn("Failed to get dps window: ", result.error);
+        return;
+      } else {
+        headerInfo = result.data;
+        console.log("dpsWindow: ", +Date.now(), $state.snapshot(headerInfo));
+      }
+    } catch (e) {
+      console.error("Error fetching data:", e);
+    }
+  }
+
   let { screenshotDiv }: { screenshotDiv?: HTMLElement } = $props();
 
   function formatElapsed(msBigInt: bigint) {
@@ -23,23 +38,13 @@
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
-  // is there a better way to init these?
   let headerInfo: HeaderInfo = $state({ totalDps: 0, totalDmg: 0n, elapsedMs: 0n });
-
-  async function fetchData() {
-    try {
-      headerInfo = await commands.getHeaderInfo();
-      // console.log("Header", +Date.now(), $state.snapshot(headerInfo));
-    } catch (e) {
-      console.error("Error fetching data:", e);
-    }
-  }
 
   const appWindow = getCurrentWebviewWindow();
 </script>
 
 <!-- justify-between to create left/right sides -->
-<header data-tauri-drag-region class="sticky top-0 flex gap-1 h-7 w-full items-center justify-between bg-neutral-900/80 px-1">
+<header data-tauri-drag-region class="sticky top-0 flex h-7 w-full items-center justify-between gap-1 bg-neutral-900/80 px-1">
   <!-- Left side -->
   <span>
     <span {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(headerInfo.elapsedMs)}</span>

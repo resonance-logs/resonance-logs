@@ -15,7 +15,11 @@ fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -
 }
 
 fn nan_is_zero(value: f64) -> f64 {
-    if value.is_nan() { 0.0 } else { value }
+    if value.is_nan() || value.is_infinite() {
+        0.0
+    } else {
+        value
+    }
 }
 
 // #[tauri::command]
@@ -287,26 +291,30 @@ fn nan_is_zero(value: f64) -> f64 {
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_header_info(state: tauri::State<'_, EncounterMutex>) -> HeaderInfo {
+pub fn get_header_info(state: tauri::State<'_, EncounterMutex>) -> Result<HeaderInfo, String> {
     let encounter = state.lock().unwrap();
+
+    if encounter.total_dmg == 0 {
+        return Err("No damage found".to_string())
+    }
 
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
         .saturating_sub(encounter.time_fight_start_ms);
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
-
+    
     #[allow(clippy::cast_precision_loss)]
-    HeaderInfo {
-        total_dps: encounter.total_dmg as f64 / time_elapsed_secs.max(1.0),
+    Ok(HeaderInfo {
+        total_dps: nan_is_zero(encounter.total_dmg as f64 / time_elapsed_secs),
         total_dmg: encounter.total_dmg,
         elapsed_ms: time_elapsed_ms,
-    }
+    })
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
+pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSWindow, String> {
     let encounter = state.lock().unwrap();
 
     let time_elapsed_ms = encounter
@@ -320,6 +328,10 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
 
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
+
+    if encounter.total_dmg == 0 {
+        return Err("No damage found".to_string())
+    }
 
     for (&entity_uid, entity) in &encounter.entity_uid_to_entity {
         // calculate things like dps
@@ -336,7 +348,7 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
                 class_spec: class::get_class_spec(entity.class_spec),
                 ability_score: entity.ability_score,
                 total_dmg: entity.total_dmg,
-                dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs * 100.0),
+                dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs),
                 dmg_pct: nan_is_zero(entity.total_dmg as f64 / encounter.total_dmg as f64 * 100.0),
                 crit_rate: nan_is_zero(
                     entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0,
@@ -367,7 +379,7 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    dps_window
+    Ok(dps_window)
 }
 
 #[tauri::command]
@@ -400,7 +412,7 @@ pub fn get_skill_window(
             class_spec: class::get_class_spec(entity.class_spec),
             ability_score: entity.ability_score,
             total_dmg: entity.total_dmg,
-            dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs * 100.0),
+            dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs),
             dmg_pct: nan_is_zero(entity.total_dmg as f64 / encounter.total_dmg as f64 * 100.0),
             crit_rate: nan_is_zero(entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
@@ -424,7 +436,7 @@ pub fn get_skill_window(
         let skill_row = SkillRow {
             name: Skill::get_skill_name(skill_uid),
             total_dmg: skill.total_value,
-            dps: nan_is_zero(skill.total_value as f64 / time_elapsed_secs * 100.0),
+            dps: nan_is_zero(skill.total_value as f64 / time_elapsed_secs),
             dmg_pct: nan_is_zero(skill.total_value as f64 / entity.total_dmg as f64 * 100.0),
             crit_rate: nan_is_zero(skill.crit_hits as f64 / skill.hits as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
@@ -456,7 +468,7 @@ pub fn get_skill_window(
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
+pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSWindow, String> {
     let encounter = state.lock().unwrap();
 
     let time_elapsed_ms = encounter
@@ -467,6 +479,10 @@ pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
         dps_rows: DPSRows::default(),
         // ..Default::default()
     };
+
+    if encounter.total_heal == 0 {
+        return Err("No healing found ".to_string())
+    }
 
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
@@ -486,7 +502,7 @@ pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
                 class_spec: class::get_class_spec(entity.class_spec),
                 ability_score: entity.ability_score,
                 total_dmg: entity.total_heal,
-                dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs * 100.0),
+                dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs),
                 dmg_pct: nan_is_zero(
                     entity.total_heal as f64 / encounter.total_heal as f64 * 100.0,
                 ),
@@ -519,7 +535,7 @@ pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    dps_window
+    Ok(dps_window)
 }
 
 #[tauri::command]
@@ -552,7 +568,7 @@ pub fn get_heal_skill_window(
             class_spec: class::get_class_spec(entity.class_spec),
             ability_score: entity.ability_score,
             total_dmg: entity.total_heal,
-            dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs * 100.0),
+            dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs),
             dmg_pct: nan_is_zero(entity.total_heal as f64 / encounter.total_heal as f64 * 100.0),
             crit_rate: nan_is_zero(entity.crit_hits_heal as f64 / entity.hits_heal as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
@@ -578,7 +594,7 @@ pub fn get_heal_skill_window(
         let skill_row = SkillRow {
             name: Skill::get_skill_name(skill_uid),
             total_dmg: skill.total_value,
-            dps: nan_is_zero(skill.total_value as f64 / time_elapsed_secs * 100.0),
+            dps: nan_is_zero(skill.total_value as f64 / time_elapsed_secs),
             dmg_pct: nan_is_zero(skill.total_value as f64 / entity.total_heal as f64 * 100.0),
             crit_rate: nan_is_zero(skill.crit_hits as f64 / skill.hits as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
