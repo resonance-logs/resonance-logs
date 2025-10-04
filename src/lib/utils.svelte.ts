@@ -4,6 +4,7 @@ import type { Attachment } from 'svelte/attachments';
 import html2canvas from "html2canvas-pro";
 import { writeText, writeImage } from '@tauri-apps/plugin-clipboard-manager';
 import { image } from '@tauri-apps/api';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 export const classColors: Record<string, string> = {
   "Stormblade": "#674598",
@@ -40,7 +41,7 @@ export function tooltip(getContent: () => string): Attachment {
   };
 }
 
-export async function copyToClipboard(error: MouseEvent & { currentTarget: EventTarget & HTMLTableCellElement }, content: string) {
+export async function copyToClipboard(error: MouseEvent & { currentTarget: EventTarget & HTMLElement }, content: string) {
   // TODO: add a way to simulate a "click" animation
   error.stopPropagation();
   await writeText(content);
@@ -60,4 +61,18 @@ export function takeScreenshot(target?: HTMLElement) {
       }
     });
   }, 100);
-} 
+}
+
+let isClickthrough = false;
+
+export async function setClickthrough(bool: boolean) {
+  const liveWindow = await WebviewWindow.getByLabel("live");
+  await liveWindow?.setIgnoreCursorEvents(bool);
+  isClickthrough = bool;
+}
+
+export async function toggleClickthrough() {
+  const liveWindow = await WebviewWindow.getByLabel("live");
+  await liveWindow?.setIgnoreCursorEvents(!isClickthrough);
+  isClickthrough = !isClickthrough;
+}

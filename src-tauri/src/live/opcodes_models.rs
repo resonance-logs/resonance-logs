@@ -3,6 +3,8 @@ use blueprotobuf_lib::blueprotobuf::EEntityType;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
+use windivert::layer::NetworkLayer;
+use windivert::WinDivert;
 
 #[derive(Debug, Default, Clone)]
 pub struct Encounter {

@@ -1,6 +1,9 @@
 <script lang="ts">
-  let { val = 0 }: { val: number } = $props();
-
+  let {
+    num = 0,
+  }: {
+    num: number | bigint;
+  } = $props();
   function abbreviateNumberSplit(n: number): [number, string] {
     if (n >= 1e3 && n < 1e6) return [+(n / 1e3).toFixed(1), "k"];
     if (n >= 1e6 && n < 1e9) return [+(n / 1e6).toFixed(1), "m"];
@@ -9,7 +12,10 @@
     else return [+n.toFixed(0), ""];
   }
 
-  let val_arr = $derived(abbreviateNumberSplit(val));
+  if (typeof num === "bigint") {
+    num = Number(num);
+  }
+  let abbreviatedNumberTuple = $derived(abbreviateNumberSplit(num));
 </script>
 
-{val_arr[0]}<span class="text-tiny text-gray-300">{val_arr[1]}</span>
+{abbreviatedNumberTuple[0]}<span class="text-tiny text-gray-300">{abbreviatedNumberTuple[1]}</span>

@@ -13,33 +13,33 @@ async getHeaderInfo() : Promise<Result<HeaderInfo, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getDamageWindow() : Promise<Result<DPSWindow, string>> {
+async getDpsPlayerWindow() : Promise<Result<PlayersWindow, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_damage_window") };
+    return { status: "ok", data: await TAURI_INVOKE("get_dps_player_window") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async getSkillWindow(playerUidStr: string) : Promise<Result<DPSSkillBreakdownWindow, string>> {
+async getDpsSkillWindow(playerUidStr: string) : Promise<Result<SkillsWindow, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_skill_window", { playerUidStr }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_dps_skill_window", { playerUidStr }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async getHealSkillWindow(playerUidStr: string) : Promise<Result<DPSSkillBreakdownWindow, string>> {
+async getHealPlayerWindow() : Promise<Result<PlayersWindow, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_heal_player_window") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getHealSkillWindow(playerUidStr: string) : Promise<Result<SkillsWindow, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_heal_skill_window", { playerUidStr }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getHealWindow() : Promise<Result<DPSWindow, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_heal_window") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -63,11 +63,11 @@ async togglePauseEncounter() : Promise<void> {
 
 /** user-defined types **/
 
-export type DPSRow = { uid: bigint; name: string; class: string; classSpec: string; abilityScore: number; totalDmg: bigint; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerMinute: number }
-export type DPSSkillBreakdownWindow = { currPlayer: DPSRow; skillRows: SkillRow[] }
-export type DPSWindow = { dpsRows: DPSRow[] }
 export type HeaderInfo = { totalDps: number; totalDmg: bigint; elapsedMs: bigint }
+export type PlayerRow = { uid: bigint; name: string; className: string; classSpecName: string; abilityScore: bigint; totalDmg: bigint; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerMinute: number }
+export type PlayersWindow = { playerRows: PlayerRow[] }
 export type SkillRow = { name: string; totalDmg: bigint; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerMinute: number }
+export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }
 
 /** tauri-specta globals **/
 

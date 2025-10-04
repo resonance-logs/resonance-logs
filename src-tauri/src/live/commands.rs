@@ -1,7 +1,7 @@
 use crate::live::commands_models::{
-    DPSRow, DPSRows, DPSSkillBreakdownWindow, DPSWindow, HeaderInfo, SkillRow,
+    HeaderInfo, PlayerRow, PlayerRows, PlayersWindow, SkillRow, SkillsWindow,
 };
-use crate::live::opcodes_models::{EncounterMutex, Skill, class, Encounter};
+use crate::live::opcodes_models::{Encounter, EncounterMutex, Skill, class};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::info;
 
@@ -23,280 +23,13 @@ fn nan_is_zero(value: f64) -> f64 {
     }
 }
 
-// #[tauri::command]
-// #[specta::specta]
-// #[allow(clippy::cast_precision_loss)]
-// #[allow(clippy::too_many_lines)]
-// pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> DPSWindow {
-//     DPSWindow {
-//         dps_rows: vec![
-//             DPSRow {
-//                 uid: 10000001,
-//                 name: "Stormblade".to_string(),
-//                 class: "Stormblade".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 100_000,
-//                 dps: 10_000.6,
-//                 dmg_pct: 100.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//             DPSRow {
-//                 uid: 10000002,
-//                 name: "Frost Mage".to_string(),
-//                 class: "Frost Mage".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 90_000,
-//                 dps: 6_000.6,
-//                 dmg_pct: 90.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//             DPSRow {
-//                 uid: 10000003,
-//                 name: "Wind Knight".to_string(),
-//                 class: "Wind Knight".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 80_000,
-//                 dps: 6_000.6,
-//                 dmg_pct: 80.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//             DPSRow {
-//                 uid: 10000004,
-//                 name: "Verdant Oracle".to_string(),
-//                 class: "Verdant Oracle".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 70_000,
-//                 dps: 6_000.6,
-//                 dmg_pct: 70.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//             DPSRow {
-//                 uid: 10000005,
-//                 name: "Heavy Guardian".to_string(),
-//                 class: "Heavy Guardian".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 60_000,
-//                 dps: 6_000.6,
-//                 dmg_pct: 60.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//             DPSRow {
-//                 uid: 10000006,
-//                 name: "Marksman".to_string(),
-//                 class: "Marksman".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 60_000,
-//                 dps: 6_000.6,
-//                 dmg_pct: 50.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//             DPSRow {
-//                 uid: 10000007,
-//                 name: "Shield Knight".to_string(),
-//                 class: "Shield Knight".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 50_000,
-//                 dps: 6_000.6,
-//                 dmg_pct: 40.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//             DPSRow {
-//                 uid: 10000008,
-//                 name: "Beat Performer".to_string(),
-//                 class: "Beat Performer".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 10_000,
-//                 dps: 6_000.6,
-//                 dmg_pct: 30.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//             DPSRow {
-//                 uid: 10000009,
-//                 name: "Blank Class".to_string(),
-//                 class: "blank".to_string(),
-//                 class_spec: "".to_string(),
-//                 ability_score: 1500,
-//                 total_dmg: 10_000,
-//                 dps: 6_000.6,
-//                 dmg_pct: 20.0,
-//                 crit_rate: 0.25,
-//                 crit_dmg_rate: 2.0,
-//                 lucky_rate: 0.10,
-//                 lucky_dmg_rate: 1.5,
-//                 hits: 200,
-//                 hits_per_minute: 3.3,
-//             },
-//         ],
-//     }
-// }
-
-// #[tauri::command]
-// #[specta::specta]
-// #[allow(clippy::too_many_lines)]
-// pub fn get_skill_row(
-//     state: tauri::State<'_, EncounterMutex>,
-//     player_uid: String,
-// ) -> DPSSkillBreakdownWindow {
-//     DPSSkillBreakdownWindow {
-//         curr_player: DPSRow {
-//             uid: 10_000_001,
-//             name: "Stormblade".to_string(),
-//             class: "Stormblade".to_string(),
-//             ability_score: 1500,
-//             total_dmg: 100_000,
-//             dps: 10_000.6,
-//             dmg_pct: 0.0,
-//             crit_rate: 0.25,
-//             crit_dmg_rate: 2.0,
-//             lucky_rate: 0.10,
-//             lucky_dmg_rate: 1.5,
-//             hits: 200,
-//             hits_per_minute: 3.3,
-//         },
-//         skill_rows: vec![
-//             SkillRow {
-//                 name: "Skill 1".to_string(),
-//                 total_dmg: 100_000,
-//                 dps: 5_000.0,
-//                 dmg_pct: 0.0,
-//                 crit_rate: 0.30,
-//                 crit_dmg_rate: 2.1,
-//                 lucky_rate: 0.12,
-//                 lucky_dmg_rate: 1.4,
-//                 hits: 80,
-//                 hits_per_minute: 1.5,
-//             },
-//             SkillRow {
-//                 name: "Skill 2".to_string(),
-//                 total_dmg: 50_000,
-//                 dps: 7_345.6,
-//                 dmg_pct: 0.0,
-//                 crit_rate: 0.20,
-//                 crit_dmg_rate: 1.9,
-//                 lucky_rate: 0.08,
-//                 lucky_dmg_rate: 1.3,
-//                 hits: 120,
-//                 hits_per_minute: 1.8,
-//             },
-//             SkillRow {
-//                 name: "Skill 3".to_string(),
-//                 total_dmg: 33_000,
-//                 dps: 7_345.6,
-//                 dmg_pct: 0.0,
-//                 crit_rate: 0.20,
-//                 crit_dmg_rate: 1.9,
-//                 lucky_rate: 0.08,
-//                 lucky_dmg_rate: 1.3,
-//                 hits: 120,
-//                 hits_per_minute: 1.8,
-//             },
-//             SkillRow {
-//                 name: "Skill 4".to_string(),
-//                 total_dmg: 23_000,
-//                 dps: 7_345.6,
-//                 dmg_pct: 0.0,
-//                 crit_rate: 0.20,
-//                 crit_dmg_rate: 1.9,
-//                 lucky_rate: 0.08,
-//                 lucky_dmg_rate: 1.3,
-//                 hits: 120,
-//                 hits_per_minute: 1.8,
-//             },
-//             SkillRow {
-//                 name: "Skill 5".to_string(),
-//                 total_dmg: 11_000,
-//                 dps: 7_345.6,
-//                 dmg_pct: 0.0,
-//                 crit_rate: 0.20,
-//                 crit_dmg_rate: 1.9,
-//                 lucky_rate: 0.08,
-//                 lucky_dmg_rate: 1.3,
-//                 hits: 120,
-//                 hits_per_minute: 1.8,
-//             },
-//             SkillRow {
-//                 name: "Skill 6".to_string(),
-//                 total_dmg: 1_000,
-//                 dps: 7_345.6,
-//                 dmg_pct: 0.0,
-//                 crit_rate: 0.20,
-//                 crit_dmg_rate: 1.9,
-//                 lucky_rate: 0.08,
-//                 lucky_dmg_rate: 1.3,
-//                 hits: 120,
-//                 hits_per_minute: 1.8,
-//             },
-//             SkillRow {
-//                 name: "Skill 7".to_string(),
-//                 total_dmg: 400,
-//                 dps: 7_345.6,
-//                 dmg_pct: 0.0,
-//                 crit_rate: 0.20,
-//                 crit_dmg_rate: 1.9,
-//                 lucky_rate: 0.08,
-//                 lucky_dmg_rate: 1.3,
-//                 hits: 120,
-//                 hits_per_minute: 1.8,
-//             },
-//         ],
-//     }
-// }
-
 #[tauri::command]
 #[specta::specta]
 pub fn get_header_info(state: tauri::State<'_, EncounterMutex>) -> Result<HeaderInfo, String> {
     let encounter = state.lock().unwrap();
 
     if encounter.total_dmg == 0 {
-        return Err("No damage found".to_string())
+        return Err("No damage found".to_string());
     }
 
     let time_elapsed_ms = encounter
@@ -304,7 +37,7 @@ pub fn get_header_info(state: tauri::State<'_, EncounterMutex>) -> Result<Header
         .saturating_sub(encounter.time_fight_start_ms);
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
-    
+
     #[allow(clippy::cast_precision_loss)]
     Ok(HeaderInfo {
         total_dps: nan_is_zero(encounter.total_dmg as f64 / time_elapsed_secs),
@@ -328,17 +61,174 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
     encounter.is_encounter_paused = !encounter.is_encounter_paused;
 }
 
+// #[tauri::command]
+// #[specta::specta]
+// #[allow(clippy::cast_precision_loss)]
+// #[allow(clippy::too_many_lines)]
+// pub fn get_dps_player_window(state: tauri::State<'_, EncounterMutex>) -> Result<PlayersWindow, String> {
+//     Ok(PlayersWindow {
+//         player_rows: vec![
+//             PlayerRow {
+//                 uid: 10000001,
+//                 name: "Stormblade".to_string(),
+//                 class_name: "Stormblade".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 100_000,
+//                 dps: 10_000.6,
+//                 dmg_pct: 100.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//             PlayerRow {
+//                 uid: 10000002,
+//                 name: "Frost Mage".to_string(),
+//                 class_name: "Frost Mage".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 90_000,
+//                 dps: 6_000.6,
+//                 dmg_pct: 90.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//             PlayerRow {
+//                 uid: 10000003,
+//                 name: "Wind Knight".to_string(),
+//                 class_name: "Wind Knight".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 80_000,
+//                 dps: 6_000.6,
+//                 dmg_pct: 80.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//             PlayerRow {
+//                 uid: 10000004,
+//                 name: "Verdant Oracle".to_string(),
+//                 class_name: "Verdant Oracle".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 70_000,
+//                 dps: 6_000.6,
+//                 dmg_pct: 70.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//             PlayerRow {
+//                 uid: 10000005,
+//                 name: "Heavy Guardian".to_string(),
+//                 class_name: "Heavy Guardian".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 60_000,
+//                 dps: 6_000.6,
+//                 dmg_pct: 60.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//             PlayerRow {
+//                 uid: 10000006,
+//                 name: "Marksman".to_string(),
+//                 class_name: "Marksman".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 60_000,
+//                 dps: 6_000.6,
+//                 dmg_pct: 50.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//             PlayerRow {
+//                 uid: 10000007,
+//                 name: "Shield Knight".to_string(),
+//                 class_name: "Shield Knight".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 50_000,
+//                 dps: 6_000.6,
+//                 dmg_pct: 40.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//             PlayerRow {
+//                 uid: 10000008,
+//                 name: "Beat Performer".to_string(),
+//                 class_name: "Beat Performer".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 10_000,
+//                 dps: 6_000.6,
+//                 dmg_pct: 30.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//             PlayerRow {
+//                 uid: 10000009,
+//                 name: "Blank Class".to_string(),
+//                 class_name: "blank".to_string(),
+//                 class_spec_name: "".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 10_000,
+//                 dps: 6_000.6,
+//                 dmg_pct: 20.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             },
+//         ],
+//     })
+// }
+
 #[tauri::command]
 #[specta::specta]
-pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSWindow, String> {
+pub fn get_dps_player_window(
+    state: tauri::State<'_, EncounterMutex>,
+) -> Result<PlayersWindow, String> {
     let encounter = state.lock().unwrap();
 
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
         .saturating_sub(encounter.time_fight_start_ms);
 
-    let mut dps_window = DPSWindow {
-        dps_rows: DPSRows::default(),
+    let mut dps_window = PlayersWindow {
+        player_rows: PlayerRows::default(),
         // ..Default::default()
     };
 
@@ -346,7 +236,7 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSW
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
     if encounter.total_dmg == 0 {
-        return Err("No damage found".to_string())
+        return Err("No damage found".to_string());
     }
 
     for (&entity_uid, entity) in &encounter.entity_uid_to_entity {
@@ -357,12 +247,12 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSW
         if is_player && did_damage {
             // Damage Stats per player
             #[allow(clippy::cast_precision_loss)]
-            let damage_row = DPSRow {
-                uid: entity_uid,
+            let damage_row = PlayerRow {
+                uid: entity_uid as u128,
                 name: prettify_name(entity_uid, encounter.local_player_uid, &entity.name),
-                class: class::get_class_name(entity.class_id),
-                class_spec: class::get_class_spec(entity.class_spec),
-                ability_score: entity.ability_score,
+                class_name: class::get_class_name(entity.class_id),
+                class_spec_name: class::get_class_spec(entity.class_spec),
+                ability_score: entity.ability_score as u128,
                 total_dmg: entity.total_dmg,
                 dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs),
                 dmg_pct: nan_is_zero(entity.total_dmg as f64 / encounter.total_dmg as f64 * 100.0),
@@ -382,13 +272,13 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSW
                 hits_per_minute: nan_is_zero(entity.hits_dmg as f64 / time_elapsed_secs * 60.0),
                 // ..Default:default()
             };
-            dps_window.dps_rows.push(damage_row);
+            dps_window.player_rows.push(damage_row);
         }
     }
     drop(encounter); // todo: is this a good idea? dropping lock before expensive sort
 
     // Sort skills descending by damage dealt
-    dps_window.dps_rows.sort_by(|this_row, other_row| {
+    dps_window.player_rows.sort_by(|this_row, other_row| {
         other_row
             .total_dmg
             .partial_cmp(&this_row.total_dmg)
@@ -398,12 +288,127 @@ pub fn get_damage_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSW
     Ok(dps_window)
 }
 
+// #[tauri::command]
+// #[specta::specta]
+// #[allow(clippy::too_many_lines)]
+// pub fn get_dps_skill_window(
+//     state: tauri::State<'_, EncounterMutex>,
+//     player_uid: String,
+// ) -> Result<SkillsWindow, String> {
+//     Ok(SkillsWindow {
+//         curr_player: vec![
+//             PlayerRow {
+//                 uid: 10_000_001,
+//                 name: "Stormblade Player".to_string(),
+//                 class_name: "Stormblade".to_string(),
+//                 class_spec_name: "Iaido".to_string(),
+//                 ability_score: 1500,
+//                 total_dmg: 100_000,
+//                 dps: 10_000.6,
+//                 dmg_pct: 90.0,
+//                 crit_rate: 0.25,
+//                 crit_dmg_rate: 2.0,
+//                 lucky_rate: 0.10,
+//                 lucky_dmg_rate: 1.5,
+//                 hits: 200,
+//                 hits_per_minute: 3.3,
+//             }
+//         ],
+//         skill_rows: vec![
+//             SkillRow {
+//                 name: "Skill 1".to_string(),
+//                 total_dmg: 100_000,
+//                 dps: 5_000.0,
+//                 dmg_pct: 80.0,
+//                 crit_rate: 0.30,
+//                 crit_dmg_rate: 2.1,
+//                 lucky_rate: 0.12,
+//                 lucky_dmg_rate: 1.4,
+//                 hits: 80,
+//                 hits_per_minute: 1.5,
+//             },
+//             SkillRow {
+//                 name: "Skill 2".to_string(),
+//                 total_dmg: 50_000,
+//                 dps: 7_345.6,
+//                 dmg_pct: 70.0,
+//                 crit_rate: 0.20,
+//                 crit_dmg_rate: 1.9,
+//                 lucky_rate: 0.08,
+//                 lucky_dmg_rate: 1.3,
+//                 hits: 120,
+//                 hits_per_minute: 1.8,
+//             },
+//             SkillRow {
+//                 name: "Skill 3".to_string(),
+//                 total_dmg: 33_000,
+//                 dps: 7_345.6,
+//                 dmg_pct: 60.0,
+//                 crit_rate: 0.20,
+//                 crit_dmg_rate: 1.9,
+//                 lucky_rate: 0.08,
+//                 lucky_dmg_rate: 1.3,
+//                 hits: 120,
+//                 hits_per_minute: 1.8,
+//             },
+//             SkillRow {
+//                 name: "Skill 4".to_string(),
+//                 total_dmg: 23_000,
+//                 dps: 7_345.6,
+//                 dmg_pct: 50.0,
+//                 crit_rate: 0.20,
+//                 crit_dmg_rate: 1.9,
+//                 lucky_rate: 0.08,
+//                 lucky_dmg_rate: 1.3,
+//                 hits: 120,
+//                 hits_per_minute: 1.8,
+//             },
+//             SkillRow {
+//                 name: "Skill 5".to_string(),
+//                 total_dmg: 11_000,
+//                 dps: 7_345.6,
+//                 dmg_pct: 40.0,
+//                 crit_rate: 0.20,
+//                 crit_dmg_rate: 1.9,
+//                 lucky_rate: 0.08,
+//                 lucky_dmg_rate: 1.3,
+//                 hits: 120,
+//                 hits_per_minute: 1.8,
+//             },
+//             SkillRow {
+//                 name: "Skill 6".to_string(),
+//                 total_dmg: 1_000,
+//                 dps: 7_345.6,
+//                 dmg_pct: 30.0,
+//                 crit_rate: 0.20,
+//                 crit_dmg_rate: 1.9,
+//                 lucky_rate: 0.08,
+//                 lucky_dmg_rate: 1.3,
+//                 hits: 120,
+//                 hits_per_minute: 1.8,
+//             },
+//             SkillRow {
+//                 name: "Skill 7".to_string(),
+//                 total_dmg: 400,
+//                 dps: 7_345.6,
+//                 dmg_pct: 20.0,
+//                 crit_rate: 0.20,
+//                 crit_dmg_rate: 1.9,
+//                 lucky_rate: 0.08,
+//                 lucky_dmg_rate: 1.3,
+//                 hits: 120,
+//                 hits_per_minute: 1.8,
+//             },
+//         ],
+//     })
+// }
+
 #[tauri::command]
 #[specta::specta]
-pub fn get_skill_window(
+pub fn get_dps_skill_window(
     state: tauri::State<'_, EncounterMutex>,
     player_uid_str: &str,
-) -> Result<DPSSkillBreakdownWindow, String> {
+) -> Result<SkillsWindow, String> {
     let player_uid: i64 = player_uid_str.parse().unwrap();
     let encounter = state.lock().unwrap();
 
@@ -420,13 +425,13 @@ pub fn get_skill_window(
 
     // Player DPS Stats
     #[allow(clippy::cast_precision_loss)]
-    let mut skill_window = DPSSkillBreakdownWindow {
-        curr_player: DPSRow {
-            uid: player_uid,
+    let mut skill_window = SkillsWindow {
+        curr_player: vec![PlayerRow {
+            uid: player_uid as u128,
             name: prettify_name(player_uid, encounter.local_player_uid, &entity.name),
-            class: class::get_class_name(entity.class_id),
-            class_spec: class::get_class_spec(entity.class_spec),
-            ability_score: entity.ability_score,
+            class_name: class::get_class_name(entity.class_id),
+            class_spec_name: class::get_class_spec(entity.class_spec),
+            ability_score: entity.ability_score as u128,
             total_dmg: entity.total_dmg,
             dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs),
             dmg_pct: nan_is_zero(entity.total_dmg as f64 / encounter.total_dmg as f64 * 100.0),
@@ -441,7 +446,7 @@ pub fn get_skill_window(
             hits: entity.hits_dmg,
             hits_per_minute: nan_is_zero(entity.hits_dmg as f64 / time_elapsed_secs * 60.0),
             // ..Default::default()
-        },
+        }],
         ..Default::default()
     };
 
@@ -484,20 +489,22 @@ pub fn get_skill_window(
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSWindow, String> {
+pub fn get_heal_player_window(
+    state: tauri::State<'_, EncounterMutex>,
+) -> Result<PlayersWindow, String> {
     let encounter = state.lock().unwrap();
 
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
         .saturating_sub(encounter.time_fight_start_ms);
 
-    let mut dps_window = DPSWindow {
-        dps_rows: DPSRows::default(),
+    let mut dps_window = PlayersWindow {
+        player_rows: PlayerRows::default(),
         // ..Default::default()
     };
 
     if encounter.total_heal == 0 {
-        return Err("No healing found ".to_string())
+        return Err("No healing found ".to_string());
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -511,12 +518,12 @@ pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSWin
         if is_player && did_damage {
             // Damage Stats per player
             #[allow(clippy::cast_precision_loss)]
-            let damage_row = DPSRow {
-                uid: entity_uid,
+            let damage_row = PlayerRow {
+                uid: entity_uid as u128,
                 name: prettify_name(entity_uid, encounter.local_player_uid, &entity.name),
-                class: class::get_class_name(entity.class_id),
-                class_spec: class::get_class_spec(entity.class_spec),
-                ability_score: entity.ability_score,
+                class_name: class::get_class_name(entity.class_id),
+                class_spec_name: class::get_class_spec(entity.class_spec),
+                ability_score: entity.ability_score as u128,
                 total_dmg: entity.total_heal,
                 dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs),
                 dmg_pct: nan_is_zero(
@@ -538,13 +545,13 @@ pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSWin
                 hits_per_minute: nan_is_zero(entity.hits_heal as f64 / time_elapsed_secs * 60.0),
                 // ..Default:default()
             };
-            dps_window.dps_rows.push(damage_row);
+            dps_window.player_rows.push(damage_row);
         }
     }
     drop(encounter); // todo: is this a good idea? dropping lock before expensive sort
 
     // Sort skills descending by damage dealt
-    dps_window.dps_rows.sort_by(|this_row, other_row| {
+    dps_window.player_rows.sort_by(|this_row, other_row| {
         other_row
             .total_dmg
             .partial_cmp(&this_row.total_dmg)
@@ -559,7 +566,7 @@ pub fn get_heal_window(state: tauri::State<'_, EncounterMutex>) -> Result<DPSWin
 pub fn get_heal_skill_window(
     state: tauri::State<'_, EncounterMutex>,
     player_uid_str: &str,
-) -> Result<DPSSkillBreakdownWindow, String> {
+) -> Result<SkillsWindow, String> {
     let player_uid: i64 = player_uid_str.parse().unwrap();
     let encounter = state.lock().unwrap();
 
@@ -576,13 +583,13 @@ pub fn get_heal_skill_window(
 
     // Player DPS Stats
     #[allow(clippy::cast_precision_loss)]
-    let mut skill_window = DPSSkillBreakdownWindow {
-        curr_player: DPSRow {
-            uid: player_uid,
+    let mut skill_window = SkillsWindow {
+        curr_player: vec![PlayerRow {
+            uid: player_uid as u128,
             name: prettify_name(player_uid, encounter.local_player_uid, &entity.name),
-            class: class::get_class_name(entity.class_id),
-            class_spec: class::get_class_spec(entity.class_spec),
-            ability_score: entity.ability_score,
+            class_name: class::get_class_name(entity.class_id),
+            class_spec_name: class::get_class_spec(entity.class_spec),
+            ability_score: entity.ability_score as u128,
             total_dmg: entity.total_heal,
             dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs),
             dmg_pct: nan_is_zero(entity.total_heal as f64 / encounter.total_heal as f64 * 100.0),
@@ -599,7 +606,7 @@ pub fn get_heal_skill_window(
             hits: entity.hits_heal,
             hits_per_minute: nan_is_zero(entity.hits_heal as f64 / time_elapsed_secs * 60.0),
             // ..Default::default()
-        },
+        }],
         ..Default::default()
     };
 

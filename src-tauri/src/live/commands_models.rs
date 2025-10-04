@@ -8,20 +8,20 @@ pub struct HeaderInfo {
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct DPSWindow {
-    pub dps_rows: DPSRows,
+pub struct PlayersWindow {
+    pub player_rows: PlayerRows,
 }
 
-pub type DPSRows = Vec<DPSRow>;
+pub type PlayerRows = Vec<PlayerRow>;
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct DPSRow {
-    pub uid: i64,
+pub struct PlayerRow {
+    pub uid: u128,
     pub name: String,
-    pub class: String,
-    pub class_spec: String,
-    pub ability_score: i32,
+    pub class_name: String,
+    pub class_spec_name: String,
+    pub ability_score: u128,
     pub total_dmg: u128,
     pub dps: f64,
     pub dmg_pct: f64,
@@ -35,8 +35,8 @@ pub struct DPSRow {
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct DPSSkillBreakdownWindow {
-    pub curr_player: DPSRow,
+pub struct SkillsWindow {
+    pub curr_player: PlayerRows,
     pub skill_rows: SkillRows,
 }
 

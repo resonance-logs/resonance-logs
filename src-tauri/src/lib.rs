@@ -1,10 +1,10 @@
 mod live;
 mod packets;
 
-use std::process::Command;
 use crate::live::opcodes_models::EncounterMutex;
-use log::{info, warn};
+use log::{error, info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
+use std::process::Command;
 use window_vibrancy::apply_blur;
 
 use tauri::menu::{Menu, MenuBuilder, MenuItem};
@@ -20,6 +20,11 @@ pub const WINDOW_MAIN_LABEL: &str = "main";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // std::panic::set_hook(Box::new(|info| {
+    //     info!("App crashed! Info: {:?}", info);
+    //     unload_and_remove_windivert();
+    // }));
+
     let time_now = Some(format!(
         "{:?}",
         chrono::Utc::now()
@@ -31,10 +36,10 @@ pub fn run() {
         // Then register them (separated by a comma)
         .commands(collect_commands![
             live::commands::get_header_info,
-            live::commands::get_damage_window,
-            live::commands::get_skill_window,
+            live::commands::get_dps_player_window,
+            live::commands::get_dps_skill_window,
+            live::commands::get_heal_player_window,
             live::commands::get_heal_skill_window,
-            live::commands::get_heal_window,
             live::commands::reset_encounter,
             live::commands::toggle_pause_encounter,
         ]);
@@ -48,6 +53,7 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
             info!("starting app v{}", app.package_info().version);
@@ -56,14 +62,13 @@ pub fn run() {
             // https://v2.tauri.app/plugin/updater/#checking-for-updates
             #[cfg(not(debug_assertions))] // <- Only check for updates on release builds
             {
-                unload_and_remove_driver();
+                unload_and_remove_windivert();
 
                 let handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     crate::update(handle).await.unwrap();
                 });
             }
-
 
             let app_handle = app.handle().clone();
 
@@ -73,7 +78,7 @@ pub fn run() {
             // Setup blur
             setup_blur(&app_handle);
 
-            app.manage(EncounterMutex::default()); // todo: maybe use https://github.com/ferreira-tb/tauri-store
+            app.manage(EncounterMutex::default());
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks
@@ -82,11 +87,12 @@ pub fn run() {
             );
             Ok(())
         })
-        .on_window_event(on_window_event)
+        .on_window_event(on_window_event_fn)
         .plugin(tauri_plugin_clipboard_manager::init()) // used to read/write to the clipboard
         .plugin(tauri_plugin_updater::Builder::new().build()) // used for auto updating the app
         .plugin(tauri_plugin_window_state::Builder::default().build()) // used to remember window size/position https://v2.tauri.app/plugin/window-state/
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {})) // used to enforce only 1 instance of the app https://v2.tauri.app/plugin/single-instance/
+        .plugin(tauri_plugin_svelte::init()) // used for settings file
         .plugin(
             tauri_plugin_log::Builder::new() // https://v2.tauri.app/plugin/logging/
                 .clear_targets()
@@ -98,15 +104,20 @@ pub fn run() {
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
                         file_name: time_now,
                     })
-                    .filter(|metadata| metadata.level() <= log::LevelFilter::Info), // todo: remove info filter
+                        .filter(|metadata| metadata.level() <= log::LevelFilter::Info), // todo: remove info filter
                 ])
                 .build(),
         )
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|_app_handle, event|
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                info!("App is closing! Cleaning up resources...");
+                // unload_and_remove_windivert();
+            });
 }
 
-fn unload_and_remove_driver() {
+fn unload_and_remove_windivert() {
     let status = Command::new("sc").args(["stop", "windivert"]).status();
     if status.is_ok_and(|status| status.success()) {
         info!("stopped driver");
@@ -114,8 +125,12 @@ fn unload_and_remove_driver() {
         warn!("could not execute command to stop driver");
     }
 
-    let status = Command::new("sc").args(["delete", "windivert"]).status();
-    status.expect("unable to delete driver");
+    let status = Command::new("sc").args(["delete", "windivert", "start=", "demand"]).status();
+    if status.is_ok_and(|status| status.success()) {
+        info!("deleted driver");
+    } else {
+        warn!("could not execute command to delete driver");
+    }
 }
 
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
@@ -153,8 +168,8 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         .text("show-settings", "Show Settings")
         .separator()
         .text("show-live", "Show Live Meter")
-        .separator()
         .text("reset", "Reset Window")
+        .text("clickthrough", "Disable Clickthrough")
         .separator()
         .text("quit", "Quit")
         .build()?;
@@ -198,6 +213,12 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                 live_meter_window.set_focus().unwrap();
                 live_meter_window.set_ignore_cursor_events(false).unwrap();
             }
+            "clickthrough" => {
+                let Some(live_meter_window) = tray_app.get_webview_window(WINDOW_LIVE_LABEL) else {
+                    return;
+                };
+                live_meter_window.set_ignore_cursor_events(false).unwrap();
+            }
             "quit" => {
                 tray_app.exit(0);
             }
@@ -228,7 +249,7 @@ fn setup_blur(app: &tauri::AppHandle) {
     }
 }
 
-fn on_window_event(window: &Window, event: &WindowEvent) {
+fn on_window_event_fn(window: &Window, event: &WindowEvent) {
     match event {
         // when you click the X button to close a window
         WindowEvent::CloseRequested { api, .. } => {
@@ -236,12 +257,13 @@ fn on_window_event(window: &Window, event: &WindowEvent) {
             if window.label() == WINDOW_MAIN_LABEL {
                 window.hide().unwrap();
             }
-        },
+        }
         WindowEvent::Focused(focused) if !focused => {
-            window.app_handle().save_window_state(StateFlags::all());
+            window
+                .app_handle()
+                .save_window_state(StateFlags::all())
+                .unwrap();
         }
         _ => {}
     }
 }
-
-
