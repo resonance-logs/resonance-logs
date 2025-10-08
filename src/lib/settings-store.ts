@@ -2,7 +2,10 @@ import { RuneStore } from '@tauri-store/svelte';
 
 const DEFAULT_SETTINGS = {
   general: {
-
+    showYourName: "Show Your Name",
+    showOthersName: "Show Others' Name",
+    showYourAbilityScore: true,
+    showOthersAbilityScore: true,
   },
   accessibility: {
 

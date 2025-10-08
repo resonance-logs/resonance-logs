@@ -70,7 +70,7 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
 //         player_rows: vec![
 //             PlayerRow {
 //                 uid: 10000001,
-//                 name: "Stormblade".to_string(),
+//                 name: "Name Stormblade (You)".to_string(),
 //                 class_name: "Stormblade".to_string(),
 //                 class_spec_name: "".to_string(),
 //                 ability_score: 1500,
@@ -86,7 +86,7 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
 //             },
 //             PlayerRow {
 //                 uid: 10000002,
-//                 name: "Frost Mage".to_string(),
+//                 name: "Name Frost Mage".to_string(),
 //                 class_name: "Frost Mage".to_string(),
 //                 class_spec_name: "".to_string(),
 //                 ability_score: 1500,
@@ -102,7 +102,7 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
 //             },
 //             PlayerRow {
 //                 uid: 10000003,
-//                 name: "Wind Knight".to_string(),
+//                 name: "Name Wind Knight".to_string(),
 //                 class_name: "Wind Knight".to_string(),
 //                 class_spec_name: "".to_string(),
 //                 ability_score: 1500,
@@ -118,7 +118,7 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
 //             },
 //             PlayerRow {
 //                 uid: 10000004,
-//                 name: "Verdant Oracle".to_string(),
+//                 name: "Name Verdant Oracle".to_string(),
 //                 class_name: "Verdant Oracle".to_string(),
 //                 class_spec_name: "".to_string(),
 //                 ability_score: 1500,
@@ -134,7 +134,7 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
 //             },
 //             PlayerRow {
 //                 uid: 10000005,
-//                 name: "Heavy Guardian".to_string(),
+//                 name: "Name Heavy Guardian".to_string(),
 //                 class_name: "Heavy Guardian".to_string(),
 //                 class_spec_name: "".to_string(),
 //                 ability_score: 1500,
@@ -150,7 +150,7 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
 //             },
 //             PlayerRow {
 //                 uid: 10000006,
-//                 name: "Marksman".to_string(),
+//                 name: "Name Marksman".to_string(),
 //                 class_name: "Marksman".to_string(),
 //                 class_spec_name: "".to_string(),
 //                 ability_score: 1500,
@@ -166,7 +166,7 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
 //             },
 //             PlayerRow {
 //                 uid: 10000007,
-//                 name: "Shield Knight".to_string(),
+//                 name: "Name Shield Knight".to_string(),
 //                 class_name: "Shield Knight".to_string(),
 //                 class_spec_name: "".to_string(),
 //                 ability_score: 1500,
@@ -182,7 +182,7 @@ pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
 //             },
 //             PlayerRow {
 //                 uid: 10000008,
-//                 name: "Beat Performer".to_string(),
+//                 name: "Name Beat Performer".to_string(),
 //                 class_name: "Beat Performer".to_string(),
 //                 class_spec_name: "".to_string(),
 //                 ability_score: 1500,
@@ -299,7 +299,7 @@ pub fn get_dps_player_window(
 //         curr_player: vec![
 //             PlayerRow {
 //                 uid: 10_000_001,
-//                 name: "Stormblade Player".to_string(),
+//                 name: "Name Stormblade".to_string(),
 //                 class_name: "Stormblade".to_string(),
 //                 class_spec_name: "Iaido".to_string(),
 //                 ability_score: 1500,

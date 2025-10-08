@@ -9,12 +9,13 @@
     if (n >= 1e6 && n < 1e9) return [+(n / 1e6).toFixed(1), "m"];
     if (n >= 1e9 && n < 1e12) return [+(n / 1e9).toFixed(1), "b"];
     if (n >= 1e12) return [+(n / 1e12).toFixed(1), "t"];
-    else return [+n.toFixed(0), ""];
+    else return [+n.toFixed(3), ""];
   }
 
   if (typeof num === "bigint") {
     num = Number(num);
   }
+
   let abbreviatedNumberTuple = $derived(abbreviateNumberSplit(num));
 </script>
 

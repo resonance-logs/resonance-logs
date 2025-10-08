@@ -2,13 +2,13 @@
   import { Switch } from "$lib/components/ui/switch/index.js";
 
   let {
-    checked = $bindable(false),
     label = "",
     description = "",
+    checked = $bindable(false),
   }: {
-    checked: boolean | undefined;
     label: string;
-    description: string | undefined;
+    description?: string | undefined;
+    checked: boolean | undefined;
   } = $props();
 
   // If checked is undefined, give it a default (e.g. false)

@@ -58,6 +58,9 @@
       },
     },
   });
+
+  let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
+  let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
 </script>
 
 <svelte:window oncontextmenu={() => window.history.back()} />
@@ -76,21 +79,26 @@
     </thead>
     <tbody>
       {#each currPlayerTable.getRowModel().rows as row (row.id)}
-        <tr class="h-7 px-2 py-1 text-center">
-          {#each row.getVisibleCells() as cell (cell.id)}
-            <td><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
-          {/each}
-          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(row.original.className)}; width: 100vw;"></td>
-        </tr>
-      {/each}
-      {#each healSkillBreakdownTable.getRowModel().rows as row, i (row.id)}
         {@const currPlayer = healSkillBreakdownWindow.currPlayer[0]}
         {#if currPlayer}
+          {@const className = row.original.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? currPlayer.className : ""}
           <tr class="h-7 px-2 py-1 text-center">
             {#each row.getVisibleCells() as cell (cell.id)}
               <td><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
             {/each}
-            <td class="-z-1 absolute left-0 h-7" style="background-color: {`color-mix(in srgb, ${getClassColor(currPlayer.className)} 80%, white ${i % 2 === 0 ? '50%' : '20%'})`}; width: {row.original.dmgPct}vw;"></td>
+            <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: 100vw;"></td>
+          </tr>
+        {/if}
+      {/each}
+      {#each healSkillBreakdownTable.getRowModel().rows as row, i (row.id)}
+        {@const currPlayer = healSkillBreakdownWindow.currPlayer[0]}
+        {#if currPlayer}
+          {@const className = row.original.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? currPlayer.className : ""}
+          <tr class="h-7 px-2 py-1 text-center">
+            {#each row.getVisibleCells() as cell (cell.id)}
+              <td><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
+            {/each}
+            <td class="-z-1 absolute left-0 h-7" style="background-color: {`color-mix(in srgb, ${getClassColor(className)} 80%, white ${i % 2 === 0 ? '50%' : '20%'})`}; width: {row.original.dmgPct}vw;"></td>
           </tr>
         {/if}
       {/each}

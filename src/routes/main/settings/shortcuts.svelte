@@ -11,6 +11,7 @@
 
   import { settings } from "$lib/settings-store";
   import { registerShortcut } from "./shortcuts.js";
+  import type { BaseInput, BaseInputs } from "./settings.js";
 
   let editingId: string | null = $state(null);
 
@@ -37,9 +38,9 @@
     return mainKey ? [...mods, mainKey].join("+") : mods.join("+");
   }
 
-  function startEdit(cmd: Command) {
+  function startEdit(shortcut: BaseInput) {
     stopEdit();
-    editingId = cmd.id;
+    editingId = shortcut.id;
     activeMods.clear();
     mainKey = null;
 
@@ -87,21 +88,21 @@
       const hasMain = !!mainKey;
       if (!hasMain) return;
 
-      const cmd = commands.find((c) => c.id === editingId);
+      const cmd = inputs.find((c) => c.id === editingId);
       if (cmd) {
-        settings.state[SETTINGS_CATEGORY][cmd.id] = shortcutKey;
-
+        unregister(SHORTCUTS_SETTINGS[cmd.id]);
+        SHORTCUTS_SETTINGS[cmd.id] = shortcutKey;
         registerShortcut(cmd.id, shortcutKey);
       }
       stopEdit();
     }
   }
 
-  async function clearShortcut(cmd: Command, e: MouseEvent) {
+  async function clearShortcut(shortcut: BaseInput, e: MouseEvent) {
     e.preventDefault();
-    const existing = settings.state[SETTINGS_CATEGORY][cmd.id];
+    const existing = SHORTCUTS_SETTINGS[shortcut.id];
     if (existing) {
-      settings.state[SETTINGS_CATEGORY][cmd.id] = "";
+      SHORTCUTS_SETTINGS[shortcut.id] = "";
       await unregister(existing);
     }
   }
@@ -109,13 +110,9 @@
   onDestroy(stopEdit);
 
   const SETTINGS_CATEGORY = "shortcuts";
+  const SHORTCUTS_SETTINGS = $derived(settings.state[SETTINGS_CATEGORY]);
 
-  type Command = {
-    id: string;
-    label: string;
-  };
-
-  let commands: Command[] = [
+  let inputs: BaseInputs = [
     {
       id: "showLiveMeter",
       label: "Show Live Meter",
@@ -146,22 +143,22 @@
 <Tabs.Content value={SETTINGS_CATEGORY}>
   <Alert.Root variant="destructive" class="mb-4">
     <AlertCircleIcon />
-    <Alert.Description>TBD: Make it so that having the same hotkey for Show/Hide is Toggle. For now, a separate Toggle hotkey is available.</Alert.Description>
+    <Alert.Description>TBD: Make it so that having the same shortcut for Show/Hide is Toggle. For now, a separate Toggle shortcut is available.</Alert.Description>
   </Alert.Root>
   <Alert.Root>
     <Alert.Title>Right click to clear shortcuts</Alert.Title>
   </Alert.Root>
-  {#each commands as cmd (cmd.id)}
+  {#each inputs as input (input.id)}
     <Item.Root>
       <Item.Content>
-        <Item.Title>{cmd.label}</Item.Title>
+        <Item.Title>{input.label}</Item.Title>
       </Item.Content>
       <Item.Actions>
-        <Button variant="outline" class="uppercase" onclick={() => startEdit(cmd)} oncontextmenu={(e: MouseEvent) => clearShortcut(cmd, e)}>
-          {#if editingId === cmd.id}
+        <Button variant="outline" class="uppercase" onclick={() => startEdit(input)} oncontextmenu={(e: MouseEvent) => clearShortcut(input, e)}>
+          {#if editingId === input.id}
             {currentShortcutString() || "Press keys"}...
           {:else}
-            {settings.state[SETTINGS_CATEGORY][cmd.id] || "Unbound"}
+            {SHORTCUTS_SETTINGS[input.id] || "Unbound"}
           {/if}
         </Button>
       </Item.Actions>

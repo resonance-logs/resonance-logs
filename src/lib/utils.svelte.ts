@@ -22,7 +22,7 @@ export function getClassColor(className: string): string {
 }
 
 export function getClassIcon(class_name: string): string {
-  if (class_name == "") {
+  if (class_name === "") {
     return "/images/classes/blank.png";
   }
   return "/images/classes/" + class_name + ".png";
@@ -47,20 +47,23 @@ export async function copyToClipboard(error: MouseEvent & { currentTarget: Event
   await writeText(content);
 }
 
-export function takeScreenshot(target?: HTMLElement) {
+export async function takeScreenshot(target?: HTMLElement): Promise<void> {
   if (!target) return;
-  setTimeout(async () => {
-    const canvas = await html2canvas(target, { backgroundColor: "#27272A" });
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-      try {
-        // TODO: is there a way to avoid image.Image.fromBytes()?
-        await writeImage(await image.Image.fromBytes(await blob.arrayBuffer()));
-      } catch (error) {
-        console.error("Failed to take a screenshot", error)
-      }
-    });
-  }, 100);
+  // Give the browser a paint frame (helps if caller just changed DOM)
+  await new Promise(requestAnimationFrame);
+
+  const canvas = await html2canvas(target, { backgroundColor: "#27272A" });
+
+  const blob: Blob | null = await new Promise((resolve) =>
+    canvas.toBlob(resolve)
+  );
+  if (!blob) return;
+
+  try {
+    await writeImage(await image.Image.fromBytes(await blob.arrayBuffer()));
+  } catch (error) {
+    console.error("Failed to take a screenshot", error);
+  }
 }
 
 let isClickthrough = false;

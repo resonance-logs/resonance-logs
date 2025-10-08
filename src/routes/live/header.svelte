@@ -9,11 +9,12 @@
   import PointerIcon from "virtual:icons/lucide/pointer";
   import SettingsIcon from "virtual:icons/lucide/settings";
 
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { commands, type HeaderInfo } from "$lib/bindings";
   import { takeScreenshot, tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
+  import { settings } from "$lib/settings-store";
 
   onMount(() => {
     fetchData();
@@ -70,7 +71,27 @@
   <!-- Right side -->
   <span class="flex gap-1">
     <!-- TODO: add responsive clicks, toaster -->
-    <button onclick={() => takeScreenshot(screenshotDiv)} {@attach tooltip(() => "Screenshot to Clipboard")}><CameraIcon /></button>
+    <button
+      onclick={async () => {
+        const prev = settings.state.general.showOthersName;
+        if (settings.state.general.showOthersName === "Show Others' Name") {
+          settings.state.general.showOthersName = "Show Others' Class";
+        }
+
+        // Wait for reactive flush & paint
+        await tick();
+
+        // Take screenshot AFTER change is visible
+        await takeScreenshot(screenshotDiv);
+
+        // Revert & let UI update
+        settings.state.general.showOthersName = prev;
+        await tick();
+      }}
+      {@attach tooltip(() => "Screenshot to Clipboard")}
+    >
+      <CameraIcon />
+    </button>
     <button onclick={() => commands.resetEncounter()} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon /></button>
     <button
       onclick={() => {
