@@ -1,6 +1,6 @@
 use crate::live::opcodes_models;
 use crate::live::opcodes_models::class::{
-    ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
+    ClassStyle, get_class_id_from_spec, get_class_style_from_skill_id,
 };
 use crate::live::opcodes_models::{Encounter, Entity, Skill, attr_type};
 use crate::packets::utils::BinaryReader;
@@ -137,10 +137,10 @@ pub fn process_aoi_sync_delta(
 
         // Skills
         let skill_uid = sync_damage_info.owner_id?;
-        if attacker_entity.class_spec == ClassSpec::Unknown {
-            let class_spec = get_class_spec_from_skill_id(skill_uid);
-            attacker_entity.class_id = get_class_id_from_spec(class_spec);
-            attacker_entity.class_spec = class_spec;
+        if attacker_entity.class_style == ClassStyle::Unknown {
+            let class_style = get_class_style_from_skill_id(skill_uid);
+            attacker_entity.class_id = get_class_id_from_spec(class_style);
+            attacker_entity.class_style = class_style;
         }
 
         let is_heal = sync_damage_info.r#type.unwrap_or(0) == EDamageType::Heal as i32;

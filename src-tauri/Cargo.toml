@@ -41,6 +41,7 @@ serde_json = "1.0.145"
 window-vibrancy = "0.6.0"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-svelte = "3"
+tauri-plugin-os = "2"
 
 [dependencies.blueprotobuf-lib]
 path = "./src/blueprotobuf-lib"

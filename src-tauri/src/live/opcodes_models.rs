@@ -1,4 +1,4 @@
-use crate::live::opcodes_models::class::ClassSpec;
+use crate::live::opcodes_models::class::ClassStyle;
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
@@ -24,7 +24,7 @@ pub struct Entity {
     pub name: String,
     pub entity_type: EEntityType,
     pub class_id: i32,
-    pub class_spec: ClassSpec,
+    pub class_style: ClassStyle,
     pub ability_score: i32,
     pub level: i32,
     // Damage
@@ -113,97 +113,97 @@ pub mod class {
     }
 
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-    pub enum ClassSpec {
+    pub enum ClassStyle {
         #[default]
         Unknown,
         // Stormblade
         Iaido,
-        Moonstrike,
+        Moonblade,
         // Frost Mage
-        Icicle,
-        Frostbeam,
+        Frostlance,
+        Ray,
         // Wind Knight
-        Vanguard,
-        Skyward,
+        Overdrive,
+        Aerial,
         // Verdant Oracle
-        Smite,
-        Lifebind,
+        Thornlash,
+        Healing,
         // Heavy Guardian
-        Earthfort,
+        Stonewall,
         Block,
         // Marksman
-        Wildpack,
+        Beastmaster,
         Falconry,
         // Shield Knight
-        Recovery,
-        Shield,
+        Bulwark,
+        RadiantGuard,
         // Beat Performer
         Dissonance,
         Concerto,
     }
 
-    pub fn get_class_spec_from_skill_id(skill_id: i32) -> ClassSpec {
+    pub fn get_class_style_from_skill_id(skill_id: i32) -> ClassStyle {
         match skill_id {
-            1714 | 1734 => ClassSpec::Iaido,
-            44701 | 179906 => ClassSpec::Moonstrike,
+            1714 | 1734 => ClassStyle::Iaido,
+            44701 | 179906 => ClassStyle::Moonblade,
 
-            120901 | 120902 => ClassSpec::Icicle,
-            1241 => ClassSpec::Frostbeam,
+            120901 | 120902 => ClassStyle::Frostlance,
+            1241 => ClassStyle::Ray,
 
-            1405 | 1418 => ClassSpec::Vanguard,
-            1419 => ClassSpec::Skyward,
+            1405 | 1418 => ClassStyle::Overdrive,
+            1419 => ClassStyle::Aerial,
 
-            1518 | 1541 | 21402 => ClassSpec::Smite,
-            20301 => ClassSpec::Lifebind,
+            1518 | 1541 | 21402 => ClassStyle::Thornlash,
+            20301 => ClassStyle::Healing,
 
-            199902 => ClassSpec::Earthfort,
-            1930 | 1931 | 1934 | 1935 => ClassSpec::Block,
+            199902 => ClassStyle::Stonewall,
+            1930 | 1931 | 1934 | 1935 => ClassStyle::Block,
 
-            220112 | 2203622 => ClassSpec::Falconry,
-            2292 | 1700820 | 1700825 | 1700827 => ClassSpec::Wildpack,
+            220112 | 2203622 => ClassStyle::Falconry,
+            2292 | 1700820 | 1700825 | 1700827 => ClassStyle::Beastmaster,
 
-            2406 => ClassSpec::Recovery,
-            2405 => ClassSpec::Shield,
+            2406 => ClassStyle::Bulwark,
+            2405 => ClassStyle::RadiantGuard,
 
-            2306 => ClassSpec::Dissonance,
-            2307 | 2361 | 55302 => ClassSpec::Concerto,
-            _ => ClassSpec::Unknown,
+            2306 => ClassStyle::Dissonance,
+            2307 | 2361 | 55302 => ClassStyle::Concerto,
+            _ => ClassStyle::Unknown,
         }
     }
 
-    pub fn get_class_id_from_spec(class_spec: ClassSpec) -> i32 {
-        match class_spec {
-            ClassSpec::Iaido | ClassSpec::Moonstrike => STORMBLADE,
-            ClassSpec::Icicle | ClassSpec::Frostbeam => FROST_MAGE,
-            ClassSpec::Vanguard | ClassSpec::Skyward => WIND_KNIGHT,
-            ClassSpec::Smite | ClassSpec::Lifebind => VERDANT_ORACLE,
-            ClassSpec::Earthfort | ClassSpec::Block => HEAVY_GUARDIAN,
-            ClassSpec::Wildpack | ClassSpec::Falconry => MARKSMAN,
-            ClassSpec::Recovery | ClassSpec::Shield => SHIELD_KNIGHT,
-            ClassSpec::Dissonance | ClassSpec::Concerto => BEAT_PERFORMER,
-            ClassSpec::Unknown => UNKNOWN,
+    pub fn get_class_id_from_spec(class_style: ClassStyle) -> i32 {
+        match class_style {
+            ClassStyle::Iaido | ClassStyle::Moonblade => STORMBLADE,
+            ClassStyle::Frostlance | ClassStyle::Ray => FROST_MAGE,
+            ClassStyle::Overdrive | ClassStyle::Aerial => WIND_KNIGHT,
+            ClassStyle::Thornlash | ClassStyle::Healing => VERDANT_ORACLE,
+            ClassStyle::Stonewall | ClassStyle::Block => HEAVY_GUARDIAN,
+            ClassStyle::Beastmaster | ClassStyle::Falconry => MARKSMAN,
+            ClassStyle::Bulwark | ClassStyle::RadiantGuard => SHIELD_KNIGHT,
+            ClassStyle::Dissonance | ClassStyle::Concerto => BEAT_PERFORMER,
+            ClassStyle::Unknown => UNKNOWN,
         }
     }
 
-    pub fn get_class_spec(class_spec: ClassSpec) -> String {
-        String::from(match class_spec {
-            ClassSpec::Unknown => "",
-            ClassSpec::Iaido => "Iaido",
-            ClassSpec::Moonstrike => "Moonstrike",
-            ClassSpec::Icicle => "Icicle",
-            ClassSpec::Frostbeam => "Frostbeam",
-            ClassSpec::Vanguard => "Vanguard",
-            ClassSpec::Skyward => "Skyward",
-            ClassSpec::Smite => "Smite",
-            ClassSpec::Lifebind => "Lifebind",
-            ClassSpec::Earthfort => "Earthfort",
-            ClassSpec::Block => "Block",
-            ClassSpec::Wildpack => "Wildpack",
-            ClassSpec::Falconry => "Falconry",
-            ClassSpec::Recovery => "Recovery",
-            ClassSpec::Shield => "Shield",
-            ClassSpec::Dissonance => "Dissonance",
-            ClassSpec::Concerto => "Concerto",
+    pub fn get_class_style(class_style: ClassStyle) -> String {
+        String::from(match class_style {
+            ClassStyle::Unknown => "",
+            ClassStyle::Iaido => "Iaido",
+            ClassStyle::Moonblade => "Moonblade",
+            ClassStyle::Frostlance => "Frostlance",
+            ClassStyle::Ray => "Ray",
+            ClassStyle::Overdrive => "Overdrive",
+            ClassStyle::Aerial => "Aerial",
+            ClassStyle::Thornlash => "Thornlash",
+            ClassStyle::Healing => "Healing",
+            ClassStyle::Stonewall => "Stonewall",
+            ClassStyle::Block => "Block",
+            ClassStyle::Beastmaster => "Beastmaster",
+            ClassStyle::Falconry => "Falconry",
+            ClassStyle::Bulwark => "Bulwark",
+            ClassStyle::RadiantGuard => "RadiantGuard",
+            ClassStyle::Dissonance => "Dissonance",
+            ClassStyle::Concerto => "Concerto",
         })
     }
 }

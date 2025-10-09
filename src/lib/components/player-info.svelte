@@ -5,13 +5,13 @@
 
   let {
     className = "",
-    classSpecName = "",
+    classStyleName = "",
     abilityScore = 0n,
     name = "",
     uid = 0n,
   }: {
     className: string;
-    classSpecName: string;
+    classStyleName: string;
     abilityScore: bigint;
     name: string;
     uid: bigint;
@@ -22,7 +22,7 @@
 
   // Derived helpers
   const isYou = $derived(name?.includes("You") ?? false);
-  const classDisplay = $derived(`${className}${classSpecName ? "-" : ""}${classSpecName}`);
+  const classDisplay = $derived(`${className}${classStyleName ? "-" : ""}${classStyleName}`);
 
   const nameDisplay = $derived(() => {
     const base = name ?? "Unknown Name";
