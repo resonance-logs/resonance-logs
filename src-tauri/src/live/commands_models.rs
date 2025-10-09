@@ -24,7 +24,7 @@ pub struct PlayerRow {
     pub uid: u128,
     pub name: String,
     pub class_name: String,
-    pub class_style_name: String,
+    pub class_spec_name: String,
     pub ability_score: u128,
     pub total_dmg: u128,
     pub dps: f64,

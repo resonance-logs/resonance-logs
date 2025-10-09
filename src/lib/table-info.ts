@@ -26,7 +26,7 @@ export const dpsPlayersColumnDefs = [
     cell: ({ row }) =>
       renderComponent(PlayerInfo, {
         className: row.original.className,
-        classStyleName: row.original.classStyleName,
+        classSpecName: row.original.classSpecName,
         abilityScore: row.original.abilityScore,
         name: row.original.name,
         uid: row.original.uid
@@ -242,7 +242,7 @@ export const healPlayersColumnDefs = [
     cell: ({ row }) =>
       renderComponent(PlayerInfo, {
         className: row.original.className,
-        classStyleName: row.original.classStyleName,
+        classSpecName: row.original.classSpecName,
         abilityScore: row.original.abilityScore,
         name: row.original.name,
         uid: row.original.uid
