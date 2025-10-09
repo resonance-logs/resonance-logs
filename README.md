@@ -111,7 +111,11 @@ A: [Yes.](https://i.imgur.com/QsLAntt.png)
 
 ## In-game Overlay
 
-TBD
+<img width="984" height="510" alt="image" src="https://github.com/user-attachments/assets/f53667ae-19b2-408f-b98e-2325b04466ec" />
+
+## Streamer Mode
+
+<img width="984" height="510" alt="image" src="https://github.com/user-attachments/assets/02d2eb42-cb33-42e2-9a60-5886261af2d8" />
 
 ## Damage Breakdown with DPS Charts
 
@@ -119,7 +123,7 @@ TBD
 
 ## Skill Breakdown
 
-TBD
+<img width="984" height="510" alt="image" src="https://github.com/user-attachments/assets/feb1d04c-90c7-4eb9-9f37-0070e238097c" />
 
 ## Buff Uptime Tracking
 
