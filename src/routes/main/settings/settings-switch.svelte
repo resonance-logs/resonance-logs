@@ -5,6 +5,7 @@
     label = "",
     description = "",
     checked = $bindable(false),
+    ...restProps
   }: {
     label: string;
     description?: string | undefined;
@@ -18,7 +19,7 @@
 </script>
 
 <label class="flex flex-row items-center">
-  <Switch bind:checked />
+  <Switch bind:checked {...restProps} />
   <div class="ml-4">
     <div>{label}</div>
     {#if description}

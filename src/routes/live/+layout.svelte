@@ -1,9 +1,19 @@
 <script lang="ts">
+  import { commands } from "$lib/bindings";
+  import { settings } from "$lib/settings-store";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
 
   let { children } = $props();
   let screenshotDiv: HTMLDivElement | undefined = $state();
+
+  $effect(() => {
+    if (settings.state.accessibility.blur) {
+      commands.enableBlur();
+    } else {
+      commands.disableBlur();
+    }
+  });
 </script>
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->

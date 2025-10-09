@@ -5,6 +5,12 @@
 
 
 export const commands = {
+async enableBlur() : Promise<void> {
+    await TAURI_INVOKE("enable_blur");
+},
+async disableBlur() : Promise<void> {
+    await TAURI_INVOKE("disable_blur");
+},
 async getHeaderInfo() : Promise<Result<HeaderInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_header_info") };

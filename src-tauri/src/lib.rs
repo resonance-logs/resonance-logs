@@ -21,7 +21,7 @@ pub const WINDOW_MAIN_LABEL: &str = "main";
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // std::panic::set_hook(Box::new(|info| {
-    //     info!("App crashed! Info: {:?}", info);
+    //     info!pub(crate)("App crashed! Info: {:?}", info);
     //     unload_and_remove_windivert();
     // }));
 
@@ -35,6 +35,8 @@ pub fn run() {
     let builder = Builder::<tauri::Wry>::new()
         // Then register them (separated by a comma)
         .commands(collect_commands![
+            live::commands::enable_blur,
+            live::commands::disable_blur,
             live::commands::get_header_info,
             live::commands::get_dps_player_window,
             live::commands::get_dps_skill_window,
@@ -53,6 +55,7 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
@@ -74,9 +77,6 @@ pub fn run() {
 
             // Setup tray icon
             setup_tray(&app_handle).expect("failed to setup tray");
-
-            // Setup blur
-            setup_blur(&app_handle);
 
             app.manage(EncounterMutex::default());
 
@@ -104,17 +104,18 @@ pub fn run() {
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
                         file_name: time_now,
                     })
-                        .filter(|metadata| metadata.level() <= log::LevelFilter::Info), // todo: remove info filter
+                    .filter(|metadata| metadata.level() <= log::LevelFilter::Info), // todo: remove info filter
                 ])
                 .build(),
         )
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        .run(|_app_handle, event|
+        .run(|_app_handle, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
                 info!("App is closing! Cleaning up resources...");
                 // unload_and_remove_windivert();
-            });
+            }
+        });
 }
 
 fn unload_and_remove_windivert() {
@@ -125,7 +126,9 @@ fn unload_and_remove_windivert() {
         warn!("could not execute command to stop driver");
     }
 
-    let status = Command::new("sc").args(["delete", "windivert", "start=", "demand"]).status();
+    let status = Command::new("sc")
+        .args(["delete", "windivert", "start=", "demand"])
+        .status();
     if status.is_ok_and(|status| status.success()) {
         info!("deleted driver");
     } else {
@@ -241,12 +244,6 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         })
         .build(app)?;
     Ok(())
-}
-
-fn setup_blur(app: &tauri::AppHandle) {
-    if let Some(meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) {
-        apply_blur(&meter_window, Some((10, 10, 10, 50))).ok();
-    }
 }
 
 fn on_window_event_fn(window: &Window, event: &WindowEvent) {

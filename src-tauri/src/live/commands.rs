@@ -1,9 +1,12 @@
+use crate::WINDOW_LIVE_LABEL;
 use crate::live::commands_models::{
     HeaderInfo, PlayerRow, PlayerRows, PlayersWindow, SkillRow, SkillsWindow,
 };
 use crate::live::opcodes_models::{Encounter, EncounterMutex, Skill, class};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::info;
+use tauri::Manager;
+use window_vibrancy::{apply_blur, clear_blur};
 
 fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -> String {
     if player_uid == local_player_uid && player_name.is_empty() {
@@ -20,6 +23,22 @@ fn nan_is_zero(value: f64) -> f64 {
         0.0
     } else {
         value
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn disable_blur(app: tauri::AppHandle) {
+    if let Some(meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) {
+        clear_blur(&meter_window).ok();
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn enable_blur(app: tauri::AppHandle) {
+    if let Some(meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) {
+        apply_blur(&meter_window, Some((10, 10, 10, 50))).ok();
     }
 }
 

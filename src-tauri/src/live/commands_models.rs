@@ -1,3 +1,7 @@
+use crate::WINDOW_LIVE_LABEL;
+use tauri::Manager;
+use window_vibrancy::apply_blur;
+
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct HeaderInfo {
