@@ -433,7 +433,7 @@ dependencies = [
 
 [[package]]
 name = "bpsr-logs"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "blueprotobuf-lib",
  "byteorder",
