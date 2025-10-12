@@ -25,7 +25,7 @@
   const classDisplay = $derived(`${className}${classSpecName ? "-" : ""}${classSpecName}`);
 
   const nameDisplay = $derived(() => {
-    const base = name ?? "Unknown Name";
+    const base = name ? name : "Unknown Name";
     if (isYou) {
       if (SETTINGS_YOUR_NAME === "Show Your Class") {
         return `${classDisplay} (You)`;
