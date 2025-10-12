@@ -38,15 +38,15 @@
     }
   }
 
-  function formatElapsed(msBigInt: bigint) {
-    const totalSeconds = Math.floor(Number(msBigInt) / 1000);
+  function formatElapsed(msElapsed: number) {
+    const totalSeconds = Math.floor(Number(msElapsed) / 1000);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
-  let headerInfo: HeaderInfo = $state({ totalDps: 0, totalDmg: 0n, elapsedMs: 0n });
+  let headerInfo: HeaderInfo = $state({ totalDps: 0, totalDmg: 0, elapsedMs: 0 });
   let isEncounterPaused = $state(false);
   const { screenshotDiv }: { screenshotDiv?: HTMLElement } = $props();
   const appWindow = getCurrentWebviewWindow();

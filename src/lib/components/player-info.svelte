@@ -6,15 +6,15 @@
   let {
     className = "",
     classSpecName = "",
-    abilityScore = 0n,
+    abilityScore = 0,
     name = "",
-    uid = 0n,
+    uid = 0,
   }: {
     className: string;
     classSpecName: string;
-    abilityScore: bigint;
+    abilityScore: number;
     name: string;
-    uid: bigint;
+    uid: number;
   } = $props();
 
   let SETTINGS_YOUR_NAME = $derived(settings.state.general.showYourName);
@@ -63,14 +63,14 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <span class="ml-1 cursor-pointer truncate" onclick={(error) => copyToClipboard(error, `#${uid}`)} {@attach tooltip(() => `UID: #${uid}`)}>
-    {#if abilityScore !== 0n}
+    {#if abilityScore !== 0}
       {#if isYou && settings.state.general.showYourAbilityScore}
         <AbbreviatedNumber num={abilityScore} />
       {:else if !isYou && settings.state.general.showOthersAbilityScore}
         <AbbreviatedNumber num={abilityScore} />
-      {:else}
-        ??
       {/if}
+    {:else}
+      ??
     {/if}
     {nameDisplay()}
   </span>

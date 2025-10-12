@@ -69,10 +69,10 @@ async togglePauseEncounter() : Promise<void> {
 
 /** user-defined types **/
 
-export type HeaderInfo = { totalDps: number; totalDmg: bigint; elapsedMs: bigint }
-export type PlayerRow = { uid: bigint; name: string; className: string; classSpecName: string; abilityScore: bigint; totalDmg: bigint; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerMinute: number }
+export type HeaderInfo = { totalDps: number; totalDmg: number; elapsedMs: number }
+export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type PlayersWindow = { playerRows: PlayerRow[] }
-export type SkillRow = { name: string; totalDmg: bigint; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: bigint; hitsPerMinute: number }
+export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }
 
 /** tauri-specta globals **/
