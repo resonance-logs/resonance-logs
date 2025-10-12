@@ -35,7 +35,6 @@
       return base;
     } else {
       if (SETTINGS_OTHERS_NAME === "Show Others' Class") {
-        console.log("hi");
         return classDisplay;
       } else if (SETTINGS_OTHERS_NAME === "Hide Others' Name") {
         return "Hidden Name";
