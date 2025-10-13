@@ -1,6 +1,7 @@
 <script lang="ts">
   import { commands } from "$lib/bindings";
   import { settings } from "$lib/settings-store";
+  import { cn } from "$lib/utils";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
 
@@ -20,7 +21,7 @@
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
 <div class="flex h-screen flex-col text-sm text-white" bind:this={screenshotDiv}>
   <Header {screenshotDiv} />
-  <main class="flex-1 overflow-y-auto">
+  <main class={cn("flex-1 overflow-y-auto", !settings.state.accessibility.transparency && "bg-neutral-900/25")}>
     {@render children()}
   </main>
   <Footer />

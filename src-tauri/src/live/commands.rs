@@ -30,17 +30,17 @@ fn nan_is_zero(value: f64) -> f64 {
 
 #[tauri::command]
 #[specta::specta]
-pub fn disable_blur(app: tauri::AppHandle) {
+pub fn enable_blur(app: tauri::AppHandle) {
     if let Some(meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) {
-        clear_blur(&meter_window).ok();
+        apply_blur(&meter_window, Some((10, 10, 10, 50))).ok();
     }
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn enable_blur(app: tauri::AppHandle) {
+pub fn disable_blur(app: tauri::AppHandle) {
     if let Some(meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) {
-        apply_blur(&meter_window, Some((10, 10, 10, 50))).ok();
+        clear_blur(&meter_window).ok();
     }
 }
 
