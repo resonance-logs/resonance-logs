@@ -1,3 +1,4 @@
+use std::sync::MutexGuard;
 use crate::WINDOW_LIVE_LABEL;
 use crate::live::commands_models::{
     HeaderInfo, PlayerRow, PlayerRows, PlayersWindow, SkillRow, SkillsWindow,
@@ -7,6 +8,7 @@ use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::info;
 use tauri::Manager;
 use window_vibrancy::{apply_blur, clear_blur};
+use crate::packets::packet_capture::request_restart;
 
 fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -> String {
     if player_uid == local_player_uid && player_name.is_empty() {
@@ -67,9 +69,19 @@ pub fn get_header_info(state: tauri::State<'_, EncounterMutex>) -> Result<Header
 
 #[tauri::command]
 #[specta::specta]
+pub fn hard_reset(state: tauri::State<'_, EncounterMutex>) {
+    let mut encounter = state.lock().unwrap();
+    encounter.clone_from(&Encounter::default());
+    request_restart();
+    info!("Hard Reset");
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn reset_encounter(state: tauri::State<'_, EncounterMutex>) {
     let mut encounter = state.lock().unwrap();
     encounter.clone_from(&Encounter::default());
+
     info!("encounter reset");
 }
 

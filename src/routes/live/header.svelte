@@ -2,12 +2,13 @@
   import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
   import CameraIcon from "virtual:icons/lucide/camera";
-  import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
+  import TimerResetIcon from "virtual:icons/lucide/timer-reset";
   import PauseIcon from "virtual:icons/lucide/pause";
   import PlayIcon from "virtual:icons/lucide/play";
   import MinusIcon from "virtual:icons/lucide/minus";
   import PointerIcon from "virtual:icons/lucide/pointer";
   import SettingsIcon from "virtual:icons/lucide/settings";
+  import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
 
   import { onMount, tick } from "svelte";
   import { commands, type HeaderInfo } from "$lib/bindings";
@@ -64,6 +65,7 @@
 <header data-tauri-drag-region class="sticky top-0 flex h-7 w-full items-center justify-between bg-neutral-900/80 px-1">
   <!-- Left side -->
   <span>
+    <button onclick={() => commands.hardReset()} {@attach tooltip(() => "Temp Fix: Hard Reset")}><RefreshCwIcon /></button>
     <span {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(headerInfo.elapsedMs)}</span>
     <span><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
     <span><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
@@ -92,7 +94,7 @@
     >
       <CameraIcon />
     </button>
-    <button onclick={() => commands.resetEncounter()} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon /></button>
+    <button onclick={() => commands.resetEncounter()} {@attach tooltip(() => "Reset Encounter")}><TimerResetIcon /></button>
     <button
       onclick={() => {
         commands.togglePauseEncounter();

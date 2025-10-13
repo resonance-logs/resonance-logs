@@ -6,22 +6,40 @@ use etherparse::NetSlice::Ipv4;
 use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
 use log::{debug, error, info, trace};
+use once_cell::sync::OnceCell;
 use std::hash::Hash;
+use tokio::sync::watch;
 use windivert::WinDivert;
 use windivert::prelude::WinDivertFlags;
+
+// Global sender for restart signal
+static RESTART_SENDER: OnceCell<watch::Sender<bool>> = OnceCell::new();
 
 pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
     let (packet_sender, packet_receiver) =
         tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(1);
+    let (restart_sender, mut restart_receiver) = watch::channel(false);
+    RESTART_SENDER.set(restart_sender.clone()).ok();
     tauri::async_runtime::spawn(async move {
-        read_packets(packet_sender).await;
-        info!("oopsies {}", line!());
+        loop {
+            read_packets(&packet_sender, &mut restart_receiver).await;
+            // Wait for restart signal
+            while !*restart_receiver.borrow() {
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            }
+            // Reset signal to false before next loop
+            let _ = restart_sender.send(false);
+        }
+        // info!("oopsies {}", line!());
     });
     packet_receiver
 }
 
 #[allow(clippy::too_many_lines)]
-async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>) {
+async fn read_packets(
+    packet_sender: &tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
+    restart_receiver: &mut watch::Receiver<bool>,
+) {
     let windivert = match WinDivert::network(
         "!loopback && ip && tcp", // todo: idk why but filtering by port just crashes the program, investigate?
         0,
@@ -82,6 +100,7 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
 
                 // info!("ffffff {:?}", tcp_payload_reader.cursor.get_ref());
                 while tcp_payload_reader.remaining() >= FRAG_LENGTH_SIZE {
+                    trace!("Line: {} - Stuck at 1. Try to identify game server via small packets?", line!());
                     // info!("while tcp_payload_reader.remaining() >= FRAG_LENGTH_SIZE");
 
                     // Read fragment length
@@ -167,6 +186,7 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
             .cache
             .contains_key(&tcp_reassembler.next_seq.unwrap())
         {
+            trace!("Line: {} - Stuck at while tcp_reassembler.cache.contains_key(&tcp_reassembler.next_seq.unwrap())?", line!());
             // info!("tcp_reassembler.cache.contains_key(&tcp_reassembler.next_seq.unwrap())");
             let seq = &tcp_reassembler.next_seq.unwrap();
             let cached_tcp_data = tcp_reassembler.cache.get(seq).unwrap();
@@ -182,6 +202,7 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
 
         // info!("{}", line!());
         while tcp_reassembler._data.len() > 4 {
+            trace!("Line: {} - Stuck at while tcp_reassembler._data.len() > 4?", line!());
             // info!(" tcp_reassembler._data.len() > 4");
             // info!("{}", line!());
             let packet_size = BinaryReader::from(tcp_reassembler._data.clone())
@@ -214,6 +235,18 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
         //     // trace!("Reassembled: Seq - {} - {}", seq_num, hex::encode(tcp_payload.clone())); // todo: comment for trace
         //     process_packet(BinaryReader::from(tcp_payload), packet_sender.clone()).await; // todo: optimize: instead of cloning, is it better to just move it to the function and return?
         // }
+
+        // Periodically check for restart signal
+        if *restart_receiver.borrow() {
+            break;
+        }
     } // todo: if it errors, it breaks out of the loop but will it ever error?
     // info!("{}", line!());
+}
+
+// Function to send restart signal from another thread/task
+pub fn request_restart() {
+    if let Some(sender) = RESTART_SENDER.get() {
+        let _ = sender.send(true);
+    }
 }

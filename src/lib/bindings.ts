@@ -56,6 +56,9 @@ async resetEncounter() : Promise<void> {
 },
 async togglePauseEncounter() : Promise<void> {
     await TAURI_INVOKE("toggle_pause_encounter");
+},
+async hardReset() : Promise<void> {
+    await TAURI_INVOKE("hard_reset");
 }
 }
 
