@@ -22,11 +22,11 @@
     try {
       const result = await commands.getHealPlayerWindow();
       if (result.status !== "ok") {
-        console.warn("Failed to get heal window: ", result.error);
+        console.warn("timestamp: ", +Date.now(), " Failed to get heal window: ", +Date.now(),  result.error);
         return;
       } else {
         healPlayersWindow = result.data;
-        // console.log("healWindow: ", +Date.now(), $state.snapshot(healPlayersWindow));
+        console.log("timestamp: ", +Date.now(), " healPlayersWindow: ", $state.snapshot(healPlayersWindow));
       }
     } catch (e) {
       console.error("Error fetching data: ", e);

@@ -22,12 +22,11 @@
     try {
       const result = await commands.getDpsPlayerWindow();
       if (result.status !== "ok") {
-        console.warn("Failed to get dps window: ", result.error);
+        console.warn("timestamp: ", +Date.now(), " Failed to get dps window: ", +Date.now(),  result.error);
         return;
       } else {
         dpsPlayersWindow = result.data;
-        console.log(typeof dpsPlayersWindow.playerRows[0]?.abilityScore, dpsPlayersWindow.playerRows[0]?.abilityScore);
-        // console.log("dpsWindow: ", +Date.now(), $state.snapshot(dpsPlayersWindow));
+        console.log("timestamp: ", +Date.now(), " dpsPlayersWindow: ", $state.snapshot(dpsPlayersWindow));
       }
     } catch (e) {
       console.error("Error fetching data: ", e);
