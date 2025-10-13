@@ -49,7 +49,7 @@ pub fn run() {
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     builder
         .export(
-            Typescript::new().bigint(BigIntExportBehavior::BigInt),
+            Typescript::new().bigint(BigIntExportBehavior::Number),
             "../src/lib/bindings.ts",
         )
         .expect("Failed to export typescript bindings");

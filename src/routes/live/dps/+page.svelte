@@ -26,6 +26,7 @@
         return;
       } else {
         dpsPlayersWindow = result.data;
+        console.log(typeof dpsPlayersWindow.playerRows[0]?.abilityScore, dpsPlayersWindow.playerRows[0]?.abilityScore);
         // console.log("dpsWindow: ", +Date.now(), $state.snapshot(dpsPlayersWindow));
       }
     } catch (e) {
