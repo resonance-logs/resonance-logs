@@ -78,12 +78,12 @@ async fn read_packets(
             ip_packet.header().destination(),
             tcp_packet.to_header().destination_port,
         );
-        trace!(
-            "{} ({}) => {:?}",
-            curr_server,
-            tcp_packet.payload().len(),
-            tcp_packet.payload(),
-        );
+        // trace!(
+        //     "{} ({}) => {:?}",
+        //     curr_server,
+        //     tcp_packet.payload().len(),
+        //     tcp_packet.payload(),
+        // );
 
         // 1. Try to identify game server via small packets
         if known_server != Some(curr_server) {
