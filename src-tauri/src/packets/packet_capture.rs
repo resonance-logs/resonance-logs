@@ -99,8 +99,12 @@ async fn read_packets(
                 const SIGNATURE: [u8; 6] = [0x00, 0x63, 0x33, 0x53, 0x42, 0x00];
 
                 // info!("ffffff {:?}", tcp_payload_reader.cursor.get_ref());
+                let mut i = 0;
                 while tcp_payload_reader.remaining() >= FRAG_LENGTH_SIZE {
-                    trace!("Line: {} - Stuck at 1. Try to identify game server via small packets?", line!());
+                    i += 1;
+                    if i > 1000 {
+                        info!("Line: {} - Stuck at 1. Try to identify game server via small packets?", line!());
+                    }
                     // info!("while tcp_payload_reader.remaining() >= FRAG_LENGTH_SIZE");
 
                     // Read fragment length
@@ -182,11 +186,15 @@ async fn read_packets(
         }
 
         // info!("{}", line!());
+        let mut i = 0;
         while tcp_reassembler
             .cache
             .contains_key(&tcp_reassembler.next_seq.unwrap())
         {
-            trace!("Line: {} - Stuck at while tcp_reassembler.cache.contains_key(&tcp_reassembler.next_seq.unwrap())?", line!());
+            i += 1;
+            if i > 1000 {
+                info!("Line: {} - Stuck at 1. Try to identify game server via small packets?", line!());
+            }
             // info!("tcp_reassembler.cache.contains_key(&tcp_reassembler.next_seq.unwrap())");
             let seq = &tcp_reassembler.next_seq.unwrap();
             let cached_tcp_data = tcp_reassembler.cache.get(seq).unwrap();
@@ -201,8 +209,12 @@ async fn read_packets(
         }
 
         // info!("{}", line!());
+        i = 0;
         while tcp_reassembler._data.len() > 4 {
-            trace!("Line: {} - Stuck at while tcp_reassembler._data.len() > 4?", line!());
+            i += 1;
+            if i > 1000 {
+                info!("Line: {} - Stuck at while tcp_reassembler._data.len() > 4?", line!());
+            }
             // info!(" tcp_reassembler._data.len() > 4");
             // info!("{}", line!());
             let packet_size = BinaryReader::from(tcp_reassembler._data.clone())
@@ -232,7 +244,7 @@ async fn read_packets(
         // // // todo: tbh idk why in original meter this isnt done before finding the server address
         // if let Some((seq_num, tcp_payload)) = tcp_reassembler.push_segment(tcp_packet.clone()) {
         //     info!("Reassembled: Seq - {} - {:?}", seq_num, tcp_payload.as_slice()); // todo: comment
-        //     // trace!("Reassembled: Seq - {} - {}", seq_num, hex::encode(tcp_payload.clone())); // todo: comment for trace
+        //     // info!("Reassembled: Seq - {} - {}", seq_num, hex::encode(tcp_payload.clone())); // todo: comment for info
         //     process_packet(BinaryReader::from(tcp_payload), packet_sender.clone()).await; // todo: optimize: instead of cloning, is it better to just move it to the function and return?
         // }
 
