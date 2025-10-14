@@ -11,6 +11,9 @@ async enableBlur() : Promise<void> {
 async disableBlur() : Promise<void> {
     await TAURI_INVOKE("disable_blur");
 },
+async copySyncContainerData() : Promise<void> {
+    await TAURI_INVOKE("copy_sync_container_data");
+},
 async getHeaderInfo() : Promise<Result<HeaderInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_header_info") };

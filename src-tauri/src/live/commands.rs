@@ -7,6 +7,7 @@ use crate::live::opcodes_models::{Encounter, EncounterMutex, Skill, class};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::info;
 use tauri::Manager;
+use tauri_plugin_clipboard_manager::ClipboardExt;
 use window_vibrancy::{apply_blur, clear_blur};
 use crate::packets::packet_capture::request_restart;
 
@@ -42,6 +43,15 @@ pub fn disable_blur(app: tauri::AppHandle) {
     if let Some(meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) {
         clear_blur(&meter_window).ok();
     }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn copy_sync_container_data(app: tauri::AppHandle) {
+    let state = app.state::<EncounterMutex>();
+    let encounter = state.lock().unwrap();
+    let json = serde_json::to_string_pretty(&encounter.local_player).unwrap();
+    app.clipboard().write_text(json).unwrap();
 }
 
 #[tauri::command]

@@ -37,6 +37,7 @@ pub fn run() {
         .commands(collect_commands![
             live::commands::enable_blur,
             live::commands::disable_blur,
+            live::commands::copy_sync_container_data,
             live::commands::get_header_info,
             live::commands::get_dps_player_window,
             live::commands::get_dps_skill_window,
