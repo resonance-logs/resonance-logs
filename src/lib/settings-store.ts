@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
     showOthersName: "Show Others' Name",
     showYourAbilityScore: true,
     showOthersAbilityScore: true,
+    relativeToTop: false,
   },
   accessibility: {
     blur: !IS_WIN_11,
