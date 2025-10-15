@@ -3,6 +3,7 @@ use crate::live::commands_models::{
     HeaderInfo, PlayerRow, PlayerRows, PlayersWindow, SkillRow, SkillsWindow,
 };
 use crate::live::opcodes_models::{Encounter, EncounterMutex, Skill, class};
+use crate::live::event_manager::{EventManagerMutex, LiveEventType};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::info;
 use tauri::Manager;
@@ -67,17 +68,30 @@ pub fn get_header_info(state: tauri::State<'_, EncounterMutex>) -> Result<Header
 
 #[tauri::command]
 #[specta::specta]
-pub fn reset_encounter(state: tauri::State<'_, EncounterMutex>) {
+pub fn reset_encounter(state: tauri::State<'_, EncounterMutex>, event_manager: tauri::State<'_, EventManagerMutex>) {
     let mut encounter = state.lock().unwrap();
     encounter.clone_from(&Encounter::default());
     info!("encounter reset");
+
+    // Emit encounter reset event
+    let event_manager = event_manager.lock().unwrap();
+    if event_manager.should_emit_events() {
+        event_manager.emit_encounter_reset();
+    }
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>) {
+pub fn toggle_pause_encounter(state: tauri::State<'_, EncounterMutex>, event_manager: tauri::State<'_, EventManagerMutex>) {
     let mut encounter = state.lock().unwrap();
+    let was_paused = encounter.is_encounter_paused;
     encounter.is_encounter_paused = !encounter.is_encounter_paused;
+
+    // Emit pause/resume event
+    let event_manager = event_manager.lock().unwrap();
+    if event_manager.should_emit_events() {
+        event_manager.emit_encounter_pause(encounter.is_encounter_paused);
+    }
 }
 
 // #[tauri::command]

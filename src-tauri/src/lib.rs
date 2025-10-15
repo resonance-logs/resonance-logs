@@ -2,6 +2,7 @@ mod live;
 mod packets;
 
 use crate::live::opcodes_models::EncounterMutex;
+use crate::live::event_manager::{EventManager, EventManagerMutex};
 use log::{error, info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use std::process::Command;
@@ -79,6 +80,7 @@ pub fn run() {
             setup_tray(&app_handle).expect("failed to setup tray");
 
             app.manage(EncounterMutex::default());
+            app.manage(EventManagerMutex::default());
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks

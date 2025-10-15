@@ -1,4 +1,5 @@
 use crate::live::opcodes_models::EncounterMutex;
+use crate::live::event_manager::{EventManagerMutex, generate_header_info, generate_player_row, generate_skill_rows};
 use crate::live::opcodes_process::{
     on_server_change, process_aoi_sync_delta, process_sync_container_data,
     process_sync_container_dirty_data, process_sync_near_entities, process_sync_to_me_delta_info,
@@ -16,6 +17,13 @@ pub async fn start(app_handle: AppHandle) {
     // 1. Start capturing packets and send to rx
     let mut rx = packets::packet_capture::start_capture(); // Since live meter is not critical, it's ok to just log it // TODO: maybe bubble an error up to the frontend instead?
 
+    // Initialize event manager
+    {
+        let event_manager_state = app_handle.state::<EventManagerMutex>();
+        let mut event_manager = event_manager_state.lock().unwrap();
+        event_manager.initialize(app_handle.clone());
+    }
+
     // 2. Use the channel to receive packets back and process them
     while let Some((op, data)) = rx.recv().await {
         {
@@ -32,6 +40,13 @@ pub async fn start(app_handle: AppHandle) {
                 let encounter_state = app_handle.state::<EncounterMutex>();
                 let mut encounter_state = encounter_state.lock().unwrap();
                 on_server_change(&mut encounter_state);
+
+                // Emit encounter reset event
+                let event_manager_state = app_handle.state::<EventManagerMutex>();
+                let event_manager = event_manager_state.lock().unwrap();
+                if event_manager.should_emit_events() {
+                    event_manager.emit_encounter_reset();
+                }
             }
             packets::opcodes::Pkt::SyncNearEntities => {
                 // info!("Received {op:?}");
@@ -68,6 +83,18 @@ pub async fn start(app_handle: AppHandle) {
                 if process_sync_container_data(&mut encounter_state, sync_container_data).is_none()
                 {
                     warn!("Error processing SyncContainerData.. ignoring.");
+                } else {
+                    // Emit events for updated data
+                    let event_manager_state = app_handle.state::<EventManagerMutex>();
+                    let event_manager = event_manager_state.lock().unwrap();
+                    if event_manager.should_emit_events() {
+                        // Emit player updates for all players with damage data
+                        for (&entity_uid, entity) in &encounter_state.entity_uid_to_entity {
+                            if let Some(player_row) = generate_player_row(entity_uid, entity, &encounter_state) {
+                                event_manager.emit_player_update(entity_uid, player_row);
+                            }
+                        }
+                    }
                 }
             }
             packets::opcodes::Pkt::SyncContainerDirtyData => {
@@ -90,6 +117,18 @@ pub async fn start(app_handle: AppHandle) {
                 .is_none()
                 {
                     warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
+                } else {
+                    // Emit events for updated data
+                    let event_manager_state = app_handle.state::<EventManagerMutex>();
+                    let event_manager = event_manager_state.lock().unwrap();
+                    if event_manager.should_emit_events() {
+                        // Emit player updates for all players with damage data
+                        for (&entity_uid, entity) in &encounter_state.entity_uid_to_entity {
+                            if let Some(player_row) = generate_player_row(entity_uid, entity, &encounter_state) {
+                                event_manager.emit_player_update(entity_uid, player_row);
+                            }
+                        }
+                    }
                 }
             }
             packets::opcodes::Pkt::SyncServerTime => {
@@ -123,6 +162,18 @@ pub async fn start(app_handle: AppHandle) {
                     .is_none()
                 {
                     warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
+                } else {
+                    // Emit events for updated data
+                    let event_manager_state = app_handle.state::<EventManagerMutex>();
+                    let event_manager = event_manager_state.lock().unwrap();
+                    if event_manager.should_emit_events() {
+                        // Emit player updates for all players with damage data
+                        for (&entity_uid, entity) in &encounter_state.entity_uid_to_entity {
+                            if let Some(player_row) = generate_player_row(entity_uid, entity, &encounter_state) {
+                                event_manager.emit_player_update(entity_uid, player_row);
+                            }
+                        }
+                    }
                 }
             }
             packets::opcodes::Pkt::SyncNearDeltaInfo => {
@@ -141,6 +192,18 @@ pub async fn start(app_handle: AppHandle) {
                 for aoi_sync_delta in sync_near_delta_info.delta_infos {
                     if process_aoi_sync_delta(&mut encounter_state, aoi_sync_delta).is_none() {
                         warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
+                    }
+                }
+
+                // Emit events for updated data
+                let event_manager_state = app_handle.state::<EventManagerMutex>();
+                let event_manager = event_manager_state.lock().unwrap();
+                if event_manager.should_emit_events() {
+                    // Emit player updates for all players with damage data
+                    for (&entity_uid, entity) in &encounter_state.entity_uid_to_entity {
+                        if let Some(player_row) = generate_player_row(entity_uid, entity, &encounter_state) {
+                            event_manager.emit_player_update(entity_uid, player_row);
+                        }
                     }
                 }
             }
