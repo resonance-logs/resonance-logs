@@ -228,11 +228,11 @@ async fn read_packets(
                 let (left, right) = tcp_reassembler._data.split_at(packet_size as usize);
                 let packet = left.to_vec();
                 tcp_reassembler._data = right.to_vec();
-                trace!(
-                    "Reassembled: Seq - {} - {:?}",
-                    tcp_reassembler.next_seq.unwrap(),
-                    packet.as_slice()
-                ); // todo: comment
+                // trace!(
+                //     "Reassembled: Seq - {} - {:?}",
+                //     tcp_reassembler.next_seq.unwrap(),
+                //     packet.as_slice()
+                // ); // todo: comment
                 process_packet(BinaryReader::from(packet), packet_sender.clone()).await;
                 // info!("{}", line!());
             }
