@@ -60,7 +60,7 @@ jobs:
           updaterJsonPreferNsis: true
           releaseName: ${{ github.ref_name == 'release' && 'v__VERSION__' || '' }}
           releaseBody: ${{ env.RELEASE_BODY }}
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
 
