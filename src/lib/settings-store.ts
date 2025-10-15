@@ -77,3 +77,20 @@ export const settings = new RuneStore('settings', DEFAULT_SETTINGS, {
   autoStart: true,
   saveOnChange: true,
 });
+
+function mergeDefaults<T extends Record<string, any>>(target: T, defaults: T): T {
+  for (const key in defaults) {
+    if (!(key in target)) {
+      target[key] = defaults[key];
+    } else if (
+      typeof defaults[key] === "object" &&
+      defaults[key] !== null &&
+      !Array.isArray(defaults[key])
+    ) {
+      mergeDefaults(target[key], defaults[key]);
+    }
+  }
+  return target;
+}
+
+mergeDefaults(settings.state, DEFAULT_SETTINGS);
