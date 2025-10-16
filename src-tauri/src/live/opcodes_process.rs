@@ -1,8 +1,8 @@
 use crate::live::opcodes_models;
 use crate::live::opcodes_models::class::{
-    ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
+    get_class_id_from_spec, get_class_spec_from_skill_id, ClassSpec,
 };
-use crate::live::opcodes_models::{Encounter, Entity, Skill, attr_type};
+use crate::live::opcodes_models::{attr_type, Encounter, Entity, Skill};
 use crate::packets::utils::BinaryReader;
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};

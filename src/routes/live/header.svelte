@@ -10,33 +10,26 @@
   import SettingsIcon from "virtual:icons/lucide/settings";
 
   import { onMount, tick } from "svelte";
-  import { commands, type HeaderInfo } from "$lib/bindings";
+  import { onEncounterUpdate, resetEncounter, togglePauseEncounter, type HeaderInfo } from "$lib/api";
   import { takeScreenshot, tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
   import { settings } from "$lib/settings-store";
 
   onMount(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 200);
+    let unlisten: (() => void) | null = null;
 
-    return () => clearInterval(interval);
+    onEncounterUpdate((event) => {
+      headerInfo = event.payload.headerInfo;
+      isEncounterPaused = event.payload.isPaused;
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
   });
-
-  async function fetchData() {
-    try {
-      const result = await commands.getHeaderInfo();
-      if (result.status !== "ok") {
-        console.warn("Failed to get header: ", result.error);
-        return;
-      } else {
-        headerInfo = result.data;
-        // console.log("header: ", +Date.now(), $state.snapshot(headerInfo));
-      }
-    } catch (e) {
-      console.error("Error fetching data: ", e);
-    }
-  }
 
   function formatElapsed(msElapsed: number) {
     const totalSeconds = Math.floor(Number(msElapsed) / 1000);
@@ -92,19 +85,19 @@
     >
       <CameraIcon />
     </button>
-    <button onclick={() => commands.resetEncounter()} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon /></button>
-    <button
-      onclick={() => {
-        commands.togglePauseEncounter();
-        isEncounterPaused = !isEncounterPaused;
-      }}
-    >
-      {#if isEncounterPaused}
-        <PlayIcon {@attach tooltip(() => "Resume Encounter")} />
-      {:else}
-        <PauseIcon {@attach tooltip(() => "Pause Encounter")} />
-      {/if}
-    </button>
+        <button onclick={() => resetEncounter()} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon /></button>
+        <button
+          onclick={() => {
+            togglePauseEncounter();
+            isEncounterPaused = !isEncounterPaused;
+          }}
+        >
+          {#if isEncounterPaused}
+            <PlayIcon {@attach tooltip(() => "Resume Encounter")} />
+          {:else}
+            <PauseIcon {@attach tooltip(() => "Pause Encounter")} />
+          {/if}
+        </button>
     <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon /></button>
     <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon /></button>
     <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon /></button>

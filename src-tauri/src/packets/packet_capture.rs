@@ -7,8 +7,8 @@ use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
 use log::{debug, error, info, trace};
 use std::hash::Hash;
-use windivert::WinDivert;
 use windivert::prelude::WinDivertFlags;
+use windivert::WinDivert;
 
 pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
     let (packet_sender, packet_receiver) =
@@ -215,5 +215,5 @@ async fn read_packets(packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes
         //     process_packet(BinaryReader::from(tcp_payload), packet_sender.clone()).await; // todo: optimize: instead of cloning, is it better to just move it to the function and return?
         // }
     } // todo: if it errors, it breaks out of the loop but will it ever error?
-    // info!("{}", line!());
+      // info!("{}", line!());
 }

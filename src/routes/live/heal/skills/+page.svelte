@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { commands, type SkillsWindow } from "$lib/bindings";
+  import { onHealSkillsUpdate, type SkillsWindow } from "$lib/api";
   import { getClassColor } from "$lib/utils.svelte";
   import { page } from "$app/state";
   import { createSvelteTable, FlexRender } from "$lib/svelte-table";
@@ -10,28 +10,59 @@
 
   const playerUid: string = page.url.searchParams.get("playerUid") ?? "-1";
 
+  let unlisten: (() => void) | null = null;
+  let lastEventTime = Date.now();
+  let reconnectInterval: ReturnType<typeof setInterval> | null = null;
+  let isReconnecting = false;
+  const RECONNECT_DELAY = 1000;
+  const DISCONNECT_THRESHOLD = 5000;
+
+  async function setupEventListener() {
+    if (isReconnecting) return;
+    try {
+      const unlistenFn = await onHealSkillsUpdate((event) => {
+        lastEventTime = Date.now();
+        // Only update if this is the correct player
+        if (event.payload.playerUid.toString() === playerUid) {
+          healSkillBreakdownWindow = event.payload.skillsWindow;
+        }
+      });
+      unlisten = unlistenFn;
+      console.log("Event listener set up for heal skills");
+    } catch (e) {
+      console.error("Failed to set up event listener for heal skills:", e);
+      isReconnecting = true;
+      setTimeout(() => {
+        isReconnecting = false;
+        setupEventListener();
+      }, RECONNECT_DELAY);
+    }
+  }
+
+  function startReconnectCheck() {
+    reconnectInterval = setInterval(() => {
+      if (Date.now() - lastEventTime > DISCONNECT_THRESHOLD) {
+        console.warn("Event stream disconnected for heal skills, attempting reconnection");
+        if (unlisten) {
+          unlisten();
+          unlisten = null;
+        }
+        setupEventListener();
+      }
+    }, 1000);
+  }
+
   onMount(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 200);
-    return () => clearInterval(interval);
+    setupEventListener();
+    startReconnectCheck();
+
+    return () => {
+      if (reconnectInterval) clearInterval(reconnectInterval);
+      if (unlisten) unlisten();
+    };
   });
 
   let healSkillBreakdownWindow: SkillsWindow = $state({ currPlayer: [], skillRows: [] });
-
-  async function fetchData() {
-    try {
-      const result = await commands.getHealSkillWindow(playerUid);
-      if (result.status !== "ok") {
-        console.warn("Failed to get skill window: ", result.error);
-        return;
-      } else {
-        healSkillBreakdownWindow = result.data;
-        // console.log("healSkillBreakdown: ", +Date.now(), $state.snapshot(healSkillBreakdownWindow));
-      }
-    } catch (e) {
-      console.error("Error fetching data: ", e);
-    }
-  }
 
   const currPlayerTable = createSvelteTable({
     get data() {

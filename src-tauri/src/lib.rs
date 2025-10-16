@@ -2,13 +2,12 @@ mod live;
 mod packets;
 
 use crate::live::opcodes_models::EncounterMutex;
-use crate::live::event_manager::{EventManager, EventManagerMutex};
-use log::{error, info, warn};
+use crate::live::event_manager::EventManagerMutex;
+use log::{info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use std::process::Command;
-use window_vibrancy::apply_blur;
 
-use tauri::menu::{Menu, MenuBuilder, MenuItem};
+use tauri::menu::{MenuBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, WindowEvent};
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
@@ -38,11 +37,6 @@ pub fn run() {
         .commands(collect_commands![
             live::commands::enable_blur,
             live::commands::disable_blur,
-            live::commands::get_header_info,
-            live::commands::get_dps_player_window,
-            live::commands::get_dps_skill_window,
-            live::commands::get_heal_player_window,
-            live::commands::get_heal_skill_window,
             live::commands::reset_encounter,
             live::commands::toggle_pause_encounter,
         ]);

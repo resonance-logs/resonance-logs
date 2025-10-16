@@ -11,46 +11,6 @@ async enableBlur() : Promise<void> {
 async disableBlur() : Promise<void> {
     await TAURI_INVOKE("disable_blur");
 },
-async getHeaderInfo() : Promise<Result<HeaderInfo, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_header_info") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getDpsPlayerWindow() : Promise<Result<PlayersWindow, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_dps_player_window") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getDpsSkillWindow(playerUidStr: string) : Promise<Result<SkillsWindow, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_dps_skill_window", { playerUidStr }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getHealPlayerWindow() : Promise<Result<PlayersWindow, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_heal_player_window") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getHealSkillWindow(playerUidStr: string) : Promise<Result<SkillsWindow, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_heal_skill_window", { playerUidStr }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async resetEncounter() : Promise<void> {
     await TAURI_INVOKE("reset_encounter");
 },
@@ -69,11 +29,7 @@ async togglePauseEncounter() : Promise<void> {
 
 /** user-defined types **/
 
-export type HeaderInfo = { totalDps: number; totalDmg: number; elapsedMs: number }
-export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
-export type PlayersWindow = { playerRows: PlayerRow[] }
-export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
-export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }
+
 
 /** tauri-specta globals **/
 
