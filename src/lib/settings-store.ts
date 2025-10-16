@@ -22,7 +22,10 @@ const DEFAULT_SETTINGS = {
     showOthersName: "Show Others' Name",
     showYourAbilityScore: true,
     showOthersAbilityScore: true,
-    relativeToTop: false,
+    relativeToTopDPSPlayer: false,
+    relativeToTopDPSSkill: false,
+    relativeToTopHealPlayer: false,
+    relativeToTopHealSkill: false,
   },
   accessibility: {
     blur: !IS_WIN_11,
@@ -70,24 +73,24 @@ export const SETTINGS = {
   live: {
     dps: {
       players: new RuneStore(
-        'live_dps_players',
+        'liveDpsPlayers',
         DEFAULT_SETTINGS.live.dpsPlayers,
         RUNE_STORE_OPTIONS
       ),
       skillBreakdown: new RuneStore(
-        'live_dps_skill_breakdown',
+        'liveDpsSkillBreakdown',
         DEFAULT_SETTINGS.live.dpsSkillBreakdown,
         RUNE_STORE_OPTIONS
       ),
     },
     heal: {
       players: new RuneStore(
-        'live_heal_players',
+        'liveHealPlayers',
         DEFAULT_SETTINGS.live.healPlayers,
         RUNE_STORE_OPTIONS
       ),
       skillBreakdown: new RuneStore(
-        'live_heal_skill_breakdown',
+        'liveHealSkillBreakdown',
         DEFAULT_SETTINGS.live.healSkillBreakdown,
         RUNE_STORE_OPTIONS
       ),
