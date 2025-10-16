@@ -48,6 +48,6 @@
             "icons/icon.ico"
         ],
         "resources": ["./WinDivert.dll", "./WinDivert64.sys"],
-        "createUpdaterArtifacts": true
+        "createUpdaterArtifacts": false
     }
 }
