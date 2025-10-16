@@ -363,8 +363,8 @@
     },
     "21404": {
         "ChineseShort": "持续回复生命值",
-        "EnglishShort": "HP Regan",
-        "EnglishLong": "Regan a small amount of HP over 10s."
+        "EnglishShort": "HP Regen",
+        "EnglishLong": "Regen a small amount of HP over 10s."
     },
     "21405": {
         "ChineseShort": "移动丢种子"
@@ -390,7 +390,12 @@
     "21412": {
         "ChineseShort": "减CD",
         "EnglishShort": "Fast Growth",
-        "EnglishLong": "Gain Cooldown Reduction."
+        "EnglishLong": "CD Reduced"
+    },
+    "21413": {
+        "ChineseShort": "15%元素减免",
+        "EnglishShort": "15% Element Resistance",
+        "EnglishLong": "15% Element Resistance"
     },
     "21414": {
         "ChineseShort": "庇护领域带草"
@@ -420,8 +425,8 @@
     },
     "21421": {
         "ChineseShort": "飞升",
-        "EnglishShort": "​Vital Surge​",
-        "EnglishLong": "Attack Power increase, reduced skill energy cost, casting Life Bloom reduces cooldowns of healing Expertise."
+        "EnglishShort": "Vital Surge",
+        "EnglishLong": "ATK increase, reduced skill energy cost, casting Life Bloom reduces CDs of healing Expertise."
     },
     "21422": {
         "ChineseShort": "护盾",
@@ -435,8 +440,8 @@
     },
     "21424": {
         "ChineseShort": "荆棘",
-        "EnglishShort": "Thorns",
-        "EnglishLong": "Deals 20% Attack Power Magic Damage per second to enemy target for 10s."
+        "EnglishShort": "Thorn",
+        "EnglishLong": "Deals 20% ATK Magic Damage per second to enemy target for 10s."
     },
     "21425": {
         "ChineseShort": "奶环自愈",
@@ -457,6 +462,16 @@
     },
     "21430": {
         "ChineseShort": "普攻4段回血"
+    },
+    "21431": {
+        "ChineseShort": "灌注标记",
+        "EnglishShort": "Infusion",
+        "EnglishLong": "Infusion"
+    },
+    "21432": {
+        "ChineseShort": "灌注目标死亡",
+        "EnglishShort": "Infused target has died.",
+        "EnglishLong": "Infused target has died."
     },
     "25101": {
         "ChineseShort": "博伊斯测试用BUFF-无限水矛"
@@ -625,7 +640,7 @@
     "30501": {
         "ChineseShort": "蒂娜大招激励",
         "EnglishShort": "Inspire",
-        "EnglishLong": "Gain 50% Haste Increase"
+        "EnglishLong": "Gain 50% Haste Bonus"
     },
     "30601": {
         "ChineseShort": "下落攻击表现buff"
@@ -647,12 +662,12 @@
     },
     "31201": {
         "ChineseShort": "风姿卓绝",
-        "EnglishShort": "​Galeform​",
+        "EnglishShort": "Galeform",
         "EnglishLong": "Increases own Strength and continuously restores Courage."
     },
     "31301": {
         "ChineseShort": "护佑之风",
-        "EnglishShort": "​Aegis Gale​",
+        "EnglishShort": "Aegis Gale",
         "EnglishLong": "Immune to damage, counterattacks based on number of hits received."
     },
     "31401": {
@@ -695,8 +710,14 @@
     },
     "32201": {
         "ChineseShort": "螺旋击刺重伤",
-        "EnglishShort": "Severe Injury",
-        "EnglishLong": "Wound (Negative Effect): Reduces healing received by 50%."
+        "EnglishShort": "Wound",
+        "EnglishLong": "Wound (Debuff): Reduces healing received by 50%."
+    },
+    "32301": {
+        "ChineseShort": "破追计时"
+    },
+    "32401": {
+        "ChineseShort": "龙卷风逐渐减少造成的伤害"
     },
     "35101": {
         "ChineseShort": "塔塔能量回复被动"
@@ -834,7 +855,7 @@
     },
     "43201": {
         "ChineseShort": "鸣雷印记效果",
-        "EnglishShort": "​Stormflash​",
+        "EnglishShort": "Stormflash",
         "EnglishLong": "Continuously restores Blade Intent. When a skill that consumes Blade Intent hits a target, an additional Thunder Strike is triggered"
     },
     "43202": {
@@ -876,11 +897,17 @@
     },
     "44501": {
         "ChineseShort": "镰车重伤",
-        "EnglishShort": "Severe Injury",
-        "EnglishLong": "Wound (Negative Effect): Reduces healing received by 50%."
+        "EnglishShort": "Wound",
+        "EnglishLong": "Wound (Debuff): Reduces healing received by 50%."
     },
     "44701": {
         "ChineseShort": "镰车伤害"
+    },
+    "44801": {
+        "ChineseShort": "霹雳连斩检测"
+    },
+    "44901": {
+        "ChineseShort": "死亡时减镰车CD，杀死月刃"
     },
     "45101": {
         "ChineseShort": "陶洛斯导弹BUFF"
@@ -997,7 +1024,7 @@
     "50024": {
         "ChineseShort": "特攻A护盾",
         "EnglishShort": "Shield",
-        "EnglishLong": "Gain a shield based on Attack Power"
+        "EnglishLong": "Gain a shield based on ATK"
     },
     "50025": {
         "ChineseShort": "岩沙缠绕[武器特效]"
@@ -1086,7 +1113,7 @@
     },
     "50050": {
         "ChineseShort": "格挡冲击",
-        "EnglishShort": "​​Countercrush​​",
+        "EnglishShort": "Countercrush",
         "EnglishLong": "Block Enhancement"
     },
     "50051": {
@@ -1102,8 +1129,8 @@
     },
     "50054": {
         "ChineseShort": "眩晕",
-        "EnglishShort": "stun",
-        "EnglishLong": "stun"
+        "EnglishShort": "Stun",
+        "EnglishLong": "Stun"
     },
     "50055": {
         "ChineseShort": "特攻B计次"
@@ -1113,7 +1140,7 @@
     },
     "50057": {
         "ChineseShort": "巨岩躯体",
-        "EnglishShort": "​Stoneform​",
+        "EnglishShort": "Stoneform",
         "EnglishLong": "Armor greatly increased."
     },
     "50058": {
@@ -1136,7 +1163,7 @@
     },
     "50062": {
         "ChineseShort": "岩怒之击",
-        "EnglishShort": "​Granite Fury​",
+        "EnglishShort": "Granite Fury",
         "EnglishLong": "Damage taken -10%"
     },
     "50063": {
@@ -1248,7 +1275,7 @@
     },
     "55221": {
         "ChineseShort": "罗特罗亚尼-弓-光能重铸",
-        "EnglishShort": "Photon Regorge",
+        "EnglishShort": "Photon Reforge",
         "EnglishLong": "Special attacks and some Class Skills are strengthened. Light energy drains over time, effect ends at 0"
     },
     "55222": {
@@ -1256,8 +1283,8 @@
     },
     "55223": {
         "ChineseShort": "罗特罗亚尼-弓-集中",
-        "EnglishShort": "​Focus​",
-        "EnglishLong": "Haste greatly increased, special attack cooldown -50%"
+        "EnglishShort": "Focus",
+        "EnglishLong": "Haste greatly increased, special attack CD -50%"
     },
     "55224": {
         "ChineseShort": "替换下落攻击"
@@ -1314,6 +1341,9 @@
         "ChineseShort": "大招定身",
         "EnglishShort": "Light Energy Stasis",
         "EnglishLong": "Immobilized for a duration"
+    },
+    "55240": {
+        "ChineseShort": "光能轰炸伤害区域"
     },
     "55290": {
         "ChineseShort": "鸟-体型变大",
@@ -1562,8 +1592,8 @@
     },
     "55402": {
         "ChineseShort": "物理防御提升",
-        "EnglishShort": "Armor Increase",
-        "EnglishLong": "Armor Increase"
+        "EnglishShort": "Armor Bonus",
+        "EnglishLong": "Armor Bonus"
     },
     "55403": {
         "ChineseShort": "神圣之触",
@@ -1575,7 +1605,7 @@
     },
     "55405": {
         "ChineseShort": "圣光守卫",
-        "EnglishShort": "​Aegis Ward​",
+        "EnglishShort": "Aegis Ward",
         "EnglishLong": "Increases armor and Defense, prevents defeat once, and instantly restores 25% max HP"
     },
     "55406": {
@@ -1596,23 +1626,23 @@
     },
     "55412": {
         "ChineseShort": "冷酷征伐",
-        "EnglishShort": "​Zeal Crusade​",
+        "EnglishShort": "Zeal Crusade",
         "EnglishLong": "Deals DMG to nearby targets for the effect's duration"
     },
     "55413": {
         "ChineseShort": "光明决心",
-        "EnglishShort": "​Radiance​",
-        "EnglishLong": "​Radiance​"
+        "EnglishShort": "Radiance",
+        "EnglishLong": "Grants Defense scaling with max HP for the effect's duration"
     },
     "55414": {
         "ChineseShort": "光明决心层数buff",
-        "EnglishShort": "​Radiance​",
-        "EnglishLong": "​Radiance​"
+        "EnglishShort": "Radiance",
+        "EnglishLong": "Radiance"
     },
     "55415": {
         "ChineseShort": "光明决心层数删除",
-        "EnglishShort": "​Radiance​ Layer Removal",
-        "EnglishLong": "​Radiance​ Layer Removal"
+        "EnglishShort": "Radiance Layer Removal",
+        "EnglishLong": "Radiance Layer Removal"
     },
     "55416": {
         "ChineseShort": "光铸屏障",
@@ -1621,7 +1651,7 @@
     },
     "55417": {
         "ChineseShort": "冷冷酷征伐",
-        "EnglishShort": "​Zeal Crusade​",
+        "EnglishShort": "Zeal Crusade",
         "EnglishLong": "Deals DMG to nearby targets for the effect's duration"
     },
     "55418": {
@@ -1629,8 +1659,8 @@
     },
     "55419": {
         "ChineseShort": "圣灵冷却",
-        "EnglishShort": "Holy Spirit Cooldown",
-        "EnglishLong": "Holy Spirit Cooldown"
+        "EnglishShort": "Holy Spirit CD",
+        "EnglishLong": "Holy Spirit CD"
     },
     "55420": {
         "ChineseShort": "我被飞盾打中了！",
@@ -1654,8 +1684,8 @@
     },
     "55424": {
         "ChineseShort": "断罪变强",
-        "EnglishShort": "​Condemn​ Boost",
-        "EnglishLong": "​Condemn​ Boost"
+        "EnglishShort": "Condemn Boost",
+        "EnglishLong": "Condemn Boost"
     },
     "55425": {
         "ChineseShort": "炫目",
@@ -1674,18 +1704,28 @@
     },
     "55428": {
         "ChineseShort": "光明决心",
-        "EnglishShort": "​Radiance​",
-        "EnglishLong": "​Radiance​"
+        "EnglishShort": "Radiance",
+        "EnglishLong": "Radiance"
     },
     "55429": {
         "ChineseShort": "光明决心标记",
-        "EnglishShort": "​Radiance​ Mark",
-        "EnglishLong": "​Radiance​ Mark"
+        "EnglishShort": "Radiance Mark",
+        "EnglishLong": "Radiance Mark"
     },
     "55430": {
         "ChineseShort": "通用5s单体嘲讽",
         "EnglishShort": "Universal 5s Single Target Taunt",
         "EnglishLong": "Universal 5s Single Target Taunt"
+    },
+    "55431": {
+        "ChineseShort": "冷酷征伐伤害buff",
+        "EnglishShort": "Zeal Crusade DMG",
+        "EnglishLong": "Zeal Crusade DMG"
+    },
+    "55432": {
+        "ChineseShort": "冷冷酷征伐伤害buff",
+        "EnglishShort": "Zeal Crusade DMG Boost",
+        "EnglishLong": "Zeal Crusade DMG Boost"
     },
     "500101": {
         "ChineseShort": "测试配置"
@@ -1717,7 +1757,7 @@
     "500112": {},
     "500113": {
         "ChineseShort": "复活无敌",
-        "EnglishShort": "Respawn invincibility",
+        "EnglishShort": "Revive invincibility",
         "EnglishLong": "Damage immunity"
     },
     "500114": {
@@ -1857,60 +1897,60 @@
     },
     "510005": {
         "ChineseShort": "虚蚀类出现消失特效",
-        "EnglishShort": "​Void Corruption spawn and vanish effects",
-        "EnglishLong": "​Void Corruption spawn and vanish effects"
+        "EnglishShort": "Void Corruption spawn and vanish effects",
+        "EnglishLong": "Void Corruption spawn and vanish effects"
     },
     "510010": {
         "ChineseShort": "属性球-暴击-掉落物表现"
     },
     "510011": {
         "ChineseShort": "属性球-暴击-属性增加",
-        "EnglishShort": "Crit Increase",
-        "EnglishLong": "Crit Increase 100%"
+        "EnglishShort": "Crit Bonus",
+        "EnglishLong": "Crit +100%"
     },
     "510012": {
         "ChineseShort": "英雄本buff机-暴击-属性增加",
-        "EnglishShort": "Crit Increase",
-        "EnglishLong": "Each layer increases Crit by 5%"
+        "EnglishShort": "Crit Bonud",
+        "EnglishLong": "Each stack increases Crit by 5%"
     },
     "510020": {
         "ChineseShort": "属性球-幸运-掉落物表现"
     },
     "510021": {
         "ChineseShort": "属性球-幸运-属性增加",
-        "EnglishShort": "Luck up",
-        "EnglishLong": "Luck Increase 100%"
+        "EnglishShort": "Luck Bonus",
+        "EnglishLong": "Luck +100%"
     },
     "510022": {
         "ChineseShort": "英雄本buff机-幸运-属性增加",
-        "EnglishShort": "Luck up",
-        "EnglishLong": "Each layer increases Luck by 5%"
+        "EnglishShort": "Luck Bonus",
+        "EnglishLong": "Each stack increases Luck by 5%"
     },
     "510030": {
         "ChineseShort": "属性球-急速-掉落物表现"
     },
     "510031": {
         "ChineseShort": "属性球-急速-属性增加",
-        "EnglishShort": "Haste Increase",
-        "EnglishLong": "Haste Increase 40%"
+        "EnglishShort": "Haste Bonus",
+        "EnglishLong": "Haste +40%"
     },
     "510032": {
         "ChineseShort": "英雄本buff机-急速-属性增加",
-        "EnglishShort": "Haste Increase",
-        "EnglishLong": "Each layer increases Haste by 5%"
+        "EnglishShort": "Haste Bonus",
+        "EnglishLong": "Each stack increases Haste by 5%"
     },
     "510040": {
         "ChineseShort": "属性球-精通-掉落物表现"
     },
     "510041": {
         "ChineseShort": "属性球-精通-属性增加",
-        "EnglishShort": "Mastery Increase",
-        "EnglishLong": "Mastery Increase 100%"
+        "EnglishShort": "Mastery Bonus",
+        "EnglishLong": "Mastery +100%"
     },
     "510042": {
         "ChineseShort": "英雄本buff机-精通-属性增加",
-        "EnglishShort": "Mastery Increase",
-        "EnglishLong": "Each layer increases Mastery by 5%"
+        "EnglishShort": "Mastery Bonus",
+        "EnglishLong": "Each stack increases Mastery by 5%"
     },
     "510045": {
         "ChineseShort": "英雄本事件增益buff-攻击力百分比增加",
@@ -2016,6 +2056,11 @@
     "510091": {
         "ChineseShort": "锁定点名通用（持续15s可配时间"
     },
+    "510099": {
+        "ChineseShort": "大师本普攻减伤",
+        "EnglishShort": "Master's Protection",
+        "EnglishLong": "Reduced DMG taken from monsters' Basic Attacks"
+    },
     "510100": {
         "ChineseShort": "协会玩法 玩家免硬直"
     },
@@ -2048,7 +2093,7 @@
     },
     "510501": {
         "ChineseShort": "A类-眩晕",
-        "EnglishShort": "stun",
+        "EnglishShort": "Stun",
         "EnglishLong": "Stunned (Status Effect): unable to move or cast skills"
     },
     "510511": {
@@ -2079,22 +2124,22 @@
     "510541": {
         "ChineseShort": "D类-沉默",
         "EnglishShort": "Silence",
-        "EnglishLong": "Silenced (Negative Effect)"
+        "EnglishLong": "Silenced (Debuff)"
     },
     "510542": {
         "ChineseShort": "D类-减速30%",
         "EnglishShort": "Slow",
-        "EnglishLong": "Slowed (Negative Effect): Reduces move SPD by 30%"
+        "EnglishLong": "Slowed (Debuff): Reduces move SPD by 30%"
     },
     "510543": {
         "ChineseShort": "D类-定身",
         "EnglishShort": "Rooted",
-        "EnglishLong": "Rooted (Negative Effect)"
+        "EnglishLong": "Rooted (Debuff)"
     },
     "510571": {
         "ChineseShort": "E类-重伤100%",
-        "EnglishShort": "Severe Injury",
-        "EnglishLong": "Wound (Negative Effect): Reduces healing received by 100%."
+        "EnglishShort": "Wound",
+        "EnglishLong": "Wound (Debuff): Reduces healing received by 100%."
     },
     "510572": {
         "ChineseShort": "E类-中毒（未实装）",
@@ -2346,18 +2391,18 @@
     },
     "680201": {
         "ChineseShort": "水平跳开启buff",
-        "EnglishShort": "​Dash Jump​",
+        "EnglishShort": "Dash Jump",
         "EnglishLong": "Gain the ability to leap forward with a special movement. <br>After landing, a <style=\"accent-gn\">Timing Gauge</style> will appear. Jumping again at the right time fills <style=\"accent-gn\">Stamina. When the progress reaches the max, Stamina will be greatly restored.</style>"
     },
     "680301": {
         "ChineseShort": "五段跳开启buff",
-        "EnglishShort": "​​Triple Jump​",
+        "EnglishShort": "Chain Jump",
         "EnglishLong": "Perform 3 extra mid-air jumps."
     },
     "680401": {
         "ChineseShort": "立面跳跃开启buff",
         "EnglishShort": "Wall Jump",
-        "EnglishLong": "Kick walls to jump higher, consumes Stamina"
+        "EnglishLong": "Kick walls to jump higher, consumes Stamina."
     },
     "680501": {
         "ChineseShort": "立面奔跑开启buff",
@@ -2371,7 +2416,7 @@
     },
     "680601": {
         "ChineseShort": "跃动奔跑开启buff",
-        "EnglishShort": "​​Quick Dash​",
+        "EnglishShort": "Quick Dash",
         "EnglishLong": "Gain a nimble running state with side-step jumps, automatically vaults low obstacles"
     },
     "680701": {
@@ -2513,7 +2558,7 @@
     },
     "681829": {
         "ChineseShort": "变身测试BUFF-剑盾哥布林",
-        "EnglishShort": "Transformation Test - Goblin Swords"
+        "EnglishShort": "Transformation Test - Goblin Sword"
     },
     "681830": {
         "ChineseShort": "变身测试BUFF-蒂娜模型",
@@ -2545,7 +2590,7 @@
     },
     "681837": {
         "ChineseShort": "虚蚀蒂娜变身-锁太刀",
-        "EnglishShort": "Void Tina Transformation - Locked Tachi"
+        "EnglishShort": "Void Tina Transformation - Locked Blade"
     },
     "681838": {
         "ChineseShort": "艾露娜变身-纯模型",
@@ -2620,15 +2665,15 @@
     "681908": {},
     "682201": {},
     "682501": {
-        "EnglishShort": "​​Triple Jump​",
-        "EnglishLong": "Gain +1 extra midair jump, consuming Stamina, up to 3 jumps in total. <br>Grants immunity to fall."
+        "EnglishShort": "Chain Jump",
+        "EnglishLong": "Gain 1 extra air jump (costs Stamina), up to 3 jumps in total."
     },
     "682503": {
-        "EnglishShort": "​​Triple Jump​",
+        "EnglishShort": "Chain Jump",
         "EnglishLong": "Gain 1 extra air jump (costs Stamina), up to 4 jumps in total."
     },
     "682505": {
-        "EnglishShort": "​​Triple Jump​",
+        "EnglishShort": "Chain Jump",
         "EnglishLong": "Gain 1 extra air jump (costs Stamina), up to 5 jumps in total."
     },
     "682601": {
@@ -2660,7 +2705,7 @@
     },
     "683106": {
         "ChineseShort": "极限闪避后短时间无法恢复星源能量",
-        "EnglishShort": "Unable to recover star energy for a short time after extreme evasion."
+        "EnglishShort": "Unable to recover star energy for a short time after a perfect dodge."
     },
     "683110": {
         "ChineseShort": "副本通用难度标记-周本"
@@ -2697,18 +2742,18 @@
     },
     "683122": {
         "ChineseShort": "载具-马类普通跑特效",
-        "EnglishShort": "Mount - Horse normal running effect",
-        "EnglishLong": "Mount - Horse normal running effect"
+        "EnglishShort": "Mount - Horse running effect",
+        "EnglishLong": "Mount - Horse running effect"
     },
     "683123": {
         "ChineseShort": "载具-大机器人普通跑特效",
-        "EnglishShort": "Mount - Big robot normal running effect",
-        "EnglishLong": "Mount - Big robot normal running effect"
+        "EnglishShort": "Mount - Machina running effect",
+        "EnglishLong": "Mount - Machina running effect"
     },
     "683124": {
         "ChineseShort": "载具-兔子普通跑特效",
-        "EnglishShort": "Mount - Rabbit normal running effect",
-        "EnglishLong": "Mount - Rabbit normal running effect"
+        "EnglishShort": "Mount - Rabbit running effect",
+        "EnglishLong": "Mount - Rabbit running effect"
     },
     "683129": {
         "ChineseShort": "载具-猪类疾跑特效",
@@ -2738,7 +2783,7 @@
     },
     "683135": {
         "ChineseShort": "载具-小猪奔跑叠层",
-        "EnglishShort": "Piggy Run",
+        "EnglishShort": "Boars Run",
         "EnglishLong": "While running, can continuously break the speed limit, gaining increasingly faster speed bonuses"
     },
     "683136": {
@@ -2746,13 +2791,13 @@
     },
     "683137": {
         "ChineseShort": "载具-强化小猪奔跑叠层",
-        "EnglishShort": "Piggy Run Faster",
+        "EnglishShort": "Boars Run Faster",
         "EnglishLong": "While running, can continuously break the speed limit, gaining increasingly faster speed bonuses"
     },
     "683138": {
         "ChineseShort": "载具-滑板疾跑特效",
-        "EnglishShort": "Mount - Skateboard sprint effect",
-        "EnglishLong": "Mount - Skateboard sprint effect"
+        "EnglishShort": "Surfboard",
+        "EnglishLong": "Mount - Surfboard sprint effect"
     },
     "683139": {
         "ChineseShort": "载具-滑板冲刺"
@@ -2825,13 +2870,13 @@
     },
     "683161": {
         "ChineseShort": "载具-摩托滑板进阶疾跑特效",
-        "EnglishShort": "Mount - Advanced Motorized Skateboard Sprint Effect",
-        "EnglishLong": "Mount - Advanced Motorized Skateboard Sprint Effect"
+        "EnglishShort": "Mount - Advanced Motorized Surfboard Sprint Effect",
+        "EnglishLong": "Fashion Store - Accessories - Surfboard - Backwear"
     },
     "683162": {
         "ChineseShort": "载具-摩托滑板底部气流（起跳、走、普通跑）",
-        "EnglishShort": "Mount - Motorized Skateboard Bottom Airflow (Jump, Walk, Run)",
-        "EnglishLong": "Mount - Motorized Skateboard Bottom Airflow (Jump, Walk, Run)"
+        "EnglishShort": "Mount - Motorized Surfboard Bottom Airflow (Jump, Walk, Run)",
+        "EnglishLong": "Mount - Motorized Surfboard Bottom Airflow (Jump, Walk, Run)"
     },
     "683163": {
         "ChineseShort": "载具-加速技能循环特效"
@@ -2843,18 +2888,59 @@
     },
     "683165": {
         "ChineseShort": "载具-摩托滑板原皮疾跑特效",
-        "EnglishShort": "Mount - Motor Skateboard Base Skin Sprint Effect",
-        "EnglishLong": "Mount - Motor Skateboard Base Skin Sprint Effect"
+        "EnglishShort": "Mount - Motor Surfboard Base Skin Sprint Effect",
+        "EnglishLong": "Mount - Motor Surfboard Base Skin Sprint Effect"
     },
     "683166": {
         "ChineseShort": "载具-摩托滑板进阶皮普通跑特效",
-        "EnglishShort": "Mount - Motor Skateboard Advanced Skin Run Effect",
-        "EnglishLong": "Mount - Motor Skateboard Advanced Skin Run Effect"
+        "EnglishShort": "Mount - Motor Surfboard Advanced Skin Run Effect",
+        "EnglishLong": "Mount - Motor Surfboard Advanced Skin Run Effect"
     },
     "683167": {
         "ChineseShort": "载具-摩托滑板原皮普通跑特效",
-        "EnglishShort": "Mount - Motor Skateboard Base Skin Run Effect",
-        "EnglishLong": "Mount - Motor Skateboard Base Skin Run Effect"
+        "EnglishShort": "Mount - Motor Surfboard Base Skin Run Effect",
+        "EnglishLong": "Mount - Motor Surfboard Base Skin Run Effect"
+    },
+    "683168": {
+        "ChineseShort": "载具-摩托加速"
+    },
+    "683169": {
+        "ChineseShort": "载具-摩托移动充能"
+    },
+    "683170": {
+        "ChineseShort": "载具-机械狐狸加速"
+    },
+    "683171": {
+        "ChineseShort": "载具-进阶机械狐标记tag"
+    },
+    "683172": {
+        "ChineseShort": "载具-机械狐疾跑特效",
+        "EnglishShort": "Mount - Golem Foxen sprint effect",
+        "EnglishLong": "Mount - Golem Foxen sprint effect"
+    },
+    "683173": {
+        "ChineseShort": "载具-机械狐移动充能"
+    },
+    "683174": {
+        "ChineseShort": "载具-机械类QTE"
+    },
+    "683175": {
+        "ChineseShort": "载具-机械类生效判定"
+    },
+    "683176": {
+        "ChineseShort": "载具-进阶摩托标记tag"
+    },
+    "683177": {
+        "ChineseShort": "载具-摩托特技表现特效（QTE成功）"
+    },
+    "683178": {
+        "ChineseShort": "载具-摩托特技表现特效（QTE失败）"
+    },
+    "683179": {
+        "ChineseShort": "载具-摩托抬头段短喷"
+    },
+    "683180": {
+        "ChineseShort": "载具-机械系减CD"
     },
     "683301": {
         "ChineseShort": "BOSS对主要目标伤害提高300%----临时"
@@ -2959,8 +3045,8 @@
     },
     "683624": {
         "ChineseShort": "艾露娜hot",
-        "EnglishShort": "HP Regan",
-        "EnglishLong": "Regan a small amount of HP over 10s."
+        "EnglishShort": "HP Regen",
+        "EnglishLong": "Regen a small amount of HP over 10s."
     },
     "683625": {
         "ChineseShort": "艾露娜奶环释放条件"
@@ -3014,7 +3100,7 @@
     },
     "700005": {
         "ChineseShort": "虚蚀之种加属性",
-        "EnglishShort": "Void Corruption Buff"
+        "EnglishShort": "Void Boost"
     },
     "700006": {
         "ChineseShort": "虚蚀之种回血1"
@@ -3040,7 +3126,7 @@
     "700013": {
         "ChineseShort": "虚蚀之种暗蚀dot",
         "EnglishShort": "Dark Corruption",
-        "EnglishLong": "Each layer deals 1% of Max HP damage per second"
+        "EnglishLong": "Each stack deals 1% of Max HP damage per second"
     },
     "700014": {
         "ChineseShort": "虚蚀之种怪物全身特效"
@@ -3095,8 +3181,8 @@
     },
     "700031": {
         "ChineseShort": "S1虚蚀残影降攻击力",
-        "EnglishShort": "Decrease Attack Power",
-        "EnglishLong": "Decrease Attack Power by 50%"
+        "EnglishShort": "ATK down",
+        "EnglishLong": "ATK -50%"
     },
     "700032": {
         "ChineseShort": "虚蚀残影数量标记"
@@ -3123,26 +3209,26 @@
     },
     "700039": {
         "ChineseShort": "虚蚀残影读条怪击杀增益（弱化版）",
-        "EnglishShort": "Void Corruption Buff",
-        "EnglishLong": "Each layer increases Weak Point Strike by 4% and Speed by 5%."
+        "EnglishShort": "Void Boost",
+        "EnglishLong": "Each stack increases Crit by 4% and Speed by 5%."
     },
     "700040": {
         "ChineseShort": "虚蚀残影读条怪击杀增益（强化版）",
-        "EnglishShort": "Void Corruption Buff",
-        "EnglishLong": "Each layer increases Weak Point Strike by 2% and Speed by 3%"
+        "EnglishShort": "Void Boost",
+        "EnglishLong": "Each stack increases Crit by 2% and Speed by 3%"
     },
     "700041": {
         "ChineseShort": "虚蚀陨星未命中标记"
     },
     "700042": {
         "ChineseShort": "虚蚀陨星命中增益（弱化版）",
-        "EnglishShort": "Void Corruption Buff",
-        "EnglishLong": "Each layer increases Haste by 20% and Speed by 30%"
+        "EnglishShort": "Void Boost",
+        "EnglishLong": "Each stack increases Haste by 20% and Speed by 30%"
     },
     "700043": {
         "ChineseShort": "虚蚀陨星命中增益（强化版）",
-        "EnglishShort": "Void Corruption Buff",
-        "EnglishLong": "Each layer increases Haste by 10% and Speed by 30%"
+        "EnglishShort": "Void Boost",
+        "EnglishLong": "Each stack increases Haste by 10% and Speed by 30%"
     },
     "700044": {
         "ChineseShort": "幻象入侵低难度出生buff"
@@ -3162,13 +3248,13 @@
     },
     "700049": {
         "ChineseShort": "幻象入侵击杀增益（弱化版）",
-        "EnglishShort": "Void Corruption Buff",
-        "EnglishLong": "Each layer increases Mastery by 20% and Speed by 30%"
+        "EnglishShort": "Void Boost",
+        "EnglishLong": "Each stack increases Mastery by 20% and Speed by 30%"
     },
     "700050": {
         "ChineseShort": "幻象入侵击杀增益（强化版）",
-        "EnglishShort": "Void Corruption Buff",
-        "EnglishLong": "Each layer increases Mastery by 10% and Speed by 30%"
+        "EnglishShort": "Void Boost",
+        "EnglishLong": "Each stack increases Mastery by 10% and Speed by 30%"
     },
     "700051": {
         "ChineseShort": "散逸能量持续时间读条20s",
@@ -3221,17 +3307,17 @@
     },
     "700067": {
         "ChineseShort": "散逸能量捡球增益（弱化版）",
-        "EnglishShort": "Void Corruption Buff",
-        "EnglishLong": "Each layer increases versatility by 3%"
+        "EnglishShort": "Void Boost",
+        "EnglishLong": "Each stack increases versatility by 3%"
     },
     "700068": {
         "ChineseShort": "散逸能量捡球增益（强化版）",
-        "EnglishShort": "Void Corruption Buff",
-        "EnglishLong": "Each layer increases versatility by 3%"
+        "EnglishShort": "Void Boost",
+        "EnglishLong": "Each stack increases versatility by 3%"
     },
     "700069": {
         "ChineseShort": "幻象入侵闪电破甲",
-        "EnglishShort": "​Void Corruption Tear",
+        "EnglishShort": "Void Tear",
         "EnglishLong": "Physical and magical defense -5%"
     },
     "700070": {
@@ -3249,12 +3335,12 @@
     "700074": {
         "ChineseShort": "散逸能量强化（弱化版）",
         "EnglishShort": "Dispersed Energy Enhancement",
-        "EnglishLong": "Each layer increases versatility by 20% and speed by 30%"
+        "EnglishLong": "Each stack increases versatility by 20% and speed by 30%"
     },
     "700075": {
         "ChineseShort": "散逸能量强化（强化版）",
         "EnglishShort": "Dispersed Energy Enhancement",
-        "EnglishLong": "Each layer increases versatility by 10% and speed by 30%"
+        "EnglishLong": "Each stack increases versatility by 10% and speed by 30%"
     },
     "700076": {
         "ChineseShort": "散逸能量持续时间标记"
@@ -3264,7 +3350,7 @@
     },
     "700078": {
         "ChineseShort": "散逸能量本体回血",
-        "EnglishLong": "Restore 5% health"
+        "EnglishLong": "Restore 5% HP"
     },
     "700079": {
         "ChineseShort": "虚蚀傀儡出生渐显"
@@ -3280,8 +3366,8 @@
     },
     "700083": {
         "ChineseShort": "虚蚀战利品buff",
-        "EnglishShort": "Boon of the ​Void Corruption",
-        "EnglishLong": "Obtained ​Void Corruption loot, can receive special loot rewards upon dungeon completion!"
+        "EnglishShort": "Boon of the Void Corruption",
+        "EnglishLong": "Obtained Void Corruption loot, can receive special loot rewards upon dungeon completion!"
     },
     "700084": {
         "ChineseShort": "虚蚀战利品交互通信buff"
@@ -3289,12 +3375,12 @@
     "700085": {
         "ChineseShort": "虚蚀纵斩减速",
         "EnglishShort": "Staggering",
-        "EnglishLong": "Affected by ​Void Corruption Power, slowed by 75%"
+        "EnglishLong": "Affected by Void Corruption Power, slowed by 75%"
     },
     "700086": {
         "ChineseShort": "虚蚀圆斩破甲",
         "EnglishShort": "Rend",
-        "EnglishLong": "Affected by ​Void Corruption Power, defense -50%"
+        "EnglishLong": "Affected by Void Corruption Power, defense -50%"
     },
     "700087": {
         "ChineseShort": "虚蚀傀儡施法护盾"
@@ -3337,8 +3423,8 @@
     },
     "700107": {
         "ChineseShort": "虚蚀之种光环生效",
-        "EnglishShort": "​Void Aura Enhancement",
-        "EnglishLong": "Each stack increases DMG dealt by 25% and DMG RED by 10%"
+        "EnglishShort": "Void Aura Enhancement",
+        "EnglishLong": "Each stack increases DMG dealt by 25% and DMG Reduction by 10%"
     },
     "700108": {
         "ChineseShort": "虚蚀外壳护盾"
@@ -3363,7 +3449,7 @@
     },
     "700115": {
         "ChineseShort": "血池回血",
-        "EnglishLong": "Restores 3% health"
+        "EnglishLong": "Restores 3% HP"
     },
     "700116": {
         "ChineseShort": "虚蚀之种随机强化效果"
@@ -3379,11 +3465,11 @@
     },
     "700120": {
         "ChineseShort": "虚蚀闪电链连线",
-        "EnglishShort": "​Void Corruption Link"
+        "EnglishShort": "Void Corruption Link"
     },
     "700121": {
         "ChineseShort": "虚蚀闪电链连线2",
-        "EnglishShort": "​Void Corruption Link"
+        "EnglishShort": "Void Corruption Link"
     },
     "700122": {
         "ChineseShort": "普通虚蚀傀儡前置概率"
@@ -3456,7 +3542,7 @@
     "705001": {
         "ChineseShort": "寒霜食人魔冰霜buff",
         "EnglishShort": "Frozen Gale",
-        "EnglishLong": "Each layer reduces speed by 10%"
+        "EnglishLong": "Each stack reduces speed by 10%"
     },
     "705002": {
         "ChineseShort": "寒霜食人魔冻结buff",
@@ -3586,8 +3672,8 @@
     },
     "800008": {
         "ChineseShort": "阿卡多的引雷弹",
-        "EnglishShort": "Arcado's ​Raijin Dash​",
-        "EnglishLong": "Being Targeted by Arcado's ​Raijin Dash​"
+        "EnglishShort": "Arcado's Raijin Dash",
+        "EnglishLong": "Being Targeted by Arcado's Raijin Dash"
     },
     "800009": {
         "ChineseShort": "双子机械的光环",
@@ -3597,7 +3683,7 @@
     "800010": {
         "ChineseShort": "双子的火种",
         "EnglishShort": "Twin's Fire Seed",
-        "EnglishLong": "Twin Plants a Fire Seed on You, Reducing Defense, Creating a Flame Zone After 10 Stacks"
+        "EnglishLong": "Twin Plants a Fire Seed on You, Reducing Armor, Creating a Flame Zone After 10 Stacks"
     },
     "800011": {
         "ChineseShort": "双子的怒火",
@@ -3668,7 +3754,7 @@
     },
     "800026": {
         "ChineseShort": "核弹倒计时",
-        "EnglishShort": "Nuke Countdown",
+        "EnglishShort": "Nuke",
         "EnglishLong": "The Colossus is preparing a nuke, dealing lethal damage to the entire field. Shell its head to cancel the strike."
     },
     "800027": {
@@ -3709,7 +3795,7 @@
     },
     "800053": {
         "ChineseShort": "双子共生减伤盾",
-        "EnglishShort": "Twin Symbiosis DMG RED Shield"
+        "EnglishShort": "Twin Symbiosis DMG Reduction Shield"
     },
     "800054": {
         "ChineseShort": "双子近战逻辑",
@@ -3881,8 +3967,8 @@
     },
     "803050": {
         "ChineseShort": "蜂巢生命值归0时爆炸buff",
-        "EnglishShort": "Explosion bonus when hive health reaches 0",
-        "EnglishLong": "Explosion bonus when hive health reaches 0"
+        "EnglishShort": "Explosion bonus when hive HP reaches 0",
+        "EnglishLong": "Explosion bonus when hive HP reaches 0"
     },
     "803051": {
         "ChineseShort": "风球引力Buff"
@@ -3911,8 +3997,8 @@
     },
     "803062": {
         "ChineseShort": "哥布林精英生命值低于20%",
-        "EnglishShort": "Goblin Elite health below 20%",
-        "EnglishLong": "Goblin Elite health below 20%"
+        "EnglishShort": "Goblin Elite HP below 20%",
+        "EnglishLong": "Goblin Elite HP below 20%"
     },
     "803063": {
         "ChineseShort": "蜂毒",
@@ -4621,7 +4707,7 @@
     "823005": {
         "ChineseShort": "激光叠易伤buff",
         "EnglishShort": "Scorching scar",
-        "EnglishLong": "Each layer of scorch marks increases vulnerability"
+        "EnglishLong": "Each stack of scorch marks increases vulnerability"
     },
     "823006": {
         "ChineseShort": "小机器人蓄电状态",
@@ -4643,8 +4729,8 @@
     },
     "823010": {
         "ChineseShort": "巨塔大机器人灼烧dot",
-        "EnglishShort": "Flame Aftermath",
-        "EnglishLong": "Continuous loss of health per second"
+        "EnglishShort": "Flame Echo",
+        "EnglishLong": "Continuous loss of HP per second"
     },
     "823011": {
         "ChineseShort": "巨塔大机器人小导弹锁定"
@@ -4758,7 +4844,7 @@
     "823213": {
         "ChineseShort": "中毒",
         "EnglishShort": "Touch of Darkness",
-        "EnglishLong": "The longer you stay in darkness, the more HP lost and the lower your Attack Power."
+        "EnglishLong": "The longer you stay in darkness, the more HP lost and the lower your ATK."
     },
     "823214": {
         "ChineseShort": "中毒叠层",
@@ -4944,28 +5030,28 @@
     },
     "832106": {
         "ChineseShort": "小伊的故事会议范围",
-        "EnglishShort": "Airy's Story - Meeting Area",
-        "EnglishLong": "Airy's Story - Meeting Area"
+        "EnglishShort": "Ee-chan's Story - Meeting Area",
+        "EnglishLong": "Ee-chan's Story - Meeting Area"
     },
     "832107": {
         "ChineseShort": "小伊的故事跳舞范围",
-        "EnglishShort": "Airy's Story - Dance Area",
-        "EnglishLong": "Airy's Story - Dance Area"
+        "EnglishShort": "Ee-chan's Story - Dance Area",
+        "EnglishLong": "Ee-chan's Story - Dance Area"
     },
     "832108": {
         "ChineseShort": "小伊的故事会议范围标记",
-        "EnglishShort": "Airy's Story - Meeting Area Marker",
-        "EnglishLong": "Airy's Story - Meeting Area Marker"
+        "EnglishShort": "Ee-chan's Story - Meeting Area Marker",
+        "EnglishLong": "Ee-chan's Story - Meeting Area Marker"
     },
     "832109": {
         "ChineseShort": "小伊的故事舞会范围标记",
-        "EnglishShort": "Airy's Story - Dance Area Marker",
-        "EnglishLong": "Airy's Story - Dance Area Marker"
+        "EnglishShort": "Ee-chan's Story - Dance Area Marker",
+        "EnglishLong": "Ee-chan's Story - Dance Area Marker"
     },
     "832110": {
         "ChineseShort": "小伊的故事舞会加分判断",
-        "EnglishShort": "Airy's Story - Balloon Bonus Evaluation",
-        "EnglishLong": "Airy's Story - Balloon Bonus Evaluation"
+        "EnglishShort": "Ee-chan's Story - Balloon Bonus Evaluation",
+        "EnglishLong": "Ee-chan's Story - Balloon Bonus Evaluation"
     },
     "832111": {
         "ChineseShort": "学习推千金石技能",
@@ -4974,13 +5060,13 @@
     },
     "832112": {
         "ChineseShort": "小伊的故事捡到雪球特效",
-        "EnglishShort": "Airy's Story - Snowball Effect Acquired",
-        "EnglishLong": "Airy's Story - Snowball Effect Acquired"
+        "EnglishShort": "Ee-chan's Story - Snowball Effect Acquired",
+        "EnglishLong": "Ee-chan's Story - Snowball Effect Acquired"
     },
     "832113": {
         "ChineseShort": "小伊的故事已坐下标记",
-        "EnglishShort": "Airy's Story - Sitting Marker",
-        "EnglishLong": "Airy's Story - Sitting Marker"
+        "EnglishShort": "Ee-chan's Story - Sitting Marker",
+        "EnglishLong": "Ee-chan's Story - Sitting Marker"
     },
     "832114": {
         "ChineseShort": "转场屏幕效果",
@@ -5009,28 +5095,28 @@
     },
     "832119": {
         "ChineseShort": "小伊的故事千金石目的地",
-        "EnglishShort": "Airy's Story - Hefty Stone Destination",
-        "EnglishLong": "Airy's Story - Hefty Stone Destination"
+        "EnglishShort": "Ee-chan's Story - Hefty Stone Destination",
+        "EnglishLong": "Ee-chan's Story - Hefty Stone Destination"
     },
     "832120": {
         "ChineseShort": "小伊的故事千金石标识",
-        "EnglishShort": "Airy's Story - Hefty Stone Marker",
-        "EnglishLong": "Airy's Story - Hefty Stone Marker"
+        "EnglishShort": "Ee-chan's Story - Hefty Stone Marker",
+        "EnglishLong": "Ee-chan's Story - Hefty Stone Marker"
     },
     "832121": {
         "ChineseShort": "小伊的故事接鱼范围",
-        "EnglishShort": "Airy's Story - Fish Catching Range",
-        "EnglishLong": "Airy's Story - Fish Catching Range"
+        "EnglishShort": "Ee-chan's Story - Fish Catching Range",
+        "EnglishLong": "Ee-chan's Story - Fish Catching Range"
     },
     "832122": {
         "ChineseShort": "小伊的故事篮子",
-        "EnglishShort": "Airy's Story - Basket",
-        "EnglishLong": "Airy's Story - Basket"
+        "EnglishShort": "Ee-chan's Story - Basket",
+        "EnglishLong": "Ee-chan's Story - Basket"
     },
     "832123": {
         "ChineseShort": "小伊的故事龙卷风",
-        "EnglishShort": "Airy's Story - Tornado",
-        "EnglishLong": "Airy's Story - Tornado"
+        "EnglishShort": "Ee-chan's Story - Tornado",
+        "EnglishLong": "Ee-chan's Story - Tornado"
     },
     "832124": {
         "ChineseShort": "白云消失特效",
@@ -5044,8 +5130,8 @@
     },
     "832126": {
         "ChineseShort": "小伊的故事掉落眩晕惩罚",
-        "EnglishShort": "Stun penalty from Airy's story drop",
-        "EnglishLong": "Stun penalty from Airy's story drop"
+        "EnglishShort": "Stun penalty from Ee-chan's story drop",
+        "EnglishLong": "Stun penalty from Ee-chan's story drop"
     },
     "840001": {
         "ChineseShort": "标记: 一阶段"
@@ -5067,13 +5153,13 @@
     },
     "840008": {
         "ChineseShort": "虚蚀束缚",
-        "EnglishShort": "​Void Corruption Binding",
+        "EnglishShort": "Void Corruption Binding",
         "EnglishLong": "Bound and unable to move"
     },
     "840010": {
         "ChineseShort": "虚蚀侵蚀-传染BUFF",
-        "EnglishShort": "Void Sigil​",
-        "EnglishLong": "Being corroded by ​Void Corruption, will explode when the countdown ends"
+        "EnglishShort": "Void Sigil",
+        "EnglishLong": "Being corroded by Void Corruption, will explode when the countdown ends"
     },
     "840011": {
         "ChineseShort": "虚蚀侵蚀技能"
@@ -5083,8 +5169,8 @@
     },
     "840013": {
         "ChineseShort": "已经被传染过的BUFF标记",
-        "EnglishShort": "​Void Corruption Intolerance",
-        "EnglishLong": "This target has been corroded by ​Void Corruption, will continue to take damage if corroded again"
+        "EnglishShort": "Void Corruption Intolerance",
+        "EnglishLong": "This target has been corroded by Void Corruption, will continue to take damage if corroded again"
     },
     "840014": {
         "ChineseShort": "蒂娜BOSS-解毒计时"
@@ -5106,11 +5192,11 @@
     },
     "840401": {
         "ChineseShort": "虚蚀BUFF-英雄难度",
-        "EnglishShort": "​Void Corruption"
+        "EnglishShort": "Void Corruption"
     },
     "840402": {
         "ChineseShort": "虚蚀BUFF-普通难度",
-        "EnglishShort": "​Void Corruption"
+        "EnglishShort": "Void Corruption"
     },
     "840501": {
         "ChineseShort": "蒂娜BOSS被动"
@@ -5132,11 +5218,11 @@
     },
     "840902": {
         "ChineseShort": "虚蚀重击-高难引力",
-        "EnglishShort": "​Void Corruption Heavy Strike - High Gravity"
+        "EnglishShort": "Void Corruption Heavy Strike - High Gravity"
     },
     "840903": {
         "ChineseShort": "虚蚀重击-绝难引力",
-        "EnglishShort": "​Void Corruption Heavy Strike - Extreme Gravity"
+        "EnglishShort": "Void Corruption Heavy Strike - Extreme Gravity"
     },
     "841001": {
         "ChineseShort": "激昂倒计时BUFF"
@@ -5167,7 +5253,7 @@
     },
     "841504": {
         "ChineseShort": "蓄力前刺目标标记锁定",
-        "EnglishShort": "​Void Corruption Binding",
+        "EnglishShort": "Void Corruption Binding",
         "EnglishLong": "Being suppressed by Void Tina, unable to move"
     },
     "841601": {
@@ -5428,8 +5514,8 @@
     },
     "851430": {
         "ChineseShort": "虚蚀深处-被击掉道具",
-        "EnglishShort": "Voidcore — Item Drop on Hit",
-        "EnglishLong": "Voidcore — Item Drop on Hit"
+        "EnglishShort": "Voidcore - Item Drop on Hit",
+        "EnglishLong": "Voidcore - Item Drop on Hit"
     },
     "851501": {
         "ChineseShort": "减血70%BUFF"
@@ -5471,8 +5557,8 @@
     },
     "851520": {
         "ChineseShort": "增加50%攻击力",
-        "EnglishShort": "Increase Attack Power by 50%",
-        "EnglishLong": "Increase Attack Power by 50%"
+        "EnglishShort": "Increase ATK by 50%",
+        "EnglishLong": "Increase ATK by 50%"
     },
     "851521": {
         "ChineseShort": "增加50%防御力",
@@ -5523,7 +5609,7 @@
     },
     "851620": {
         "ChineseShort": "斯卡尔锁血1%",
-        "EnglishShort": "Skarl lock health at 1%"
+        "EnglishShort": "Skarl lock HP at 1%"
     },
     "851621": {
         "ChineseShort": "隐身不可选中buff",
@@ -5551,8 +5637,8 @@
     },
     "851627": {
         "ChineseShort": "奈莫莱斯转变阵营",
-        "EnglishShort": "Naimoles change faction",
-        "EnglishLong": "Naimoles change faction"
+        "EnglishShort": "Nemolais change faction",
+        "EnglishLong": "Nemolais change faction"
     },
     "851628": {
         "ChineseShort": "强行中断技能",
@@ -5566,13 +5652,13 @@
     },
     "851630": {
         "ChineseShort": "斯卡尔血量监控",
-        "EnglishShort": "Skarl health monitoring",
-        "EnglishLong": "Skarl health monitoring"
+        "EnglishShort": "Skarl HP monitoring",
+        "EnglishLong": "Skarl HP monitoring"
     },
     "851631": {
         "ChineseShort": "奈莫莱斯标记",
-        "EnglishShort": "Naimoles mark",
-        "EnglishLong": "Naimoles mark"
+        "EnglishShort": "Nemolais mark",
+        "EnglishLong": "Nemolais mark"
     },
     "851640": {
         "ChineseShort": "海怪半血放技能"
@@ -5781,13 +5867,13 @@
     },
     "852105": {
         "ChineseShort": "虚蚀屏障表现-持续（前端）",
-        "EnglishShort": "​Void Corruption effect - continuous (frontend)",
-        "EnglishLong": "​Void Corruption effect - continuous (frontend)"
+        "EnglishShort": "Void Corruption effect - continuous (frontend)",
+        "EnglishLong": "Void Corruption effect - continuous (frontend)"
     },
     "852106": {
         "ChineseShort": "虚蚀屏障表现-消失（前端）",
-        "EnglishShort": "​Void Corruption barrier effect - disappearance (frontend)",
-        "EnglishLong": "​Void Corruption barrier effect - disappearance (frontend)"
+        "EnglishShort": "Void Corruption barrier effect - disappearance (frontend)",
+        "EnglishLong": "Void Corruption barrier effect - disappearance (frontend)"
     },
     "852201": {
         "ChineseShort": "虚蚀怪物出生地点标记"
@@ -6036,7 +6122,7 @@
     "855107": {
         "ChineseShort": "山贼衰弱毒素",
         "EnglishShort": "Weakening Toxin",
-        "EnglishLong": "Each layer reduces defense"
+        "EnglishLong": "Each stack reduces defense"
     },
     "855108": {
         "ChineseShort": "A类-电磁眩晕",
@@ -6124,8 +6210,8 @@
     },
     "855132": {
         "ChineseShort": "虚弱圆舞减攻击力",
-        "EnglishShort": "Attack Power Reduction",
-        "EnglishLong": "Hit by Weakness Whirl Slash, each layer reduces Attack Power"
+        "EnglishShort": "ATK Reduction",
+        "EnglishLong": "Hit by Weakness Whirl Slash, Each stack reduces ATK"
     },
     "855133": {
         "ChineseShort": "盾兵援护读条",
@@ -6144,14 +6230,14 @@
     "855137": {
         "ChineseShort": "山贼灼烧dot",
         "EnglishShort": "Burn",
-        "EnglishLong": "Continuous loss of health per second"
+        "EnglishLong": "Continuous loss of HP per second"
     },
     "855138": {
         "ChineseShort": "伤兵防护罩"
     },
     "855139": {
         "ChineseShort": "剑士加攻读条",
-        "EnglishShort": "Increase Attack Power"
+        "EnglishShort": "Increase ATK"
     },
     "855140": {
         "ChineseShort": "剑士吟唱成功后群体加攻"
@@ -6234,7 +6320,7 @@
     },
     "855172": {
         "ChineseShort": "玩家-治疗强度增益",
-        "EnglishLong": "Restore 5% health"
+        "EnglishLong": "Restore 5% HP"
     },
     "855173": {
         "ChineseShort": "点名buff"
@@ -6735,7 +6821,7 @@
     },
     "873302": {
         "ChineseShort": "触发虚蚀残影",
-        "EnglishShort": "Trigger ​Void Corruption Afterimage",
+        "EnglishShort": "Trigger Void Corruption Afterimage",
         "EnglishLong": "Trigger upon entering combat"
     },
     "873303": {
@@ -6758,7 +6844,7 @@
     "873308": {
         "ChineseShort": "虚蚀晶体回血buff",
         "EnglishShort": "Void Crystal Healing Buff",
-        "EnglishLong": "Restore 5% health"
+        "EnglishLong": "Restore 5% HP"
     },
     "873309": {
         "ChineseShort": "虚蚀晶体删除标记",
@@ -6767,38 +6853,38 @@
     },
     "873401": {
         "ChineseShort": "虚蚀硬化",
-        "EnglishShort": "​Void Corruption Hardening",
+        "EnglishShort": "Void Corruption Hardening",
         "EnglishLong": "Enemies carrying [Void Seed] are immune to all control effects"
     },
     "873402": {
         "ChineseShort": "虚蚀硬化免控效果",
         "EnglishShort": "Void Corruption Hardening - Control Immunity",
-        "EnglishLong": "Enemies carrying [Void Seed] are immune to all control effects when their health is below 30%"
+        "EnglishLong": "Enemies carrying [Void Seed] are immune to all control effects when their HP is below 30%"
     },
     "873403": {
         "ChineseShort": "触发虚蚀雾",
-        "EnglishShort": "Trigger ​Void Engram",
-        "EnglishLong": "Trigger ​Void Engram"
+        "EnglishShort": "Trigger Void Engram",
+        "EnglishLong": "Trigger Void Engram"
     },
     "873404": {
         "ChineseShort": "触发虚蚀火山",
-        "EnglishShort": "Trigger ​Void Corruption Volcano",
-        "EnglishLong": "Trigger ​Void Corruption Volcano"
+        "EnglishShort": "Trigger Void Corruption Volcano",
+        "EnglishLong": "Trigger Void Corruption Volcano"
     },
     "873405": {
         "ChineseShort": "词缀：精锐",
         "EnglishShort": "Elite",
-        "EnglishLong": "Elite enemies +20% health and +30% damage"
+        "EnglishLong": "Elite enemies HP +20%, DMG +30%"
     },
     "873406": {
         "ChineseShort": "词缀：强韧",
         "EnglishShort": "Tenacity",
-        "EnglishLong": "Minion enemies +30% health and +10% damage"
+        "EnglishLong": "Minion enemies HP +30%, DMG +10%"
     },
     "873407": {
         "ChineseShort": "词缀：残暴",
         "EnglishShort": "Brutal",
-        "EnglishLong": "Boss enemies +15% health and +10% damage"
+        "EnglishLong": "Boss enemies HP +15%, DMG +10%"
     },
     "873408": {
         "ChineseShort": "虚蚀晶体消失读条",
@@ -6815,7 +6901,7 @@
     "873411": {
         "ChineseShort": "词缀：进化",
         "EnglishShort": "Evolution",
-        "EnglishLong": "Enemy health +25%, damage +15%"
+        "EnglishLong": "Enemy HP +25%, DMG +15%"
     },
     "873412": {
         "ChineseShort": "词缀：治疗之赐"
@@ -6841,57 +6927,57 @@
     "873419": {
         "ChineseShort": "词缀：进化",
         "EnglishShort": "Evolution",
-        "EnglishLong": "Enemy +50% health and +30% damage"
+        "EnglishLong": "Enemy HP +50%, DMG +30%"
     },
     "873420": {
         "ChineseShort": "虚蚀残影触发1",
-        "EnglishShort": "​Void Corruption Afterimage Trigger 1",
-        "EnglishLong": "​Void Corruption Afterimage Trigger 1"
+        "EnglishShort": "Void Afterimage1",
+        "EnglishLong": "Void Afterimage1"
     },
     "873421": {
         "ChineseShort": "虚蚀残影触发2",
-        "EnglishShort": "​Void Corruption Afterimage Trigger 2",
-        "EnglishLong": "​Void Corruption Afterimage Trigger 2"
+        "EnglishShort": "Void Afterimage2",
+        "EnglishLong": "Void Afterimage2"
     },
     "873422": {
         "ChineseShort": "虚蚀陨星触发1",
-        "EnglishShort": "​Void Corruption Meteor Trigger 1",
-        "EnglishLong": "​Void Corruption Meteor Trigger 1"
+        "EnglishShort": "Void Meteor 1",
+        "EnglishLong": "Void Meteor 1"
     },
     "873423": {
         "ChineseShort": "虚蚀陨星触发2",
-        "EnglishShort": "​Void Corruption Meteor Trigger 2",
-        "EnglishLong": "​Void Corruption Meteor Trigger 2"
+        "EnglishShort": "Void Meteor 2",
+        "EnglishLong": "Void Meteor 2"
     },
     "873424": {
         "ChineseShort": "幻象入侵触发1",
-        "EnglishShort": "Illusion Invasion Trigger 1",
-        "EnglishLong": "Illusion Invasion Trigger 1"
+        "EnglishShort": "Illusion Invasion 1",
+        "EnglishLong": "Illusion Invasion 1"
     },
     "873425": {
         "ChineseShort": "幻象入侵触发2",
-        "EnglishShort": "Illusion Invasion Trigger 2",
-        "EnglishLong": "Illusion Invasion Trigger 2"
+        "EnglishShort": "Illusion Invasion 2",
+        "EnglishLong": "Illusion Invasion 2"
     },
     "873426": {
         "ChineseShort": "散逸能量触发1",
-        "EnglishShort": "Dissipating Energy Trigger 1",
-        "EnglishLong": "Dissipating Energy Trigger 1"
+        "EnglishShort": "Dispersed Energy 1",
+        "EnglishLong": "Dispersed Energy 1"
     },
     "873427": {
         "ChineseShort": "散逸能量触发2",
-        "EnglishShort": "Dissipating Energy Trigger 2",
-        "EnglishLong": "Dissipating Energy Trigger 2"
+        "EnglishShort": "Dispersed Energy 2",
+        "EnglishLong": "Dispersed Energy 2"
     },
     "873501": {
         "ChineseShort": "虚蚀链接（废弃）",
-        "EnglishShort": "​Void Corruption Link",
+        "EnglishShort": "Void Corruption Link",
         "EnglishLong": "While connected, both players deal 50% less damage. Connection breaks when players move closer or farther apart."
     },
     "873502": {
         "ChineseShort": "衰弱链接-降低攻击力",
-        "EnglishShort": "​Weakening Link",
-        "EnglishLong": "Each layer reduces Attack Power by 20%, get close to another player to remove the effect!"
+        "EnglishShort": "Weakening Link",
+        "EnglishLong": "Each stack reduces ATK by 20%, get close to another player to remove the effect!"
     },
     "880001": {
         "ChineseShort": "英雄本星元失衡事件区域1"
@@ -7025,8 +7111,8 @@
     },
     "880304": {
         "ChineseShort": "禁锢控制效果",
-        "EnglishShort": "Immobilization Control Effect",
-        "EnglishLong": "Immobilization Control Effect"
+        "EnglishShort": "Immobilization",
+        "EnglishLong": "Immobilization"
     },
     "880401": {
         "ChineseShort": "跳砍预警"
@@ -7150,7 +7236,7 @@
     },
     "880533": {
         "ChineseShort": "雷电兽人血量监控",
-        "EnglishShort": "Lightning Orc Health Monitoring"
+        "EnglishShort": "Lightning Orc HP Monitoring"
     },
     "880534": {
         "ChineseShort": "星元救人反选标记",
@@ -7297,7 +7383,7 @@
     "880628": {
         "ChineseShort": "陷入黑暗",
         "EnglishShort": "Touch of Darkness",
-        "EnglishLong": "Damage ability greatly decreases in ​Void Corruption Darkness!"
+        "EnglishLong": "Damage ability greatly decreases in Void Corruption Darkness!"
     },
     "880629": {
         "ChineseShort": "免疫黑暗",
@@ -7320,7 +7406,7 @@
     "880633": {
         "ChineseShort": "获得小光点",
         "EnglishShort": "Candle Energy",
-        "EnglishLong": "Energy that can overdirve the Light Domain Pointer, lasts only 15s before disappearing"
+        "EnglishLong": "Energy that can charge the Light Domain Pointer. Disappears after 15 seconds."
     },
     "880634": {
         "ChineseShort": "光源装置充能",
@@ -7455,9 +7541,7 @@
         "ChineseShort": "黑暗减属性"
     },
     "880673": {
-        "ChineseShort": "木头人筛选玩家移动",
-        "EnglishShort": "Wooden Man - Player Movement Filter",
-        "EnglishLong": "Wooden Man - Player Movement Filter"
+        "ChineseShort": "木头人-不准动监测-动的玩家会被施加惩罚效果"
     },
     "880674": {
         "ChineseShort": "拉链释放者（队伍）",
@@ -7465,32 +7549,29 @@
         "EnglishLong": "Zipper"
     },
     "880675": {
-        "ChineseShort": "小伊木头人开场buff",
-        "EnglishShort": "Wooden Man Airy Opening Buff",
-        "EnglishLong": "Wooden Man Airy Opening Buff"
+        "ChineseShort": "木头人-开场小伊给自己发送启动的ai事件"
     },
     "880676": {
-        "ChineseShort": "木头人被发现惩罚"
+        "ChineseShort": "木头人-被发现惩罚"
     },
     "880677": {
-        "ChineseShort": "木头人抵达终点1",
-        "EnglishShort": "Wooden Man - Reached Finish Line",
-        "EnglishLong": "Wooden Man - Reached Finish Line"
+        "ChineseShort": "木头人-检测玩家当前进度",
+        "EnglishShort": "Wooden Dummy - Reached Finish Line",
+        "EnglishLong": "Wooden Dummy - Reached Finish Line"
     },
     "880678": {
-        "ChineseShort": "木头人玩家限制buff",
-        "EnglishShort": "Wooden Man - layer Restriction Buff",
-        "EnglishLong": "Wooden Man - layer Restriction Buff"
+        "ChineseShort": "木头人-玩家限制buff",
+        "EnglishShort": "Restriction Buff"
     },
     "880679": {
-        "ChineseShort": "木头人起点线",
-        "EnglishShort": "Wooden Man - Starting Line",
-        "EnglishLong": "Wooden Man - Starting Line"
+        "ChineseShort": "木头人起点线-(弃置)",
+        "EnglishShort": "Wooden Dummy - Starting Line",
+        "EnglishLong": "Wooden Dummy - Starting Line"
     },
     "880680": {
         "ChineseShort": "木头人小伊撞人",
-        "EnglishShort": "Wooden Man - Airy Crashes into Player",
-        "EnglishLong": "Wooden Man - Airy Crashes into Player"
+        "EnglishShort": "Wooden Dummy - Ee-chan Crashes into Player",
+        "EnglishLong": "Wooden Dummy - Ee-chan Crashes into Player"
     },
     "880681": {
         "ChineseShort": "随机等待时间打断技能"
@@ -7499,20 +7580,18 @@
         "ChineseShort": "木头人娜宝（角度）侦察"
     },
     "880683": {
-        "ChineseShort": "木头人第一轮开头随机传送"
+        "ChineseShort": "木头人-传送到起点(废弃)"
     },
     "880684": {
-        "ChineseShort": "木头人被发现惩罚第二轮"
+        "ChineseShort": "木头人-被发现惩罚-第二轮(废弃)"
     },
     "880685": {
-        "ChineseShort": "木头人筛选玩家移动",
-        "EnglishShort": "Wooden Man - Player Movement Filter",
-        "EnglishLong": "Wooden Man - Player Movement Filter"
+        "ChineseShort": "木头人-不准动监测-动的玩家会被施加惩罚效果(废弃)"
     },
     "880686": {
-        "ChineseShort": "木头人终点指引",
-        "EnglishShort": "Wooden Man - Finish Line Indicator",
-        "EnglishLong": "Wooden Man - Finish Line Indicator"
+        "ChineseShort": "木头人终点指引(废弃)",
+        "EnglishShort": "Wooden Dummy - Finish Line Indicator",
+        "EnglishLong": "Wooden Dummy - Finish Line Indicator"
     },
     "880687": {
         "ChineseShort": "贴贴粉色（玩家起点）"
@@ -7555,13 +7634,13 @@
     },
     "880700": {
         "ChineseShort": "虚蚀侵蚀",
-        "EnglishShort": "​Void Corruption",
-        "EnglishLong": "Gradually erodes the player's mind with ​Void Corruption."
+        "EnglishShort": "Void Corruption",
+        "EnglishLong": "Gradually erodes the player's mind with Void Corruption."
     },
     "880701": {
         "ChineseShort": "虚蚀浸透扣血死亡",
-        "EnglishShort": "​Void Corruption Penetration: Damage over time until death",
-        "EnglishLong": "​Void Corruption Penetration: Damage over time until death"
+        "EnglishShort": "Void Corruption Penetration: Damage over time until death",
+        "EnglishLong": "Void Corruption Penetration: Damage over time until death"
     },
     "880702": {
         "ChineseShort": "弱虚蚀"
@@ -7685,8 +7764,8 @@
     },
     "880803": {
         "ChineseShort": "虚蚀侵蚀",
-        "EnglishShort": "​Void Corruption",
-        "EnglishLong": "Gradually erodes the player's mind with ​Void Corruption."
+        "EnglishShort": "Void Corruption",
+        "EnglishLong": "Gradually erodes the player's mind with Void Corruption."
     },
     "880804": {
         "ChineseShort": "爬行怪预警圈"
@@ -7943,8 +8022,8 @@
     },
     "881012": {
         "ChineseShort": "心元球给BOSS回血buff",
-        "EnglishShort": "Heart Ball Restores Health to Boss",
-        "EnglishLong": "Heart Ball Restores Health to Boss"
+        "EnglishShort": "Heart Ball Restores HP to Boss",
+        "EnglishLong": "Heart Ball Restores HP to Boss"
     },
     "881013": {
         "ChineseShort": "束缚内卡利生命阶段"
@@ -8354,11 +8433,14 @@
     },
     "881214": {
         "ChineseShort": "木头人抵达终点2",
-        "EnglishShort": "Wooden Man - Reached Finish Line",
-        "EnglishLong": "Wooden Man - Reached Finish Line"
+        "EnglishShort": "Wooden Dummy - Reached Finish Line",
+        "EnglishLong": "Wooden Dummy - Reached Finish Line"
     },
     "881215": {
         "ChineseShort": "木头人第二阶段存档buff"
+    },
+    "881216": {
+        "ChineseShort": "木头人-开始后小伊给自己发送start的ai事件"
     },
     "881250": {
         "ChineseShort": "嫌疑人定时冲刺"
@@ -8476,7 +8558,7 @@
     },
     "881335": {
         "ChineseShort": "大蜘蛛吃小蜘蛛回血",
-        "EnglishLong": "Restore 5% health"
+        "EnglishLong": "Restore 5% HP"
     },
     "881336": {
         "ChineseShort": "事件蜘蛛标记buff"
@@ -8667,7 +8749,7 @@
     "881390": {
         "ChineseShort": "蟹蛛毒液",
         "EnglishShort": "Poisoned",
-        "EnglishLong": "Each layer of Arachnocrab venom causes you to lose 2.5% health per second"
+        "EnglishLong": "Each stack of Arachnocrab venom causes you to lose 2.5% HP per second"
     },
     "881391": {
         "ChineseShort": "普通蟹蛛死亡Buff"
@@ -8708,7 +8790,7 @@
     "881403": {
         "ChineseShort": "猛毒蟹蛛毒液",
         "EnglishShort": "Poisonous",
-        "EnglishLong": "Lose a large amount of health per second"
+        "EnglishLong": "Lose a large amount of HP per second"
     },
     "881404": {
         "ChineseShort": "蟹蛛钻出脚尘"
@@ -8821,16 +8903,16 @@
     },
     "881523": {
         "ChineseShort": "修改反弹盾cd",
-        "EnglishShort": "Modify Reflective Shield Cooldown",
-        "EnglishLong": "Modify Reflective Shield Cooldown"
+        "EnglishShort": "Modify Reflective Shield CD",
+        "EnglishLong": "Modify Reflective Shield CD"
     },
     "881524": {
         "ChineseShort": "点名米字龙卷（随机一条线）"
     },
     "881525": {
         "ChineseShort": "剑盾哥布林盾buff",
-        "EnglishShort": "Goblin Swords Shield Buff",
-        "EnglishLong": "Goblin Swords Shield Buff"
+        "EnglishShort": "Goblin Sword Shield Buff",
+        "EnglishLong": "Goblin Sword Shield Buff"
     },
     "881526": {},
     "881527": {
@@ -8841,8 +8923,8 @@
     },
     "881529": {
         "ChineseShort": "哥布林boss领域内剑盾哥布林tag",
-        "EnglishShort": "Goblin Boss Area Goblin Swords Tag",
-        "EnglishLong": "Goblin Boss Area Goblin Swords Tag"
+        "EnglishShort": "Goblin Boss Area Goblin Sword Tag",
+        "EnglishLong": "Goblin Boss Area Goblin Sword Tag"
     },
     "881530": {},
     "881531": {
@@ -8984,8 +9066,8 @@
     },
     "881606": {
         "ChineseShort": "虚蚀护盾本体",
-        "EnglishShort": "​Void ShieldBody",
-        "EnglishLong": "​Void ShieldBody"
+        "EnglishShort": "Void ShieldBody",
+        "EnglishLong": "Void ShieldBody"
     },
     "881607": {
         "ChineseShort": "交互领域",
@@ -9012,12 +9094,12 @@
     },
     "881612": {
         "ChineseShort": "二阶段召唤虚蚀墙",
-        "EnglishShort": "Phase 2 Summon ​Void Corruption Wall",
-        "EnglishLong": "Phase 2 Summon ​Void Corruption Wall"
+        "EnglishShort": "Phase 2 Summon Void Corruption Wall",
+        "EnglishLong": "Phase 2 Summon Void Corruption Wall"
     },
     "881613": {
         "ChineseShort": "虚蚀侵蚀",
-        "EnglishShort": "​Void Corruption",
+        "EnglishShort": "Void Corruption",
         "EnglishLong": "1% increased vulnerability per layer."
     },
     "881614": {
@@ -9027,13 +9109,13 @@
     },
     "881615": {
         "ChineseShort": "虚蚀斩武器特效",
-        "EnglishShort": "​Void Corruption Slash Weapon Effect",
-        "EnglishLong": "​Void Corruption Slash Weapon Effect"
+        "EnglishShort": "Void Corruption Slash Weapon Effect",
+        "EnglishLong": "Void Corruption Slash Weapon Effect"
     },
     "881616": {
         "ChineseShort": "清除虚蚀",
-        "EnglishShort": "Clear ​Void Corruption",
-        "EnglishLong": "Clear ​Void Corruption"
+        "EnglishShort": "Clear Void Corruption",
+        "EnglishLong": "Clear Void Corruption"
     },
     "881617": {
         "ChineseShort": "二阶段变身",
@@ -9135,7 +9217,7 @@
     },
     "881637": {
         "ChineseShort": "黑球命中",
-        "EnglishShort": "​Void Corruption",
+        "EnglishShort": "Void Corruption",
         "EnglishLong": "After 2 stacks, vanish into the void."
     },
     "881638": {
@@ -9444,7 +9526,7 @@
     "882111": {
         "ChineseShort": "玩家被定身10s",
         "EnglishShort": "Rooted",
-        "EnglishLong": "Rooted (Negative Effect)"
+        "EnglishLong": "Rooted (Debuff)"
     },
     "882112": {
         "ChineseShort": "雪崩连续打击点名表现"
@@ -9673,7 +9755,7 @@
     },
     "882212": {
         "ChineseShort": "虚蚀幻影-致死标记",
-        "EnglishShort": "​Void Residue",
+        "EnglishShort": "Void Residue",
         "EnglishLong": "Getting hit by a Void Corruption Ball within the duration results in instant death."
     },
     "882213": {
@@ -9760,50 +9842,53 @@
         "EnglishShort": "Electromagnetic vulnerability",
         "EnglishLong": "Increased damage taken"
     },
+    "882252": {
+        "ChineseShort": "内场怪不被吸"
+    },
     "882260": {
         "ChineseShort": "祝祷之泉buff-冰龙-普通",
-        "EnglishShort": "Chill - Izcorgiky's Weakness Research - Basic",
-        "EnglishLong": "Deals 10% more DMG to Chill - Izcorgiky, and takes 5% less DMG from Chill - Izcorgiky"
+        "EnglishShort": "Rin·Izcorgiky's Weakness Research - Basic",
+        "EnglishLong": "Deals 10% more DMG to Rin·Izcorgiky, and takes 5% less DMG from Rin·Izcorgiky"
     },
     "882261": {
         "ChineseShort": "祝祷之泉buff-冰龙-困难",
-        "EnglishShort": "Chill - Izcorgiky's Weakness Research - Hard",
-        "EnglishLong": "Deals 10% more DMG to Chill - Izcorgiky, and takes 5% less DMG from Chill - Izcorgiky"
+        "EnglishShort": "Rin·Izcorgiky's Weakness Research - Hard",
+        "EnglishLong": "Deals 10% more DMG to Rin·Izcorgiky, and takes 5% less DMG from Rin·Izcorgiky"
     },
     "882262": {
         "ChineseShort": "祝祷之泉buff-冰龙-噩梦",
-        "EnglishShort": "Chill - Izcorgiky's Weakness Research - Nightmare",
-        "EnglishLong": "Deals 10% more DMG to Chill - Izcorgiky, and takes 5% less DMG from Chill - Izcorgiky"
+        "EnglishShort": "Rin·Izcorgiky's Weakness Research - Nightmare",
+        "EnglishLong": "Deals 10% more DMG to Rin·Izcorgiky, and takes 5% less DMG from Rin·Izcorgiky"
     },
     "882263": {
         "ChineseShort": "祝祷之泉buff-虚蚀龙-普通",
-        "EnglishShort": "Bone - Xiolotl's Weakness Research - Basic",
-        "EnglishLong": "Deals 10% more DMG to Bone - Xiolotl, and takes 5% less DMG from Bone - Xiolotl"
+        "EnglishShort": "Bone·Xiolotl's Weakness Research - Basic",
+        "EnglishLong": "Deals 10% more DMG to Bone·Xiolotl, and takes 5% less DMG from Bone·Xiolotl"
     },
     "882264": {
         "ChineseShort": "祝祷之泉buff-虚蚀龙-困难",
-        "EnglishShort": "Bone - Xiolotl's Weakness Research - Hard",
-        "EnglishLong": "Deals 10% more DMG to Bone - Xiolotl, and takes 5% less DMG from Bone - Xiolotl"
+        "EnglishShort": "Bone·Xiolotl's Weakness Research - Hard",
+        "EnglishLong": "Deals 10% more DMG to Bone·Xiolotl, and takes 5% less DMG from Bone·Xiolotl"
     },
     "882265": {
         "ChineseShort": "祝祷之泉buff-虚蚀龙-噩梦",
-        "EnglishShort": "Bone - Xiolotl's Weakness Research - Nightmare",
-        "EnglishLong": "Deals 10% more DMG to Bone - Xiolotl, and takes 5% less DMG from Bone - Xiolotl"
+        "EnglishShort": "Bone·Xiolotl's Weakness Research - Nightmare",
+        "EnglishLong": "Deals 10% more DMG to Bone·Xiolotl, and takes 5% less DMG from Bone·Xiolotl"
     },
     "882266": {
         "ChineseShort": "祝祷之泉buff-光龙-普通",
-        "EnglishShort": "Light - Tonatiuh's Weakness Research - Basic",
-        "EnglishLong": "Deals 10% more DMG to Light - Tonatiuh, and takes 5% less DMG from Light - Tonatiuh"
+        "EnglishShort": "Light·Tonatiuh's Weakness Research - Basic",
+        "EnglishLong": "Deals 10% more DMG to Light·Tonatiuh, and takes 5% less DMG from Light·Tonatiuh"
     },
     "882267": {
         "ChineseShort": "祝祷之泉buff-光龙-困难",
-        "EnglishShort": "Light - Tonatiuh's Weakness Research - Hard",
-        "EnglishLong": "Deals 10% more DMG to Light - Tonatiuh, and takes 5% less DMG from Light - Tonatiuh"
+        "EnglishShort": "Light·Tonatiuh's Weakness Research - Hard",
+        "EnglishLong": "Deals 10% more DMG to Light·Tonatiuh, and takes 5% less DMG from Light·Tonatiuh"
     },
     "882268": {
         "ChineseShort": "祝祷之泉buff-光龙-噩梦",
-        "EnglishShort": "Light - Tonatiuh's Weakness Research - Nightmare",
-        "EnglishLong": "Deals 10% more DMG to Light - Tonatiuh, and takes 5% less DMG from Light - Tonatiuh"
+        "EnglishShort": "Light·Tonatiuh's Weakness Research - Nightmare",
+        "EnglishLong": "Deals 10% more DMG to Light·Tonatiuh, and takes 5% less DMG from Light·Tonatiuh"
     },
     "882270": {
         "ChineseShort": "标记buff-简单难度",
@@ -10006,8 +10091,8 @@
     },
     "882342": {
         "ChineseShort": "光灵-减攻击力50%",
-        "EnglishShort": "Weakened",
-        "EnglishLong": "Attack Power -50%"
+        "EnglishShort": "Weak",
+        "EnglishLong": "ATK -50%"
     },
     "882343": {
         "ChineseShort": "初始待机检测"
@@ -10037,7 +10122,9 @@
         "ChineseShort": "重置虚拟体管理"
     },
     "882352": {
-        "ChineseShort": "小怪强度buff"
+        "ChineseShort": "净化光幕-dot",
+        "EnglishShort": "Solar Flare Corrosion",
+        "EnglishLong": "Continuous HP Loss"
     },
     "882353": {
         "ChineseShort": "虚空双契-点名B"
@@ -10121,8 +10208,8 @@
     },
     "900124": {
         "ChineseShort": "吟唱增加攻击力buff",
-        "EnglishShort": "Chanting Attack Power Increase Buff",
-        "EnglishLong": "Chanting Attack Power Increase Buff"
+        "EnglishShort": "Chanting ATK Increase Buff",
+        "EnglishLong": "Chanting ATK Increase Buff"
     },
     "900125": {
         "ChineseShort": "雷电兽人白盾",
@@ -10130,7 +10217,7 @@
     },
     "900126": {
         "ChineseShort": "雷电兽人血量监控",
-        "EnglishShort": "Lightning Orc Health Monitoring"
+        "EnglishShort": "Lightning Orc HP Monitoring"
     },
     "900127": {
         "ChineseShort": "吟唱加血buff",
@@ -10269,8 +10356,8 @@
     },
     "950502": {
         "ChineseShort": "霹雷",
-        "EnglishShort": "​Raijin Dash​",
-        "EnglishLong": "​Raijin Dash​"
+        "EnglishShort": "Raijin Dash",
+        "EnglishLong": "Raijin Dash"
     },
     "950601": {
         "ChineseShort": "雷电食人魔生命值监测"
@@ -10491,25 +10578,25 @@
     "960125": {
         "ChineseShort": "增益+10%攻击",
         "EnglishShort": "Relentless Attack",
-        "EnglishLong": "Increase 10% * [Layers] Attack Power"
+        "EnglishLong": "Increase 10% * [Stacks] ATK"
     },
     "960131": {
         "ChineseShort": "武器流派-随机"
     },
     "960132": {
         "ChineseShort": "武器流派-太刀居合斩流派",
-        "EnglishShort": "Weapon Style - Katana ​Iaido Slash​ Spec",
-        "EnglishLong": "Weapon Style - Katana ​Iaido Slash​ Spec"
+        "EnglishShort": "Weapon Style - Iaido Slash Spec",
+        "EnglishLong": "Weapon Style - Iaido Slash Spec"
     },
     "960133": {
         "ChineseShort": "武器流派-太刀月刃召唤流派",
-        "EnglishShort": "Weapon Style - Katana Moonstrike Spec",
-        "EnglishLong": "Weapon Style - Katana Moonstrike Spec"
+        "EnglishShort": "Weapon Style - Moonstrike Spec",
+        "EnglishLong": "Weapon Style - Moonstrike Spec"
     },
     "960134": {
         "ChineseShort": "武器流派-魔杖射线流派",
-        "EnglishShort": "Weapon Style - Magic Wand Frostbeam Spec",
-        "EnglishLong": "Weapon Style - Magic Wand Frostbeam Spec"
+        "EnglishShort": "Weapon Style - Frostbeam Spec",
+        "EnglishLong": "Weapon Style - Frostbeam Spec"
     },
     "960135": {
         "ChineseShort": "武器流派-魔杖冰锥流派",
@@ -10538,13 +10625,13 @@
     },
     "960140": {
         "ChineseShort": "武器流派-卫刃格挡流派",
-        "EnglishShort": "Weapon Style - Edgeward Block Spec",
-        "EnglishLong": "Weapon Style - Edgeward Block Spec"
+        "EnglishShort": "Weapon Style - Edge Block Spec",
+        "EnglishLong": "Weapon Style - Edge Block Spec"
     },
     "960141": {
         "ChineseShort": "武器流派-卫刃岩盾流派",
-        "EnglishShort": "Weapon Style - Edgeward Earthfort Spec",
-        "EnglishLong": "Weapon Style - Edgeward Earthfort Spec"
+        "EnglishShort": "Weapon Style - Edge Earthfort Spec",
+        "EnglishLong": "Weapon Style - Edge Earthfort Spec"
     },
     "960142": {
         "ChineseShort": "武器流派-长枪重装流派",
@@ -10667,7 +10754,7 @@
     "960208": {
         "ChineseShort": "扫射型机甲-火力全开",
         "EnglishShort": "Full Power",
-        "EnglishLong": "Full Power, No Skill Cooldown!"
+        "EnglishLong": "Full Power, No Skill CD!"
     },
     "960209": {
         "ChineseShort": "近战DPS-聚怪BUFF",
@@ -10683,7 +10770,7 @@
     "960212": {
         "ChineseShort": "扫射型-减CD",
         "EnglishShort": "Overload",
-        "EnglishLong": "Attack Speed +50%, Cooldown -50%"
+        "EnglishLong": "Attack Speed +50%, CD -50%"
     },
     "960213": {
         "ChineseShort": "入侵机器人受击获得减速"
@@ -10826,12 +10913,12 @@
     "960503": {
         "ChineseShort": "增益+50%攻击力",
         "EnglishShort": "Relentless Attack",
-        "EnglishLong": "Increase Attack Power by 50% per layer"
+        "EnglishLong": "Increase ATK by 50% per stack"
     },
     "960504": {
         "ChineseShort": "增益+10%攻击(怪物版)",
         "EnglishShort": "Relentless Attack",
-        "EnglishLong": "Increase 10% * [Layers] Attack Power"
+        "EnglishLong": "ATK +10% * [Stacks]"
     },
     "960505": {
         "ChineseShort": "怪物播放施法动作"
@@ -10922,8 +11009,8 @@
     },
     "960713": {
         "ChineseShort": "玩家携带的恩格能量层数",
-        "EnglishShort": "Carrying Eng energy",
-        "EnglishLong": "Carrying [Layers] Eng energy balls"
+        "EnglishShort": "Carrying Engram",
+        "EnglishLong": "Carrying [Stacks] Engram Orb"
     },
     "960714": {
         "ChineseShort": "提交恩格能量"
@@ -11051,7 +11138,7 @@
     },
     "960904": {
         "ChineseShort": "机甲本-变大变强",
-        "EnglishShort": "Overdrive",
+        "EnglishShort": "Charge",
         "EnglishLong": "Mech Charged"
     },
     "960905": {
@@ -11082,7 +11169,7 @@
     },
     "965205": {
         "ChineseShort": "烟火大会-我要缩小",
-        "EnglishShort": "Shrink Down"
+        "EnglishShort": "Grow Smaller"
     },
     "965206": {
         "ChineseShort": "烟火大会-金光闪闪",
@@ -11091,6 +11178,43 @@
     "965207": {
         "ChineseShort": "烟火大会-银光熠熠",
         "EnglishShort": "Silvery Aura"
+    },
+    "965300": {
+        "ChineseShort": "搭建光桥-技能管理"
+    },
+    "965301": {
+        "ChineseShort": "搭建光桥-获得随机技能"
+    },
+    "965302": {
+        "ChineseShort": "搭建光桥-技能-召唤云朵",
+        "EnglishShort": "Summon Cloud"
+    },
+    "965303": {
+        "ChineseShort": "搭建光桥-技能-体力恢复药剂",
+        "EnglishShort": "Stamina Potion"
+    },
+    "965304": {
+        "ChineseShort": "搭建光桥-技能-召唤额外云朵",
+        "EnglishShort": "Stamina Potion"
+    },
+    "965305": {
+        "ChineseShort": "搭建光桥-技能-低重力药剂",
+        "EnglishShort": "Low-Gravity Potion"
+    },
+    "965306": {
+        "ChineseShort": "搭建光桥-技能-召唤游泳池",
+        "EnglishShort": "Summon Pool"
+    },
+    "965311": {
+        "ChineseShort": "搭建光桥-低重力",
+        "EnglishShort": "Low Gravity",
+        "EnglishLong": "Low Gravity"
+    },
+    "965312": {
+        "ChineseShort": "搭建光桥-玩家身上带有的云朵粒子层数管理"
+    },
+    "965313": {
+        "ChineseShort": "悬浮炸弹-待机状态"
     },
     "970001": {
         "ChineseShort": "玩具通用buff：屏蔽移动禁止跳跃"
@@ -11248,8 +11372,8 @@
     },
     "972026": {
         "ChineseShort": "使用玩具-冰雪射线",
-        "EnglishShort": "​​Frostbeam",
-        "EnglishLong": "For a period of time, you can release the ​​Frostbeam skill"
+        "EnglishShort": "Frostbeam",
+        "EnglishLong": "For a period of time, you can release the Frostbeam skill"
     },
     "972027": {
         "ChineseShort": "使用玩具-可爱看书",
@@ -11337,6 +11461,9 @@
     },
     "974005": {
         "ChineseShort": "大世界室内锁跑酷BUFF"
+    },
+    "974006": {
+        "ChineseShort": "大世界-锁玩具使用BUFF"
     },
     "974101": {
         "ChineseShort": "生存玩法-冰箱"
@@ -11427,6 +11554,12 @@
     },
     "974200": {
         "ChineseShort": "泡点巡逻-巡逻NPC天生buff"
+    },
+    "974201": {
+        "ChineseShort": "泡点巡逻-巡逻队长"
+    },
+    "974202": {
+        "ChineseShort": "泡点巡逻-巡逻队员"
     },
     "974210": {
         "ChineseShort": "追人蜘蛛雷"
@@ -11535,7 +11668,7 @@
     "990215": {
         "ChineseShort": "姆克头目-增伤",
         "EnglishShort": "Power of Muku",
-        "EnglishLong": "Each stack increases Attack Power by 100%"
+        "EnglishLong": "Each stack increases ATK by 100%"
     },
     "990220": {
         "ChineseShort": "姆克狂战士-加速"
@@ -11907,7 +12040,7 @@
     "995161": {
         "ChineseShort": "风灵强化buff",
         "EnglishShort": "Wind spirit activation",
-        "EnglishLong": "Each layer +10% Attack Power, -10% defense"
+        "EnglishLong": "Each stack +10% ATK, -10% defense"
     },
     "995162": {
         "ChineseShort": "风龙吸取精魄连线"
@@ -11968,7 +12101,7 @@
     "995178": {
         "ChineseShort": "雷电增伤",
         "EnglishShort": "Lightning Surge",
-        "EnglishLong": "Charged with lightning power. Each layer increases damage by 20%."
+        "EnglishLong": "Charged with lightning power. Each stack increases damage by 20%."
     },
     "995201": {
         "ChineseShort": "学习加速技能"
@@ -12120,7 +12253,7 @@
     },
     "995248": {
         "ChineseShort": "攻击力降低10%-每秒检测",
-        "EnglishShort": "Attack Power -10%"
+        "EnglishShort": "ATK -10%"
     },
     "995249": {
         "ChineseShort": "防御提升50%-每秒检测",
@@ -12390,7 +12523,7 @@
     },
     "998000": {
         "ChineseShort": "肉鸽本-货币",
-        "EnglishShort": "Training Token",
+        "EnglishShort": "Training Coin",
         "EnglishLong": "A special currency used in dungeons to exchange for Entries, and upgrade stats or skills."
     },
     "998001": {
@@ -12445,7 +12578,7 @@
     "998030": {
         "ChineseShort": "肉鸽词条-循环加速",
         "EnglishShort": "Cycle Acceleration",
-        "EnglishLong": "Eliminations reduce Expertise Skill cooldown by 10%"
+        "EnglishLong": "Eliminations reduce Expertise Skill CD by 10%"
     },
     "998040": {
         "ChineseShort": "肉鸽词条-时光沙漏",
@@ -12500,7 +12633,7 @@
     "998090": {
         "ChineseShort": "肉鸽词条-武器专家",
         "EnglishShort": "Weapon Expert",
-        "EnglishLong": "Increases Attack Power by 3% Mastery."
+        "EnglishLong": "Increases ATK by 3% Mastery."
     },
     "998100": {
         "ChineseShort": "肉鸽词条-生存专家",
@@ -12525,7 +12658,7 @@
     "998140": {
         "ChineseShort": "肉鸽词条-雷云密布",
         "EnglishShort": "Stormclouds Gather",
-        "EnglishLong": "Landing a Lucky Hit triggers Lightning Strike. Cooldown: 1s."
+        "EnglishLong": "Landing a Lucky Strike triggers Lightning Strike. CD: 1s."
     },
     "998141": {
         "ChineseShort": "肉鸽词条-雷云密布2"
@@ -12533,7 +12666,7 @@
     "998150": {
         "ChineseShort": "肉鸽词条-剑刃风暴",
         "EnglishShort": "Blade Storm",
-        "EnglishLong": "Landing a Lucky Hit triggers Blade Storm. Cooldown: 1s."
+        "EnglishLong": "Landing a Lucky Strike triggers Blade Storm. CD: 1s."
     },
     "998151": {
         "ChineseShort": "肉鸽词条-剑刃风暴2"
@@ -12541,7 +12674,7 @@
     "998160": {
         "ChineseShort": "肉鸽词条-燃爆一击",
         "EnglishShort": "Blazing Strike",
-        "EnglishLong": "Landing a Lucky Hit triggers Fireball Explosion. Cooldown: 1s."
+        "EnglishLong": "Landing a Lucky Strike triggers Fireball Explosion. CD: 1s."
     },
     "998161": {
         "ChineseShort": "肉鸽词条-燃爆一击2"
@@ -12549,7 +12682,7 @@
     "998170": {
         "ChineseShort": "肉鸽词条-连锁闪电",
         "EnglishShort": "Chain Lightning",
-        "EnglishLong": "Landing a Lucky Hit triggers Lightning Chain. Cooldown: 1s."
+        "EnglishLong": "Landing a Lucky Strike triggers Lightning Chain. CD: 1s."
     },
     "998171": {
         "ChineseShort": "肉鸽词条-连锁闪电2"
@@ -12578,7 +12711,7 @@
     "998190": {
         "ChineseShort": "肉鸽词条-天命裁决",
         "EnglishShort": "Providence's Verdict",
-        "EnglishLong": "Lucky Hit instantly annihilates non-elite enemies"
+        "EnglishLong": "Lucky Strike instantly annihilates non-elite enemies"
     },
     "998191": {
         "ChineseShort": "肉鸽词条-天命裁决2"
@@ -12586,7 +12719,7 @@
     "998200": {
         "ChineseShort": "肉鸽词条-狂血契约",
         "EnglishShort": "Blood Pact",
-        "EnglishLong": "Attack Power +50%, but each attack consumes 2.5% HP. At 1 HP, all healing is nullified."
+        "EnglishLong": "ATK +50%, but each attack consumes 2.5% HP. At 1 HP, all healing is nullified."
     },
     "998201": {
         "ChineseShort": "肉鸽词条-狂血契约2"
@@ -12604,12 +12737,12 @@
     "998210": {
         "ChineseShort": "肉鸽词条-血怒转化",
         "EnglishShort": "Bloodwrath Conversion",
-        "EnglishLong": "Converts a percentage of missing HP into bonus Attack Power."
+        "EnglishLong": "Converts a percentage of missing HP into bonus ATK."
     },
     "998220": {
         "ChineseShort": "肉鸽词条-血气爆发",
         "EnglishShort": "Blood Surge",
-        "EnglishLong": "Landing a Lucky Hit triggers Fireball Explosion, dealing DMG equal to 20% of your lost HP."
+        "EnglishLong": "Landing a Lucky Strike triggers Fireball Explosion, dealing DMG equal to 20% of your lost HP."
     },
     "998221": {
         "ChineseShort": "肉鸽词条-血气爆发2"
@@ -12629,7 +12762,7 @@
     "998240": {
         "ChineseShort": "肉鸽词条-绝境神行",
         "EnglishShort": "Divine Escape",
-        "EnglishLong": "Gains 3s of \"Invincibility\" and \"Acceleration\" (20s cooldown)"
+        "EnglishLong": "Gains 3s of \"Invincibility\" and \"Acceleration\" (20s CD)"
     },
     "998241": {
         "ChineseShort": "肉鸽词条-绝境神行2"
@@ -12659,16 +12792,16 @@
     "998270": {
         "ChineseShort": "肉鸽词条-杀意凝聚",
         "EnglishShort": "Killing Intent",
-        "EnglishLong": "After 10s without taking DMG, gains 15% Attack Power"
+        "EnglishLong": "After 10s without taking DMG, gains 15% ATK"
     },
     "998271": {
         "ChineseShort": "肉鸽词条-杀意凝聚2",
-        "EnglishShort": "Attack Power +15%"
+        "EnglishShort": "ATK +15%"
     },
     "998280": {
         "ChineseShort": "肉鸽词条-统御王座",
         "EnglishShort": "Throne of Domination",
-        "EnglishLong": "Grants \"Super Armor\", but reduces movement speed by 40%. Automatically casts Taunt every 10s."
+        "EnglishLong": "Grants \"Super Armor\", but reduces movement speed by 40%. casts Taunt every 10s."
     },
     "998281": {
         "ChineseShort": "肉鸽词条-统御王座2"
@@ -12676,7 +12809,7 @@
     "998290": {
         "ChineseShort": "肉鸽词条-空间力场",
         "EnglishShort": "Spatial Forcefield",
-        "EnglishLong": "Landing a Lucky Hit triggers a Spatial Forcefield for 8s (Cooldown: 15s). Enemies within the field cannot move and are inflicted with 10% Vulnerability."
+        "EnglishLong": "Landing a Lucky Strike triggers a Spatial Forcefield for 8s (CD: 15s). Enemies within the field cannot move and are inflicted with 10% Vulnerability."
     },
     "998291": {
         "ChineseShort": "肉鸽词条-空间力场2"
@@ -12712,11 +12845,11 @@
     "998320": {
         "ChineseShort": "肉鸽词条-力量链接",
         "EnglishShort": "Bond of Shared Strength",
-        "EnglishLong": "Reduces your own Attack Power by 50%, and creates a tether to the nearest Ally within 10 meters, granting them 20% Attack Power"
+        "EnglishLong": "Reduces your own ATK by 50%, and creates a tether to the nearest Ally within 10 meters, granting them 20% ATK"
     },
     "998321": {
         "ChineseShort": "肉鸽词条-力量链接2",
-        "EnglishShort": "Attack Power +20%"
+        "EnglishShort": "ATK +20%"
     },
     "998330": {
         "ChineseShort": "肉鸽词条-能量光环",
@@ -12764,7 +12897,7 @@
     },
     "998361": {
         "ChineseShort": "肉鸽词条-不朽契约2",
-        "EnglishShort": "Increase Max HP by 25%"
+        "EnglishShort": "Max HP +25%"
     },
     "998370": {
         "ChineseShort": "肉鸽词条-泰坦进化",
@@ -12773,7 +12906,7 @@
     },
     "998371": {
         "ChineseShort": "肉鸽词条-泰坦进化2",
-        "EnglishShort": "Increases Max HP by 0.1%"
+        "EnglishShort": "Max HP +0.1%"
     },
     "998372": {
         "ChineseShort": "肉鸽词条-泰坦进化3"
@@ -12792,12 +12925,12 @@
     "998390": {
         "ChineseShort": "肉鸽词条-巨人之握",
         "EnglishShort": "Giant's Grasp",
-        "EnglishLong": "Gains Attack Power equal to 0.3% Max HP"
+        "EnglishLong": "Gains ATK equal to 0.3% Max HP"
     },
     "998400": {
         "ChineseShort": "肉鸽词条-巨人铠甲",
         "EnglishShort": "Giant's Armor",
-        "EnglishLong": "Lucky Hit grants you a shield equal to 10% Max HP"
+        "EnglishLong": "Lucky Strike grants you a shield equal to 10% Max HP"
     },
     "998401": {
         "ChineseShort": "肉鸽词条-巨人铠甲2",
@@ -12907,23 +13040,23 @@
     },
     "999051": {
         "ChineseShort": "洞察弱点-提升伤害",
-        "EnglishShort": "Attack Power +200%"
+        "EnglishShort": "ATK +200%"
     },
     "999052": {
         "ChineseShort": "洞察弱点-提升伤害2",
-        "EnglishShort": "Attack Power +300%"
+        "EnglishShort": "ATK +300%"
     },
     "999053": {
         "ChineseShort": "洞察弱点-提升伤害3",
-        "EnglishShort": "Attack Power +400%"
+        "EnglishShort": "ATK +400%"
     },
     "999054": {
         "ChineseShort": "洞察弱点-提升伤害4",
-        "EnglishShort": "Attack Power +500%"
+        "EnglishShort": "ATK +500%"
     },
     "999055": {
         "ChineseShort": "洞察弱点-提升伤害5",
-        "EnglishShort": "Attack Power +600%, each enemy killed reduces the cooldown by 8s."
+        "EnglishShort": "ATK +600%, each enemy killed reduces the CD by 8s."
     },
     "999060": {
         "ChineseShort": "肉鸽技能-我是传奇"
@@ -13044,7 +13177,7 @@
     "999995": {
         "ChineseShort": "肉鸽本-玩家等级",
         "EnglishShort": "Stat Boost",
-        "EnglishLong": "Increases Attack Power by 100 and Max HP by 4000 per level."
+        "EnglishLong": "Increases ATK by 100 and Max HP by 4000 per level."
     },
     "999996": {
         "ChineseShort": "肉鸽本-怪物等级"
@@ -13071,8 +13204,8 @@
     },
     "2010012": {
         "ChineseShort": "肉类+1 协会buff",
-        "EnglishShort": "Meat +1 Guild Buff",
-        "EnglishLong": "Meat +1 Guild Buff"
+        "EnglishShort": "Fish Meat +1 Guild Buff",
+        "EnglishLong": "Fish Meat +1 Guild Buff"
     },
     "2010013": {
         "ChineseShort": "award测试百分比数量奖励"
@@ -13114,21 +13247,21 @@
     "2010051": {
         "ChineseShort": "战舞加成1级",
         "EnglishShort": "War Dance Buff Lv.1",
-        "EnglishLong": "In Guild Hunt instance, Attack Power +5%, max HP +5%"
+        "EnglishLong": "In Guild Hunt dungeon, ATK +5%, max HP +5%"
     },
     "2010052": {
         "ChineseShort": "战舞加成2级",
         "EnglishShort": "War Dance Buff Lv.2",
-        "EnglishLong": "In Guild Hunt Dungeon, Attack Power +10%, max HP +10%"
+        "EnglishLong": "In Guild Hunt Dungeon, ATK +10%, max HP +10%"
     },
     "2010053": {
         "ChineseShort": "战舞加成3级",
         "EnglishShort": "War Dance Buff Lv.3",
-        "EnglishLong": "In Guild Hunt Dungeon, Attack Power +15%, max HP +15%"
+        "EnglishLong": "In Guild Hunt Dungeon, ATK +15%, max HP +15%"
     },
     "2010060": {
         "ChineseShort": "3倍掉落奖励",
-        "EnglishShort": "Mega Cheer-Up Treat",
+        "EnglishShort": "Cheer-Up Treat",
         "EnglishLong": "Clear Chaotic Realm dungeon to get triple rewards at once."
     },
     "2020001": {
@@ -13190,7 +13323,7 @@
     },
     "2031101": {
         "ChineseShort": "太刀-幸运",
-        "EnglishShort": "Tachi - Luck"
+        "EnglishShort": "Blade - Luck"
     },
     "2031102": {
         "ChineseShort": "法杖-幸运",
@@ -13241,12 +13374,12 @@
     },
     "2032010": {
         "ChineseShort": "物攻",
-        "EnglishShort": "Attack Power​"
+        "EnglishShort": "ATK"
     },
     "2032011": {
         "ChineseShort": "物攻Lv1",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Physical Attack​ +15"
+        "EnglishLong": "Physical Attack +15"
     },
     "2032012": {
         "ChineseShort": "物攻Lv2",
@@ -13256,7 +13389,7 @@
     "2032013": {
         "ChineseShort": "物攻Lv3",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Physical Attack​ +45"
+        "EnglishLong": "Physical Attack +45"
     },
     "2032014": {
         "ChineseShort": "物攻Lv4",
@@ -13266,17 +13399,17 @@
     "2032015": {
         "ChineseShort": "物攻Lv5",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Attack Power +15"
+        "EnglishLong": "ATK +15"
     },
     "2032016": {
         "ChineseShort": "物攻Lv6",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Attack Power +105"
+        "EnglishLong": "ATK +105"
     },
     "2032017": {
         "ChineseShort": "物攻Lv7",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Physical Attack​​ +120"
+        "EnglishLong": "Physical Attack +120"
     },
     "2032018": {
         "ChineseShort": "物攻Lv8",
@@ -13290,7 +13423,7 @@
     "2032021": {
         "ChineseShort": "魔攻Lv1",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Magic Power +15"
+        "EnglishLong": "MATK +15"
     },
     "2032022": {
         "ChineseShort": "魔攻Lv2",
@@ -13373,51 +13506,51 @@
     },
     "2032040": {
         "ChineseShort": "耐力",
-        "EnglishShort": "Stamina"
+        "EnglishShort": "Endurance"
     },
     "2032041": {
         "ChineseShort": "耐力Lv1",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Stamina +45"
+        "EnglishLong": "Endurance +45"
     },
     "2032042": {
         "ChineseShort": "生命Lv2",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Stamina +90"
+        "EnglishLong": "Endurance +90"
     },
     "2032043": {
         "ChineseShort": "生命Lv3",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Stamina +135"
+        "EnglishLong": "Endurance +135"
     },
     "2032044": {
         "ChineseShort": "生命Lv4",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Stamina +225"
+        "EnglishLong": "Endurance +225"
     },
     "2032045": {
         "ChineseShort": "生命Lv5",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Stamina +450"
+        "EnglishLong": "Endurance +450"
     },
     "2032046": {
         "ChineseShort": "生命Lv6",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Stamina +825"
+        "EnglishLong": "Endurance +825"
     },
     "2032047": {
         "ChineseShort": "生命Lv7",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Stamina +1050"
+        "EnglishLong": "Endurance +1050"
     },
     "2032048": {
         "ChineseShort": "生命Lv8",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Stamina +1500"
+        "EnglishLong": "Endurance +1500"
     },
     "2032050": {
         "ChineseShort": "生命恢复",
-        "EnglishShort": "Health Regeneration"
+        "EnglishShort": "HP Regen"
     },
     "2032051": {
         "ChineseShort": "生命恢复Lv1",
@@ -13461,31 +13594,31 @@
     },
     "2032060": {
         "ChineseShort": "物攻+精英增伤",
-        "EnglishShort": "Attack Power​ + Elite Damage Increase"
+        "EnglishShort": "ATK + Elite Damage Increase"
     },
     "2032065": {
         "ChineseShort": "物攻+精英增伤Lv1",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Physical Attack +75, Damage to Elite and Above Targets +5% "
+        "EnglishLong": "Physical Attack +75, Damage to Elite and Above Targets +5%"
     },
     "2032067": {
         "ChineseShort": "物攻+精英增伤Lv2",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Physical Attack +120, Damage to Elite and Above Targets +10% "
+        "EnglishLong": "Physical Attack +120, Damage to Elite and Above Targets +10%"
     },
     "2032070": {
         "ChineseShort": "魔攻+精英增伤",
-        "EnglishShort": "Magic Power +Elite Damage Increase"
+        "EnglishShort": "MATK +Elite Damage Increase"
     },
     "2032075": {
         "ChineseShort": "魔攻+精英增伤Lv1",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Magic Power +75, Damage to Elite and Above Targets +5% "
+        "EnglishLong": "MATK +75, Damage to Elite and Above Targets +5%"
     },
     "2032077": {
         "ChineseShort": "魔攻+精英增伤Lv2",
         "EnglishShort": "Cuisine",
-        "EnglishLong": "Magic Power +120, Damage to Elite and Above Targets +10% "
+        "EnglishLong": "MATK +120, Damage to Elite and Above Targets +10%"
     },
     "2032080": {
         "ChineseShort": "护甲+精英减伤",
@@ -13503,7 +13636,7 @@
     },
     "2033000": {
         "ChineseShort": "回血",
-        "EnglishShort": "Health Regeneration"
+        "EnglishShort": "HP Regen"
     },
     "2033010": {
         "ChineseShort": "元素强度·火"
@@ -13511,17 +13644,17 @@
     "2033011": {
         "ChineseShort": "元素强度·火Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Fireal Strength +240"
+        "EnglishLong": "Fire Strength +240"
     },
     "2033012": {
         "ChineseShort": "元素强度·火Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Fireal Strength +500"
+        "EnglishLong": "Fire Strength +500"
     },
     "2033013": {
         "ChineseShort": "元素强度·火Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Fireal Strength +750"
+        "EnglishLong": "Fire Strength +750"
     },
     "2033020": {
         "ChineseShort": "元素强度·冰"
@@ -13529,17 +13662,17 @@
     "2033021": {
         "ChineseShort": "元素强度·冰Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Iceal Strength +240"
+        "EnglishLong": "Ice Strength +240"
     },
     "2033022": {
         "ChineseShort": "元素强度·冰Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Iceal Strength +500"
+        "EnglishLong": "Ice Strength +500"
     },
     "2033023": {
         "ChineseShort": "元素强度·冰Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Iceal Strength +750"
+        "EnglishLong": "Ice Strength +750"
     },
     "2033030": {
         "ChineseShort": "元素强度·森"
@@ -13547,17 +13680,17 @@
     "2033031": {
         "ChineseShort": "元素强度·森Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Forestal Strength +240"
+        "EnglishLong": "Forest Strength +240"
     },
     "2033032": {
         "ChineseShort": "元素强度·森Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Forestal Strength +500"
+        "EnglishLong": "Forest Strength +500"
     },
     "2033033": {
         "ChineseShort": "元素强度·森Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Forestal Strength +750"
+        "EnglishLong": "Forest Strength +750"
     },
     "2033040": {
         "ChineseShort": "元素强度·岩"
@@ -13565,17 +13698,17 @@
     "2033041": {
         "ChineseShort": "元素强度·岩Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Rockal Strength +240"
+        "EnglishLong": "Rock Strength +240"
     },
     "2033042": {
         "ChineseShort": "元素强度·岩Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Rockal Strength +500"
+        "EnglishLong": "Rock Strength +500"
     },
     "2033043": {
         "ChineseShort": "元素强度·岩Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Rockal Strength +750"
+        "EnglishLong": "Rock Strength +750"
     },
     "2033050": {
         "ChineseShort": "元素强度·风"
@@ -13583,17 +13716,17 @@
     "2033051": {
         "ChineseShort": "元素强度·风Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Windal Strength +240"
+        "EnglishLong": "Wind Strength +240"
     },
     "2033052": {
         "ChineseShort": "元素强度·风Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Windal Strength +500"
+        "EnglishLong": "Wind Strength +500"
     },
     "2033053": {
         "ChineseShort": "元素强度·风Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Windal Strength +750"
+        "EnglishLong": "Wind Strength +750"
     },
     "2033060": {
         "ChineseShort": "元素强度·雷"
@@ -13619,17 +13752,17 @@
     "2033071": {
         "ChineseShort": "元素强度·光Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Lightal Strength +240"
+        "EnglishLong": "Light Strength +240"
     },
     "2033072": {
         "ChineseShort": "元素强度·光Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Lightal Strength +500"
+        "EnglishLong": "Light Strength +500"
     },
     "2033073": {
         "ChineseShort": "元素强度·光Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Lightal Strength +750"
+        "EnglishLong": "Light Strength +750"
     },
     "2033080": {
         "ChineseShort": "元素强度·暗"
@@ -13637,17 +13770,17 @@
     "2033081": {
         "ChineseShort": "元素强度·暗Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Darkal Strength +240"
+        "EnglishLong": "Dark Strength +240"
     },
     "2033082": {
         "ChineseShort": "元素强度·暗Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Darkal Strength +500"
+        "EnglishLong": "Dark Strength +500"
     },
     "2033083": {
         "ChineseShort": "元素强度·暗Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Darkal Strength +750"
+        "EnglishLong": "Dark Strength +750"
     },
     "2033090": {
         "ChineseShort": "元素抗性·火"
@@ -13655,17 +13788,17 @@
     "2033091": {
         "ChineseShort": "元素抗性·火Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Fireal Resistance +500"
+        "EnglishLong": "Fire Resistance +500"
     },
     "2033092": {
         "ChineseShort": "元素抗性·火Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Fireal Resistance +1150"
+        "EnglishLong": "Fire Resistance +1150"
     },
     "2033093": {
         "ChineseShort": "元素抗性·火Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Fireal Resistance +1950"
+        "EnglishLong": "Fire Resistance +1950"
     },
     "2033100": {
         "ChineseShort": "元素抗性·冰"
@@ -13673,17 +13806,17 @@
     "2033101": {
         "ChineseShort": "元素抗性·冰Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Iceal Resistance +500"
+        "EnglishLong": "Ice Resistance +500"
     },
     "2033102": {
         "ChineseShort": "元素抗性·冰Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Iceal Resistance +1150"
+        "EnglishLong": "Ice Resistance +1150"
     },
     "2033103": {
         "ChineseShort": "元素抗性·冰Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Iceal Resistance +1950"
+        "EnglishLong": "Ice Resistance +1950"
     },
     "2033110": {
         "ChineseShort": "元素抗性·森"
@@ -13691,17 +13824,17 @@
     "2033111": {
         "ChineseShort": "元素抗性·森Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Forestal Resistance +500"
+        "EnglishLong": "Forest Resistance +500"
     },
     "2033112": {
         "ChineseShort": "元素抗性·森Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Forestal Resistance +1150"
+        "EnglishLong": "Forest Resistance +1150"
     },
     "2033113": {
         "ChineseShort": "元素抗性·森Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Forestal Resistance +1950"
+        "EnglishLong": "Forest Resistance +1950"
     },
     "2033120": {
         "ChineseShort": "元素抗性·岩"
@@ -13709,17 +13842,17 @@
     "2033121": {
         "ChineseShort": "元素抗性·岩Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Rockal Resistance +500"
+        "EnglishLong": "Rock Resistance +500"
     },
     "2033122": {
         "ChineseShort": "元素抗性·岩Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Rockal Resistance +1150"
+        "EnglishLong": "Rock Resistance +1150"
     },
     "2033123": {
         "ChineseShort": "元素抗性·岩Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Rockal Resistance +1950"
+        "EnglishLong": "Rock Resistance +1950"
     },
     "2033130": {
         "ChineseShort": "元素抗性·风"
@@ -13727,17 +13860,17 @@
     "2033131": {
         "ChineseShort": "元素抗性·风Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Windal Resistance +500"
+        "EnglishLong": "Wind Resistance +500"
     },
     "2033132": {
         "ChineseShort": "元素抗性·风Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Windal Resistance +1150"
+        "EnglishLong": "Wind Resistance +1150"
     },
     "2033133": {
         "ChineseShort": "元素抗性·风Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Windal Resistance +1950"
+        "EnglishLong": "Wind Resistance +1950"
     },
     "2033140": {
         "ChineseShort": "元素抗性·雷"
@@ -13763,17 +13896,17 @@
     "2033151": {
         "ChineseShort": "元素抗性·光Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Lightal Resistance +500"
+        "EnglishLong": "Light Resistance +500"
     },
     "2033152": {
         "ChineseShort": "元素抗性·光Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Lightal Resistance +1150"
+        "EnglishLong": "Light Resistance +1150"
     },
     "2033153": {
         "ChineseShort": "元素抗性·光Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Lightal Resistance +1950"
+        "EnglishLong": "Light Resistance +1950"
     },
     "2033160": {
         "ChineseShort": "元素抗性·暗"
@@ -13781,17 +13914,17 @@
     "2033161": {
         "ChineseShort": "元素抗性·暗Lv1",
         "EnglishShort": "Potion",
-        "EnglishLong": "Darkal Resistance +500"
+        "EnglishLong": "Dark Resistance +500"
     },
     "2033162": {
         "ChineseShort": "元素抗性·暗Lv2",
         "EnglishShort": "Potion",
-        "EnglishLong": "Darkal Resistance +1150"
+        "EnglishLong": "Dark Resistance +1150"
     },
     "2033163": {
         "ChineseShort": "元素抗性·暗Lv3",
         "EnglishShort": "Potion",
-        "EnglishLong": "Darkal Resistance +1950"
+        "EnglishLong": "Dark Resistance +1950"
     },
     "2100001": {
         "ChineseShort": "彩虹桥BUFF"
@@ -13819,7 +13952,7 @@
     "2100008": {
         "ChineseShort": "3701输出小技能-冰箱",
         "EnglishShort": "Stasis",
-        "EnglishLong": "Immune to damage, restores 5% health per second"
+        "EnglishLong": "Immune to damage, restores 5% HP per second"
     },
     "2100009": {
         "ChineseShort": "运气耗尽"
@@ -13884,7 +14017,7 @@
     },
     "2100151": {
         "ChineseShort": "3602输出大招-暴击流",
-        "EnglishShort": "​True Sight​",
+        "EnglishShort": "True Sight",
         "EnglishLong": "Increases Crit chance by 35%"
     },
     "2100152": {
@@ -13933,7 +14066,7 @@
     "2100203": {
         "ChineseShort": "3104战斗怒吼-愤怒噌噌涨",
         "EnglishShort": "Battle Roar",
-        "EnglishLong": "Continuously increase the hostility value of the marked target, and recover 3% of your own health when attacking it"
+        "EnglishLong": "Continuously increase the hostility value of the marked target, and recover 3% of your own HP when attacking it"
     },
     "2100204": {
         "ChineseShort": "风！墙！"
@@ -14023,15 +14156,15 @@
     "2110024": {
         "ChineseShort": "超会心",
         "EnglishShort": "Super Critical",
-        "EnglishLong": "Crit and Crit Damage increased during duration."
+        "EnglishLong": "Crit and Crit DMG increased throughout the duration."
     },
     "2110025": {
         "ChineseShort": "绝技，猪突猛进"
     },
     "2110026": {
         "ChineseShort": "重伤",
-        "EnglishShort": "Severe Injury",
-        "EnglishLong": "Healing received -100% during duration"
+        "EnglishShort": "Wound",
+        "EnglishLong": "Healing received -100% throughout the duration"
     },
     "2110031": {
         "ChineseShort": "共鸣远古伊露娜",
@@ -14050,18 +14183,18 @@
     },
     "2110034": {
         "ChineseShort": "冷却缩减提升",
-        "EnglishShort": "Increase Cooldown Reduction",
-        "EnglishLong": "Increase cooldown speed during the duration"
+        "EnglishShort": "Lower CD",
+        "EnglishLong": "Increase CD speed throughout the duration"
     },
     "2110041": {
         "ChineseShort": "共鸣蓝火-赤玉地狐",
-        "EnglishShort": "Resonance Blue Fire - Crimson Foxen",
-        "EnglishLong": "Resonance Blue Fire - Crimson Foxen"
+        "EnglishShort": "Blue Fire - Crimson Foxen",
+        "EnglishLong": "Blue Fire - Crimson Foxen"
     },
     "2110042": {
         "ChineseShort": "急速提升",
         "EnglishShort": "Haste",
-        "EnglishLong": "Increase Haste during duration"
+        "EnglishLong": "Increase Haste throughout the duration"
     },
     "2110051": {
         "ChineseShort": "共鸣手雷",
@@ -14076,7 +14209,7 @@
     "2110053": {
         "ChineseShort": "精通加成",
         "EnglishShort": "Mastery Increase",
-        "EnglishLong": "Increase Mastery during duration"
+        "EnglishLong": "Increase Mastery throughout the duration"
     },
     "2110054": {
         "ChineseShort": "不可列入仇恨属性添加"
@@ -14105,12 +14238,12 @@
     "2110060": {
         "ChineseShort": "迅捷涡流加属性",
         "EnglishShort": "Swift Vortex",
-        "EnglishLong": "Gain explosive Speed and rapid acceleration during duration"
+        "EnglishLong": "Gain explosive Speed and rapid acceleration throughout the duration"
     },
     "2110061": {
         "ChineseShort": "烈焰之心不死",
         "EnglishShort": "Heart of Flames",
-        "EnglishLong": "Health cannot drop below a certain percentage during duration"
+        "EnglishLong": "HP cannot drop below a certain percentage throughout the duration"
     },
     "2110062": {
         "ChineseShort": "巨斧哥布林攻击力提升",
@@ -14126,12 +14259,12 @@
     "2110065": {
         "ChineseShort": "炽热战意",
         "EnglishShort": "Fiery Battle Will",
-        "EnglishLong": "Affected by the Fiery Battle Axe, increases Attack Power"
+        "EnglishLong": "Affected by the Fiery Battle Axe, increases ATK"
     },
     "2110066": {
         "ChineseShort": "大地之盾",
         "EnglishShort": "Earth Shield",
-        "EnglishLong": "Restores a percentage of lost HP when hit during duration, up to 9 times"
+        "EnglishLong": "Restores a percentage of lost HP when hit throughout the duration, up to 9 times"
     },
     "2110067": {
         "ChineseShort": "坚毅壁垒寻找目标"
@@ -14144,12 +14277,12 @@
     "2110069": {
         "ChineseShort": "破伤风效果",
         "EnglishShort": "Tetanus",
-        "EnglishLong": "Healing received -100% during duration"
+        "EnglishLong": "Healing received -100% throughout the duration"
     },
     "2110070": {
         "ChineseShort": "攻击力下降",
         "EnglishShort": "Demoralizing Roar",
-        "EnglishLong": "Attack Power reduced during the duration"
+        "EnglishLong": "ATK reduced throughout the duration"
     },
     "2110071": {
         "ChineseShort": "野猪王闪电链主Buff"
@@ -14166,7 +14299,7 @@
     "2110075": {
         "ChineseShort": "增加精通",
         "EnglishShort": "Breaking Out of the Cocoon",
-        "EnglishLong": "Significant mastery boost during duration"
+        "EnglishLong": "Significant mastery boost throughout the duration"
     },
     "2110076": {
         "ChineseShort": "击杀目标叠层",
@@ -14175,12 +14308,12 @@
     "2110077": {
         "ChineseShort": "叠层buff",
         "EnglishShort": "Intimidation",
-        "EnglishLong": "Gain Attack Power for each enemy killed during duration, up to 10 layers"
+        "EnglishLong": "Gain ATK for each enemy killed throughout the duration, up to 10 stacks"
     },
     "2110078": {
         "ChineseShort": "防御力下降",
         "EnglishShort": "Shock Defense Break",
-        "EnglishLong": "Defense reduced during duration"
+        "EnglishLong": "Defense reduced throughout the duration"
     },
     "2110080": {
         "ChineseShort": "赤玉地狐-宠物天生BUFF",
@@ -14214,8 +14347,8 @@
     },
     "2110090": {
         "ChineseShort": "虚蚀侵害",
-        "EnglishShort": "​Void Corruption Decay",
-        "EnglishLong": "​Void Corruption Decay"
+        "EnglishShort": "Void Corruption Decay",
+        "EnglishLong": "Void Corruption Decay"
     },
     "2110091": {
         "ChineseShort": "接受伤害转为治疗",
@@ -14235,8 +14368,8 @@
     },
     "2110095": {
         "ChineseShort": "超会心-姆克头目",
-        "EnglishShort": "Weak Point Strike Enhancement",
-        "EnglishLong": "Crit and Crit Damage increased during duration."
+        "EnglishShort": "Crit Enhancement",
+        "EnglishLong": "Crit and Crit DMG increased throughout the duration."
     },
     "2110096": {
         "ChineseShort": "野猪王-雷球通电",
@@ -14256,7 +14389,7 @@
     "2110100": {
         "ChineseShort": "铁牙-重伤",
         "EnglishShort": "Healing Prohibition",
-        "EnglishLong": "Healing received -100% during duration"
+        "EnglishLong": "Healing received -100% throughout the duration"
     },
     "2110101": {
         "ChineseShort": "变异蜂-变身",
@@ -14266,7 +14399,7 @@
     "2110102": {
         "ChineseShort": "风哥布林王-加幸运",
         "EnglishShort": "Lucky enhancement",
-        "EnglishLong": "Greatly increases own luck and lucky hit chance"
+        "EnglishLong": "Greatly increases own luck and Lucky Strike chance"
     },
     "2110103": {
         "ChineseShort": "圣域飞鱼-加急速",
@@ -14301,7 +14434,7 @@
     "2110110": {
         "ChineseShort": "鱼人战士-主动",
         "EnglishShort": "Murloc's Luck",
-        "EnglishLong": "Increases Lucky Hit DMG"
+        "EnglishLong": "Increases Lucky Strike DMG"
     },
     "2110111": {
         "ChineseShort": "罗罗拉-咒术",
@@ -14311,6 +14444,10 @@
     "2110112": {
         "ChineseShort": "陶洛斯-麻痹",
         "EnglishShort": "Paralyzed"
+    },
+    "2110113": {
+        "ChineseShort": "污染蟹蛛-无敌",
+        "EnglishShort": "Void Arachnocrab - Invincible"
     },
     "2199999": {
         "ChineseShort": "共鸣技能怪物通用标记",
@@ -14334,8 +14471,8 @@
     },
     "2200051": {
         "ChineseShort": "心眼一击_超高回雷之印",
-        "EnglishShort": "​Overdrive​",
-        "EnglishLong": "Gain 2 additional Thunder Sigils on the next ​Overdrive​, effect removed upon leaving combat state."
+        "EnglishShort": "Overdrive",
+        "EnglishLong": "Gain 2 additional Thunder Sigils on the next Overdrive, effect removed upon leaving combat state."
     },
     "2200060": {
         "ChineseShort": "心眼强化"
@@ -14358,7 +14495,7 @@
     "2200111": {
         "ChineseShort": "雷返叠层",
         "EnglishShort": "Thunder Reversal Mark",
-        "EnglishLong": "Consumes 5 layers of Thunder Reversal Mark when releasing ​Iaido Slash​, gaining 10% Thunder Element Damage for 15s."
+        "EnglishLong": "Consumes 5 layers of Thunder Reversal Mark when releasing Iaido Slash, gaining 10% Thunder Element Damage for 15s."
     },
     "2200112": {
         "ChineseShort": "雷返效果",
@@ -14371,7 +14508,7 @@
     "2200121": {
         "ChineseShort": "霹雳居合连斩替换",
         "EnglishShort": "Thunder Cut",
-        "EnglishLong": "​Iaido Slash​ comes with a Vacuum Wave."
+        "EnglishLong": "Iaido Slash comes with a Vacuum Wave."
     },
     "2200122": {
         "ChineseShort": "雷压计数buff"
@@ -14387,8 +14524,8 @@
     },
     "2200151": {
         "ChineseShort": "刃风界域_居合附带刃风",
-        "EnglishShort": "Blade Wind Domain",
-        "EnglishLong": "Releases ​Iaido Slash​, forming a Blade Wind Domain in front."
+        "EnglishShort": "Bladewind Domain",
+        "EnglishLong": "Releases Iaido Slash, forming a Bladewind Domain in front."
     },
     "2200160": {
         "ChineseShort": "雷魂之触"
@@ -14523,6 +14660,11 @@
     "2200400": {
         "ChineseShort": "雷符刀意"
     },
+    "2200401": {
+        "ChineseShort": "雷符刀意减伤",
+        "EnglishShort": "Thunder Charm Blade Intent Defense",
+        "EnglishLong": "Grant 20% DMG Reduction while consuming Blade Intent"
+    },
     "2200410": {
         "ChineseShort": "无穷雷霆"
     },
@@ -14617,7 +14759,7 @@
     },
     "2200641": {
         "ChineseShort": "绚影层叠替换缭乱兜割",
-        "EnglishShort": "​Chaos Breaker​"
+        "EnglishShort": "Chaos Breaker"
     },
     "2200650": {
         "ChineseShort": "雷击强化"
@@ -14645,6 +14787,12 @@
     },
     "2200721": {
         "ChineseShort": "月刃神速效果"
+    },
+    "2200730": {
+        "ChineseShort": "雷霆神威"
+    },
+    "2200740": {
+        "ChineseShort": "雷霆神威"
     },
     "2201010": {
         "ChineseShort": "砂岩之握精进"
@@ -14710,7 +14858,7 @@
     "2201161": {
         "ChineseShort": "猛击庇护_减伤子BUFF",
         "EnglishShort": "Defense Buff",
-        "EnglishLong": "Reduces DMG taken from enemies by 3%, stacking up to 3 times."
+        "EnglishLong": "Reduces DMG by 3%, stacking up to 3 times."
     },
     "2201170": {
         "ChineseShort": "护盾回能"
@@ -14718,7 +14866,16 @@
     "2201171": {
         "ChineseShort": "护盾回能_回能buff"
     },
-    "2201172": {},
+    "2201172": {
+        "ChineseShort": "删所有盾并造成伤害",
+        "EnglishShort": "Shatter All Shields & Deal Damage",
+        "EnglishLong": "Shatter All Shields & Deal Damage"
+    },
+    "2201173": {
+        "ChineseShort": "有盾标记",
+        "EnglishShort": "Shielded",
+        "EnglishLong": "Shielded"
+    },
     "2201180": {
         "ChineseShort": "猛击援护"
     },
@@ -14728,7 +14885,7 @@
     "2201191": {
         "ChineseShort": "砂之庇护",
         "EnglishShort": "Sandy Shelter",
-        "EnglishLong": "Shield strength +3%, up to 10 layers.."
+        "EnglishLong": "Shield +3%, up to 10 layers.."
     },
     "2201200": {
         "ChineseShort": "护盾连击"
@@ -14766,7 +14923,7 @@
     "2201252": {
         "ChineseShort": "破碎怒击",
         "EnglishShort": "Shattering Rageblow",
-        "EnglishLong": "Block DMG RED +10%."
+        "EnglishLong": "Block DMG Reduction +10%."
     },
     "2201270": {
         "ChineseShort": "绝境逢生"
@@ -14801,7 +14958,7 @@
     },
     "2201311": {
         "ChineseShort": "怒不可遏buff效果",
-        "EnglishShort": "Enrage",
+        "EnglishShort": "Enraged",
         "EnglishLong": "Damage +20%, movement Speed +10%, gain super armor."
     },
     "2201320": {
@@ -14815,8 +14972,8 @@
     },
     "2201341": {
         "ChineseShort": "巨岩护体",
-        "EnglishShort": "​Stoneform​ Protection",
-        "EnglishLong": "​Stoneform​ Protection"
+        "EnglishShort": "Stoneform Protection",
+        "EnglishLong": "Stoneform Protection"
     },
     "2201342": {
         "ChineseShort": "同调领域buff"
@@ -14932,7 +15089,7 @@
     "2201501": {
         "ChineseShort": "碎星崩裂--子buff",
         "EnglishShort": "Starfall",
-        "EnglishLong": "​Starfall​ - Sub Buff"
+        "EnglishLong": "Starfall - Sub Buff"
     },
     "2201502": {
         "ChineseShort": "能量豆显示",
@@ -14989,7 +15146,7 @@
     "2201591": {
         "ChineseShort": "格挡庇护_子BUFF",
         "EnglishShort": "Block Shelter",
-        "EnglishLong": "Lucky Block DMG RED +2%, stacking up to 3 times."
+        "EnglishLong": "Lucky Block DMG Reduction +2%, stacking up to 3 times."
     },
     "2201600": {
         "ChineseShort": "魔法格挡"
@@ -15002,7 +15159,7 @@
     "2201611": {
         "ChineseShort": "岩之心--子buff",
         "EnglishShort": "Heart of Rock",
-        "EnglishLong": "​Granite Fury​ evolves into ​Stone Fist​."
+        "EnglishLong": "Granite Fury evolves into Stone Fist."
     },
     "2201620": {
         "ChineseShort": "轰拳",
@@ -15046,7 +15203,7 @@
     "2201651": {
         "ChineseShort": "壁垒刚毅_子BUFF",
         "EnglishShort": "Rampart Fortitude",
-        "EnglishLong": "Increases Block Counterstrike DMG by 10% for 10s, stacking up to 10 times."
+        "EnglishLong": "Increases Countercrush DMG by 10% for 10s, stacking up to 10 times."
     },
     "2201660": {
         "ChineseShort": "怒击强化"
@@ -15105,8 +15262,8 @@
     },
     "2202042": {
         "ChineseShort": "鼓舞减伤",
-        "EnglishShort": "Inspiration DMG RED",
-        "EnglishLong": "Inspiration DMG RED"
+        "EnglishShort": "Inspiration DMG Reduction",
+        "EnglishLong": "Inspiration DMG Reduction"
     },
     "2202050": {
         "ChineseShort": "再生蓓蕾"
@@ -15129,7 +15286,7 @@
     "2202081": {
         "ChineseShort": "森之精通子buff",
         "EnglishShort": "Arcane of Green",
-        "EnglishLong": "Infusion, Wild Bloom, and ​Stag Charge​ damage +20%."
+        "EnglishLong": "Infusion, Wild Bloom, and Stag Charge damage +20%."
     },
     "2202090": {
         "ChineseShort": "治疗链接"
@@ -15150,8 +15307,8 @@
     },
     "2202120": {
         "ChineseShort": "自然护盾",
-        "EnglishShort": "Nature Shield​",
-        "EnglishLong": "Nature Shield​"
+        "EnglishShort": "Nature Shield",
+        "EnglishLong": "Nature Shield"
     },
     "2202121": {
         "ChineseShort": "自然护盾_子BUFF_目标身上cd"
@@ -15176,7 +15333,7 @@
     "2202142": {
         "ChineseShort": "幸运愈合_愈合",
         "EnglishShort": "Healing",
-        "EnglishLong": "Restores 20% of Attack Power as health per second, lasts 3s."
+        "EnglishLong": "Restores 20% of ATK as HP per second, lasts 3s."
     },
     "2202150": {
         "ChineseShort": "幸运追击"
@@ -15254,7 +15411,7 @@
     "2202241": {
         "ChineseShort": "绽放光环_自然之灵",
         "EnglishShort": "Spirit of Nature",
-        "EnglishLong": "casting Life Bloom does not consume energy."
+        "EnglishLong": "Casting Life Bloom does not consume energy."
     },
     "2202250": {
         "ChineseShort": "鹿之奔袭"
@@ -15338,7 +15495,7 @@
     },
     "2202331": {
         "ChineseShort": "花界神升",
-        "EnglishShort": "Divine Ascension of the Flower Realm",
+        "EnglishShort": "Flowers Ascension",
         "EnglishLong": "Forest Bonus +10%."
     },
     "2202340": {
@@ -15387,13 +15544,13 @@
     },
     "2202440": {
         "ChineseShort": "自然护盾吸收翻倍",
-        "EnglishShort": "Nature Shield​ absorption doubled",
-        "EnglishLong": "Nature Shield​ absorption doubled"
+        "EnglishShort": "Nature Shield absorption doubled",
+        "EnglishLong": "Nature Shield absorption doubled"
     },
     "2202441": {
         "ChineseShort": "翻倍-子buff",
         "EnglishShort": "Shelter",
-        "EnglishLong": "The Nature Shield​ added by Wild Bloom or Nature's Shrine absorbs double the damage."
+        "EnglishLong": "The Nature Shield added by Wild Bloom or Nature's Shrine absorbs double the damage."
     },
     "2202450": {
         "ChineseShort": "脉冲之息"
@@ -15521,7 +15678,7 @@
     "2202671": {
         "ChineseShort": "超然",
         "EnglishShort": "Transcendence",
-        "EnglishLong": "Instantly gain 100 energy, and all Expertise immediately finish their cooldowns. Magic Power +30% for the next 10s."
+        "EnglishLong": "Instantly gain 100 energy, and all Expertise immediately finish their CDs. MATK +30% for the next 10s."
     },
     "2202680": {
         "ChineseShort": "治疗冷却"
@@ -15544,7 +15701,7 @@
     "2202702": {
         "ChineseShort": "红色花株【洞察启示】",
         "EnglishShort": "Crimson Insight",
-        "EnglishLong": "The cooldown time of the next Expertise Skill cast -50%."
+        "EnglishLong": "The CD of the next Expertise Skill cast -50%."
     },
     "2202703": {
         "ChineseShort": "黄色花株【虔诚启示】",
@@ -15554,7 +15711,7 @@
     "2202704": {
         "ChineseShort": "蓝色花株【慰藉启示】",
         "EnglishShort": "Moonlight Solace",
-        "EnglishLong": "The next Life Bloom applies a shield to the healed target for 8s, absorbing damage equal to 200% of your Attack Power. Targets with the shield take 10% less damage from all sources."
+        "EnglishLong": "The next Life Bloom applies a shield to the healed target for 8s, absorbing damage equal to 200% of your ATK. Targets with the shield take 10% less damage from all sources."
     },
     "2202705": {
         "ChineseShort": "蓝花花护盾",
@@ -15787,7 +15944,7 @@
     },
     "2203292": {
         "ChineseShort": "苍穹之落-子BUFF2",
-        "EnglishShort": "Photon Regorge",
+        "EnglishShort": "Photon Reforge",
         "EnglishLong": "Photon Energy is fully charged. Special Attacks and certain Class Skills are enhanced."
     },
     "2203293": {
@@ -15862,7 +16019,7 @@
     },
     "2203441": {
         "ChineseShort": "强化怒涛射击-子buff  替换怒涛射击",
-        "EnglishShort": "​Lumi Torrent​"
+        "EnglishShort": "Lumi Torrent"
     },
     "2203450": {
         "ChineseShort": "狂野呼唤冷却"
@@ -16028,7 +16185,7 @@
     },
     "2204101": {
         "ChineseShort": "冰凌之约_叠层",
-        "EnglishShort": "Ice shard pact",
+        "EnglishShort": "Ice Shard Pact",
         "EnglishLong": "Haste, mastery +1%, lasts for 3s, up to 5 layers."
     },
     "2204110": {
@@ -16082,8 +16239,8 @@
     },
     "2204171": {
         "ChineseShort": "风雨际会-子BUFF",
-        "EnglishShort": "Stormy encounter",
-        "EnglishLong": "​Crystal Veil​ damage has a 10% fixed chance to gain Frost."
+        "EnglishShort": "Stormy Encounter",
+        "EnglishLong": "Crystal Veil damage has a 10% fixed chance to gain Frost."
     },
     "2204172": {
         "ChineseShort": "风雨际会-子buff2"
@@ -16185,7 +16342,7 @@
     "2204371": {
         "ChineseShort": "无尽苦寒-子BUFF",
         "EnglishShort": "Endless Cold",
-        "EnglishLong": "Increases Meteor Storm DMG by 150%, and removes its cooldown and Ice Energy cost. During this period, Ice Arrows triggered by Meteor Storm cannot produce Frost Crystal."
+        "EnglishLong": "Increases Meteor Storm DMG by 150%, and removes its CD and Ice Energy cost. During this period, Ice Arrows triggered by Meteor Storm cannot produce Frost Crystal."
     },
     "2204380": {
         "ChineseShort": "冰矛二连发"
@@ -16347,14 +16504,14 @@
     },
     "2205071": {
         "ChineseShort": "异技瞬回_撕裂",
-        "EnglishLong": "Target loses HP equal to 25% Attack Power per second."
+        "EnglishLong": "Target loses HP equal to 25% ATK per second."
     },
     "2205080": {
         "ChineseShort": "快枪流星"
     },
     "2205081": {
         "ChineseShort": "螺旋爆炎效果",
-        "EnglishShort": "Thousand Wounds",
+        "EnglishShort": "Rupture",
         "EnglishLong": "Tear effect +100%"
     },
     "2205090": {
@@ -16380,7 +16537,7 @@
     "2205131": {
         "ChineseShort": "风螺旋",
         "EnglishShort": "Wind Spiral",
-        "EnglishLong": "Spiral Thrust, ​Valor Cyclone​ includes Spiral Explosion."
+        "EnglishLong": "Spiral Thrust, Valor Cyclone includes Spiral Explosion."
     },
     "2205132": {
         "ChineseShort": "释放风螺旋",
@@ -16392,10 +16549,13 @@
     },
     "2205134": {
         "ChineseShort": "神影螺旋",
-        "EnglishShort": "​Vortex Strike​"
+        "EnglishShort": "Vortex Strike"
     },
     "2205140": {
         "ChineseShort": "刹那暴击"
+    },
+    "2205141": {
+        "ChineseShort": "刹那连击暴击翻倍"
     },
     "2205150": {
         "ChineseShort": "飞矛贯穿"
@@ -16438,7 +16598,7 @@
     },
     "2205211": {
         "ChineseShort": "追击身法",
-        "EnglishShort": "Pursuit Stance",
+        "EnglishShort": "Chasing Step",
         "EnglishLong": "DMG of Instant Edge +30%, stacking up to 2 times. Deducts 1 stack after Instant Edge deals DMG."
     },
     "2205220": {
@@ -16447,7 +16607,7 @@
     "2205221": {
         "ChineseShort": "战斗专长_属性",
         "EnglishShort": "Combat Expertise",
-        "EnglishLong": "Attack Power +2% every 15s, up to +8%."
+        "EnglishLong": "ATK +2% every 15s, up to +8%."
     },
     "2205230": {
         "ChineseShort": "幻影连击"
@@ -16458,7 +16618,7 @@
     "2205241": {
         "ChineseShort": "捕手_叠层",
         "EnglishShort": "Catcher",
-        "EnglishLong": "For every enemy that you participated in defeating, Attack Power +30 for 30s, up to 300."
+        "EnglishLong": "For every enemy that you participated in defeating, ATK +30 for 30s, up to 300."
     },
     "2205242": {
         "ChineseShort": "捕手_参与击杀"
@@ -16471,7 +16631,7 @@
     },
     "2205261": {
         "ChineseShort": "风雷破击子buff",
-        "EnglishShort": "Wind and Thunder Strike",
+        "EnglishShort": "Tempestrike",
         "EnglishLong": "Strength +12%."
     },
     "2205270": {
@@ -16526,7 +16686,7 @@
     "2205371": {
         "ChineseShort": "破追精进效果",
         "EnglishShort": "Break Pursuit Advancement",
-        "EnglishLong": "Casting Break Pursuit will not enter cooldown, and the effect is removed after the time ends or after Casting Break Pursuit 3 times."
+        "EnglishLong": "Casting Break Pursuit will not enter CD, and the effect is removed after the time ends or after Casting Break Pursuit 3 times."
     },
     "2205380": {
         "ChineseShort": "刚勇"
@@ -16562,7 +16722,7 @@
     },
     "2205421": {
         "ChineseShort": "疾驰龙炮替换",
-        "EnglishShort": "​Drake Cannon​"
+        "EnglishShort": "Drake Cannon"
     },
     "2205430": {
         "ChineseShort": "千疮百孔"
@@ -16615,7 +16775,7 @@
     },
     "2205521": {
         "ChineseShort": "风环龙炮替换",
-        "EnglishShort": "​Drake Cannon​"
+        "EnglishShort": "Drake Cannon"
     },
     "2205530": {
         "ChineseShort": "飞鸟精进"
@@ -16631,7 +16791,7 @@
     },
     "2205561": {
         "ChineseShort": "锐利长息_子BUFF",
-        "EnglishShort": "​Azure Sever​"
+        "EnglishShort": "Azure Sever"
     },
     "2205570": {
         "ChineseShort": "锐利扩充"
@@ -16681,7 +16841,7 @@
     "2206011": {
         "ChineseShort": "光铸身躯-子buff",
         "EnglishShort": "Radiant shield",
-        "EnglishLong": "Infuse the shield with light, absorbing 50% of the damage taken during the duration. Repeated acquisition can stack absorption and reset duration, up to 100% of Max HP."
+        "EnglishLong": "Infuse the shield with light, absorbing 50% of the damage taken throughout the duration. Repeated acquisition can stack absorption and reset duration, up to 100% of Max HP."
     },
     "2206020": {
         "ChineseShort": "断罪",
@@ -16707,8 +16867,8 @@
     },
     "2206042": {
         "ChineseShort": "裁决之环CD",
-        "EnglishShort": "Judgment Ring Cooldown",
-        "EnglishLong": "Judgment Ring Cooldown"
+        "EnglishShort": "Judgment Ring CD",
+        "EnglishLong": "Judgment Ring CD"
     },
     "2206043": {
         "ChineseShort": "继承等级",
@@ -16769,7 +16929,7 @@
     "2206121": {
         "ChineseShort": "替换炽热清算",
         "EnglishShort": "Inferno Reckon",
-        "EnglishLong": "Replace ​Inferno Reckon"
+        "EnglishLong": "Replace Inferno Reckon"
     },
     "2206130": {
         "ChineseShort": "光护",
@@ -16804,7 +16964,7 @@
     "2206171": {
         "ChineseShort": "光明圣剑-子buff",
         "EnglishShort": "Lightforged Greatsword",
-        "EnglishLong": "​Aegis Ward​ Sword - Sub Buff"
+        "EnglishLong": "Aegis Ward Sword - Sub Buff"
     },
     "2206172": {
         "ChineseShort": "光明圣剑-炽热",
@@ -16847,7 +17007,7 @@
     },
     "2206220": {
         "ChineseShort": "圣环咏叹",
-        "EnglishShort": "​Divine Circle​ Chant"
+        "EnglishShort": "Divine Circle Chant"
     },
     "2206230": {
         "ChineseShort": "圣击",
@@ -16867,6 +17027,11 @@
         "ChineseShort": "命中印记",
         "EnglishShort": "Hit Mark",
         "EnglishLong": "Hit Mark"
+    },
+    "2206243": {
+        "ChineseShort": "神圣印记伤害",
+        "EnglishShort": "Holy Mark DMG",
+        "EnglishLong": "Holy Mark DMG"
     },
     "2206250": {
         "ChineseShort": "决心斩击",
@@ -16905,7 +17070,7 @@
     },
     "2206280": {
         "ChineseShort": "圣环激荡",
-        "EnglishShort": "​Divine Circle​ Resonance"
+        "EnglishShort": "Divine Circle Resonance"
     },
     "2206290": {
         "ChineseShort": "众生裁决",
@@ -16913,7 +17078,7 @@
     },
     "2206300": {
         "ChineseShort": "圣环祝福",
-        "EnglishShort": "​Divine Circle​ Blessing"
+        "EnglishShort": "Divine Circle Blessing"
     },
     "2206310": {
         "ChineseShort": "光铸平衡",
@@ -16933,7 +17098,8 @@
     },
     "2206331": {
         "ChineseShort": "转移仇恨",
-        "EnglishShort": "Transfer Aggro"
+        "EnglishShort": "Transfer Aggro",
+        "EnglishLong": "Max HP +10%"
     },
     "2206340": {
         "ChineseShort": "生命强化",
@@ -16941,8 +17107,8 @@
     },
     "2206350": {
         "ChineseShort": "断罪时效",
-        "EnglishShort": "​Condemn​ Time Limit",
-        "EnglishLong": "​Condemn​ Time Limit"
+        "EnglishShort": "Condemn Time Limit",
+        "EnglishLong": "Condemn Time Limit"
     },
     "2206360": {
         "ChineseShort": "剑舞",
@@ -16988,7 +17154,7 @@
     "2206421": {
         "ChineseShort": "炽热",
         "EnglishShort": "Scorching Heat",
-        "EnglishLong": "Reckoning derives into ​Inferno Reckon."
+        "EnglishLong": "Reckoning derives into Inferno Reckon."
     },
     "2206430": {
         "ChineseShort": "圣体治愈",
@@ -17091,7 +17257,7 @@
     "2206571": {
         "ChineseShort": "决断之刃_子BUFF",
         "EnglishShort": "Decisive Blade",
-        "EnglishLong": "​Sacred Blade​ DMG +100%."
+        "EnglishLong": "Sacred Blade DMG +100%."
     },
     "2206580": {
         "ChineseShort": "冷酷加速",
@@ -17133,7 +17299,7 @@
     },
     "2206660": {
         "ChineseShort": "圣剑强化",
-        "EnglishShort": "​Sacred Blade​ Enhancement"
+        "EnglishShort": "Sacred Blade Enhancement"
     },
     "2206670": {
         "ChineseShort": "光晕",
@@ -17250,7 +17416,7 @@
     },
     "2207241": {
         "ChineseShort": "获得超过热演奏",
-        "EnglishShort": "Passion Burst"
+        "EnglishShort": "Passion Fury"
     },
     "2207242": {
         "ChineseShort": "激涌五重奏CD立减，无消耗"
@@ -17273,7 +17439,7 @@
     "2207261": {
         "ChineseShort": "音域扩充强化标记",
         "EnglishShort": "Soundfield Expansion",
-        "EnglishLong": "Increases bonus for main stats"
+        "EnglishLong": "Increases bonus for main attributes"
     },
     "2207270": {
         "ChineseShort": "火曜"
@@ -17711,11 +17877,11 @@
     },
     "2401110": {
         "ChineseShort": "（唯一）【套装2A】居合伤害",
-        "EnglishShort": "(Unique) [Set 2A] — Iaido Slash DMG"
+        "EnglishShort": "(Unique) [Set 2A] - Iaido Slash DMG"
     },
     "2401120": {
         "ChineseShort": "（唯一）【套装4A】居合斩消耗雷之印增伤",
-        "EnglishShort": "(Unique) [Set 4A] — Iaido Slash DMG Boost from Thunder Sigil consumption"
+        "EnglishShort": "(Unique) [Set 4A] - Iaido Slash DMG Boost from Thunder Sigil consumption"
     },
     "2401121": {
         "ChineseShort": "（唯一）【套装4A】——增伤",
@@ -17735,7 +17901,7 @@
     },
     "2401240": {
         "ChineseShort": "（唯一）【套装4B】月刃触发幸运一击后增加幸运效果伤害",
-        "EnglishShort": "(Unique) [Set 4B] After Moonstrike triggers Lucky Hit, Luck Effect DMG increases"
+        "EnglishShort": "(Unique) [Set 4B] After Moonstrike triggers Lucky Strike, Luck Effect DMG increases"
     },
     "2401241": {
         "ChineseShort": "（唯一）【套装4B】——幸运效果伤害",
@@ -17743,39 +17909,39 @@
     },
     "2401250": {
         "ChineseShort": "【橙武】1",
-        "EnglishLong": "Critical DMG. <br>Skills that consume Thunder Sigil gain 5% PHY Boost."
+        "EnglishLong": "Crit DMG. <br>Skills that consume Thunder Sigil gain 5% PHY Boost."
     },
     "2402110": {
         "ChineseShort": "（唯一）【套装2A】冰矛伤害",
-        "EnglishShort": "(Unique) [Set 2A] — Icicle DMG"
+        "EnglishShort": "(Unique) [Set 2A] - Icicle DMG"
     },
     "2402111": {
         "ChineseShort": "（唯一）【套装2A】——冰矛伤害持续buff",
-        "EnglishShort": "(Unique) [Set 2A] — Icicle gains a lasting DMG buff"
+        "EnglishShort": "(Unique) [Set 2A] - Icicle gains a lasting DMG buff"
     },
     "2402120": {
         "ChineseShort": "寒冰风暴伤害",
-        "EnglishShort": "​Blizzard​ damage"
+        "EnglishShort": "Blizzard damage"
     },
     "2402130": {
         "ChineseShort": "（唯一）【套装4A】冰矛暴伤，消耗玄冰后寒冰风暴伤害",
-        "EnglishShort": "(Unique) [Set 4A] — Icicle Crit DMG, Blizzard DMG after consuming Frost Crystal"
+        "EnglishShort": "(Unique) [Set 4A] - Icicle Crit DMG, Blizzard DMG after consuming Frost Crystal"
     },
     "2402131": {
         "ChineseShort": "（唯一）【套装4A】——寒冰风暴伤害叠层",
-        "EnglishShort": "(Unique) [Set 4A] — Stacking DMG for Blizzard"
+        "EnglishShort": "(Unique) [Set 4A] - Stacking DMG for Blizzard"
     },
     "2402210": {
         "ChineseShort": "（唯一）【套装2B】寒冰射线伤害",
-        "EnglishShort": "(Unique) [Set 2B] — Frostbeam DMG"
+        "EnglishShort": "(Unique) [Set 2B] - Frostbeam DMG"
     },
     "2402220": {
         "ChineseShort": "（唯一）【套装4B】寒冰射线加精通",
-        "EnglishShort": "(Unique) [Set 4B] — Frostbeam Mastery"
+        "EnglishShort": "(Unique) [Set 4B] - Frostbeam Mastery"
     },
     "2402221": {
         "ChineseShort": "（唯一）【套装4B】——精通",
-        "EnglishShort": "(Unique) [Set 4B] — Mastery"
+        "EnglishShort": "(Unique) [Set 4B] - Mastery"
     },
     "2402230": {
         "ChineseShort": "激光消耗减少（唯一）",
@@ -17799,27 +17965,27 @@
     },
     "2403120": {
         "ChineseShort": "（唯一）【套装2A】消耗勇气的技能",
-        "EnglishShort": "(Unique) [Set 2A] — Skills consuming Courage"
+        "EnglishShort": "(Unique) [Set 2A] - Skills consuming Courage"
     },
     "2403130": {
         "ChineseShort": "（唯一）【套装4A】锐利增伤",
-        "EnglishShort": "(Unique) [Set 4A] — Sharp DMG Boost"
+        "EnglishShort": "(Unique) [Set 4A] - Sharp DMG Boost"
     },
     "2403210": {
         "ChineseShort": "（唯一）【套装4B】消耗锐利增伤",
-        "EnglishShort": "(Unique) [Set 4B] — DMG Boost from consuming Sharpness"
+        "EnglishShort": "(Unique) [Set 4B] - DMG Boost from consuming Sharp"
     },
     "2403211": {
         "ChineseShort": "（唯一）【套装4B】——消耗锐利增伤叠层",
-        "EnglishShort": "(Unique) [Set 4B] — Consuming Sharp grants stacking DMG Boost"
+        "EnglishShort": "(Unique) [Set 4B] - Consuming Sharp grants stacking DMG Boost"
     },
     "2403220": {
         "ChineseShort": "（唯一）【套装2B】翔返、刹那风伤害",
-        "EnglishShort": "(Unique) [Set 2B] — Skyfall, Instant Edge DMG"
+        "EnglishShort": "(Unique) [Set 2B] - Skyfall, Instant Edge DMG"
     },
     "2403230": {
         "ChineseShort": "（唯一）飞鸟投有几率获得1锐利",
-        "EnglishShort": "(Unique) Chance to gain 1 Sharpness from Falcon Toss"
+        "EnglishShort": "(Unique) Chance to gain 1 Sharp from Falcon Toss"
     },
     "2403240": {
         "ChineseShort": "【橙武】1",
@@ -17831,7 +17997,7 @@
     },
     "2403260": {
         "ChineseShort": "【橙武】3",
-        "EnglishShort": "Lucky Hit Multiplier. <br>While Galeform is active, increases PHY Boost by 6%."
+        "EnglishShort": "Lucky Strike Multiplier. <br>While Galeform is active, increases PHY Boost by 6%."
     },
     "2404110": {
         "ChineseShort": "共生印记减伤（唯一）",
@@ -17851,7 +18017,7 @@
     },
     "2404130": {
         "ChineseShort": "（唯一）【套装2A】共生印记转换治疗量",
-        "EnglishShort": "(Unique) [Set 2A] — Symbiotic Mark healing conversion"
+        "EnglishShort": "(Unique) [Set 2A] - Symbiotic Mark healing conversion"
     },
     "2404140": {
         "ChineseShort": "（唯一）【套装4A】狂野绽放、不羁之种升下一次",
@@ -17859,7 +18025,7 @@
     },
     "2404210": {
         "ChineseShort": "（唯一）【套装4B】溢出治疗转护盾",
-        "EnglishShort": "(Unique) [Set 4B] — Excess healing to shield conversion"
+        "EnglishShort": "(Unique) [Set 4B] - Excess healing to shield conversion"
     },
     "2404211": {
         "ChineseShort": "（唯一）【套装4B】——护盾",
@@ -17868,7 +18034,7 @@
     },
     "2404220": {
         "ChineseShort": "（唯一）【套装2B】森之祈愿对最低血队友治疗效果",
-        "EnglishShort": "(Unique) [Set 2B] — Grove Wish Healing on lowest HP Ally"
+        "EnglishShort": "(Unique) [Set 2B] - Grove Wish Healing on lowest HP Ally"
     },
     "2404230": {
         "ChineseShort": "【橙武】1",
@@ -17884,7 +18050,7 @@
     },
     "2405110": {
         "ChineseShort": "宠物伤害",
-        "EnglishShort": "Pet Damage"
+        "EnglishShort": "Companion's Damage"
     },
     "2405120": {
         "ChineseShort": "光能重铸光元素伤害",
@@ -17904,11 +18070,11 @@
     },
     "2405141": {
         "ChineseShort": "（唯一）【套装4A】——光属性加成",
-        "EnglishShort": "(Unique) [Set 4A] — Light Attribute Bonus"
+        "EnglishShort": "(Unique) [Set 4A] - Light Attribute Bonus"
     },
     "2405210": {
         "ChineseShort": "（唯一）【套装2B】猎鹰出击、闪电冲击伤害",
-        "EnglishShort": "(Unique) [Set 2B] — Falcon Strike, Lightning Strike DMG"
+        "EnglishShort": "(Unique) [Set 2B] - Falcon Strike, Lightning Strike DMG"
     },
     "2405220": {
         "ChineseShort": "箭雨伤害",
@@ -17928,7 +18094,7 @@
     },
     "2406110": {
         "ChineseShort": "（唯一）【套装2A】护盾猛击伤害、护盾",
-        "EnglishShort": "(Unique) [Set 2A] — Shield Bash DMG, Shield"
+        "EnglishShort": "(Unique) [Set 2A] - Shield Bash DMG, Shield"
     },
     "2406120": {
         "ChineseShort": "有护盾时受治疗",
@@ -17944,11 +18110,11 @@
     },
     "2406210": {
         "ChineseShort": "（唯一）【套装2B】格挡冲击状态下，护甲提升",
-        "EnglishShort": "(Unique) [Set 2B] — Armor boost during Countercrush"
+        "EnglishShort": "(Unique) [Set 2B] - Armor boost during Countercrush"
     },
     "2406220": {
         "ChineseShort": "岩怒之击伤害",
-        "EnglishShort": "​Granite Fury​ damage"
+        "EnglishShort": "Granite Fury damage"
     },
     "2406221": {
         "ChineseShort": "格挡几率堆叠",
@@ -17968,7 +18134,7 @@
     },
     "2406250": {
         "ChineseShort": "【橙武】1",
-        "EnglishLong": "Shield Strength. <br>Under Enraged, gains 4.5% PHY Boost."
+        "EnglishLong": "Shield. <br>Under Enraged, gains 4.5% PHY Boost."
     },
     "2406260": {
         "ChineseShort": "【橙武】2",
@@ -17980,11 +18146,11 @@
     },
     "2407020": {
         "ChineseShort": "圣环内急速",
-        "EnglishShort": "Haste within the ​Divine Circle​"
+        "EnglishShort": "Haste within the Divine Circle"
     },
     "2407110": {
         "ChineseShort": "（唯一）【套装2A】英勇盾击伤害、施加的防御效果",
-        "EnglishShort": "(Unique) [Set 2A] — Valor Bash DMG, applied Armor effect"
+        "EnglishShort": "(Unique) [Set 2A] - Valor Bash DMG, applied Armor effect"
     },
     "2407120": {
         "ChineseShort": "清算的暴击几率",
@@ -17992,7 +18158,7 @@
     },
     "2407130": {
         "ChineseShort": "（唯一）【套装4A】消耗圣令给下次圣光守卫减伤",
-        "EnglishShort": "(Unique) [Set 4A] Consumes Holy Sigil to gain DMG RED during the next Aegis Ward"
+        "EnglishShort": "(Unique) [Set 4A] Consumes Holy Sigil to gain DMG Reduction during the next Aegis Ward"
     },
     "2407210": {
         "ChineseShort": "光铸屏障物理防御",
@@ -18000,11 +18166,11 @@
     },
     "2407220": {
         "ChineseShort": "圣剑伤害",
-        "EnglishShort": "​Sacred Blade​ damage"
+        "EnglishShort": "Sacred Blade damage"
     },
     "2407230": {
         "ChineseShort": "（唯一）【套装2B】光铸屏障减伤",
-        "EnglishShort": "(Unique) [Set 2B] Lightforged Barrier DMG RED"
+        "EnglishShort": "(Unique) [Set 2B] Lightforged Barrier DMG Reduction"
     },
     "2407231": {
         "ChineseShort": "光铸屏障消失减伤"
@@ -18019,7 +18185,7 @@
     },
     "2407260": {
         "ChineseShort": "【橙武】2",
-        "EnglishLong": "Critical DMG. <br>Under Valor Bash, gains 4.5% PHY Boost."
+        "EnglishLong": "Crit DMG. <br>Under Valor Bash, gains 4.5% PHY Boost."
     },
     "2407270": {
         "ChineseShort": "【橙武】3",
@@ -18073,7 +18239,7 @@
     },
     "3001010": {
         "ChineseShort": "虚蚀真言",
-        "EnglishShort": "​Void Corruption Mantra"
+        "EnglishShort": "Void Corruption Mantra"
     },
     "3001020": {
         "ChineseShort": "暗影庇护",
@@ -18081,11 +18247,11 @@
     },
     "3001030": {
         "ChineseShort": "虚蚀光环",
-        "EnglishShort": "​Void Aura"
+        "EnglishShort": "Void Aura"
     },
     "3001031": {
         "ChineseShort": "虚蚀光环-战斗中生效",
-        "EnglishShort": "​Void Aura",
+        "EnglishShort": "Void Aura",
         "EnglishLong": "Deals damage per second to nearby Void Monsters and restores HP when damage is dealt"
     },
     "3001040": {
@@ -18099,19 +18265,19 @@
     },
     "3001152": {
         "ChineseShort": "虚蚀爆裂—虚蚀之影",
-        "EnglishShort": "​Void Corruption Arcane—Voidshaded"
+        "EnglishShort": "Void Corruption Arcane-Voidshaded"
     },
     "3001160": {
         "ChineseShort": "虚蚀之力",
-        "EnglishShort": "​Void Corruption Power"
+        "EnglishShort": "Void Corruption Power"
     },
     "3001161": {
         "ChineseShort": "虚蚀之力—计时BUFF",
-        "EnglishShort": "​Void Corruption Power—Timed BUFF"
+        "EnglishShort": "Void Corruption Power-Timed BUFF"
     },
     "3001162": {
         "ChineseShort": "虚蚀之力—效果",
-        "EnglishShort": "​Void Corruption Power—Effect"
+        "EnglishShort": "Void Corruption Power-Effect"
     },
     "3001170": {
         "ChineseShort": "虚蚀波动"
@@ -18121,7 +18287,7 @@
     },
     "3001180": {
         "ChineseShort": "虚蚀灼热",
-        "EnglishShort": "​Void Corruption Scorch"
+        "EnglishShort": "Void Corruption Scorch"
     },
     "3001190": {
         "ChineseShort": "暗蚀回溯"
@@ -18144,11 +18310,11 @@
     },
     "3001211": {
         "ChineseShort": "暗影守护—生效",
-        "EnglishShort": "Shadow Guard—Activation"
+        "EnglishShort": "Shadow Guard-Activation"
     },
     "3001212": {
         "ChineseShort": "暗影守护—cd",
-        "EnglishShort": "Shadow Guard—Cooldown"
+        "EnglishShort": "Shadow Guard-CD"
     },
     "3001220": {
         "ChineseShort": "暗影真言"
@@ -18161,18 +18327,18 @@
     },
     "3001232": {
         "ChineseShort": "虚蚀盾——定时器",
-        "EnglishShort": "​Void Shield - Timer"
+        "EnglishShort": "Void Shield - Timer"
     },
     "3001240": {
         "ChineseShort": "虚蚀奥秘"
     },
     "3001241": {
         "ChineseShort": "虚蚀奥秘——定时器",
-        "EnglishShort": "​Void Secret - Timer"
+        "EnglishShort": "Void Secret - Timer"
     },
     "3001242": {
         "ChineseShort": "虚蚀奥秘——属性叠层",
-        "EnglishShort": "​Void Secret - Attribute Stack"
+        "EnglishShort": "Void Secret - Attribute Stack"
     },
     "3001250": {
         "ChineseShort": "虚蚀终结"
@@ -18194,7 +18360,7 @@
     },
     "3001290": {
         "ChineseShort": "虚雾奥秘",
-        "EnglishShort": "​Void Engram Mystery"
+        "EnglishShort": "Void Engram Mystery"
     },
     "3001291": {
         "ChineseShort": "虚雾奥秘——队友增益",
@@ -18235,36 +18401,36 @@
     },
     "3100010": {
         "ChineseShort": "极限本掉率提高-战甲",
-        "EnglishShort": "Extreme Drop Rate Increase—Armor",
-        "EnglishLong": "Extreme Drop Rate Increase—Armor"
+        "EnglishShort": "Extreme Drop Rate Increase-Armor",
+        "EnglishLong": "Extreme Drop Rate Increase-Armor"
     },
     "3100020": {
         "ChineseShort": "极限本掉率提高-手套",
-        "EnglishShort": "Extreme Drop Rate Increase—Gloves",
-        "EnglishLong": "Extreme Drop Rate Increase—Gloves"
+        "EnglishShort": "Extreme Drop Rate Increase-Gloves",
+        "EnglishLong": "Extreme Drop Rate Increase-Gloves"
     },
     "3100030": {
         "ChineseShort": "极限本掉率提高-战靴",
-        "EnglishShort": "Extreme Drop Rate Increase—Boots",
-        "EnglishLong": "Extreme Drop Rate Increase—Boots"
+        "EnglishShort": "Extreme Drop Rate Increase-Boots",
+        "EnglishLong": "Extreme Drop Rate Increase-Boots"
     },
     "3100040": {
         "ChineseShort": "极限本掉率提高-头盔",
-        "EnglishShort": "Extreme Drop Rate Increase—Helmet",
-        "EnglishLong": "Extreme Drop Rate Increase—Helmet"
+        "EnglishShort": "Extreme Drop Rate Increase-Helmet",
+        "EnglishLong": "Extreme Drop Rate Increase-Helmet"
     },
     "3100050": {
         "ChineseShort": "极限本掉率提高-头盔",
-        "EnglishShort": "Extreme Drop Rate Increase—Helmet",
-        "EnglishLong": "Extreme Drop Rate Increase—Helmet"
+        "EnglishShort": "Extreme Drop Rate Increase-Helmet",
+        "EnglishLong": "Extreme Drop Rate Increase-Helmet"
     },
     "3200002": {
         "ChineseShort": "铁牙-被动"
     },
     "3200003": {
         "ChineseShort": "铁牙-被动触发",
-        "EnglishShort": "Last stand",
-        "EnglishLong": "All Defense"
+        "EnglishShort": "Survival Instinct",
+        "EnglishLong": "All Armor"
     },
     "3200004": {
         "ChineseShort": "猪突猛进-被动特攻加成"
@@ -18376,12 +18542,12 @@
     "3210041": {
         "ChineseShort": "斥候姆克-被动-子buff加攻",
         "EnglishShort": "Swift Combo",
-        "EnglishLong": "Attack Power Increase"
+        "EnglishLong": "ATK Increase"
     },
     "3210042": {
         "ChineseShort": "斥候姆克被动强化",
         "EnglishShort": "Power of Muku",
-        "EnglishLong": "Further increases Attack Power based on number of passive stacks"
+        "EnglishLong": "Further increases ATK based on number of passive stacks"
     },
     "3210050": {
         "ChineseShort": "山贼首领-被动"
@@ -18493,7 +18659,7 @@
     "5000801": {
         "ChineseShort": "风元素充沛",
         "EnglishShort": "Abundant Wind",
-        "EnglishLong": "Phantom Dash Cooldown Reduction"
+        "EnglishLong": "Phantom Dash CD Reduction"
     },
     "5000802": {
         "ChineseShort": "森元素紊乱特效"
@@ -18565,12 +18731,12 @@
     "5001920": {
         "ChineseShort": "奥尔维拉的守护",
         "EnglishShort": "Olvera's Blessing",
-        "EnglishLong": "Gains Olvera's Blessing: +20% Attack Power for 60s."
+        "EnglishLong": "Gains Olvera's Blessing: +20% ATK for 60s."
     },
     "5001921": {
         "ChineseShort": "蒂娜的守护",
         "EnglishShort": "Tina's Blessing",
-        "EnglishLong": "Gain Tina's Blessing: +20% DMG RED for 60s."
+        "EnglishLong": "Gain Tina's Blessing: +20% DMG Reduction for 60s."
     },
     "5002101": {
         "ChineseShort": "支线昔日之影控制台特效",
@@ -18599,19 +18765,19 @@
     },
     "5002601": {
         "ChineseShort": "虚蚀屏幕",
-        "EnglishShort": "​Void Corruption Screen"
+        "EnglishShort": "Void Corruption Screen"
     },
     "5002701": {
         "ChineseShort": "虚印扩散版",
-        "EnglishShort": "Void Sigil​ Diffusion Edition"
+        "EnglishShort": "Void Sigil Diffusion Edition"
     },
     "5002801": {
         "ChineseShort": "虚印得到抑制",
-        "EnglishShort": "Void Sigil​ Suppress"
+        "EnglishShort": "Void Sigil Suppress"
     },
     "5002901": {
         "ChineseShort": "虚印弱化后",
-        "EnglishShort": "After Void Sigil​ Weakening"
+        "EnglishShort": "After Void Sigil Weakening"
     },
     "5003001": {
         "ChineseShort": "伤员引导",
@@ -18627,7 +18793,7 @@
     },
     "5003201": {
         "ChineseShort": "蒂娜泉之心溃散",
-        "EnglishShort": "Tina's ​Springheart Collapse"
+        "EnglishShort": "Tina's Core of Stellarium Collapse"
     },
     "5003202": {},
     "5003301": {
@@ -18676,8 +18842,8 @@
     },
     "7000003": {
         "ChineseShort": "烟花大会定制小伊烟花宝箱",
-        "EnglishShort": "Fireworks Festival Skin: Airy Fireworks Chest",
-        "EnglishLong": "Fireworks Festival Skin: Airy Fireworks Chest"
+        "EnglishShort": "Fireworks Festival Skin: Ee-chan Fireworks Chest",
+        "EnglishLong": "Fireworks Festival Skin: Ee-chan Fireworks Chest"
     },
     "7000031": {
         "ChineseShort": "采集物特效"
@@ -18885,6 +19051,12 @@
     "7000246": {
         "ChineseShort": "随机技能球"
     },
+    "7000247": {
+        "ChineseShort": "跑酷-起跑线(5倍长度)"
+    },
+    "7000248": {
+        "ChineseShort": "跑酷-终点线(5倍长度)"
+    },
     "7002200": {
         "ChineseShort": "钓鱼点"
     },
@@ -18920,8 +19092,8 @@
     },
     "7003021": {
         "ChineseShort": "洞悉扫描特效",
-        "EnglishShort": "​True Sight​ Scanning Effect",
-        "EnglishLong": "​True Sight​ Scanning Effect"
+        "EnglishShort": "True Sight Scanning Effect",
+        "EnglishLong": "True Sight Scanning Effect"
     },
     "7003031": {
         "ChineseShort": "滑翔开始",
@@ -19475,6 +19647,12 @@
     "7100021": {
         "ChineseShort": "弹跳装置-静止"
     },
+    "7100022": {
+        "ChineseShort": "气球-待机"
+    },
+    "7100023": {
+        "ChineseShort": "气球-消失"
+    },
     "7520010": {
         "ChineseShort": "普通宝箱 未开启"
     },
@@ -19907,8 +20085,8 @@
     },
     "7920050": {
         "ChineseShort": "宠物隐藏表现",
-        "EnglishShort": "Pet hiding performance",
-        "EnglishLong": "Pet hiding performance"
+        "EnglishShort": "Companion hiding performance",
+        "EnglishLong": "Companion hiding performance"
     },
     "7920051": {
         "ChineseShort": "挖矿开始",

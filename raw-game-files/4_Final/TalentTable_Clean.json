@@ -117,7 +117,7 @@
     },
     "52": {
         "TalentName$chinese": "易伤强度",
-        "TalentName$english": "Vulnerability Intensity"
+        "TalentName$english": "Vulnerability factor"
     },
     "53": {
         "TalentName$chinese": "易伤增伤",
@@ -401,7 +401,7 @@
         "TalentName$chinese": "雷霆之压",
         "TalentDes$chinese": "每次施放坠龙闪、神影斩叠加5层雷压，雷压最多可叠加8层。",
         "TalentName$english": "Thundrage",
-        "TalentDes$english": "Each time Dracoflash and Phantom Slash are cast, stack 5 layers of Thundrage, up to a maximum of 8 layers."
+        "TalentDes$english": "Each time Dracoflash and Phantom Slash are cast, gains 5 stacks of Thundrage, up to a maximum of 8 layers."
     },
     "148": {
         "TalentName$chinese": "超高出力精进",
@@ -473,7 +473,7 @@
         "TalentName$chinese": "月光电荷",
         "TalentDes$chinese": "月刃触发幸运一击时有30%固定几率，获得1枚电荷之种。",
         "TalentName$english": "Moonlight Charge",
-        "TalentDes$english": "When Moon Blade triggers a Lucky Strike, 30% chance to gain 1 Charge Seed."
+        "TalentDes$english": "When Moon Blade , 30% chance to gain 1 Charge Seed."
     },
     "160": {
         "TalentName$chinese": "刀意·极",
@@ -496,7 +496,7 @@
     "163": {
         "TalentName$chinese": "雷击强化",
         "TalentDes$chinese": "雷击伤害+20%。<br>每1%幸运提供1%雷击伤害加成。",
-        "TalentName$english": "Thunder Strike Enhancement",
+        "TalentName$english": "Enhanced Thunder",
         "TalentDes$english": "Lightning damage +20%.<br>Each 1% Luck provides 1% Lightning damage bonus."
     },
     "164": {
@@ -610,7 +610,7 @@
     "210": {
         "TalentName$chinese": "冰凌之约",
         "TalentDes$chinese": "水之涡流寒冰能量回复效率+200%。",
-        "TalentName$english": "Ice shard pact",
+        "TalentName$english": "Ice Shard Pact",
         "TalentDes$english": "Maelstrom Ice Energy recovery efficiency +200%."
     },
     "211": {
@@ -652,7 +652,7 @@
     "219": {
         "TalentName$chinese": "风雨际会",
         "TalentDes$chinese": "清滝绕珠造成伤害时有固定几率缩减寒冰风暴1秒剩余冷却时间，几率等同于你幸运%的一半。",
-        "TalentName$english": "Stormy encounter",
+        "TalentName$english": "Stormy Encounter",
         "TalentDes$english": "When Crystal Veil deals damage, it has a fixed chance to reduce the remaining CD time of Blizzard by 1s, with the chance equal to half of your Luck%."
     },
     "220": {
@@ -1048,8 +1048,8 @@
     "416": {
         "TalentName$chinese": "长矛贯穿",
         "TalentDes$chinese": "翔返触发幸运一击时触发长矛贯穿，每2秒最多生效一次。<br>长矛贯穿造成伤害回复8点勇气。",
-        "TalentName$english": "Spear Penetration",
-        "TalentDes$english": "When Skyfall triggers Lucky Strike, it triggers Spear Penetration, which can occur once every 2s.<br>Spear Penetration deals damage and recovers 8 points of Courage."
+        "TalentName$english": "Spear Thrust",
+        "TalentDes$english": "When Skyfall triggers Lucky Strike, it triggers Spear Thrust, which can occur once every 2s.<br>Spear Thrust deals damage and recovers 8 points of Courage."
     },
     "417": {
         "TalentName$chinese": "风怒",
@@ -1120,7 +1120,7 @@
     "429": {
         "TalentName$chinese": "风雷破击",
         "TalentDes$chinese": "风姿卓绝结束时施加风雷破击效果，使接下来8秒时间内自身力量+12%。<br>在风姿卓绝生效期间每消耗50点勇气，可使风雷破击时间延长1秒。",
-        "TalentName$english": "Wind and Thunder Strike",
+        "TalentName$english": "Tempestrike",
         "TalentDes$english": "When Wind Grace ends, apply Wind Thunder Break effect, increasing self strength by 12% for the next 8s.<br>During Wind Grace, every 50 points of Courage consumed extends Wind Thunder Break duration by 1s."
     },
     "430": {
@@ -1151,7 +1151,7 @@
         "TalentName$chinese": "斗志昂扬",
         "TalentDes$chinese": "<linktext=1525><style=\"ItemQuality_5\">风神·破阵之风</style></linktext>将举起旗枪，为队友施加<style=\"accent-gn\">激励</style>。随后可施加二段追击奋力跃入敌阵，对范围内的敌方目标造成<style=\"physical\">物理伤害</style>并将其击飞，同时回复<style=\"accent-gn\">100</style>点<style=\"accent-gn\">勇气</style>。<br><style=\"accent-gn\">激励</style>：持续<style=\"accent-gn\">10</style>秒，期间所有队友急速+<style=\"accent-gn\">10%</style>（该效果同时最多生效一个），自身每<style=\"accent-gn\">1</style>秒回复<style=\"accent-gn\">10</style>点<style=\"accent-gn\">勇气</style>每<style=\"accent-gn\">2</style>秒回复<style=\"accent-gn\">1</style>层<linktext=1152><style=\"ItemQuality_5\">锐利</style></linktext>。",
         "TalentName$english": "Battle Cry",
-        "TalentDes$english": "<linktext=1525><style=\"ItemQuality_5\">Typhoon Cleave</style></linktext>Raises the banner spear, granting <style=\"accent-gn\">Inspire</style> to Allies. Afterward, a follow-up leap can be launched, dealing <style=\"physical\">Attack Damage</style> to the enemies within range and knocking them airborne, while restoring <style=\"accent-gn\">100</style> <style=\"accent-gn\">Courage</style>. <br><style=\"accent-gn\">Inspire</style>: Lasts for <style=\"accent-gn\">10s</style>. All Allies gain <style=\"accent-gn\">10%</style> Haste (Only one effect can be active at a time). You restore <style=\"accent-gn\">10</style> <style=\"accent-gn\">Courage</style> <style=\"accent-gn\">per</style> second and <style=\"accent-gn\">1</style> <linktext=1152><style=\"ItemQuality_5\">Sharpness</style></linktext> every <style=\"accent-gn\">2s</style>."
+        "TalentDes$english": "<linktext=1525><style=\"ItemQuality_5\">Typhoon Cleave</style></linktext> Raises the banner spear, granting <style=\"accent-gn\">Inspire</style> to Allies. Afterward, a follow-up leap can be launched, dealing <style=\"physical\">Attack Damage</style> to the enemies within range and knocking them airborne, while restoring <style=\"accent-gn\">100</style> <style=\"accent-gn\">Courage</style>. <br><style=\"accent-gn\">Inspire</style>: Lasts for <style=\"accent-gn\">10s</style>. All Allies gain <style=\"accent-gn\">10%</style> Haste (only one effect can be active at a time). You restore <style=\"accent-gn\">10</style> <style=\"accent-gn\">Courage</style> <style=\"accent-gn\">per</style> second and <style=\"accent-gn\">1</style> <linktext=1152><style=\"ItemQuality_5\">Sharp</style></linktext> every <style=\"accent-gn\">2s</style>."
     },
     "435": {
         "TalentName$chinese": "迅捷",
@@ -1216,8 +1216,8 @@
     "445": {
         "TalentName$chinese": "千疮百孔",
         "TalentDes$chinese": "勇气风环造成伤害时，有50%固定几率施加千疮百孔。",
-        "TalentName$english": "Thousand Wounds",
-        "TalentDes$english": "When Valor Cyclone causes damage, 50% chance to apply Thousand Wounds."
+        "TalentName$english": "Rupture",
+        "TalentDes$english": "When Valor Cyclone causes damage, 50% chance to apply Rupture."
     },
     "446": {
         "TalentName$chinese": "螺旋撕裂",
@@ -1289,7 +1289,7 @@
         "TalentName$chinese": "长矛回复",
         "TalentDes$chinese": "长矛贯穿缩减飞鸟投剩余冷却时间2秒。",
         "TalentName$english": "Spear Recovery",
-        "TalentDes$english": "Spear Penetration reduces the remaining CD time of Falcon Toss by 2s."
+        "TalentDes$english": "Spear Thrust reduces the remaining CD time of Falcon Toss by 2s."
     },
     "458": {
         "TalentName$chinese": "锐利长息",
@@ -1319,7 +1319,7 @@
         "TalentName$chinese": "卓绝风华",
         "TalentDes$chinese": "风姿卓绝持续期间刹那、翔返伤害+25%。",
         "TalentName$english": "Exceptional Elegance",
-        "TalentDes$english": "During the duration of Galeform, Instant Edge and Skyfall damage +25%."
+        "TalentDes$english": "throughout the duration of Galeform, Instant Edge and Skyfall damage +25%."
     },
     "463": {
         "TalentName$chinese": "风神·锐利冲击",
@@ -1337,7 +1337,7 @@
         "TalentName$chinese": "风卷劲击",
         "TalentDes$chinese": "龙卷风伤害+30%。<br>长矛贯穿伤害+10%。",
         "TalentName$english": "Wind Swirl Strike",
-        "TalentDes$english": "Tornado damage +30%.<br>Spear Penetration damage +10%."
+        "TalentDes$english": "Tornado damage +30%.<br>Spear Thrust damage +10%."
     },
     "466": {
         "TalentName$chinese": "追击之锐",
@@ -1540,7 +1540,7 @@
     "530": {
         "TalentName$chinese": "花界神升",
         "TalentDes$chinese": "狂野之种造成伤害或滋养之种造成治疗时使得接下来8秒内获得10%森元素加成。",
-        "TalentName$english": "Divine Ascension of the Flower Realm",
+        "TalentName$english": "Flowers Ascension",
         "TalentDes$english": "When Wild Seed deals DMG or Nourishing Seed generates healing, you gain a 10% Forest bonus for the next 8s."
     },
     "531": {
@@ -1552,7 +1552,7 @@
     "532": {
         "TalentName$chinese": "荆棘",
         "TalentDes$chinese": "狂野之种命中目标时为其施加荆棘。<br>荆棘目标受到来自玩家的森元素伤害 +5%。",
-        "TalentName$english": "Thorns",
+        "TalentName$english": "Thorn",
         "TalentDes$english": "Wild Seed inflicts Thorn on the targets hit.<br>You deal 5% more Verdant DMG to the targets with Thorn."
     },
     "533": {
@@ -1901,7 +1901,7 @@
         "TalentName$chinese": "破碎怒击",
         "TalentDes$chinese": "岩怒之击造成伤害时，有20%几率使你的普通攻击派生为怒击，每2%幸运附加1%触发几率。<br>怒击施放后格挡减伤+10%，持续10秒。",
         "TalentName$english": "Shattering Rageblow",
-        "TalentDes$english": "When dealing DMG, Granite Fury has a 20% chance to allow your next Basic Attack to evolve into Rageblow. Each 2% Luck adds 1% chance.<br>After using Rageblow, increases Block DMG RED by 10% for 10s."
+        "TalentDes$english": "When dealing DMG, Granite Fury has a 20% chance to allow your next Basic Attack to evolve into Rageblow. Each 2% Luck adds 1% chance.<br>After using Rageblow, increases Block DMG Reduction by 10% for 10s."
     },
     "924": {
         "TalentName$chinese": "首领之牙",
@@ -1913,7 +1913,7 @@
         "TalentName$chinese": "绝境逢生",
         "TalentDes$chinese": "生命值低于30%时，触发绝境逢生，每60秒最多生效一次。",
         "TalentName$english": "Survival Instinct",
-        "TalentDes$english": "When HP falls below 30%, trigger Last Stand. Once every 60s."
+        "TalentDes$english": "When HP falls below 30%, trigger Survival Instinct. Once every 60s."
     },
     "926": {
         "TalentName$chinese": "敌影之盾",
@@ -1943,7 +1943,7 @@
         "TalentName$chinese": "格挡流",
         "TalentDes$chinese": "<style=\"accent-gn\">特殊攻击</style>更换为<linktext=1538><style=\"ItemQuality_5\">格挡冲击</style></linktext>，并增强使用该技能的能力。<br>触发<linktext=1126><style=\"ItemQuality_5\">幸运格挡</style></linktext>可格挡减伤+<style=\"accent-gn\">10%</style>。<br><br><i><style=\"text_third_gray\"><size=20>尽可能保持格挡冲击的覆盖，格挡冲击下受到的部分伤害会被格挡抵消掉，高额的幸运能让格挡时附加各种收益。</size></style></i>",
         "TalentName$english": "Block Spec",
-        "TalentDes$english": "Replace <style=\"accent-gn\">Special Attack</style> with <linktext=1538><style=\"ItemQuality_5\">Countercrush</style></linktext>, and enhance the ability. <br>When <linktext=1126><style=\"ItemQuality_5\">Lucky Block</style></linktext> triggers, increases Block DMG RED by <style=\"accent-gn\">10%</style>. <br><br><i><style=\"text_third_gray\"><size=20>Try to keep Countercrush active as much as possible. While it's active, part of incoming DMG can be blocked. High Luck allows parry to yield various buffs.</size></style></i>"
+        "TalentDes$english": "Replaces <style=\"accent-gn\">Special Attack</style> with <linktext=1538><style=\"ItemQuality_5\">Countercrush</style></linktext>, and enhances the ability. <br>When <linktext=1126><style=\"ItemQuality_5\">Lucky Block</style></linktext> triggers, increases Block DMG Reduction by <style=\"accent-gn\">10%</style>. <br><br><i><style=\"text_third_gray\"><size=20>Try to keep Countercrush active as much as possible. While it's active, part of incoming DMG can be blocked. High Luck allows parry to yield various buffs.</size></style></i>"
     },
     "931": {
         "TalentName$chinese": "岩盾流",
@@ -2019,7 +2019,7 @@
         "TalentName$chinese": "石域",
         "TalentDes$chinese": "砂石斗篷持续期间，受到攻击时使自身5米范围内敌方目标攻击速度降低30%，持续3秒。<br>砂石斗篷持续期间，自身8米范围内友方物理防御+10%。",
         "TalentName$english": "Stone Domain",
-        "TalentDes$english": "During the duration of Sandshroud, being attacked reduces the attack speed of enemy targets within 5 meters by 30%, lasting for 3s.<br>During the duration of Sandshroud, Armor of friendly targets within 8 meters +10%."
+        "TalentDes$english": "throughout the duration of Sandshroud, being attacked reduces the attack speed of enemy targets within 5 meters by 30%, lasting for 3s.<br>throughout the duration of Sandshroud, Armor of friendly targets within 8 meters +10%."
     },
     "944": {
         "TalentName$chinese": "岩盾倍增",
@@ -2031,7 +2031,7 @@
         "TalentName$chinese": "巨石护体",
         "TalentDes$chinese": "巨岩躯体持续期间受到所有伤害-10%。",
         "TalentName$english": "Boulder Shield",
-        "TalentDes$english": "During the duration of Stoneform, all damage received -10%."
+        "TalentDes$english": "throughout the duration of Stoneform, all damage received -10%."
     },
     "946": {
         "TalentName$chinese": "猛击护盾",
@@ -2055,7 +2055,7 @@
         "TalentName$chinese": "岩之主",
         "TalentDes$chinese": "施放碎星崩裂后，获得岩之主。<br>岩之主：15秒内，普通攻击派生为1次崩裂，怒爆派生为1次地崩山摧。",
         "TalentName$english": "Lord of Rocks",
-        "TalentDes$english": "After Casting Starfall Arcane, gain Rock Master.<br>Rock Master: For 15s, normal attacks evolve into 1 Arcane, and Rage Burst evolves into 1 Terra Sunder."
+        "TalentDes$english": "After Casting Starfall, gain Rock Master.<br>Rock Master: For 15s, normal attacks evolve into 1 Arcane, and Rage Burst evolves into 1 Terra Sunder."
     },
     "950": {
         "TalentName$chinese": "碎击",
@@ -2120,14 +2120,14 @@
     "960": {
         "TalentName$chinese": "岩弹",
         "TalentDes$chinese": "施放巨岩轰击后，接下来6秒时间内，每2秒召唤1记岩弹。",
-        "TalentName$english": "Earth Shard",
-        "TalentDes$english": "After Casting Stone Fist, summon 1 Rock Bullet every 2s for the next 6s."
+        "TalentName$english": "Granite",
+        "TalentDes$english": "After Casting Stone Fist, summon 1 Granite every 2s for the next 6s."
     },
     "961": {
         "TalentName$chinese": "岩弹激怒",
         "TalentDes$chinese": "每产生50点怒气，召唤1记岩弹。",
         "TalentName$english": "Granite Fury",
-        "TalentDes$english": "For every 50 Rage generated, summon 1 Rock Bullet."
+        "TalentDes$english": "For every 50 Rage generated, summon 1 Granite."
     },
     "962": {
         "TalentName$chinese": "岩拳回复",
@@ -2151,19 +2151,19 @@
         "TalentName$chinese": "岩弹二连击",
         "TalentDes$chinese": "岩弹有几率额外召唤1记岩弹，其几率等于幸运几率。",
         "TalentName$english": "Granite Combo",
-        "TalentDes$english": "Rock Bullet has a chance to summon an additional Rock Bullet, with the chance equal to Lucky Chance."
+        "TalentDes$english": "Granite has a chance to summon an additional Granite, with the chance equal to Lucky Chance."
     },
     "966": {
         "TalentName$chinese": "威压",
         "TalentDes$chinese": "岩弹命中目标使其接下来5秒内对我造成的所有伤害-10%。",
         "TalentName$english": "Intimidation",
-        "TalentDes$english": "Rock Bullet hitting a target reduces all damage dealt to me by that target by -10% for the next 5s."
+        "TalentDes$english": "Granite hitting a target reduces all damage dealt to me by that target by -10% for the next 5s."
     },
     "967": {
         "TalentName$chinese": "岩弹怒击",
         "TalentDes$chinese": "每召唤20记岩弹，获得岩之心。<br>岩之心：10秒内，岩怒之击派生为巨岩轰击。",
         "TalentName$english": "Granite Fury",
-        "TalentDes$english": "Every 20 rock bullets summoned grants a Heart of Rock.<br>Heart of Rock: For 10s, Granite Fury transforms into Stone Fist."
+        "TalentDes$english": "Every 20 Granites summoned grants a Heart of Rock.<br>Heart of Rock: For 10s, Granite Fury transforms into Stone Fist."
     },
     "968": {
         "TalentName$chinese": "反击风暴",
@@ -2385,7 +2385,7 @@
         "TalentName$chinese": "野兽之力",
         "TalentDes$chinese": "宠物伤害+10%。",
         "TalentName$english": "Beast Power",
-        "TalentDes$english": "Pet damage +10%."
+        "TalentDes$english": "Companion's damage +10%."
     },
     "1134": {
         "TalentName$chinese": "灵巧",
@@ -2409,7 +2409,7 @@
         "TalentName$chinese": "野兽怒涛之力",
         "TalentDes$chinese": "宠物伤害+2%。<br>施放怒涛射击后的5秒内，宠物伤害+10%。",
         "TalentName$english": "Beast Tidal Power",
-        "TalentDes$english": "Companion damage +2%.<br>Within 5s after Casting Torrent Volley, Companion damage +10%."
+        "TalentDes$english": "Companion's damage +2%.<br>Within 5s after Casting Torrent Volley, Companion's damage +10%."
     },
     "1138": {
         "TalentName$chinese": "箭雨加速",
@@ -2462,8 +2462,8 @@
     "1146": {
         "TalentName$chinese": "生命流失之精通",
         "TalentDes$chinese": "每2%精通提供1%生命流失伤害。",
-        "TalentName$english": "Mastery of bleed",
-        "TalentDes$english": "Every 2% mastery provides 1% bleed damage."
+        "TalentName$english": "Mastery of Bleed",
+        "TalentDes$english": "Every 2% mastery provides 1% Bleed damage."
     },
     "1147": {
         "TalentName$chinese": "追光锋锐",
@@ -2493,7 +2493,7 @@
         "TalentName$chinese": "践踏",
         "TalentDes$chinese": "施放狂野呼唤后的10秒内再次施放狂野呼唤，可命令场上的所有宠物立即施放践踏。",
         "TalentName$english": "Stomp",
-        "TalentDes$english": "Within 10s after Casting Wild Call, Casting Wild Call again can command all pets on the field to immediately cast Trample."
+        "TalentDes$english": "Within 10s after Casting Wild Call, Casting Wild Call again can command all Companions in combat to immediately cast Trample."
     },
     "1152": {
         "TalentName$chinese": "钢制喙",
@@ -2511,7 +2511,7 @@
         "TalentName$chinese": "凝神专注",
         "TalentDes$chinese": "精神凝聚持续期间，每1秒+0.5%暴击、1%暴击伤害，该效果最多叠加12层。",
         "TalentName$english": "Focused Concentration",
-        "TalentDes$english": "During the duration of Focus, +0.5% Crit and +1% Crit DMG every second, this effect can stack up to 12 layers."
+        "TalentDes$english": "throughout the duration of Focus, +0.5% Crit and +1% Crit DMG every second, this effect can stack up to 12 layers."
     },
     "1155": {
         "TalentName$chinese": "双矢极意",
@@ -2547,7 +2547,7 @@
         "TalentName$chinese": "天界雄鹰",
         "TalentDes$chinese": "精神凝聚持续期间，光能轰炸在目标位置召唤1只天界雄鹰。",
         "TalentName$english": "Celestial Eagle",
-        "TalentDes$english": "During the duration of Focus, Radiance Barrage summons a celestial eagle at the target's location."
+        "TalentDes$english": "throughout the duration of Focus, Radiance Barrage summons a celestial eagle at the target's location."
     },
     "1161": {
         "TalentName$chinese": "辉爆蓄势",
@@ -2559,7 +2559,7 @@
         "TalentName$chinese": "光棱",
         "TalentDes$chinese": "闪电冲击命中目标触发光棱。<br>光棱：对周围最多5个敌方目标分别造成100%攻击力造成连锁伤害，同时额外附加3层钢制喙。",
         "TalentName$english": "Light Prism",
-        "TalentDes$english": "Lightning Strike hitting the target triggers Prism.<br>Prism: Deals chain damage equal to 100% ATK to up to 5 surrounding enemy targets, additionally applies 3 layers of Steel Beak."
+        "TalentDes$english": "Lightning Strike hitting the target triggers Prism.<br>Prism: Deals chain damage equal to 100% ATK to up to 5 surrounding enemy targets, additionally applies 3 stacks of Steel Beak."
     },
     "1163": {
         "TalentName$chinese": "闪电破",
@@ -2577,7 +2577,7 @@
         "TalentName$chinese": "钢喙之击",
         "TalentDes$chinese": "聚能射击命中目标施加2层钢制喙，如果暴击则施加5层钢制喙。",
         "TalentName$english": "Steel Beak Strike",
-        "TalentDes$english": "Powerdraw hitting the target applies 2 layers of Steel Beak, if it hits critically, applies 5 layers of Steel Beak."
+        "TalentDes$english": "Powerdraw hitting the target applies 2 stacks of Steel Beak, if it hits critically, applies 5 stacks of Steel Beak."
     },
     "1166": {
         "TalentName$chinese": "钢制喙聚集",
@@ -2709,7 +2709,7 @@
         "TalentName$chinese": "光障",
         "TalentDes$chinese": "光铸屏障上限+2。",
         "TalentName$english": "Light Barrier",
-        "TalentDes$english": "Lightforged Barrier limit +2."
+        "TalentDes$english": "Lightforged Barrier cap +2."
     },
     "1220": {
         "TalentName$chinese": "光铸屏障的升华",
@@ -2739,19 +2739,19 @@
         "TalentName$chinese": "决心斩击",
         "TalentDes$chinese": "对神圣印记目标造成伤害时，伤害的2%转化为自己生命值。<br>光明决心持续期间，效果提升至4%。",
         "TalentName$english": "Determination Slash",
-        "TalentDes$english": "When dealing damage to targets with Holy Mark, 2% of the damage is converted into your own HP.<br>During the duration of Radiance, this effect is increased to 4%."
+        "TalentDes$english": "When dealing damage to targets with Holy Mark, 2% of the damage is converted into your own HP.<br>throughout the duration of Radiance, this effect is increased to 4%."
     },
     "1225": {
         "TalentName$chinese": "光铸驱动",
         "TalentDes$chinese": "施放光明决心时，自动向周围最多5个敌方目标释放裁决。",
         "TalentName$english": "Lightforged Drive",
-        "TalentDes$english": "When Casting Radiance, automatically releases Judgment to up to 5 surrounding enemy targets."
+        "TalentDes$english": "When casting Radiance, automatically releases Judgment to up to 5 surrounding enemy targets."
     },
     "1226": {
         "TalentName$chinese": "冷酷回溯",
         "TalentDes$chinese": "冷酷征伐持续期间，每秒获得1层光铸屏障同时每消耗1枚圣令，可为冷酷征伐进行1层充能；当充能达到3层时，冷酷征伐向外爆裂，造成200%攻击力物理伤害且必定暴击。",
         "TalentName$english": "Ruthless Rewind",
-        "TalentDes$english": "During Zeal Crusade, gains 1 stack of Lightforged Barrier per second and each Holy Decree consumed grants Zeal Crusade 1 charge. When 3 charges are reached, Zeal Crusade explodes outward, dealing 200% Attack Damage and guaranteed Crit."
+        "TalentDes$english": "During Zeal Crusade, gains 1 stack of Lightforged Barrier per second and each Holy Sigil consumed grants Zeal Crusade 1 charge. When 3 charges are reached, Zeal Crusade explodes outward, dealing 200% Attack Damage and guaranteed Crit DMG."
     },
     "1227": {
         "TalentName$chinese": "圣环激荡",
@@ -3132,8 +3132,8 @@
     "1323": {
         "TalentName$chinese": "热情挥洒·激昂",
         "TalentDes$chinese": "每消耗10个演奏热情，接下来10秒内热情挥洒将强化为激昂·热情挥洒。",
-        "TalentName$english": "Passion Burst: Fervor",
-        "TalentDes$english": "For each 10 Performance Passion consumed, enhances Passion Burst to Passion Burst for 10s."
+        "TalentName$english": "Passion Fury",
+        "TalentDes$english": "For each 10 Performance Passion consumed, enhances Passion Burst to Passion Fury for 10s."
     },
     "1324": {
         "TalentName$chinese": "属性共鸣",
@@ -3288,7 +3288,7 @@
     "1349": {
         "TalentName$chinese": "极意万众瞩目·狂音",
         "TalentDes$chinese": "万众瞩目充能次数+1。<br>每消耗50个演奏热情，获得1层万众瞩目充能。",
-        "TalentName$english": "Zenith Center Stage: Mad Tune",
+        "TalentName$english": "Center Stage: Mad Tune",
         "TalentDes$english": "Center Stage charge +1.<br>For every 50 Performance Passion consumed, gain 1 Center Stage charge."
     },
     "1350": {
@@ -3384,7 +3384,7 @@
     "1365": {
         "TalentName$chinese": "极意万众瞩目·协奏",
         "TalentDes$chinese": "万众瞩目充能次数+1。<br>每消耗50个演奏热情，获得1层万众瞩目充能。",
-        "TalentName$english": "Zenith Center Stage: Concerto",
+        "TalentName$english": "Center Stage: Concerto",
         "TalentDes$english": "Center Stage charge +1.<br>For every 50 Performance Passion consumed, gain 1 Center Stage charge."
     },
     "1366": {

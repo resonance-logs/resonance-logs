@@ -834,6 +834,7 @@
     "RecountName": 893315188,
     "RecountName$english": "Wild Wolf Pounce",
     "DamageId": [
+      117008250102,
       117008260102
     ]
   },
@@ -1013,7 +1014,7 @@
   "1907": {
     "Id": 1907,
     "RecountName": 1572111517,
-    "RecountName$english": "Cracking Echo",
+    "RecountName$english": "Tectonic Ring",
     "DamageId": [
       119070103
     ]
@@ -1897,7 +1898,7 @@
   "2332": {
     "Id": 2332,
     "RecountName": 1572141014,
-    "RecountName$english": "Passion Burst",
+    "RecountName$english": "Passion Fury",
     "DamageId": [
       123320102,
       123320103
