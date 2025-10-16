@@ -10,5 +10,5 @@
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
   <Button onclick={commands.copySyncContainerData}>Dump SyncContainerData to clipboard</Button>
-  <SettingsSwitch bind:checked={SETTINGS.misc.state.testingMode} label="Testing Mode" description="Enable UI Testing. Only works with DPS/Heal Player/Skills" />
+  <SettingsSwitch bind:checked={SETTINGS.misc.state.testingMode} label="Testing Mode" description="Enable UI Testing. Only works with DPS/Heal Player/Skills. Once you turn it off, make sure to reload the window." />
 </Tabs.Content>

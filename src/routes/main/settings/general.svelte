@@ -2,6 +2,7 @@
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import { SETTINGS } from "$lib/settings-store";
   import SettingsSelect from "./settings-select.svelte";
+  import SettingsSlider from "./settings-slider.svelte";
   import SettingsSwitch from "./settings-switch.svelte";
 
   const SETTINGS_CATEGORY = "general";
@@ -16,4 +17,5 @@
   <SettingsSwitch bind:checked={SETTINGS.general.state.relativeToTopDPSSkill} label="Relative to Top DPS - Skill" description="Color bars are relative to top DPS skill instead of all skills. Useful for 20 man or World Bosses." />
   <SettingsSwitch bind:checked={SETTINGS.general.state.relativeToTopHealPlayer} label="Relative to Top Heal - Player" description="Color bars are relative to top healing player instead of all players. Useful for 20 man or World Bosses." />
   <SettingsSwitch bind:checked={SETTINGS.general.state.relativeToTopHealSkill} label="Relative to Top - Skill" description="Color bars are relative to top healing skill instead of all skills. Useful for 20 man or World Bosses." />
+  <SettingsSlider bind:value={SETTINGS.general.state.resetElapsed} label="Reset after Elapsed Time" description="Amount of time to wait before the meter automatically resets the encounter. 0s = Never Resets"></SettingsSlider>
 </Tabs.Content>

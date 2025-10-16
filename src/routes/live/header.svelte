@@ -23,7 +23,14 @@
     return () => clearInterval(interval);
   });
 
+  let hasReset = false;
+
   async function fetchData() {
+    if (SETTINGS.general.state.resetElapsed && !hasReset && Date.now() - headerInfo.timeLastCombatPacketMs > SETTINGS.general.state.resetElapsed * 1000) {
+      hasReset = true;
+      console.log(`Resetting as ${SETTINGS.general.state.resetElapsed}s has passed.`);
+      commands.hardReset(); // TODO: this is temporary, switch to resetEncounter once bug is fixed.
+    }
     try {
       const result = await commands.getHeaderInfo();
       if (result.status !== "ok") {
@@ -32,6 +39,11 @@
       } else {
         headerInfo = result.data;
         // console.log("header: ", +Date.now(), $state.snapshot(headerInfo));
+        if (hasReset) {
+          hasReset = false;
+          window.location.reload();
+          console.log("Fresh packet");
+        }
       }
     } catch (e) {
       console.error("Error fetching data: ", e);

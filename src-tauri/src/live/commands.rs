@@ -74,6 +74,7 @@ pub fn get_header_info(state: tauri::State<'_, EncounterMutex>) -> Result<Header
         total_dps: nan_is_zero(encounter.total_dmg as f64 / time_elapsed_secs),
         total_dmg: encounter.total_dmg,
         elapsed_ms: time_elapsed_ms,
+        time_last_combat_packet_ms: encounter.time_last_combat_packet_ms,
     })
 }
 
