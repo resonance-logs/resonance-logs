@@ -46,6 +46,8 @@ pub fn run() {
             live::commands::reset_encounter,
             live::commands::toggle_pause_encounter,
             live::commands::hard_reset,
+            live::commands::get_test_player_window,
+            live::commands::get_test_skill_window,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

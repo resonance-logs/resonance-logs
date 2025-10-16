@@ -1,5 +1,6 @@
 import { version } from '@tauri-apps/plugin-os';
 import { RuneStore } from '@tauri-store/svelte';
+import Accessibility from '../routes/main/settings/accessibility.svelte';
 
 const IS_WIN_11 = parseInt(version().split(".")[2] || "0", 10) >= 22000;
 
@@ -42,6 +43,9 @@ const DEFAULT_SETTINGS = {
     dpsSkillBreakdown: { ...DEFAULT_STATS },
     healPlayers: { ...DEFAULT_STATS },
     healSkillBreakdown: { ...DEFAULT_STATS },
+  },
+  misc: {
+    testingMode: false,
   },
 };
 
@@ -89,4 +93,9 @@ export const SETTINGS = {
       ),
     },
   },
+  misc: new RuneStore(
+    'misc',
+    DEFAULT_SETTINGS.misc,
+    RUNE_STORE_OPTIONS
+  ),
 };

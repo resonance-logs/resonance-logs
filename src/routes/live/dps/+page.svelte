@@ -20,7 +20,7 @@
 
   async function fetchData() {
     try {
-      const result = await commands.getDpsPlayerWindow();
+      const result = SETTINGS.misc.state.testingMode ? await commands.getTestPlayerWindow() : await commands.getDpsPlayerWindow();
       if (result.status !== "ok") {
         console.warn("timestamp: ", +Date.now(), " Failed to get dps window: ", +Date.now(), result.error);
         return;
