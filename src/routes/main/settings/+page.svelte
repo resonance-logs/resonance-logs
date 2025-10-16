@@ -3,6 +3,7 @@
   import Accessibility from "./accessibility.svelte";
   import General from "./general.svelte";
   import Live from "./live.svelte";
+  import Misc from "./misc.svelte";
   import Shortcuts from "./shortcuts.svelte";
 
   const settingsTabs = [
@@ -10,6 +11,7 @@
     { id: "accessibility", label: "Accessibility"},
     { id: "shortcuts", label: "Shortcuts" },
     { id: "live", label: "Live" },
+    { id: "misc", label: "Misc" },
   ];
 </script>
 
@@ -23,4 +25,5 @@
   <Accessibility/>
   <Shortcuts/>
   <Live/>
+  <Misc/>
 </Tabs.Root>

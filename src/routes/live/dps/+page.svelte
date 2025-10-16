@@ -21,6 +21,7 @@
     try {
       const unlistenFn = await onDpsPlayersUpdate((event) => {
         lastEventTime = Date.now();
+        console.log(event.payload)
         dpsPlayersWindow = event.payload;
       });
       unlisten = unlistenFn;
@@ -73,6 +74,8 @@
     },
   });
 
+  let maxDamage = $derived(dpsPlayersWindow.playerRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
+
   let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
   let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
 </script>
@@ -93,9 +96,9 @@
         {@const className = row.original.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? row.original.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? row.original.className : ""}
         <tr class="h-7 px-2 py-1 text-center" onclick={() => goto(`/live/dps/skills?playerUid=${row.original.uid}`)}>
           {#each row.getVisibleCells() as cell (cell.id)}
-            <td><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
+            <td class="text-right"><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
           {/each}
-          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {row.original.dmgPct}vw;"></td>
+          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {settings.state.general.relativeToTop ? maxDamage > 0 ? (row.original.totalDmg / maxDamage) * 100 : 0 :  row.original.dmgPct}%;"></td>
         </tr>
       {/each}
     </tbody>

@@ -9,9 +9,11 @@ const DEFAULT_SETTINGS = {
     showOthersName: "Show Others' Name",
     showYourAbilityScore: true,
     showOthersAbilityScore: true,
+    relativeToTop: false,
   },
   accessibility: {
     blur: !IS_WIN_11,
+    transparency: false,
   },
   shortcuts: {
     showMeter: "",
@@ -26,10 +28,10 @@ const DEFAULT_SETTINGS = {
         critRate: true,
         dmgPct: true,
         dps: true,
-        hits: true,
-        hitsPerMinute: true,
-        luckyDmgRate: true,
-        luckyRate: true,
+        hits: false,
+        hitsPerMinute: false,
+        luckyDmgRate: false,
+        luckyRate: false,
         totalDmg: true,
       },
       skillBreakdown: {
@@ -37,10 +39,10 @@ const DEFAULT_SETTINGS = {
         critRate: true,
         dmgPct: true,
         dps: true,
-        hits: true,
-        hitsPerMinute: true,
-        luckyDmgRate: true,
-        luckyRate: true,
+        hits: false,
+        hitsPerMinute: false,
+        luckyDmgRate: false,
+        luckyRate: false,
         totalDmg: true,
       },
     },
@@ -50,10 +52,10 @@ const DEFAULT_SETTINGS = {
         critRate: true,
         dmgPct: true,
         dps: true,
-        hits: true,
-        hitsPerMinute: true,
-        luckyDmgRate: true,
-        luckyRate: true,
+        hits: false,
+        hitsPerMinute: false,
+        luckyDmgRate: false,
+        luckyRate: false,
         totalDmg: true,
       },
       skillBreakdown: {
@@ -61,10 +63,10 @@ const DEFAULT_SETTINGS = {
         critRate: true,
         dmgPct: true,
         dps: true,
-        hits: true,
-        hitsPerMinute: true,
-        luckyDmgRate: true,
-        luckyRate: true,
+        hits: false,
+        hitsPerMinute: false,
+        luckyDmgRate: false,
+        luckyRate: false,
         totalDmg: true,
       },
     },
@@ -75,3 +77,20 @@ export const settings = new RuneStore('settings', DEFAULT_SETTINGS, {
   autoStart: true,
   saveOnChange: true,
 });
+
+function mergeDefaults<T extends Record<string, any>>(target: T, defaults: T): T {
+  for (const key in defaults) {
+    if (!(key in target)) {
+      target[key] = defaults[key];
+    } else if (
+      typeof defaults[key] === "object" &&
+      defaults[key] !== null &&
+      !Array.isArray(defaults[key])
+    ) {
+      mergeDefaults(target[key], defaults[key]);
+    }
+  }
+  return target;
+}
+
+mergeDefaults(settings.state, DEFAULT_SETTINGS);

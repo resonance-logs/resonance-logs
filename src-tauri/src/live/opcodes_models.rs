@@ -1,5 +1,5 @@
 use crate::live::opcodes_models::class::ClassSpec;
-use blueprotobuf_lib::blueprotobuf::EEntityType;
+use blueprotobuf_lib::blueprotobuf::{EEntityType, SyncContainerData};
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
@@ -15,6 +15,7 @@ pub struct Encounter {
     pub total_heal: u128,
     pub local_player_uid: i64,
     pub entity_uid_to_entity: HashMap<i64, Entity>, // key: entity uid
+    pub local_player: SyncContainerData,
 }
 
 pub type EncounterMutex = Mutex<Encounter>;

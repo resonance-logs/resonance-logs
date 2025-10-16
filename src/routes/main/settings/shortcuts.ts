@@ -1,3 +1,4 @@
+import { commands } from "$lib/bindings";
 import { settings } from "$lib/settings-store";
 import { setClickthrough, toggleClickthrough } from "$lib/utils.svelte";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -71,6 +72,22 @@ export async function registerShortcut(cmdId: string, shortcutKey: string) {
           if (event.state === "Pressed") {
             console.log(`Triggered ${cmdId}`);
             toggleClickthrough();
+          }
+        });
+        break;
+
+      case "resetEncounter":
+        await register(shortcutKey, async (event) => {
+          if (event.state === "Pressed") {
+            commands.resetEncounter();
+          }
+        });
+        break;
+
+      case "hardReset":
+        await register(shortcutKey, async (event) => {
+          if (event.state === "Pressed") {
+            commands.hardReset();
           }
         });
         break;

@@ -100,7 +100,7 @@ pub fn run() {
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
                         file_name: time_now,
                     })
-                    .filter(|metadata| metadata.level() <= log::LevelFilter::Info), // todo: remove info filter
+                    // .filter(|metadata| metadata.level() <= log::LevelFilter::Info), // todo: remove info filter
                 ])
                 .build(),
         )

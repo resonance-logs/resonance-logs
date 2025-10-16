@@ -137,6 +137,14 @@
       id: "toggleClickthrough",
       label: "Toggle Clickthrough",
     },
+    {
+      id: "resetEncounter",
+      label: "Reset Encounter",
+    },
+    {
+      id: "hardReset",
+      label: "TEMP FIX: Hard Reset",
+    },
   ];
 </script>
 

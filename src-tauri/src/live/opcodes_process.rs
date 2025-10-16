@@ -171,10 +171,10 @@ pub fn process_aoi_sync_delta(
             attacker_entity.total_heal += actual_value;
             skill.hits += 1;
             skill.total_value += actual_value;
-            info!(
-                "heal packet: {attacker_uid} to {target_uid}: {actual_value} heal {} total heal",
-                skill.total_value
-            );
+            // info!(
+            //     "heal packet: {attacker_uid} to {target_uid}: {actual_value} heal {} total heal",
+            //     skill.total_value
+            // );
         } else {
             let skill = attacker_entity
                 .skill_uid_to_dmg_skill
@@ -202,10 +202,10 @@ pub fn process_aoi_sync_delta(
             attacker_entity.total_dmg += actual_value;
             skill.hits += 1;
             skill.total_value += actual_value;
-            info!(
-                "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
-                skill.total_value
-            );
+            // info!(
+            //     "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
+            //     skill.total_value
+            // );
         }
     }
 
@@ -223,7 +223,7 @@ pub fn process_aoi_sync_delta(
 
 fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<Attr>) {
     for attr in attrs {
-        let Some(raw_bytes) = attr.raw_data else {
+        let Some(mut raw_bytes) = attr.raw_data else {
             continue;
         };
         let Some(attr_id) = attr.id else { continue };
@@ -232,7 +232,9 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
         match attr_id {
             attr_type::ATTR_NAME => {
                 // todo: fix these brackets
-                player_entity.name = BinaryReader::from(raw_bytes).read_string().unwrap();
+                raw_bytes.remove(0); // not sure why, there's some weird character as the first e.g. "\u{6}Sketal"
+                let player_name = BinaryReader::from(raw_bytes).read_string().unwrap();
+                player_entity.name = player_name;
                 info! {"Found player {} with UID {}", player_entity.name, target_uid}
             }
             #[allow(clippy::cast_possible_truncation)]

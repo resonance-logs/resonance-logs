@@ -1785,11 +1785,11 @@ pub struct EquipList {
     pub equip_list: ::std::collections::HashMap<i32, EquipInfo>,
     #[prost(message, optional, tag = "2")]
     pub equip_attr: ::core::option::Option<EquipAttr>,
-    #[prost(map = "uint64, message", tag = "3")]
+    #[prost(map = "uint64, message", tag = "4")]
     pub equip_recast_info: ::std::collections::HashMap<u64, EquipAttr>,
-    #[prost(map = "int64, message", tag = "4")]
+    #[prost(map = "int64, message", tag = "5")]
     pub equip_enchant: ::std::collections::HashMap<i64, EquipEnchantInfo>,
-    #[prost(map = "int32, message", tag = "5")]
+    #[prost(map = "int32, message", tag = "6")]
     pub suit_info_dict: ::std::collections::HashMap<i32, EquipSuitInfo>,
 }
 #[derive(specta::Type)]
@@ -1975,17 +1975,17 @@ pub struct SkillCdInfo {
     pub duration: ::core::option::Option<i32>,
     #[prost(uint32, optional, tag = "4")]
     pub skill_cd_type: ::core::option::Option<u32>,
-    #[prost(int64, optional, tag = "5")]
+    #[prost(int64, optional, tag = "6")]
     pub profession_hold_begin_time: ::core::option::Option<i64>,
-    #[prost(int32, optional, tag = "6")]
-    pub charge_count: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "7")]
-    pub valid_cd_time: ::core::option::Option<i32>,
+    pub charge_count: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "8")]
+    pub valid_cd_time: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "9")]
     pub sub_cd_ratio: ::core::option::Option<i32>,
-    #[prost(int64, optional, tag = "9")]
+    #[prost(int64, optional, tag = "10")]
     pub sub_cd_fixed: ::core::option::Option<i64>,
-    #[prost(int32, optional, tag = "10")]
+    #[prost(int32, optional, tag = "11")]
     pub accelerate_cd_ratio: ::core::option::Option<i32>,
 }
 #[derive(specta::Type)]
@@ -3166,9 +3166,9 @@ pub struct LifeProfessionBasic {
     pub level: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "3")]
     pub exp: ::core::option::Option<i32>,
-    #[prost(map = "int32, message", tag = "4")]
+    #[prost(map = "int32, message", tag = "5")]
     pub specialization: ::std::collections::HashMap<i32, LiftProfessionSpecialization>,
-    #[prost(int32, optional, tag = "5")]
+    #[prost(int32, optional, tag = "6")]
     pub current_specialization_point: ::core::option::Option<i32>,
 }
 #[derive(specta::Type)]
@@ -3246,11 +3246,11 @@ pub struct UserActivityList {
 #[derive(specta::Type)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UserActivityInfo {
-    #[prost(uint64, optional, tag = "1")]
-    pub start_time: ::core::option::Option<u64>,
     #[prost(uint64, optional, tag = "2")]
+    pub start_time: ::core::option::Option<u64>,
+    #[prost(uint64, optional, tag = "3")]
     pub end_time: ::core::option::Option<u64>,
-    #[prost(map = "uint32, message", tag = "3")]
+    #[prost(map = "uint32, message", tag = "4")]
     pub rewards: ::std::collections::HashMap<u32, UserActivityRewardInfo>,
 }
 #[derive(specta::Type)]
