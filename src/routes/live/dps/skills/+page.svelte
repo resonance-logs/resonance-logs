@@ -6,7 +6,7 @@
   import { createSvelteTable, FlexRender } from "$lib/svelte-table";
   import { dpsPlayersColumnDefs, dpsSkillsColumnDefs } from "$lib/table-info";
   import { getCoreRowModel } from "@tanstack/table-core";
-  import { settings } from "$lib/settings-store";
+  import { SETTINGS } from "$lib/settings-store";
 
   const playerUid: string = page.url.searchParams.get("playerUid") ?? "-1";
 
@@ -41,7 +41,7 @@
     getCoreRowModel: getCoreRowModel(),
     state: {
       get columnVisibility() {
-        return settings.state["live"]["dps"]["skillBreakdown"];
+        return SETTINGS.live.dps.skillBreakdown.state;
       },
     },
   });
@@ -54,15 +54,15 @@
     getCoreRowModel: getCoreRowModel(),
     state: {
       get columnVisibility() {
-        return settings.state["live"]["dps"]["skillBreakdown"];
+        return SETTINGS.live.dps.skillBreakdown.state;
       },
     },
   });
 
-  let maxSkillValue = $derived(dpsSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0n));
+  let maxSkillValue = $derived(dpsSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
 
-  let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
-  let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
+  let SETTINGS_YOUR_NAME = $derived(SETTINGS.general.state.showYourName);
+  let SETTINGS_OTHERS_NAME = $derived(SETTINGS.general.state.showOthersName);
 </script>
 
 <svelte:window oncontextmenu={() => window.history.back()} />

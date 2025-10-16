@@ -9,7 +9,7 @@
   import * as Alert from "$lib/components/ui/alert/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
 
-  import { settings } from "$lib/settings-store";
+  import { SETTINGS } from "$lib/settings-store";
   import { registerShortcut } from "./shortcuts.js";
   import type { BaseInput, BaseInputs } from "./settings.js";
 
@@ -90,8 +90,8 @@
 
       const cmd = inputs.find((c) => c.id === editingId);
       if (cmd) {
-        unregister(SHORTCUTS_SETTINGS[cmd.id]);
-        SHORTCUTS_SETTINGS[cmd.id] = shortcutKey;
+        unregister(SETTINGS.shortcuts.state[cmd.id]);
+        SETTINGS.shortcuts.state[cmd.id] = shortcutKey;
         registerShortcut(cmd.id, shortcutKey);
       }
       stopEdit();
@@ -100,9 +100,9 @@
 
   async function clearShortcut(shortcut: BaseInput, e: MouseEvent) {
     e.preventDefault();
-    const existing = SHORTCUTS_SETTINGS[shortcut.id];
+    const existing = SETTINGS.shortcuts.state[shortcut.id];
     if (existing) {
-      SHORTCUTS_SETTINGS[shortcut.id] = "";
+      SETTINGS.shortcuts.state[shortcut.id] = "";
       await unregister(existing);
     }
   }
@@ -110,7 +110,6 @@
   onDestroy(stopEdit);
 
   const SETTINGS_CATEGORY = "shortcuts";
-  const SHORTCUTS_SETTINGS = $derived(settings.state[SETTINGS_CATEGORY]);
 
   let inputs: BaseInputs = [
     {
@@ -166,7 +165,7 @@
           {#if editingId === input.id}
             {currentShortcutString() || "Press keys"}...
           {:else}
-            {SHORTCUTS_SETTINGS[input.id] || "Unbound"}
+            {SETTINGS.shortcuts.state[input.id] || "Unbound"}
           {/if}
         </Button>
       </Item.Actions>

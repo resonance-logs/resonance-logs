@@ -12,8 +12,9 @@ import SkillInfo from "$lib/components/skill-info.svelte";
 declare module '@tanstack/table-core' {
   interface ColumnMeta<TData, TValue> {
     class: string;         // CSS class (for Tailwind) for column
-    label: string;         // Label text for settings
-    description?: string;  // Descriptive text for settings
+    label: string;         // Label text for SETTINGS
+    description?: string;  // Descriptive text for SETTINGS
+    // TODO: move the label and description to the settings
   }
 }
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { commands } from "$lib/bindings";
-  import { settings } from "$lib/settings-store";
+  import { SETTINGS } from "$lib/settings-store";
   import { cn } from "$lib/utils";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
@@ -9,7 +9,7 @@
   let screenshotDiv: HTMLDivElement | undefined = $state();
 
   $effect(() => {
-    if (settings.state.accessibility.blur) {
+    if (SETTINGS.accessibility.state.blur) {
       commands.enableBlur();
     } else {
       commands.disableBlur();
@@ -21,7 +21,7 @@
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
 <div class="flex h-screen flex-col text-sm text-white" bind:this={screenshotDiv}>
   <Header {screenshotDiv} />
-  <main class={cn("flex-1 overflow-y-auto", !settings.state.accessibility.transparency && "bg-neutral-900/25")}>
+  <main class={cn("flex-1 overflow-y-auto", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/25")}>
     {@render children()}
   </main>
   <Footer />

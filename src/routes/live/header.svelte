@@ -15,7 +15,7 @@
   import { takeScreenshot, tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
-  import { settings } from "$lib/settings-store";
+  import { SETTINGS } from "$lib/settings-store";
 
   onMount(() => {
     fetchData();
@@ -89,9 +89,9 @@
     <!-- TODO: add responsive clicks, toaster -->
     <button
       onclick={async () => {
-        const prev = settings.state.general.showOthersName;
-        if (settings.state.general.showOthersName === "Show Others' Name") {
-          settings.state.general.showOthersName = "Show Others' Class";
+        const prev = SETTINGS.general.state.showOthersName;
+        if (SETTINGS.general.state.showOthersName === "Show Others' Name") {
+          SETTINGS.general.state.showOthersName = "Show Others' Class";
         }
 
         // Wait for reactive flush & paint
@@ -101,7 +101,7 @@
         await takeScreenshot(screenshotDiv);
 
         // Revert & let UI update
-        settings.state.general.showOthersName = prev;
+        SETTINGS.general.state.showOthersName = prev;
         await tick();
       }}
       {@attach tooltip(() => "Screenshot to Clipboard")}
