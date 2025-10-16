@@ -11,7 +11,6 @@ use tauri::menu::{MenuBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, WindowEvent};
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
-use tauri_plugin_updater::UpdaterExt;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tauri_specta::{Builder, collect_commands};
 
@@ -56,17 +55,17 @@ pub fn run() {
         .setup(|app| {
             info!("starting app v{}", app.package_info().version);
 
-            // Check app updates
-            // https://v2.tauri.app/plugin/updater/#checking-for-updates
-            #[cfg(not(debug_assertions))] // <- Only check for updates on release builds
-            {
-                unload_and_remove_windivert();
+            // // Check app updates
+            // // https://v2.tauri.app/plugin/updater/#checking-for-updates
+            // #[cfg(not(debug_assertions))] // <- Only check for updates on release builds
+            // {
+            //     unload_and_remove_windivert();
 
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    crate::update(handle).await.unwrap();
-                });
-            }
+            //     let handle = app.handle().clone();
+            //     tauri::async_runtime::spawn(async move {
+            //         crate::update(handle).await.unwrap();
+            //     });
+            // }
 
             let app_handle = app.handle().clone();
 
@@ -85,7 +84,6 @@ pub fn run() {
         })
         .on_window_event(on_window_event_fn)
         .plugin(tauri_plugin_clipboard_manager::init()) // used to read/write to the clipboard
-        .plugin(tauri_plugin_updater::Builder::new().build()) // used for auto updating the app
         .plugin(tauri_plugin_window_state::Builder::default().build()) // used to remember window size/position https://v2.tauri.app/plugin/window-state/
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {})) // used to enforce only 1 instance of the app https://v2.tauri.app/plugin/single-instance/
         .plugin(tauri_plugin_svelte::init()) // used for settings file
@@ -132,26 +130,26 @@ fn unload_and_remove_windivert() {
     }
 }
 
-async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
-    if let Some(update) = app.updater()?.check().await? {
-        let mut downloaded = 0;
-        update
-            .download_and_install(
-                |chunk_length, content_length| {
-                    downloaded += chunk_length;
-                    info!("downloaded {downloaded} from {content_length:?}");
-                },
-                || {
-                    info!("download finished");
-                },
-            )
-            .await?;
+// async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+//     if let Some(update) = app.updater()?.check().await? {
+//         let mut downloaded = 0;
+//         update
+//             .download_and_install(
+//                 |chunk_length, content_length| {
+//                     downloaded += chunk_length;
+//                     info!("downloaded {downloaded} from {content_length:?}");
+//                 },
+//                 || {
+//                     info!("download finished");
+//                 },
+//             )
+//             .await?;
 
-        info!("update installed");
-        app.restart();
-    }
-    Ok(())
-}
+//         info!("update installed");
+//         app.restart();
+//     }
+//     Ok(())
+// }
 
 fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     fn show_window(window: &tauri::WebviewWindow) {
