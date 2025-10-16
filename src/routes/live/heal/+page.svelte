@@ -22,7 +22,7 @@
     try {
       const result = await commands.getHealPlayerWindow();
       if (result.status !== "ok") {
-        console.warn("timestamp: ", +Date.now(), " Failed to get heal window: ", +Date.now(),  result.error);
+        console.warn("timestamp: ", +Date.now(), " Failed to get heal window: ", +Date.now(), result.error);
         return;
       } else {
         healPlayersWindow = result.data;
@@ -70,7 +70,7 @@
           {#each row.getVisibleCells() as cell (cell.id)}
             <td><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
           {/each}
-          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {SETTINGS.general.state.relativeToTop ? maxHeal > 0 ? (row.original.totalDmg / maxHeal) * 100 : 0 :  row.original.dmgPct}%;"></td>
+          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {SETTINGS.general.state.relativeToTop ? (maxHeal > 0 ? (row.original.totalDmg / maxHeal) * 100 : 0) : row.original.dmgPct}%;"></td>
         </tr>
       {/each}
     </tbody>

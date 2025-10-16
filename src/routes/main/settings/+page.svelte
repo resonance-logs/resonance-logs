@@ -8,7 +8,7 @@
 
   const settingsTabs = [
     { id: "general", label: "General" },
-    { id: "accessibility", label: "Accessibility"},
+    { id: "accessibility", label: "Accessibility" },
     { id: "shortcuts", label: "Shortcuts" },
     { id: "live", label: "Live" },
     { id: "misc", label: "Misc" },
@@ -18,12 +18,12 @@
 <Tabs.Root value="general">
   <Tabs.List>
     {#each settingsTabs as settingsTab (settingsTab.id)}
-      <Tabs.Trigger value={settingsTab.id} >{settingsTab.label}</Tabs.Trigger>
+      <Tabs.Trigger value={settingsTab.id}>{settingsTab.label}</Tabs.Trigger>
     {/each}
   </Tabs.List>
-  <General/>
-  <Accessibility/>
-  <Shortcuts/>
-  <Live/>
-  <Misc/>
+  <General />
+  <Accessibility />
+  <Shortcuts />
+  <Live />
+  <Misc />
 </Tabs.Root>

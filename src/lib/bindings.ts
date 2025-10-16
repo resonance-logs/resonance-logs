@@ -5,64 +5,64 @@
 
 
 export const commands = {
-async enableBlur() : Promise<void> {
+  async enableBlur(): Promise<void> {
     await TAURI_INVOKE("enable_blur");
-},
-async disableBlur() : Promise<void> {
+  },
+  async disableBlur(): Promise<void> {
     await TAURI_INVOKE("disable_blur");
-},
-async copySyncContainerData() : Promise<void> {
+  },
+  async copySyncContainerData(): Promise<void> {
     await TAURI_INVOKE("copy_sync_container_data");
-},
-async getHeaderInfo() : Promise<Result<HeaderInfo, string>> {
+  },
+  async getHeaderInfo(): Promise<Result<HeaderInfo, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_header_info") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getDpsPlayerWindow() : Promise<Result<PlayersWindow, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("get_header_info") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async getDpsPlayerWindow(): Promise<Result<PlayersWindow, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_dps_player_window") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getDpsSkillWindow(playerUidStr: string) : Promise<Result<SkillsWindow, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("get_dps_player_window") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async getDpsSkillWindow(playerUidStr: string): Promise<Result<SkillsWindow, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_dps_skill_window", { playerUidStr }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getHealPlayerWindow() : Promise<Result<PlayersWindow, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("get_dps_skill_window", { playerUidStr }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async getHealPlayerWindow(): Promise<Result<PlayersWindow, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_heal_player_window") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async getHealSkillWindow(playerUidStr: string) : Promise<Result<SkillsWindow, string>> {
+      return { status: "ok", data: await TAURI_INVOKE("get_heal_player_window") };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async getHealSkillWindow(playerUidStr: string): Promise<Result<SkillsWindow, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_heal_skill_window", { playerUidStr }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async resetEncounter() : Promise<void> {
+      return { status: "ok", data: await TAURI_INVOKE("get_heal_skill_window", { playerUidStr }) };
+    } catch (e) {
+      if (e instanceof Error) throw e;
+      else return { status: "error", error: e as any };
+    }
+  },
+  async resetEncounter(): Promise<void> {
     await TAURI_INVOKE("reset_encounter");
-},
-async togglePauseEncounter() : Promise<void> {
+  },
+  async togglePauseEncounter(): Promise<void> {
     await TAURI_INVOKE("toggle_pause_encounter");
-},
-async hardReset() : Promise<void> {
+  },
+  async hardReset(): Promise<void> {
     await TAURI_INVOKE("hard_reset");
-}
+  }
 }
 
 /** user-defined events **/
@@ -84,59 +84,59 @@ export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }
 /** tauri-specta globals **/
 
 import {
-	invoke as TAURI_INVOKE,
-	Channel as TAURI_CHANNEL,
+  invoke as TAURI_INVOKE,
+  Channel as TAURI_CHANNEL,
 } from "@tauri-apps/api/core";
 import * as TAURI_API_EVENT from "@tauri-apps/api/event";
 import { type WebviewWindow as __WebviewWindow__ } from "@tauri-apps/api/webviewWindow";
 
 type __EventObj__<T> = {
-	listen: (
-		cb: TAURI_API_EVENT.EventCallback<T>,
-	) => ReturnType<typeof TAURI_API_EVENT.listen<T>>;
-	once: (
-		cb: TAURI_API_EVENT.EventCallback<T>,
-	) => ReturnType<typeof TAURI_API_EVENT.once<T>>;
-	emit: null extends T
-		? (payload?: T) => ReturnType<typeof TAURI_API_EVENT.emit>
-		: (payload: T) => ReturnType<typeof TAURI_API_EVENT.emit>;
+  listen: (
+    cb: TAURI_API_EVENT.EventCallback<T>,
+  ) => ReturnType<typeof TAURI_API_EVENT.listen<T>>;
+  once: (
+    cb: TAURI_API_EVENT.EventCallback<T>,
+  ) => ReturnType<typeof TAURI_API_EVENT.once<T>>;
+  emit: null extends T
+  ? (payload?: T) => ReturnType<typeof TAURI_API_EVENT.emit>
+  : (payload: T) => ReturnType<typeof TAURI_API_EVENT.emit>;
 };
 
 export type Result<T, E> =
-	| { status: "ok"; data: T }
-	| { status: "error"; error: E };
+  | { status: "ok"; data: T }
+  | { status: "error"; error: E };
 
 function __makeEvents__<T extends Record<string, any>>(
-	mappings: Record<keyof T, string>,
+  mappings: Record<keyof T, string>,
 ) {
-	return new Proxy(
-		{} as unknown as {
-			[K in keyof T]: __EventObj__<T[K]> & {
-				(handle: __WebviewWindow__): __EventObj__<T[K]>;
-			};
-		},
-		{
-			get: (_, event) => {
-				const name = mappings[event as keyof T];
+  return new Proxy(
+    {} as unknown as {
+      [K in keyof T]: __EventObj__<T[K]> & {
+        (handle: __WebviewWindow__): __EventObj__<T[K]>;
+      };
+    },
+    {
+      get: (_, event) => {
+        const name = mappings[event as keyof T];
 
-				return new Proxy((() => {}) as any, {
-					apply: (_, __, [window]: [__WebviewWindow__]) => ({
-						listen: (arg: any) => window.listen(name, arg),
-						once: (arg: any) => window.once(name, arg),
-						emit: (arg: any) => window.emit(name, arg),
-					}),
-					get: (_, command: keyof __EventObj__<any>) => {
-						switch (command) {
-							case "listen":
-								return (arg: any) => TAURI_API_EVENT.listen(name, arg);
-							case "once":
-								return (arg: any) => TAURI_API_EVENT.once(name, arg);
-							case "emit":
-								return (arg: any) => TAURI_API_EVENT.emit(name, arg);
-						}
-					},
-				});
-			},
-		},
-	);
+        return new Proxy((() => { }) as any, {
+          apply: (_, __, [window]: [__WebviewWindow__]) => ({
+            listen: (arg: any) => window.listen(name, arg),
+            once: (arg: any) => window.once(name, arg),
+            emit: (arg: any) => window.emit(name, arg),
+          }),
+          get: (_, command: keyof __EventObj__<any>) => {
+            switch (command) {
+              case "listen":
+                return (arg: any) => TAURI_API_EVENT.listen(name, arg);
+              case "once":
+                return (arg: any) => TAURI_API_EVENT.once(name, arg);
+              case "emit":
+                return (arg: any) => TAURI_API_EVENT.emit(name, arg);
+            }
+          },
+        });
+      },
+    },
+  );
 }

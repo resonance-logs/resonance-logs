@@ -7,9 +7,5 @@
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
-  <Button
-    onclick={commands.copySyncContainerData}
-  >
-    Dump SyncContainerData to clipboard
-  </Button>
+  <Button onclick={commands.copySyncContainerData}>Dump SyncContainerData to clipboard</Button>
 </Tabs.Content>
