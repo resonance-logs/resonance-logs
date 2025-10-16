@@ -26,6 +26,7 @@ const DEFAULT_SETTINGS = {
     relativeToTopDPSSkill: false,
     relativeToTopHealPlayer: false,
     relativeToTopHealSkill: false,
+    shortenAbilityScore: true, 
     resetElapsed: 60,
   },
   accessibility: {
