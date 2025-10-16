@@ -1,8 +1,8 @@
 use crate::live::opcodes_models;
 use crate::live::opcodes_models::class::{
-    ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
+    get_class_id_from_spec, get_class_spec_from_skill_id, ClassSpec,
 };
-use crate::live::opcodes_models::{Encounter, Entity, Skill, attr_type};
+use crate::live::opcodes_models::{attr_type, Encounter, Entity, Skill};
 use crate::packets::utils::BinaryReader;
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
@@ -171,10 +171,10 @@ pub fn process_aoi_sync_delta(
             attacker_entity.total_heal += actual_value;
             skill.hits += 1;
             skill.total_value += actual_value;
-            info!(
-                "heal packet: {attacker_uid} to {target_uid}: {actual_value} heal {} total heal",
-                skill.total_value
-            );
+            // info!(
+            //     "heal packet: {attacker_uid} to {target_uid}: {actual_value} heal {} total heal",
+            //     skill.total_value
+            // );
         } else {
             let skill = attacker_entity
                 .skill_uid_to_dmg_skill
@@ -202,10 +202,10 @@ pub fn process_aoi_sync_delta(
             attacker_entity.total_dmg += actual_value;
             skill.hits += 1;
             skill.total_value += actual_value;
-            info!(
-                "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
-                skill.total_value
-            );
+            // info!(
+            //     "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
+            //     skill.total_value
+            // );
         }
     }
 

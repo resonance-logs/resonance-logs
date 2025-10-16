@@ -1,3 +1,7 @@
+use crate::live::event_manager::{
+    generate_header_info, generate_players_window_dps, generate_players_window_heal,
+    generate_skills_window_dps, generate_skills_window_heal, EventManagerMutex,
+};
 use crate::live::opcodes_models::EncounterMutex;
 use crate::live::opcodes_process::{
     on_server_change, process_aoi_sync_delta, process_sync_container_data,
@@ -6,8 +10,9 @@ use crate::live::opcodes_process::{
 use crate::packets;
 use blueprotobuf_lib::blueprotobuf;
 use bytes::Bytes;
-use log::{error, info, trace, warn};
+use log::{info, trace, warn};
 use prost::Message;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 
 pub async fn start(app_handle: AppHandle) {
@@ -15,6 +20,17 @@ pub async fn start(app_handle: AppHandle) {
     // https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html
     // 1. Start capturing packets and send to rx
     let mut rx = packets::packet_capture::start_capture(); // Since live meter is not critical, it's ok to just log it // TODO: maybe bubble an error up to the frontend instead?
+
+    // Initialize event manager
+    {
+        let event_manager_state = app_handle.state::<EventManagerMutex>();
+        let mut event_manager = event_manager_state.lock().unwrap();
+        event_manager.initialize(app_handle.clone());
+    }
+
+    // Throttling for events (emit at most every 100ms)
+    let mut last_emit_time = Instant::now();
+    let emit_throttle_duration = Duration::from_millis(100);
 
     // 2. Use the channel to receive packets back and process them
     while let Some((op, data)) = rx.recv().await {
@@ -32,6 +48,13 @@ pub async fn start(app_handle: AppHandle) {
                 let encounter_state = app_handle.state::<EncounterMutex>();
                 let mut encounter_state = encounter_state.lock().unwrap();
                 on_server_change(&mut encounter_state);
+
+                // Emit encounter reset event
+                let event_manager_state = app_handle.state::<EventManagerMutex>();
+                let event_manager = event_manager_state.lock().unwrap();
+                if event_manager.should_emit_events() {
+                    event_manager.emit_encounter_reset();
+                }
             }
             packets::opcodes::Pkt::SyncNearEntities => {
                 // info!("Received {op:?}");
@@ -142,6 +165,58 @@ pub async fn start(app_handle: AppHandle) {
                 for aoi_sync_delta in sync_near_delta_info.delta_infos {
                     if process_aoi_sync_delta(&mut encounter_state, aoi_sync_delta).is_none() {
                         warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
+                    }
+                }
+
+                // Check if we should emit events (throttling)
+                let now = Instant::now();
+                if now.duration_since(last_emit_time) >= emit_throttle_duration {
+                    last_emit_time = now;
+
+                    // Emit events for updated data
+                    let event_manager_state = app_handle.state::<EventManagerMutex>();
+                    let event_manager = event_manager_state.lock().unwrap();
+                    if event_manager.should_emit_events() {
+                        // Generate and emit encounter update
+                        if let Some(header_info) = generate_header_info(&encounter_state) {
+                            event_manager.emit_encounter_update(
+                                header_info,
+                                encounter_state.is_encounter_paused,
+                            );
+                        }
+
+                        // Generate and emit DPS players update
+                        let dps_players = generate_players_window_dps(&encounter_state);
+                        event_manager.emit_dps_players_update(dps_players);
+
+                        // Generate and emit heal players update
+                        let heal_players = generate_players_window_heal(&encounter_state);
+                        event_manager.emit_heal_players_update(heal_players);
+
+                        // Emit skills updates for all players with damage/heal data
+                        for (&entity_uid, entity) in &encounter_state.entity_uid_to_entity {
+                            let is_player =
+                                entity.entity_type == blueprotobuf::EEntityType::EntChar;
+                            let has_dmg_skills = !entity.skill_uid_to_dmg_skill.is_empty();
+                            let has_heal_skills = !entity.skill_uid_to_heal_skill.is_empty();
+
+                            if is_player && has_dmg_skills {
+                                if let Some(skills_window) =
+                                    generate_skills_window_dps(&encounter_state, entity_uid)
+                                {
+                                    event_manager.emit_dps_skills_update(entity_uid, skills_window);
+                                }
+                            }
+
+                            if is_player && has_heal_skills {
+                                if let Some(skills_window) =
+                                    generate_skills_window_heal(&encounter_state, entity_uid)
+                                {
+                                    event_manager
+                                        .emit_heal_skills_update(entity_uid, skills_window);
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -154,7 +154,7 @@ impl BinaryReader {
         (total_len.saturating_sub(current_pos)) as usize
     }
 
-    pub const fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.cursor.get_ref().len()
     }
 

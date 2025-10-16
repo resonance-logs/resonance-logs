@@ -253,7 +253,7 @@ async fn read_packets(
             break;
         }
     } // todo: if it errors, it breaks out of the loop but will it ever error?
-    // info!("{}", line!());
+      // info!("{}", line!());
 }
 
 // Function to send restart signal from another thread/task
