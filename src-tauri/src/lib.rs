@@ -69,7 +69,8 @@ pub fn run() {
             // https://v2.tauri.app/plugin/updater/#checking-for-updates
             #[cfg(not(debug_assertions))] // <- Only check for updates on release builds
             {
-                unload_and_remove_windivert();
+                unload_windivert();
+                remove_windivert();
 
                 let handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
@@ -86,6 +87,7 @@ pub fn run() {
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks
+            start_windivert();
             tauri::async_runtime::spawn(
                 async move { live::live_main::start(app_handle.clone()).await },
             );
@@ -116,20 +118,31 @@ pub fn run() {
         .expect("error while running tauri application")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                unload_windivert();
                 info!("App is closing! Cleaning up resources...");
-                // unload_and_remove_windivert();
             }
         });
 }
 
-fn unload_and_remove_windivert() {
+fn start_windivert() {
+    let status = Command::new("sc").args(["create", "windivert", "type=", "kernel", "binPath=", "WinDivert64.sys", "start=", "demand"]).status();
+    if status.is_ok_and(|status| status.success()) {
+        info!("started driver");
+    } else {
+        warn!("could not execute command to stop driver");
+    }
+}
+
+fn unload_windivert() {
     let status = Command::new("sc").args(["stop", "windivert"]).status();
     if status.is_ok_and(|status| status.success()) {
         info!("stopped driver");
     } else {
         warn!("could not execute command to stop driver");
     }
+}
 
+fn remove_windivert() {
     let status = Command::new("sc")
         .args(["delete", "windivert", "start=", "demand"])
         .status();
@@ -227,6 +240,7 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                 live_meter_window.set_ignore_cursor_events(false).unwrap();
             }
             "quit" => {
+                unload_windivert();
                 tray_app.exit(0);
             }
             _ => {}
