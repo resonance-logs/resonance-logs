@@ -11,25 +11,79 @@
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
 
   import { onMount, tick } from "svelte";
-  import { onEncounterUpdate, resetEncounter, togglePauseEncounter, type HeaderInfo } from "$lib/api";
+  import { onEncounterUpdate, onResetEncounter, resetEncounter, togglePauseEncounter, type HeaderInfo } from "$lib/api";
   // import { takeScreenshot, tooltip } from "$lib/utils.svelte";
   import { tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
   import { SETTINGS } from "$lib/settings-store";
 
+  let fightStartTimestampMs = $state(0);
+  let clientElapsedMs = $state(0);
+  let animationFrameId: number | null = null;
+
+  // Client-side timer loop
+  function updateClientTimer() {
+    if (fightStartTimestampMs > 0 && !isEncounterPaused) {
+      clientElapsedMs = Date.now() - fightStartTimestampMs;
+    }
+    animationFrameId = requestAnimationFrame(updateClientTimer);
+  }
+
+  function resetTimer() {
+    fightStartTimestampMs = 0;
+    clientElapsedMs = 0;
+    headerInfo = {
+      totalDps: 0,
+      totalDmg: 0,
+      elapsedMs: 0,
+      fightStartTimestampMs: 0,
+    };
+  }
+
   onMount(() => {
-    let unlisten: (() => void) | null = null;
+    let encounterUnlisten: (() => void) | null = null;
+    let resetUnlisten: (() => void) | null = null;
 
     onEncounterUpdate((event) => {
-      headerInfo = event.payload.headerInfo;
+      const newHeaderInfo = event.payload.headerInfo;
+      const newFightStartTimestamp = newHeaderInfo.fightStartTimestampMs;
+
+      // Sync fight start timestamp from backend (acts as sync point)
+      if (newFightStartTimestamp > 0 && newFightStartTimestamp !== fightStartTimestampMs) {
+        fightStartTimestampMs = newFightStartTimestamp;
+        clientElapsedMs = Date.now() - fightStartTimestampMs;
+      }
+
+      // Update other header info
+      headerInfo = newHeaderInfo;
       isEncounterPaused = event.payload.isPaused;
+
+      // Reset client timer if encounter is reset (fightStartTimestampMs becomes 0)
+      if (newFightStartTimestamp === 0) {
+        fightStartTimestampMs = 0;
+        clientElapsedMs = 0;
+      }
     }).then((fn) => {
-      unlisten = fn;
+      encounterUnlisten = fn;
     });
 
+    // Listen for reset-encounter event (fired on server change)
+    onResetEncounter(() => {
+      resetTimer();
+    }).then((fn) => {
+      resetUnlisten = fn;
+    });
+
+    // Start the client-side timer loop
+    animationFrameId = requestAnimationFrame(updateClientTimer);
+
     return () => {
-      if (unlisten) unlisten();
+      if (encounterUnlisten) encounterUnlisten();
+      if (resetUnlisten) resetUnlisten();
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
     };
   });
 
@@ -45,6 +99,7 @@
     totalDps: 0,
     totalDmg: 0,
     elapsedMs: 0,
+    fightStartTimestampMs: 0,
   });
   let isEncounterPaused = $state(false);
   // const {
@@ -69,14 +124,7 @@
 <header data-tauri-drag-region class="sticky top-0 flex h-7 w-full items-center justify-between bg-neutral-900/80 px-1">
   <!-- Left side -->
   <span>
-    <button
-      onclick={() => {
-        commands.hardReset();
-        window.location.reload();
-      }}
-      {@attach tooltip(() => "Temp Fix: Hard Reset")}><RefreshCwIcon /></button
-    >
-    <span {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(headerInfo.elapsedMs)}</span>
+    <span {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
     <span><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
     <span><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
   </span>

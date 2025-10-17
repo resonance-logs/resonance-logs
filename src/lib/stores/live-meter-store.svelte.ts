@@ -1,28 +1,37 @@
 import type { PlayersWindow } from "$lib/api";
+import { RuneStore } from '@tauri-store/svelte';
 
-// Live meter data store using Svelte 5 runes
-let dpsPlayers: PlayersWindow = $state({ playerRows: [] });
-let healPlayers: PlayersWindow = $state({ playerRows: [] });
+// Live meter data store using RuneStore
+const dpsPlayersStore = new RuneStore<PlayersWindow>(
+    'liveMeterDps',
+    { playerRows: [] },
+    { autoStart: false, saveOnChange: false }
+);
 
-// Store functions
+const healPlayersStore = new RuneStore<PlayersWindow>(
+    'liveMeterHeal',
+    { playerRows: [] },
+    { autoStart: false, saveOnChange: false }
+);
+
+// Export store functions
 export function setDpsPlayers(players: PlayersWindow) {
-    dpsPlayers = players;
+    dpsPlayersStore.state.playerRows = players.playerRows;
 }
 
 export function setHealPlayers(players: PlayersWindow) {
-    healPlayers = players;
+    healPlayersStore.state.playerRows = players.playerRows;
 }
 
 export function clearMeterData() {
-    dpsPlayers = { playerRows: [] };
-    healPlayers = { playerRows: [] };
+    dpsPlayersStore.state.playerRows = [];
+    healPlayersStore.state.playerRows = [];
 }
 
-// Reactive state getters
 export function getDpsPlayers() {
-    return dpsPlayers;
+    return dpsPlayersStore.state;
 }
 
 export function getHealPlayers() {
-    return healPlayers;
+    return healPlayersStore.state;
 }

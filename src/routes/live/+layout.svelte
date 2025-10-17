@@ -7,10 +7,12 @@
   import { setDpsPlayers, setHealPlayers, clearMeterData } from "$lib/stores/live-meter-store.svelte";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
+  import NotificationToast from "./notification-toast.svelte";
 
   let { children } = $props();
   // let screenshotDiv: HTMLDivElement | undefined = $state();
 
+  let notificationToast: NotificationToast;
   let unlisten: (() => void) | null = null;
   let lastEventTime = Date.now();
   let reconnectInterval: ReturnType<typeof setInterval> | null = null;
@@ -23,12 +25,14 @@
     try {
       // Set up DPS players listener
       const dpsUnlisten = await onDpsPlayersUpdate((event) => {
+        console.log("dmg websocket", event.payload)
         lastEventTime = Date.now();
         setDpsPlayers(event.payload);
       });
 
       // Set up heal players listener
       const healUnlisten = await onHealPlayersUpdate((event) => {
+        console.log("heal websocket", event.payload)
         lastEventTime = Date.now();
         setHealPlayers(event.payload);
       });
@@ -36,6 +40,7 @@
       // Set up reset encounter listener
       const resetUnlisten = await onResetEncounter(() => {
         clearMeterData();
+        notificationToast?.showToast('notice', 'Server change detected, resetting log');
       });
 
       // Combine all unlisten functions
@@ -96,6 +101,7 @@
     {@render children()}
   </main>
   <Footer />
+  <NotificationToast bind:this={notificationToast} />
 </div>
 
 <style>

@@ -100,12 +100,12 @@ pub async fn process_packet(
                 let server_sequence_id = match reader.read_u32() {
                     Ok(sid) => sid,
                     Err(e) => {
-                        debug!("FrameDown: failed to read_u32 server_sequence_id: {e}");
+                        // debug!("FrameDown: failed to read_u32 server_sequence_id: {e}");
                         continue;
                     }
                 };
                 if reader.remaining() == 0 {
-                    debug!("FrameDown: reader.remaining() == 0");
+                    // debug!("FrameDown: reader.remaining() == 0");
                     break;
                 }
 
@@ -116,7 +116,7 @@ pub async fn process_packet(
                             packets_reader = BinaryReader::from(tcp_fragment_decompressed);
                         }
                         Err(e) => {
-                            debug!("FrameDown: zstd decompression failed: {e}");
+                            // debug!("FrameDown: zstd decompression failed: {e}");
                             continue;
                         }
                     }
@@ -125,7 +125,6 @@ pub async fn process_packet(
                 }
             }
             _ => {
-                debug!("Unknown fragment type: {msg_type_id}");
                 continue;
             }
         }
