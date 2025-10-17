@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
-  import CameraIcon from "virtual:icons/lucide/camera";
+  // import CameraIcon from "virtual:icons/lucide/camera";
   import TimerResetIcon from "virtual:icons/lucide/timer-reset";
   import PauseIcon from "virtual:icons/lucide/pause";
   import PlayIcon from "virtual:icons/lucide/play";
@@ -12,7 +12,8 @@
 
   import { onMount, tick } from "svelte";
   import { onEncounterUpdate, resetEncounter, togglePauseEncounter, type HeaderInfo } from "$lib/api";
-  import { takeScreenshot, tooltip } from "$lib/utils.svelte";
+  // import { takeScreenshot, tooltip } from "$lib/utils.svelte";
+  import { tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
   import { SETTINGS } from "$lib/settings-store";
@@ -46,11 +47,11 @@
     elapsedMs: 0,
   });
   let isEncounterPaused = $state(false);
-  const {
-    screenshotDiv,
-  }: {
-    screenshotDiv?: HTMLElement;
-  } = $props();
+  // const {
+  //   screenshotDiv,
+  // }: {
+  //   screenshotDiv?: HTMLElement;
+  // } = $props();
   const appWindow = getCurrentWebviewWindow();
 
   async function openSettings() {
@@ -82,12 +83,12 @@
   <!-- Right side -->
   <span class="flex gap-1">
     <!-- TODO: add responsive clicks, toaster -->
-    <button
+    <!-- <button
       onclick={async () => takeScreenshot(screenshotDiv)}
       {@attach tooltip(() => "Screenshot to Clipboard")}
     >
       <CameraIcon />
-    </button>
+    </button> -->
         <button onclick={() => resetEncounter()} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon /></button>
         <button
           onclick={() => {

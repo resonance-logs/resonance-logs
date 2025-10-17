@@ -1,9 +1,10 @@
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import type { Attachment } from 'svelte/attachments';
-import html2canvas from "html2canvas-pro";
-import { writeText, writeImage } from '@tauri-apps/plugin-clipboard-manager';
-import { image } from '@tauri-apps/api';
+// import html2canvas from "html2canvas-pro";
+import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+// import { writeImage } from '@tauri-apps/plugin-clipboard-manager';
+// import { image } from '@tauri-apps/api';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 export const classColors: Record<string, string> = {
@@ -47,24 +48,24 @@ export async function copyToClipboard(error: MouseEvent & { currentTarget: Event
   await writeText(content);
 }
 
-export async function takeScreenshot(target?: HTMLElement): Promise<void> {
-  if (!target) return;
-  // Give the browser a paint frame (helps if caller just changed DOM)
-  await new Promise(requestAnimationFrame);
+// export async function takeScreenshot(target?: HTMLElement): Promise<void> {
+//   if (!target) return;
+//   // Give the browser a paint frame (helps if caller just changed DOM)
+//   await new Promise(requestAnimationFrame);
 
-  const canvas = await html2canvas(target, { backgroundColor: "#27272A" });
+//   const canvas = await html2canvas(target, { backgroundColor: "#27272A" });
 
-  const blob: Blob | null = await new Promise((resolve) =>
-    canvas.toBlob(resolve)
-  );
-  if (!blob) return;
+//   const blob: Blob | null = await new Promise((resolve) =>
+//     canvas.toBlob(resolve)
+//   );
+//   if (!blob) return;
 
-  try {
-    await writeImage(await image.Image.fromBytes(await blob.arrayBuffer()));
-  } catch (error) {
-    console.error("Failed to take a screenshot", error);
-  }
-}
+//   try {
+//     await writeImage(await image.Image.fromBytes(await blob.arrayBuffer()));
+//   } catch (error) {
+//     console.error("Failed to take a screenshot", error);
+//   }
+// }
 
 let isClickthrough = false;
 
