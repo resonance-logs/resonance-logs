@@ -1,5 +1,6 @@
 use crate::live::event_manager::EventManagerMutex;
 use crate::live::opcodes_models::{Encounter, EncounterMutex};
+use crate::live::skills_store::SkillsStoreMutex;
 use std::sync::MutexGuard;
 use crate::WINDOW_LIVE_LABEL;
 use log::info;
@@ -23,6 +24,69 @@ fn nan_is_zero(value: f64) -> f64 {
         0.0
     } else {
         value
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn subscribe_player_skills(
+    uid: i64,
+    skill_type: String,
+    skills_store: tauri::State<'_, SkillsStoreMutex>,
+) -> Result<crate::live::commands_models::SkillsWindow, String> {
+    let mut skills_store = skills_store.lock().unwrap();
+
+    // Add to active subscriptions
+    skills_store.subscribe(uid, skill_type.clone());
+
+    // Return current skills data
+    match skill_type.as_str() {
+        "dps" => {
+            skills_store.get_dps_skills(uid)
+                .cloned()
+                .ok_or_else(|| format!("No DPS skills found for player {}", uid))
+        }
+        "heal" => {
+            skills_store.get_heal_skills(uid)
+                .cloned()
+                .ok_or_else(|| format!("No heal skills found for player {}", uid))
+        }
+        _ => Err(format!("Invalid skill type: {}", skill_type))
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn unsubscribe_player_skills(
+    uid: i64,
+    skill_type: String,
+    skills_store: tauri::State<'_, SkillsStoreMutex>,
+) {
+    let mut skills_store = skills_store.lock().unwrap();
+    skills_store.unsubscribe(uid, skill_type);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_player_skills(
+    uid: i64,
+    skill_type: String,
+    skills_store: tauri::State<'_, SkillsStoreMutex>,
+) -> Result<crate::live::commands_models::SkillsWindow, String> {
+    let skills_store = skills_store.lock().unwrap();
+
+    match skill_type.as_str() {
+        "dps" => {
+            skills_store.get_dps_skills(uid)
+                .cloned()
+                .ok_or_else(|| format!("No DPS skills found for player {}", uid))
+        }
+        "heal" => {
+            skills_store.get_heal_skills(uid)
+                .cloned()
+                .ok_or_else(|| format!("No heal skills found for player {}", uid))
+        }
+        _ => Err(format!("Invalid skill type: {}", skill_type))
     }
 }
 
@@ -88,6 +152,7 @@ pub fn copy_sync_container_data(app: tauri::AppHandle) {
 pub fn reset_encounter(
     state: tauri::State<'_, EncounterMutex>,
     event_manager: tauri::State<'_, EventManagerMutex>,
+    skills_store: tauri::State<'_, SkillsStoreMutex>,
 ) {
     let mut encounter = state.lock().unwrap();
     encounter.clone_from(&Encounter::default());
@@ -98,6 +163,10 @@ pub fn reset_encounter(
     if event_manager.should_emit_events() {
         event_manager.emit_encounter_reset();
     }
+
+    // Clear skills store and subscriptions
+    let mut skills_store = skills_store.lock().unwrap();
+    skills_store.clear();
 }
 
 #[tauri::command]

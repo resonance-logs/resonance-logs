@@ -16,6 +16,25 @@ async resetEncounter() : Promise<void> {
 },
 async togglePauseEncounter() : Promise<void> {
     await TAURI_INVOKE("toggle_pause_encounter");
+},
+async getPlayerSkills(uid: number, skillType: string) : Promise<Result<SkillsWindow, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_player_skills", { uid, skillType }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async subscribePlayerSkills(uid: number, skillType: string) : Promise<Result<SkillsWindow, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("subscribe_player_skills", { uid, skillType }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<void> {
+    await TAURI_INVOKE("unsubscribe_player_skills", { uid, skillType });
 }
 }
 
@@ -29,7 +48,9 @@ async togglePauseEncounter() : Promise<void> {
 
 /** user-defined types **/
 
-
+export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
+export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
+export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }
 
 /** tauri-specta globals **/
 

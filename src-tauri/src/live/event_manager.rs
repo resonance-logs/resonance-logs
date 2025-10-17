@@ -50,6 +50,7 @@ impl EventManager {
         }
     }
 
+
     pub fn emit_dps_skills_update(&self, player_uid: i64, skills_window: SkillsWindow) {
         if let Some(app_handle) = &self.app_handle {
             let payload = SkillsUpdatePayload {
@@ -105,6 +106,7 @@ pub struct EncounterUpdatePayload {
     pub header_info: HeaderInfo,
     pub is_paused: bool,
 }
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
