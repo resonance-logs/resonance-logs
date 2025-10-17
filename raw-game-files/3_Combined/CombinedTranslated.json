@@ -8687,6 +8687,9 @@
         "skill_names_Clean.json": {
             "ChineseShort": "光能轰炸伤害区域BUFF",
             "AIEnglishShort": "Light energy bombing damage area BUFF"
+        },
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Light energy bombardment area"
         }
     },
     "55290": {
@@ -9450,12 +9453,18 @@
         "skill_names_Clean.json": {
             "ChineseShort": "冷酷征伐伤害buff",
             "AIEnglishShort": "Furious Conquest Damage Buff"
+        },
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Ruthless Conquest damage buff"
         }
     },
     "55432": {
         "skill_names_Clean.json": {
             "ChineseShort": "冷冷酷征伐伤害buff",
             "AIEnglishShort": "Cold and cold battle damage buff"
+        },
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Ruthless Crusade damage buff"
         }
     },
     "100101": {
@@ -47048,7 +47057,9 @@
         }
     },
     "2201172": {
-        "BuffTable_Clean.json": {},
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Deletes all shields and causes damage"
+        },
         "skill_names_Clean.json": {
             "ChineseShort": "坚毅之息",
             "AIEnglishShort": "Break of perseverance"
@@ -51132,6 +51143,9 @@
         "skill_names_Clean.json": {
             "ChineseShort": "神圣印记伤害",
             "AIEnglishShort": "Divine Seal Damage"
+        },
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "holy mark damage"
         }
     },
     "2206250": {
@@ -60018,6 +60032,236 @@
     "23001170": {
         "RecountTable_Clean.json": {
             "EnglishShort": "Void Corruption Fluctuation"
+        }
+    },
+    "32401": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Tornadoes gradually reduce damage caused"
+        }
+    },
+    "32301": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Break the chase timer"
+        }
+    },
+    "21431": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "perfusion mark"
+        }
+    },
+    "21432": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Imbued target dies"
+        }
+    },
+    "44801": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Thunderbolt Continuous Slash Detection"
+        }
+    },
+    "21413": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "15% element reduction"
+        }
+    },
+    "44901": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "The cooldown of the sickle is reduced when you die, and the moon blade is killed."
+        }
+    },
+    "510099": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Master's basic attack damage reduction"
+        }
+    },
+    "683168": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Motorcycle Acceleration"
+        }
+    },
+    "683171": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Advanced Mechanical Fox Tag"
+        }
+    },
+    "683173": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical Fox Mobile Charging"
+        }
+    },
+    "683172": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical Fox Sprinting Special Effects"
+        }
+    },
+    "683169": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-motorcycle charging"
+        }
+    },
+    "683170": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical Fox Acceleration"
+        }
+    },
+    "683174": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical QTE"
+        }
+    },
+    "683178": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle - motorcycle stunt performance effects (QTE failed)"
+        }
+    },
+    "683176": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-advanced motorcycle tag"
+        }
+    },
+    "683175": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical Validity Determination"
+        }
+    },
+    "683177": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle - motorcycle stunt performance effects (QTE successful)"
+        }
+    },
+    "881216": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Wooden Man-After starting, Xiaoyi sends himself the start ai event."
+        }
+    },
+    "965300": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Building an optical bridge-skills management"
+        }
+    },
+    "965301": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a light bridge - get random skills"
+        }
+    },
+    "683179": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-motorcycle head-up section short spray"
+        }
+    },
+    "683180": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-mechanical system reduces CD"
+        }
+    },
+    "882252": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Infield monsters are not attracted"
+        }
+    },
+    "965302": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Summon Clouds"
+        }
+    },
+    "965303": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Stamina Restoration Potion"
+        }
+    },
+    "965304": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Summon Extra Clouds"
+        }
+    },
+    "965306": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Summon Swimming Pool"
+        }
+    },
+    "965305": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Low Gravity Potion"
+        }
+    },
+    "965312": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Building a light bridge - managing the layers of cloud particles carried by the player"
+        }
+    },
+    "965311": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Building a light bridge - low gravity"
+        }
+    },
+    "974006": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Big World-Lock Toy Use BUFF"
+        }
+    },
+    "974201": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Bubble Spot Patrol-Patrol Captain"
+        }
+    },
+    "965313": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Suspended bomb-standby state"
+        }
+    },
+    "974202": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Bubble Spot Patrol-Patrol Team"
+        }
+    },
+    "2110113": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Pollution Crab Spider-Invincible"
+        }
+    },
+    "2200740": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Thunder God"
+        }
+    },
+    "2200730": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Thunder God"
+        }
+    },
+    "2200401": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Thunder Talisman Knife Intent reduces damage"
+        }
+    },
+    "2205141": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Instant combo critical hits doubled"
+        }
+    },
+    "2201173": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "with shield mark"
+        }
+    },
+    "7000247": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Parkour - starting line (5 times the length)"
+        }
+    },
+    "7000248": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Parkour - Finish Line (5x length)"
+        }
+    },
+    "7100023": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "balloon-disappear"
+        }
+    },
+    "7100022": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Balloon - Standby"
         }
     }
 }

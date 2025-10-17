@@ -15,7 +15,7 @@
   import { takeScreenshot, tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
-  import { settings } from "$lib/settings-store";
+  import { SETTINGS } from "$lib/settings-store";
 
   onMount(() => {
     let unlisten: (() => void) | null = null;
@@ -55,9 +55,10 @@
 
   async function openSettings() {
     const mainWindow = await WebviewWindow.getByLabel("main");
-    if (mainWindow) {
+    if (mainWindow !== null) {
       await mainWindow?.unminimize();
       await mainWindow?.show();
+      await mainWindow?.setFocus();
       await emitTo("main", "navigate", "/main/settings");
     }
   }
@@ -82,22 +83,7 @@
   <span class="flex gap-1">
     <!-- TODO: add responsive clicks, toaster -->
     <button
-      onclick={async () => {
-        const prev = settings.state.general.showOthersName;
-        if (settings.state.general.showOthersName === "Show Others' Name") {
-          settings.state.general.showOthersName = "Show Others' Class";
-        }
-
-        // Wait for reactive flush & paint
-        await tick();
-
-        // Take screenshot AFTER change is visible
-        await takeScreenshot(screenshotDiv);
-
-        // Revert & let UI update
-        settings.state.general.showOthersName = prev;
-        await tick();
-      }}
+      onclick={async () => takeScreenshot(screenshotDiv)}
       {@attach tooltip(() => "Screenshot to Clipboard")}
     >
       <CameraIcon />

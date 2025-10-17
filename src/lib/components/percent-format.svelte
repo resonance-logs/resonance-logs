@@ -2,7 +2,7 @@
   let {
     val = "",
     fractionDigits = 0,
-  }: { 
+  }: {
     val: string | number;
     fractionDigits?: number;
   } = $props();

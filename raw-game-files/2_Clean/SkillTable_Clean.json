@@ -1,21 +1,27 @@
 {
     "1101": {
-        "ChineseShort": "场地标记01"
+        "ChineseShort": "场地标记01",
+        "EnglishShort": "Marker 1"
     },
     "1102": {
-        "ChineseShort": "场地标记02"
+        "ChineseShort": "场地标记02",
+        "EnglishShort": "Marker 2"
     },
     "1103": {
-        "ChineseShort": "场地标记03"
+        "ChineseShort": "场地标记03",
+        "EnglishShort": "Marker 3"
     },
     "1104": {
-        "ChineseShort": "场地标记04"
+        "ChineseShort": "场地标记04",
+        "EnglishShort": "Marker 4"
     },
     "1105": {
-        "ChineseShort": "场地标记05"
+        "ChineseShort": "场地标记05",
+        "EnglishShort": "Marker 5"
     },
     "1106": {
-        "ChineseShort": "场地标记06"
+        "ChineseShort": "场地标记06",
+        "EnglishShort": "Marker 6"
     },
     "1201": {
         "ChineseShort": "博伊斯ATK_01",
@@ -40,7 +46,7 @@
     "1210": {
         "ChineseShort": "博伊斯SKILL_01",
         "EnglishShort": "Maelstrom",
-        "EnglishLong": "Unleashes a water vortex at the target's feet, continuously dealing <style=\"magic\">Magic Damage</style> to enemies within range. Each time DMG is dealt, for every <style=\"accent-gn\">1</style> target hit, restore <style=\"accent-gn\">2</style> <style=\"accent-gn\">Ice Energy</style>. A maximum of 10 <style=\"accent-gn\">Ice Energy</style> can be restored per hit. <br><br><style=\"accent-gn\">Ultra Cold Vortex</style><br>While in the <style=\"accent-gn\">Ultra Cold</style> state, the water vortex will freeze and violently explode upon ending, dealing higher <style=\"magic\">Magic Damage</style> to all enemies within range. <br><br><size=22><style=\"tipsYellow\">Tips: Pair with Ray Stream. Casting at the right moment can restore considerable Ice Energy.</style></size>"
+        "EnglishLong": "Unleashes a water vortex at the target's feet, continuously dealing <style=\"magic\">Magic Damage</style> to enemies within range. Each time DMG is dealt, for <style=\"accent-gn\">every</style> target hit, restores <style=\"accent-gn\">2</style> <style=\"accent-gn\">Ice Energy</style>. A maximum of 10 <style=\"accent-gn\">Ice Energy</style> can be restored per hit. <br><br><style=\"accent-gn\">Ultra Cold Vortex</style><br>While in the <style=\"accent-gn\">Ultra Cold</style> state, the water vortex will freeze and violently explode upon ending, dealing higher <style=\"magic\">Magic Damage</style> to all enemies within range. <br><br><size=22><style=\"tipsYellow\">Tips: Pair with Frostbeam Spec. Casting at the right moment can restore considerable Ice Energy.</style></size>"
     },
     "1211": {
         "ChineseShort": "博伊斯SKILL_02",
@@ -97,7 +103,7 @@
     "1240": {
         "ChineseShort": "冰风",
         "EnglishShort": "Frozen Gale",
-        "EnglishLong": "Unleashes built-up cold energy in a violent surge, dealing <style=\"magic\">Magic Damage</style> and inflicting <linktext=1171><style=\"ItemQuality_5\">Frozen</style></linktext> on nearby enemies.<br>Charging the skill alters both its range and DMG.<br>Tier <style=\"accent-gn\">1</style>: Chants for <style=\"accent-gn\">1</style> sec, targeting a <style=\"accent-gn\">8</style>m frontal cone.<br>Tier <style=\"accent-gn\">2</style>: Chants for <style=\"accent-gn\">2</style> secs, targeting a <style=\"accent-gn\">8</style>m frontal cone with <style=\"accent-gn\">50%</style> increased DMG.<br>Tier <style=\"accent-gn\">3</style>: Chants for <style=\"accent-gn\">3</style> secs, targeting a <style=\"accent-gn\">8</style>m frontal cone with <style=\"accent-gn\">100%</style> increased DMG.<br>When holding <style=\"accent-gn\">1</style> / <style=\"accent-gn\">3</style> / <style=\"accent-gn\">5</style> <linktext=1171><style=\"ItemQuality_5\">Frozen</style></linktext>, the skill will instantly cast at Tier <style=\"accent-gn\">1</style> / <style=\"accent-gn\">2</style> / <style=\"accent-gn\">3</style>, skipping the charge time.<br><br><size=22><style=\"tipsYellow\">Tips: This skill offers both area damage and crowd control. For best results, cast it when you have high Frost Crystal count.</style></size>"
+        "EnglishLong": "Unleashes built-up cold energy in a violent surge, dealing <style=\"magic\">Magic Damage</style> and inflicting <linktext=1171><style=\"ItemQuality_5\">Frozen</style></linktext> on nearby enemies.<br>Charging the skill alters both its range and DMG.<br>Tier <style=\"accent-gn\">1</style>: Chants for <style=\"accent-gn\">1</style>s, targeting an <style=\"accent-gn\">8</style>m frontal cone.<br>Tier <style=\"accent-gn\">2</style>: Chants for <style=\"accent-gn\">2</style>s, targeting an <style=\"accent-gn\">8</style>m frontal cone with <style=\"accent-gn\">50%</style> increased DMG.<br>Tier <style=\"accent-gn\">3</style>: Chants for <style=\"accent-gn\">3</style>s, targeting an <style=\"accent-gn\">8</style>m frontal cone with <style=\"accent-gn\">100%</style> increased DMG.<br>When holding <style=\"accent-gn\">1</style> / <style=\"accent-gn\">3</style> / <style=\"accent-gn\">5</style> <linktext=1171><style=\"ItemQuality_5\">Frozen</style></linktext>, the skill will instantly cast at Tier <style=\"accent-gn\">1</style> / <style=\"accent-gn\">2</style> / <style=\"accent-gn\">3</style>, skipping the charge time.<br><br><size=22><style=\"tipsYellow\">Tips: This skill offers both area damage and crowd control. For best results, cast it when you have high Frost Crystal count.</style></size>"
     },
     "1241": {
         "ChineseShort": "博伊斯SPECIAL_SKILL_A",
@@ -112,7 +118,7 @@
     "1243": {
         "ChineseShort": "冰之灌注",
         "EnglishShort": "Permafrost",
-        "EnglishLong": "Summon the Strength of Ice to generate <style=\"accent-gn\">6</style> <style=\"accent-gn\">Ice Energy</style> per second and increase <style=\"accent-gn\">Haste</style> for the duration. <br><br><size=22><style=\"tipsYellow\">Tips: Increases ATK and casting speed. Since this skill generates Ice Energy, avoid using it when Ice Energy is near maximum, or quickly spend Ice Energy afterward.</style></size>"
+        "EnglishLong": "Summons the Strength of Ice to generate <style=\"accent-gn\">6</style> <style=\"accent-gn\">Ice Energy</style> per second and increase <style=\"accent-gn\">Haste</style> for the duration. <br><br><size=22><style=\"tipsYellow\">Tips: Increases attack and casting speed. Since this skill generates Ice Energy, avoid using it when Ice Energy is near maximum, but you may quickly spend Ice Energy after casting this skill.</style></size>"
     },
     "1244": {
         "ChineseShort": "冰风暴",
@@ -122,12 +128,12 @@
     "1245": {
         "ChineseShort": "冰箱",
         "EnglishShort": "Frost Shelter",
-        "EnglishLong": "Encase the caster in ice, and make caster immune to all DMG but are unable to move for the duration. Deals <style=\"magic\">Magic Damage</style> to all nearby enemies, and inflicts <linktext=3011><style=\"ItemQuality_5\">Slow</style></linktext>, which upgrades to <linktext=1171><style=\"ItemQuality_5\">Freeze</style></linktext>. <br><br><size=22><style=\"tipsYellow\">Tips: This skill is intended to be equipped in high-pressure situations to increase survivability.</style></size>"
+        "EnglishLong": "Encase the caster in ice, and make caster immune to all DMG but are unable to move for the duration. Deals <style=\"magic\">Magic Damage</style> to all nearby enemies, and inflicts <linktext=3011><style=\"ItemQuality_5\">Slow</style></linktext>, which upgrades to <linktext=1171><style=\"ItemQuality_5\">Frozen</style></linktext>. <br><br><size=22><style=\"tipsYellow\">Tips: This skill is intended to be equipped in high-pressure situations to increase survivability.</style></size>"
     },
     "1246": {
         "ChineseShort": "水龙卷",
         "EnglishShort": "Tidepool",
-        "EnglishLong": "Summon a surging Tidal Vortex at the target location, dealing <style=\"magic\">Magic Damage</style> on impact. Channels for <style=\"accent-gn\">5s</style> after casting. Can be manually canceled by casting again.<br><br><style=\"accent-gn\">Ultra Cold: Tidepool</style><br>During the <style=\"accent-gn\">Ultra Cold</style> state, the vortex Frozens upon ending and explodes, dealing higher <style=\"magic\">Magic Damage</style> to all enemies within range.<br><br><size=22><style=\"tipsYellow\">Tips: You cannot move or cast other skills while channeling. Best paired with allies' AoE skills in coordinated attacks.</style></size>"
+        "EnglishLong": "Summons a surging Tidal Vortex at the target location, dealing <style=\"magic\">Magic Damage</style> on impact. Channels for <style=\"accent-gn\">5s</style> after casting. Recast to end early.<br><br><style=\"accent-gn\">Ultra Cold: Tidepool</style><br>In the <style=\"accent-gn\">Ultra Cold</style> state, the vortex freezes and violently explodes upon ending, dealing higher <style=\"magic\">Magic Damage</style> to all enemies within range.<br><br><size=22><style=\"tipsYellow\">Tips: You cannot move or cast other skills while channeling. Best paired with allies' AoE skills in coordinated attacks.</style></size>"
     },
     "1247": {
         "ChineseShort": "天赋触发彗星"
@@ -135,7 +141,7 @@
     "1248": {
         "ChineseShort": "博伊斯UTR_SKILL",
         "EnglishShort": "Glacier Hymn",
-        "EnglishLong": "Summon the ice's blessing to unfold an <style=\"accent-gn\">Ice Domain</style>, knocking all enemies back within the range. Then summons a comet to strike the targets, dealing <style=\"magic\">Magic Damage</style> and inflicting <linktext=1171><style=\"ItemQuality_5\">Freeze</style></linktext> on all affected enemies. <br><style=\"accent-gn\">Ice Domain</style><br>Within the Domain, restores <style=\"accent-gn\">220</style> <style=\"accent-gn\">Ice Energy</style> over time and gains <style=\"accent-gn\">Ultra Cold</style>. Enemies within the domain are continuously <linktext=3011><style=\"ItemQuality_5\">Slowed</style></linktext>, escalating to <linktext=1171><style=\"ItemQuality_5\">Freeze</style></linktext>. <br>While in <style=\"accent-gn\">Ultra Cold</style>, targets are treated as <linktext=1171><style=\"ItemQuality_5\">Freeze</style></linktext>. <br><br><size=22><style=\"tipsYellow\">Tips: Casting should be avoided when Ice Energy approaches its maximum capacity, otherwise the Ice Energy will be quickly depleted. The skill is best casted within the range of Ultra Cold</style></size>"
+        "EnglishLong": "Summon the ice's blessing to unfold an <style=\"accent-gn\">Ice Domain</style>, knocking all enemies back within the range. Then summons a comet to strike the targets, dealing <style=\"magic\">Magic Damage</style> and inflicting <linktext=1171><style=\"ItemQuality_5\">Frozen</style></linktext> on all affected enemies. <br><style=\"accent-gn\">Ice Domain</style><br>Within the Domain, restores <style=\"accent-gn\">220</style> <style=\"accent-gn\">Ice Energy</style> over time and gains <style=\"accent-gn\">Ultra Cold</style>. Enemies within the domain are continuously <linktext=3011><style=\"ItemQuality_5\">Slowed</style></linktext>, escalating to <linktext=1171><style=\"ItemQuality_5\">Frozen</style></linktext>. <br>While in <style=\"accent-gn\">Ultra Cold</style>, targets are treated as <linktext=1171><style=\"ItemQuality_5\">Frozen</style></linktext>. <br><br><size=22><style=\"tipsYellow\">Tips: Casting should be avoided when Ice Energy approaches its maximum capacity, otherwise the Ice Energy will be quickly depleted. The skill is best casted within the range of Ultra Cold</style></size>"
     },
     "1249": {
         "ChineseShort": "法杖支援技-协同冰晶"
@@ -237,12 +243,12 @@
     "1409": {
         "ChineseShort": "蒂娜SKILL_03_02",
         "EnglishShort": "Typhoon Cleave",
-        "EnglishLong": "Launches into enemy lines, dealing <style=\"physical\">Attack Damage</style> to enemies in range and knocking them <style=\"accent-gn\">Airborne</style>. Restores <style=\"accent-gn\">100</style> <style=\"accent-gn\">Courage</style>.<br><i><style=\"text_third_gray\">\"Endless storm, unlock thy mighty power at my knight's command! Wind, reveal thy glory with a surging rush!\"</style></i><br><br><size=22><style=\"tipsYellow\">Tips: Cast when Courage is low.</style></size>"
+        "EnglishLong": "Launches into enemy lines, dealing <style=\"physical\">Attack Damage</style> to enemies in range and knocking them <style=\"accent-gn\">Airborne</style>. Restores <style=\"accent-gn\">100</style> <style=\"accent-gn\">Courage</style>.<br><i><style=\"text_third_gray\"><br>\"Endless storm, unlock thy mighty power at my knight's command! Wind, reveal thy glory with a surging rush!\"</style></i><br><br><size=22><style=\"tipsYellow\">Tips: Cast when Courage is low.</style></size>"
     },
     "1410": {
         "ChineseShort": "蒂娜SKILL_03_01",
         "EnglishShort": "Typhoon Cleave",
-        "EnglishLong": "Raise the banner spear, applying <style=\"accent-gn\">Inspire</style> to Allies before a follow-up leap can be launched, dealing <style=\"physical\">Attack Damage</style> to the enemies within range and <style=\"accent-gn\">knocking them airborne</style>, while restoring <style=\"accent-gn\">100</style> <style=\"accent-gn\">Courage</style>. <br><style=\"accent-gn\">Inspire</style>: Lasts for <style=\"accent-gn\">10s</style>. During this time, all Allies' Haste +<style=\"accent-gn\">10%</style>. You restore <style=\"accent-gn\">10</style> <style=\"accent-gn\">Courage</style> <style=\"accent-gn\">per</style> second and <style=\"accent-gn\">1</style> stack of <style=\"accent-gn\">Sharpness</style> every <style=\"accent-gn\">2s</style>. <br><i><style=\"text_third_gray\">\"Endless storm, unlock thy mighty power at my knight's command! Wind, reveal thy glory with a surging rush! Manifest in the wind! </style></i><br><br><size=22><style=\"tipsYellow\">Tips: Cast when Courage is low.</style></size>"
+        "EnglishLong": "Raises the banner spear, applying <style=\"accent-gn\">Inspire</style> to allies before a follow-up leap can be launched, dealing <style=\"physical\">Attack Damage</style> to the enemies within range and <style=\"accent-gn\">knocking them airborne</style>, while restoring <style=\"accent-gn\">100</style> <style=\"accent-gn\">Courage</style>. <br><style=\"accent-gn\">Inspire</style>: Lasts for <style=\"accent-gn\">10s</style>. During this time, all allies' Haste +<style=\"accent-gn\">10%</style>. You restore <style=\"accent-gn\">10</style> <style=\"accent-gn\">Courage</style> <style=\"accent-gn\">per</style> second and <style=\"accent-gn\">1</style> stack of <style=\"accent-gn\">Sharp</style> every <style=\"accent-gn\">2s</style>. <br><i><style=\"text_third_gray\">\"Endless storm, unlock thy mighty power at my knight's command! Wind, reveal thy glory with a surging rush! Manifest in the wind! </style></i><br><br><size=22><style=\"tipsYellow\">Tips: Cast when Courage is low.</style></size>"
     },
     "1411": {
         "ChineseShort": "蒂娜ATK_11",
@@ -285,7 +291,7 @@
     "1421": {
         "ChineseShort": "蒂娜可选SKILL_02",
         "EnglishShort": "Spiral Thrust",
-        "EnglishLong": "Consumes <style=\"accent-gn\">30</style> <style=\"accent-gn\">Courage</style> to reel in the spinning lance and unleash a final piercing strike. The spiraling gust tears through the air, dealing sustained <style=\"physical\">Attack Damage</style> to enemies in range. The initial strike inflicts a <style=\"accent-gn\">50%</style><style=\"accent-gn\"> <linktext=3004><style=\"ItemQuality_5\">Wound</style></linktext> on the target, lasting <style=\"accent-gn\">10s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: When Courage is high, cast the highest-priority skill first.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">30</style> <style=\"accent-gn\">Courage</style> to reel in the spinning lance and unleash a final piercing strike. The spiraling gust tears through the air, dealing sustained <style=\"physical\">Attack Damage</style> to enemies within range. The initial strike inflicts a <style=\"accent-gn\">50%</style><style=\"accent-gn\"> <linktext=3004><style=\"ItemQuality_5\">Wound</style></linktext> on the target, lasting <style=\"accent-gn\">10s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Whenever you have enough Courage, use it on your most important skill.</style></size>"
     },
     "1422": {
         "ChineseShort": "蒂娜可选SKILL_03",
@@ -295,12 +301,12 @@
     "1423": {
         "ChineseShort": "蒂娜可选SKILL_04",
         "EnglishShort": "Aegis Gale",
-        "EnglishLong": "Wind pressure is condensed in front of the caster, rendering the caster immune to all DMG. Counterattack DMG is incrementally amplified with each incoming attack, dealing <style=\"\"physical\"\">Attack Damage</style> in retaliation. <br><br><size=22><style=\"\"tipsYellow\"\">Tips: This skill is intended to be used in high-pressure situations to increase chances of survival. The more frequent enemy attack, the more this skill brings you.</style></size>"
+        "EnglishLong": "Condenses wind pressure in front of the caster, rendering the caster immune to all DMG. Counterattack DMG is incrementally amplified with each incoming attack, dealing <style=\"\"physical\"\">Attack Damage</style> in retaliation. <br><br><size=22><style=\"\"tipsYellow\"\">Tips: This skill is intended to be used in high-pressure situations to increase chances of survival. The more frequent enemy attack, the more this skill brings you.</style></size>"
     },
     "1424": {
         "ChineseShort": "蒂娜可选SKILL_05",
         "EnglishShort": "Instant Edge",
-        "EnglishLong": "Consumes 2 stacks of <style=\"accent-gn\">Sharp</style> to leap into the air and deliver a powerful aerial strike, dealing <style=\"physical\">Attack Damage</style>.<br><br><size=22><style=\"tipsYellow\">Tips: Combo with Skyward Spec. Cast when Courage is low to avoid wasting regen.</style></size>"
+        "EnglishLong": "Consumes 2 stacks of <style=\"accent-gn\">Sharp</style> to leap into the air and deliver a powerful aerial strike, dealing <style=\"physical\">Attack Damage</style>.<br><br><size=22><style=\"tipsYellow\">Tips: Combo with Skyward Spec. Cast when Courage is low to prevent overcapping and wasting Courage regeneration.</style></size>"
     },
     "1425": {
         "ChineseShort": "蒂娜可选SKILL_06",
@@ -377,7 +383,7 @@
     "1505": {
         "ChineseShort": "艾露娜SKILL_01",
         "EnglishShort": "Dance",
-        "EnglishLong": "Performs a gentle hop, summoning vines to glide and deal <style=\"dendro\">Verdant DMG</style>.<br><style=\"accent-gn\">Bloom</style><br>During the glide, casts Bloom instantly to launch 3 Dodder Seeds. Dance can be used twice in a row. <style=\"dendro\">Dance</style> can be used twice in a row.<br><br><size=22><style=\"tipsYellow\">Pro Tips: This is a charge-based skill—watch charge cap to avoid waste. After casting, uses Basic Attack to trigger Bloom for extra hits and 3 more Dodder Seeds</style></size>"
+        "EnglishLong": "Performs a gentle hop, summoning vines to glide and deal <style=\"dendro\">Verdant DMG</style>.<br><style=\"accent-gn\">Bloom</style><br>During the glide, casts Bloom instantly to launch 3 Dodder Seeds. Dance can be used twice in a row. <style=\"dendro\">Dance</style> can be used twice in a row.<br><br><size=22><style=\"tipsYellow\">Pro Tips: This is a charge-based skill-watch charge cap to avoid waste. After casting, uses Basic Attack to trigger Bloom for extra hits and 3 more Dodder Seeds</style></size>"
     },
     "1506": {
         "ChineseShort": "艾露娜SKILL_02",
@@ -412,7 +418,7 @@
     "1514": {
         "ChineseShort": "艾露娜ULT_01",
         "EnglishShort": "Spirit of Nature",
-        "EnglishLong": "Harnesses forest power to summon a spirit deer that charges forward, dealing massive <style=\"dendro\">Verdant DMG</style> to all enemies along its path. When it vanishes, it leaves behind a Fertile Domain that heals allies standing inside.<br><i><style=\"text_third_gray\">\"Power of the earth, heart of the forest—may the source of life never run dry!\"</style></i><br><br><size=22><style=\"tipsYellow\">Pro Tips: This Ultimate creates a wide rectangular area damage path and a healing zone. Pay attention to enemy placement before casting. While active, each attack skill that hits an enemy spawns a Dodder Seed—chain your skills to trigger more.</style></size>"
+        "EnglishLong": "Harnesses forest power to summon a spirit deer that charges forward, dealing massive <style=\"dendro\">Verdant DMG</style> to all enemies along its path. When it vanishes, it leaves behind a Fertile Domain that heals allies standing inside.<br><i><style=\"text_third_gray\">\"Power of the earth, heart of the forest-may the source of life never run dry!\"</style></i><br><br><size=22><style=\"tipsYellow\">Pro Tips: This Ultimate creates a wide rectangular area damage path and a healing zone. Pay attention to enemy placement before casting. While active, each attack skill that hits an enemy spawns a Dodder Seed-chain your skills to trigger more.</style></size>"
     },
     "1515": {
         "ChineseShort": "艾露娜DODGE_ATK"
@@ -431,7 +437,7 @@
     "1519": {
         "ChineseShort": "艾露娜种子陨石",
         "EnglishShort": "Feral Seed",
-        "EnglishLong": "Summon a seed to strike enemies, dealing <style=\"magic\">Magic Damage</style> and reducing their Move SPD by <style=\"accent-gn\">30%</style>. While dealing DMG, the seed restores a total of <style=\"accent-gn\">30</style> <style=\"accent-gn\">Energy</style>. <br>This skill holds <style=\"accent-gn\">2</style> charges. <br><br><size=22><style=\"tipsYellow\">Tips: Casting is advised when Energy is low.</style></size>"
+        "EnglishLong": "Summons a seed to strike enemies, dealing <style=\"magic\">Magic Damage</style> and reducing their Move SPD by <style=\"accent-gn\">30%</style>. While dealing DMG, the seed restores a total of <style=\"accent-gn\">30</style> <style=\"accent-gn\">Energy</style>. <br>This skill holds <style=\"accent-gn\">2</style> charges. <br><br><size=22><style=\"tipsYellow\">Tips: Casting is advised when Energy is low.</style></size>"
     },
     "1520": {
         "ChineseShort": "艾露娜灌注",
@@ -451,7 +457,7 @@
     "1523": {
         "ChineseShort": "艾露娜奶环",
         "EnglishShort": "Regen Pulse",
-        "EnglishLong": "Chants for <style=\"accent-gn\">2.3s</style>, then consumes <style=\"accent-gn\">40</style> <style=\"accent-gn\">Energy</style> to release a pulse from you. The pulse <style=\"accent-gn\">heals</style> the caster and all affected allies, while also dispelling <linktext=3021><style=\"ItemQuality_5\">negative effects</style></linktext>. <br><br><size=22><style=\"tipsYellow\">Tips: Optimal usage is in situations requiring dispels, with careful timing to avoid CD.</style></size>"
+        "EnglishLong": "Chants for <style=\"accent-gn\">2.3s</style>, then consumes <style=\"accent-gn\">40</style> <style=\"accent-gn\">Energy</style> to release a pulse from the caster. The pulse <style=\"accent-gn\">heals</style> the caster and all affected allies, while also dispelling <linktext=3021><style=\"ItemQuality_5\">debuffs</style></linktext>. <br><br><size=22><style=\"tipsYellow\">Tips: Optimal usage is in situations requiring dispels, with careful timing to avoid CD.</style></size>"
     },
     "1524": {
         "ChineseShort": "艾露娜减CD",
@@ -471,7 +477,7 @@
     "1527": {
         "ChineseShort": "艾露娜花语回升",
         "EnglishShort": "Bloomheal",
-        "EnglishLong": "During the <style=\"accent-gn\">6s</style> channeling, summon <linktext=1529><style=\"ItemQuality_5\">Feral Seed</style></linktext> every 0.5s to deal <style=\"magic\">Magic Damage</style> to surrounding enemies, while healing up to <style=\"accent-gn\">10</style> allies(Party Members Prioritized) and granting them <style=\"accent-gn\">25%</style> DMG Reduction."
+        "EnglishLong": "Channels for <style=\"accent-gn\">6</style>s, summoning falling seeds every 0.5s to deal <style=\"magic\">magic damage</style> to nearby enemies. At the same time, heals up to <style=\"accent-gn\">10</style> nearby allies (prioritizing teammates) and grants them <style=“accent-gn”>25%</style> DMG Reduction."
     },
     "1528": {
         "ChineseShort": "艾露娜飞升",
@@ -481,7 +487,7 @@
     "1529": {
         "ChineseShort": "艾露娜盛放注能",
         "EnglishShort": "Blossom Charge",
-        "EnglishLong": "<style=\"accent-gn\">Blooming Infusion</style><br>Unleashes vines, inflicting <linktext=3005><style=\"ItemQuality_5\">Stun</style></linktext> on surrounding enemies while dealing <style=\"magic\">Magic Damage</style>, and restoring HP to friendly targets around you. <br><br><size=22><style=\"tipsYellow\">Tips: This is an instant cast skill. Paired with Lifebind Spec talents, it provides good damaging and healing capabilities in combats requiring continuous movement.</style></size>"
+        "EnglishLong": "Unleashes vines, inflicting <linktext=3005><style=\"ItemQuality_5\">Stun</style></linktext> on surrounding enemies while dealing <style=\"magic\">Magic Damage</style>, and restoring HP to friendly targets around you. <br><br><size=22><style=\"tipsYellow\">Tips: This is an instant cast skill. Paired with Lifebind Spec talents, it provides good damaging and healing capabilities in combats requiring continuous movement.</style></size>"
     },
     "1530": {
         "ChineseShort": "艾露娜特殊攻击A_替换"
@@ -617,7 +623,7 @@
     "1614": {
         "ChineseShort": "塔塔ULT_01",
         "EnglishShort": "Fire Demon",
-        "EnglishLong": "<style=\"accent-gn\">Fire Demon:·Ember-End Slash</style><br>Enters the Scorching Flame state and unleashes a devastating slam to enemies along your path, dealing<style=\"pyro\">Fire DMG</style>.<br>While in Scorching Flame, Flame Energy drains over time and also decreases with every Secondary and Main skill used. Once the gauge is depleted, the state ends.<br><i><style=\"text_third_gray\">\"Burn—let the embers consume everything.\"</style></i><br><br><size=22><style=\"tipsYellow\">Pro Tips: Main Attack skill. While in Ultimate, all other skills are enhanced. Faster ATK SPD means more hits and more consistent Ignite.</style></size>"
+        "EnglishLong": "<style=\"accent-gn\">Fire Demon:·Ember-End Slash</style><br>Enters the Scorching Flame state and unleashes a devastating slam to enemies along your path, dealing<style=\"pyro\">Fire DMG</style>.<br>While in Scorching Flame, Flame Energy drains over time and also decreases with every Secondary and Main skill used. Once the gauge is depleted, the state ends.<br><i><style=\"text_third_gray\">\"Burn-let the embers consume everything.\"</style></i><br><br><size=22><style=\"tipsYellow\">Pro Tips: Main Attack skill. While in Ultimate, all other skills are enhanced. Faster ATK SPD means more hits and more consistent Ignite.</style></size>"
     },
     "1615": {
         "ChineseShort": "塔塔AIRATK_01",
@@ -657,7 +663,7 @@
     "1699": {
         "ChineseShort": "塔塔Passive",
         "EnglishShort": "Blazing Purge",
-        "EnglishLong": "In normal state, regenerates Flame Energy over time. Once full, the Ultimate becomes available, entering Scorching Flame state upon use.<br><style=\"accent-gn\">Scorching Flame</style><br>Basic Attack, secondary skill, and main skill with enhanced forms.<br><style=\"accent-gn\">Phoenix's Vigor</style><br>The lower your HP, the faster your Attack SPD.<br><style=\"accent-gn\">Ignition</style><br>This skill has a chance to Ignite enemies on hit, dealing<style=\"pyro\">Fire DMG</style> over time and restoring a small amount of Flame Energy.<br><i><style=\"text_third_gray\">\"Let the flames cleanse the world—unleashing a torrential blaze that cannot be stopped.\"</style></i><br><br><size=22><style=\"tipsYellow\">Pro Tips: The passive skill works best with shield-based weapons or talents. Higher ATK SPD enhances shield effects.</style></size>"
+        "EnglishLong": "In normal state, regenerates Flame Energy over time. Once full, the Ultimate becomes available, entering Scorching Flame state upon use.<br><style=\"accent-gn\">Scorching Flame</style><br>Basic Attack, secondary skill, and main skill with enhanced forms.<br><style=\"accent-gn\">Phoenix's Vigor</style><br>The lower your HP, the faster your Attack SPD.<br><style=\"accent-gn\">Ignition</style><br>This skill has a chance to Ignite enemies on hit, dealing<style=\"pyro\">Fire DMG</style> over time and restoring a small amount of Flame Energy.<br><i><style=\"text_third_gray\">\"Let the flames cleanse the world-unleashing a torrential blaze that cannot be stopped.\"</style></i><br><br><size=22><style=\"tipsYellow\">Pro Tips: The passive skill works best with shield-based weapons or talents. Higher ATK SPD enhances shield effects.</style></size>"
     },
     "1701": {
         "ChineseShort": "奥尔维拉ATK_01",
@@ -676,7 +682,7 @@
     "1705": {
         "ChineseShort": "奥尔维拉强化普攻EXATK_01",
         "EnglishShort": "Overdrive",
-        "EnglishLong": "Unleashes the power of Blade, each strike transforms the blade into a scythe, dealing higher <style=\"physical\">Attack Damage</style> and granting <style=\"accent-gn\">1</style> <style=\"accent-gn\">Thunder Sigil</style>.<br>This skill holds <style=\"accent-gn\">5</style> charges.<br><br><size=22><style=\"tipsYellow\">Tips: Ensure Thunder Sigil does not overflow and keep at least one Charge regenerating for consistent recharge.</style></size>"
+        "EnglishLong": "Unleashes the power of Blade, ; each attack shifts its form into a scythe, dealing increased <style=\"physical\">Attack Damage</style> and granting <style=\"accent-gn\">1</style> <style=\"accent-gn\">Thunder Sigil</style>.<br>This skill holds <style=\"accent-gn\">5</style> charges.<br><br><size=22><style=\"tipsYellow\">Tips: To avoid overflowing Thunder Sigils, always keep at least one charge regenerating whenever possible.</style></size>"
     },
     "1706": {
         "ChineseShort": "奥尔维拉强化普攻EXATK_02"
@@ -704,12 +710,12 @@
     "1713": {
         "ChineseShort": "奥尔维拉大招ULT_01",
         "EnglishShort": "Oblivion Combo",
-        "EnglishLong": "A supreme sword technique sharp enough to cut the air itself. Unleashes a flurry of slashes in front, dealing <style=\"physical\">Attack Damage</style> to all enemies in range. Grants max <style=\"accent-gn\">Thunder Sigil</style> at the end of the strike.<br><i><style=\"text_third_gray\">\"Heaven's weapon dims even the brightest stars.\"</style></i><br><br><size=22><style=\"tipsYellow\">Tips: Cast when Thunder Sigil is empty to quickly charge it. Also effective against multiple targets for massive area damage.</style></size>"
+        "EnglishLong": "A supreme sword technique sharp enough to cut the air itself. Unleashes a flurry of slashes in front, dealing <style=\"physical\">Attack Damage</style> to all enemies in range. Grants max <style=\"accent-gn\">Thunder Sigil</style> at the end of the strike.<br><br><i><style=\"text_third_gray\">\"Heaven's weapon dims even the brightest stars.\"</style></i><br><br><size=22><style=\"tipsYellow\">Tips: Cast when Thunder Sigil is empty to quickly charge it. Also effective against multiple targets for massive area damage.</style></size>"
     },
     "1714": {
         "ChineseShort": "奥尔维拉特攻SKILL_01",
         "EnglishShort": "Iaido Slash",
-        "EnglishLong": "After charging, delivers a swift forward slash that consumes all <style=\"accent-gn\">Thunder Sigils</style> to deal <style=\"physical\">Attack Damage</style>. <style=\"accent-gn\">Each</style> <style=\"accent-gn\">Thunder Sigil</style> consumed boosts DMG by <style=\"accent-gn\">25%</style>. <br><i><style=\"text_third_gray\">\"Everything I see, hear, or sense—can be severed.\"</style></i><br><br><size=22><style=\"tipsYellow\">Tips: For maximum DMG, use when Thunder Sigil count reaches its limit.</style></size>"
+        "EnglishLong": "After charging, delivers a swift forward slash that consumes all <style=\"accent-gn\">Thunder Sigils</style> to deal <style=\"physical\">Attack Damage</style>. <style=\"accent-gn\">Each</style> <style=\"accent-gn\">Thunder Sigil</style> consumed boosts DMG by <style=\"accent-gn\">25%</style>. <br><br><i><style=\"text_third_gray\">\"Everything I see, hear, or sense-can be severed.\"</style></i><br><br><size=22><style=\"tipsYellow\">Tips: For maximum DMG, use when Thunder Sigil count reaches its limit.</style></size>"
     },
     "1715": {
         "ChineseShort": "奥尔维拉特攻SKILL_02",
@@ -724,22 +730,22 @@
     "1717": {
         "ChineseShort": "奥尔维拉可选SKILL_02",
         "EnglishShort": "Flash strike",
-        "EnglishLong": "Consume all <style=\"accent-gn\">Thunder Sigils</style>, and charge forward after powering up to slash all enemies, dealing <style=\"physical\">Attack Damage</style>. <style=\"accent-gn\">Each</style> <style=\"accent-gn\">Thunder Sigil</style> increases DMG by <style=\"accent-gn\">25%</style>. <br><i><style=\"text_third_gray\">\"Between lightning flashes, the blade leaves its sheath.\"</style></i><br><br><size=22><style=\"tipsYellow\">Tips: A cornerstone skill of Iaodo Slash Spec. Use before Iaido Slash when possible. For maximum DMG, activate when Thunder Sigil count reaches its limit.</style></size>"
+        "EnglishLong": "Consumes all <style=\"accent-gn\">Thunder Sigils</style>, and charges forward after powering up to slash all enemies, dealing <style=\"physical\">Attack Damage</style>. <style=\"accent-gn\">Each</style> <style=\"accent-gn\">Thunder Sigil</style> increases DMG by <style=\"accent-gn\">25%</style>. <br><br><i><style=\"text_third_gray\">\"Between lightning flashes, the blade leaves its sheath.\"</style></i><br><br><size=22><style=\"tipsYellow\">Tips: A cornerstone skill of Iaodo Slash Spec. Prioritize using it before Iaido Slash. For maximum DMG, use when your Thunder Sigils are at their maximum.</style></size>"
     },
     "1718": {
         "ChineseShort": "奥尔维拉可选SKILL_03",
         "EnglishShort": "Raijin Dash",
-        "EnglishLong": "Consume all <style=\"accent-gn\">Thunder Sigils</style> to release slashes across a wide area, dealing <style=\"physical\">Attack Damage</style>. <style=\"accent-gn\">Each</style> <style=\"accent-gn\">Thunder Sigil</style> increases DMG by <style=\"accent-gn\">25%</style>. Grants <style=\"accent-gn\">immunity to all DMG</style> while slashing. <br><br><size=22><style=\"tipsYellow\">Tips: Best paired with core skill of the Spec. For highest DMG, release when facing 3 or more targets with maximum Thunder Sigil count.</style></size>"
+        "EnglishLong": "Consumes all <style=\"accent-gn\">Thunder Sigils</style> to release slashes across a wide area, dealing <style=\"physical\">Attack Damage</style>. <style=\"accent-gn\">Each</style> <style=\"accent-gn\">Thunder Sigil</style> increases DMG by <style=\"accent-gn\">25%</style>. Grants <style=\"accent-gn\">immunity to all DMG</style> while slashing. <br><br><size=22><style=\"tipsYellow\">Tips: Best paired with core skill of the Spec. For maximum DMG, use when facing 3 or more targets and your Thunder Sigils are at their maximum.</style></size>"
     },
     "1719": {
         "ChineseShort": "奥尔维拉可选SKILL_04",
         "EnglishShort": "Scythe Wheel",
-        "EnglishLong": "Change weapon to a scythe, swinging it to perform multi-hit attacks against surrounding enemies, dealing <style=\"physical\">Attack Damage</style> and <style=\"accent-gn\">repel</style> enemies. The final strike inflicts a <style=\"accent-gn\">50%</style> <linktext=3004><style=\"ItemQuality_5\">Wound</style></linktext> on the target for <style=\"accent-gn\">10s</style>. <br>Summon <style=\"accent-gn\">Moonblade</style> to aid in combat. <br><br><style=\"accent-gn\">Moonblade</style>: Spin for <style=\"accent-gn\">35s</style>, dealing <style=\"physical\">Attack Damage</style> on the target every <style=\"accent-gn\">2s</style>. Casting <style=\"accent-gn\">Moonstrike</style> commands all active <style=\"accent-gn\">Moonblades</style> to release a whirlwind attack, dealing <style=\"physical\">Attack Damage</style> to nearby enemies. When you die, <style=\"accent-gn\">Moonstrike</style> ends immediately and the remaining CD of <style=\"accent-gn\"> Scythe Wheel </style> is refunded.<br><br><size=22><style=\"tipsYellow\">Tips: Core skill of the Spec, release just prior to each Moonstrike's expiration to maximize DMG.</style></size>"
+        "EnglishLong": "Changes weapon to a scythe, swinging it to perform multi-hit attacks against surrounding enemies, dealing <style=\"physical\">Attack Damage</style> and <style=\"accent-gn\">repel</style> enemies. The final strike inflicts a <style=\"accent-gn\">50%</style> <linktext=3004><style=\"ItemQuality_5\">Wound</style></linktext> on the target for <style=\"accent-gn\">10s</style>. <br>Summons <style=\"accent-gn\">Moonblade</style> to aid in combat. <br><br><style=\"accent-gn\">Moonblade</style>: Spins for <style=\"accent-gn\">35s</style>, dealing <style=\"physical\">Attack Damage</style> on the target every <style=\"accent-gn\">2s</style>. Casting <style=\"accent-gn\">Moonstrike</style> commands all active <style=\"accent-gn\">Moonblades</style> to release a whirlwind attack, dealing <style=\"physical\">Attack Damage</style> to nearby enemies. When you die, <style=\"accent-gn\">Moonstrike</style> ends immediately and the remaining CD of <style=\"accent-gn\">Scythe Wheel</style> is refunded.<br><br><size=22><style=\"tipsYellow\">Tips: Core skill of the Spec, release just prior to each Moonstrike's expiration to maximize DMG.</style></size>"
     },
     "1720": {
         "ChineseShort": "奥尔维拉可选SKILL_05",
         "EnglishShort": "True Sight",
-        "EnglishLong": "Enter a defensive stance, gaining immunity to all DMG. If hit while in stance, counter with a slash and leaps backward. Recast to dash forward and slashes, dealing <style=\"physical\">Attack Damage</style>. If the attack hits a target, gain max <style=\"accent-gn\">Thunder Sigil</style>.<br><br><size=22><style=\"tipsYellow\">Tips: Release under intense battles or when confident in timing to gain Thunder Sigil more efficiently.</style></size>"
+        "EnglishLong": "Enters a defensive stance, gaining immunity to all DMG. If hit while in this stance, counterattacks with a slash and leaps backward. Recast to dash forward and slash, dealing <style=\"physical\">Attack Damage</style>. If the attack hits a target, gains max <style=\"accent-gn\">Thunder Sigils</style>.<br><br><size=22><style=\"tipsYellow\">Tips: Release under intense battles or when confident in timing to gain Thunder Sigil more efficiently.</style></size>"
     },
     "1721": {
         "ChineseShort": "奥尔维拉SKILL_02-替换技A",
@@ -754,17 +760,17 @@
     "1724": {
         "ChineseShort": "奥尔维拉可选SKILL_06",
         "EnglishShort": "Thundercut",
-        "EnglishLong": "Double lightning-fast Iai Slashes, inflic <style=\"physical\">Attack Damage</style> on enemies at the cost of <style=\"accent-gn\">50</style> <style=\"accent-gn\">Blade Intent</style>. Once Attack Speed reaches <style=\"accent-gn\">25%</style>|<style=\"accent-gn\">50%</style>|<style=\"accent-gn\">80%</style>, deals <style=\"accent-gn\">1</style>|<style=\"accent-gn\">2</style>|<style=\"accent-gn\">3</style> additional attack(s). If <style=\"accent-gn\">Blade Intent</style> remains after the strike, the skill can be recast. <br><br><size=22><style=\"tipsYellow\">Tips: Core skill of the Spec. Consumes Blade Intent to deal DMG. Release when Blade Intent has reached its maximum capacity.</style></size>"
+        "EnglishLong": "Double lightning-fast Iai Slashes. Inflicts <style=\"physical\">Attack Damage</style> on enemies at the cost of <style=\"accent-gn\">50</style> <style=\"accent-gn\">Blade Intent</style>. Once Attack Speed reaches <style=\"accent-gn\">25%</style>|<style=\"accent-gn\">50%</style>|<style=\"accent-gn\">80%</style>, deals <style=\"accent-gn\">1</style>|<style=\"accent-gn\">2</style>|<style=\"accent-gn\">3</style> additional attack(s). If <style=\"accent-gn\">Blade Intent</style> remains after the strike, the skill can be recast. <br><br><size=22><style=\"tipsYellow\">Tips: Core skill of the Spec. Consumes Blade Intent to deal DMG. Release when Blade Intent is at its maximum.</style></size>"
     },
     "1725": {
         "ChineseShort": "奥尔维拉可选SKILL_06_02",
         "EnglishShort": "Thundercut",
-        "EnglishLong": "Double lightning-fast Iai Slashes, inflict <style=\"physical\">Attack Damage</style> on enemies at the cost of <style=\"accent-gn\">50</style> <style=\"accent-gn\">Blade Intent</style>. Once Attack Speed reaches <style=\"accent-gn\">25%</style>|<style=\"accent-gn\">50%</style>|<style=\"accent-gn\">80%</style>, deals <style=\"accent-gn\">1</style>|<style=\"accent-gn\">2</style>|<style=\"accent-gn\">3</style> additional attack(s). If <style=\"accent-gn\">Blade Intent</style> remains after the strike, the skill can be recast. <br><br><size=22><style=\"tipsYellow\">Tips: Core skill of the Spec. Consumes Blade Intent to deal DMG. Release when Blade Intent has reached its maximum capacity.</style></size>"
+        "EnglishLong": "Double lightning-fast Iai Slashes. Inflicts <style=\"physical\">Attack Damage</style> on enemies at the cost of <style=\"accent-gn\">50</style> <style=\"accent-gn\">Blade Intent</style>. Once Attack Speed reaches <style=\"accent-gn\">25%</style>|<style=\"accent-gn\">50%</style>|<style=\"accent-gn\">80%</style>, deals <style=\"accent-gn\">1</style>|<style=\"accent-gn\">2</style>|<style=\"accent-gn\">3</style> additional attack(s). If <style=\"accent-gn\">Blade Intent</style> remains after the strike, the skill can be recast. <br><br><size=22><style=\"tipsYellow\">Tips: Core skill of the Spec. Consumes Blade Intent to deal DMG. Release when Blade Intent is at its maximum.</style></size>"
     },
     "1726": {
         "ChineseShort": "奥尔维拉可选SKILL_06_03",
         "EnglishShort": "Thundercut",
-        "EnglishLong": "Double lightning-fast Iai Slashes, inflict <style=\"physical\">Attack Damage</style> on enemies at the cost of <style=\"accent-gn\">50</style> <style=\"accent-gn\">Blade Intent</style>. Once Attack Speed reaches <style=\"accent-gn\">25%</style>|<style=\"accent-gn\">50%</style>|<style=\"accent-gn\">80%</style>, deals <style=\"accent-gn\">1</style>|<style=\"accent-gn\">2</style>|<style=\"accent-gn\">3</style> additional attack(s). If <style=\"accent-gn\">Blade Intent</style> remains after the strike, the skill can be recast. <br><br><size=22><style=\"tipsYellow\">Tips: Core skill of the Spec. Consumes Blade Intent to deal DMG. Release when Blade Intent has reached its maximum capacity.</style></size>"
+        "EnglishLong": "Double lightning-fast Iai Slashes. Inflicts <style=\"physical\">Attack Damage</style> on enemies at the cost of <style=\"accent-gn\">50</style> <style=\"accent-gn\">Blade Intent</style>. Once Attack Speed reaches <style=\"accent-gn\">25%</style>|<style=\"accent-gn\">50%</style>|<style=\"accent-gn\">80%</style>, deals <style=\"accent-gn\">1</style>|<style=\"accent-gn\">2</style>|<style=\"accent-gn\">3</style> additional attack(s). If <style=\"accent-gn\">Blade Intent</style> remains after the strike, the skill can be recast. <br><br><size=22><style=\"tipsYellow\">Tips: Core skill of the Spec. Consumes Blade Intent to deal DMG. Release when Blade Intent is at its maximum.</style></size>"
     },
     "1727": {
         "ChineseShort": "奥尔维拉触发弱点攻击",
@@ -781,12 +787,12 @@
     "1730": {
         "ChineseShort": "奥尔维拉可选SKILL_07",
         "EnglishShort": "Volt Surge",
-        "EnglishLong": "Enchants the blade with thunderous power. While active, any action that would grant <style=\"accent-gn\">Thunder Sigils</style> would instantly maxes out <style=\"accent-gn\">Thunder Sigils</style>. Also increases ATK for the duration and gains <linktext=1102><style=\"ItemQuality_5\">Super Armor</style></linktext>. <br><br><size=22><style=\"tipsYellow\">Tips: Best paired with Overdrive and Talents to rapidly gain and spend Thunder Sigils, unleashing massive DMG within a short window.</style></size>"
+        "EnglishLong": "Enchants the blade with thunderous power. While active, any action that would grant <style=\"accent-gn\">Thunder Sigils</style> would instantly maxes them out. Also increases ATK and grants <linktext=1102><style=\"ItemQuality_5\">Super Armor</style></linktext> for the duration. <br><br><size=22><style=\"tipsYellow\">Tips: Best paired with Overdrive and Talents to rapidly gain and spend Thunder Sigils, unleashing massive DMG within a short window.</style></size>"
     },
     "1731": {
         "ChineseShort": "奥尔维拉可选SKILL_08",
         "EnglishShort": "Stormflash",
-        "EnglishLong": "Unleashes raging Thunder within, generating <style=\"accent-gn\">20</style> <style=\"accent-gn\">Blade Intent</style> every 1s. During this state, using Expertise that consume <style=\"accent-gn\">Blade Intent</style> triggers a <style=\"accent-gn\">Lightning Strike</style>, dealing <style=\"physical\">Attack Damage</style> to the current target. <br><br><size=22><style=\"tipsYellow\">Tips: Pair with Thundercut to generate more Thunder strikes. Higher Mastery significantly increases Moonstrike DMG when using the Moonstrike Spec.</style></size>"
+        "EnglishLong": "Unleashes raging Thunder within, generating <style=\"accent-gn\">20</style> <style=\"accent-gn\">Blade Intent</style> every 1s. When in this state, using Expertise that consume <style=\"accent-gn\">Blade Intent</style> triggers a <style=\"accent-gn\">Lightning Strike</style>, dealing <style=\"physical\">Attack Damage</style> to the current target. <br><br><size=22><style=\"tipsYellow\">Tips: Pair with Thundercut to generate more Thunder strikes. Higher Mastery significantly increases Moonblade DMG for the Moonstrike Spec.</style></size>"
     },
     "1732": {
         "ChineseShort": "奥尔维拉触发鸣雷印记",
@@ -887,7 +893,7 @@
     "1807": {
         "ChineseShort": "陶洛斯SKILL_02",
         "EnglishShort": "Thunder Traverse",
-        "EnglishLong": "<style=\"accent-gn\">Thunder Traverse</style><br>Unleashes a relentless stream of homing thunder orbs that track enemies and deal <style=\"electro\">Thunder Element damage</style> on impact. Hold the skill button to continue the barrage, consuming the heat gauge to extend its duration.<br><br><size=22><style=\"tipsYellow\">Pro Tips: Best used when fully charged—hold the skill to unleash an overwhelming barrage for dealing massive DMG.</style></size>"
+        "EnglishLong": "<style=\"accent-gn\">Thunder Traverse</style><br>Unleashes a relentless stream of homing thunder orbs that track enemies and deal <style=\"electro\">Thunder Element damage</style> on impact. Hold the skill button to continue the barrage, consuming the heat gauge to extend its duration.<br><br><size=22><style=\"tipsYellow\">Pro Tips: Best used when fully charged-hold the skill to unleash an overwhelming barrage for dealing massive DMG.</style></size>"
     },
     "1808": {
         "ChineseShort": "陶洛斯UTR_SKILL",
@@ -951,8 +957,8 @@
     },
     "1907": {
         "ChineseShort": "杰拉德ULT_01",
-        "EnglishShort": "Cracking Echo",
-        "EnglishLong": "<style=\"accent-gn\">Tectonic Ring</style><br>Unleashes the force of Earth, deals massive <style=\"physical\">Attack Damage</style> to a large area in front, inflicts <linktext=3005><style=\"ItemQuality_5\">stun</style></linktext> on the targets for 3s, and <linktext=1092><style=\"ItemQuality_5\">taunts</style></linktext> the enemies within range. Then gathers power to instantly obtain <style=\"accent-gn\">5</style> <style=\"accent-gn\">Sand Crystals</style>, and to enter <style=\"accent-gn\">Earth Guard</style> mode. <br><style=\"accent-gn\">Earh Guard</style><br>lasts <style=\"accent-gn\">8s</style> and grants <linktext=1091><style=\"ItemQuality_5\">Super Armor</style></linktext>, which increases your Armor by <style=\"accent-gn\">100%</style>, Max HP by <style=\"accent-gn\">50%</style>, and generates <style=\"accent-gn\">40</style> <style=\"accent-gn\">Rage</style> over time. <br><br><size=22><style=\"tipsYellow\">Tips: Casting is recommended during instances of significant incoming DMG.</style></size>"
+        "EnglishShort": "Tectonic Ring",
+        "EnglishLong": "<style=\"accent-gn\">Tectonic Ring</style><br>Unleashes the force of Earth, deals massive <style=\"physical\">Attack Damage</style> to a large area in front, inflicts <linktext=3005><style=\"ItemQuality_5\">stun</style></linktext> on the targets for 3s, and <linktext=1092><style=\"ItemQuality_5\">taunts</style></linktext> the enemies within range. Then gathers power to instantly obtain <style=\"accent-gn\">5</style> <style=\"accent-gn\">Sand Crystals</style>, and to enter <style=\"accent-gn\">Earth Guard</style> mode. <br><style=\"accent-gn\">Earh Guard</style><br>Lasts <style=\"accent-gn\">8s</style> and grants <linktext=1091><style=\"ItemQuality_5\">Super Armor</style></linktext>, which increases your Armor by <style=\"accent-gn\">100%</style>, Max HP by <style=\"accent-gn\">50%</style>, and generates <style=\"accent-gn\">40</style> <style=\"accent-gn\">Rage</style> over time. <br><br><size=22><style=\"tipsYellow\">Tips: Casting is recommended during instances of significant incoming DMG.</style></size>"
     },
     "1908": {
         "ChineseShort": "杰拉德AIRATK"
@@ -1000,27 +1006,27 @@
     "1923": {
         "ChineseShort": "杰拉德盾墙无敌KX-08",
         "EnglishShort": "Sandward",
-        "EnglishLong": "Erects an immovable rock wall and enter a defensive stance, <linktext=1092><style=\"ItemQuality_5\">taunting</style></linktext> nearby monsters and becoming invincible. Blocking a <style=\"physical\">High-threat Skill</style> causes the wall to shatter and counterattack the target, dealing <style=\"physical\">Attack Damage</style> to all the enemies in front.<br><br><size=22><style=\"tipsYellow\">Tips: Ultimate tank skill, perfect for absorbing extreme DMG.</style></size>"
+        "EnglishLong": "Erects an immovable rock wall and enter a defensive stance, <linktext=1092><style=\"ItemQuality_5\">taunting</style></linktext> nearby monsters and becoming invincible. Blocking a <style=\"physical\">Lethal Skill</style> causes the wall to shatter and counterattack the target, dealing <style=\"physical\">Attack Damage</style> to all the enemies in front.<br><br><size=22><style=\"tipsYellow\">Tips: Ultimate tank skill, perfect for absorbing extreme DMG.</style></size>"
     },
     "1924": {
         "ChineseShort": "杰拉德冲锋KX-01",
         "EnglishShort": "Star Shatter",
-        "EnglishLong": "Charges ahead with immense force. Upon hit, gains <style=\"accent-gn\">25</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">1</style> <style=\"accent-gn\">Sand Crystal</style>, deals <style=\"physical\">Attack Damage</style>, and <linktext=3005><style=\"ItemQuality_5\">stuns</style></linktext> the enemy. The <style=\"accent-gn\">unstoppable</style> state is entered during the execution of the charge. <br>This skill holds <style=\"accent-gn\">2</style> charges. <br><br><size=22><style=\"tipsYellow\">Tips: This skill enhances mobility and accumulates Rage quickly.</style></size>"
+        "EnglishLong": "Charges ahead with immense force. Upon hit, gains <style=\"accent-gn\">25</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">1</style> <style=\"accent-gn\">Sand Crystal</style>, deals <style=\"physical\">Attack Damage</style>, and <linktext=3005><style=\"ItemQuality_5\">stuns</style></linktext> the enemy. Becomes <style=\"accent-gn\">unstoppable</style> during the execution of the charge. <br>This skill holds <style=\"accent-gn\">2</style> charges. <br><br><size=22><style=\"tipsYellow\">Tips: This skill enhances mobility and accumulates Rage quickly.</style></size>"
     },
     "1925": {
         "ChineseShort": "杰拉德怒吼KX-06",
         "EnglishShort": "Rage Burst",
-        "EnglishLong": "Consumes <style=\"accent-gn\">50</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">5</style> <style=\"accent-gn\">Sand Crystals</style>. Unleashes a mighty roar, dealing <style=\"physical\">Attack Damage</style> to nearby enemies, <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> their actions, and granting an all-DMG-absorbing <linktext=1035><style=\"ItemQuality_5\">shield</style></linktext>. (Shields may be stacked, with a maximum capacity equivalent to <style=\"accent-gn\">100%</style> of maximum HP) Reduces <style=\"physical\">Attack Damage</style> taken from the target by <style=\"accent-gn\">10%</style> for <style=\"accent-gn\">12s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Provides damage output capabilities when survival pressure is minimal and grants greater Armor under conditions where enemy units predominantly inflict Attack Damage.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">50</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">5</style> <style=\"accent-gn\">Sand Crystals</style>. Unleashes a mighty roar, dealing <style=\"physical\">Attack Damage</style> to nearby enemies, <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> their actions, and granting an all-DMG-absorbing <linktext=1035><style=\"ItemQuality_5\">shield</style></linktext>. (Shields may be stacked, with a maximum capacity equivalent to <style=\"accent-gn\">100%</style> of maximum HP) Reduces <style=\"physical\">Attack Damage</style> taken from the target by <style=\"accent-gn\">10%</style> for <style=\"accent-gn\">12s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Provides damaging capabilities when survival pressure is minimal and grants greater Armor in situations where enemies predominantly inflict Attack Damage.</style></size>"
     },
     "1926": {
         "ChineseShort": "杰拉德聚怪KX-04",
         "EnglishShort": "Sandgrip",
-        "EnglishLong": "Consumes <style=\"accent-gn\">30</style> <style=\"accent-gn\">Rage</style> to swing the weapon, resulting in the creation of a vacuum. Enemies are pulled in and subjected to <style=\"physical\">Attack Damage</style>, their actions <linktext=3000><style=\"ItemQuality_5\">disrupted</style></linktext>, and their movement slowed by <style=\"accent-gn\">70%</style> for <style=\"accent-gn\">8s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Effectively pulls monsters into range for swift elimination.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">30</style> <style=\"accent-gn\">Rage</style> to swing your weapon and create a vacuum, pulling nearby enemies toward you. Deals <style=\"physical\">Attack Damage</style>, <linktext=3000><style=\"ItemQuality_5\">interrupts</style></linktext> their actions, and reduces their Move SPD by <style=\"accent-gn\">70%</style> for <style=\"accent-gn\">8s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Effectively pulls monsters into range for faster takedowns.</style></size>"
     },
     "1927": {
         "ChineseShort": "杰拉德砂石披风KX-02",
         "EnglishShort": "Sandshroud",
-        "EnglishLong": "Gathers sand around yourself, dealing a burst of <style=\"physical\">Attack Damage</style> to surrounding enemies. The sand then solidifies, dealing <style=\"physical\">Attack Damage</style> to surrounding enemies every <style=\"accent-gn\">1</style> second for <style=\"accent-gn\">6s</style>. Throughout this effect, continuously regenerates <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">Sand Crystal</style>, providing <style=\"accent-gn\">33</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">6</style> <style=\"accent-gn\">Sand Crystal</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Keep it active as often as possible. The continuous AoE DMG poses a great threat to the enemies while generating Rage quickly.</style></size>"
+        "EnglishLong": "Gathers sand around yourself, dealing a burst of <style=\"physical\">Attack Damage</style> to surrounding enemies. The sand then solidifies, dealing <style=\"physical\">Attack Damage</style> to surrounding enemies for <style=\"accent-gn\">6s</style>. Throughout this effect, continuously regenerates <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">Sand Crystal</style>, providing <style=\"accent-gn\">33</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">6</style> <style=\"accent-gn\">Sand Crystals</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Keep it active as often as possible. The continuous AoE DMG poses a great threat to the enemies while generating Rage quickly.</style></size>"
     },
     "1928": {
         "ChineseShort": "杰拉德岩之守护",
@@ -1063,17 +1069,17 @@
     "1936": {
         "ChineseShort": "杰拉德减伤KX-03",
         "EnglishShort": "Stoneform",
-        "EnglishLong": "Channel Earth Strength to <linktext=1092><style=\"ItemQuality_5\">taunt</style></linktext> nearby enemies while automatically counterattacking <style=\"accent-gn\">High-threat Skill</style> for <style=\"accent-gn\">10s</style>. Also increases <style=\"accent-gn\">Armor</style> and reduces DMG taken by <style=\"accent-gn\">20%</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Cast promptly during high-pressure combat to enhance survivability.</style></size>"
+        "EnglishLong": "Channels Earth Strength to <linktext=1092><style=\"ItemQuality_5\">taunt</style></linktext> nearby enemies while automatically counterattacking <style=\"accent-gn\">Lethal Skills</style> for <style=\"accent-gn\">10s</style>. Also increases <style=\"accent-gn\">Armor</style> and reduces DMG taken by <style=\"accent-gn\">20%</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Cast promptly during high-pressure combat to enhance survivability.</style></size>"
     },
     "1937": {
         "ChineseShort": "杰拉德复仇KX-05",
         "EnglishShort": "Granite Fury",
-        "EnglishLong": "Consumes <style=\"accent-gn\">3</style> <style=\"accent-gn\">Sand Crystals</style>, dealing <style=\"physical\">Attack Damage</style> to the target and reducing DMG taken by <style=\"accent-gn\">10%</style> for the next <style=\"accent-gn\">10s</style> (non-stackable).<br><br><size=22><style=\"tipsYellow\">Tips: When you have enough Sand Crystals, timely casting of Granite Fury delivers high DMG and ensures high chances of survival.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">3</style> <style=\"accent-gn\">Sand Crystals</style>, dealing <style=\"physical\">Attack Damage</style> to the target and reducing DMG taken by <style=\"accent-gn\">10%</style> for the next <style=\"accent-gn\">10s</style> (non-stackable).<br><br><size=22><style=\"tipsYellow\">Tips: When you have enough Sand Crystals, a good use of Granite Fury delivers high DMG and ensures high chances of survival.</style></size>"
     },
     "1938": {
         "ChineseShort": "杰拉德格挡翻倍KX-07",
         "EnglishShort": "Brave Bastion",
-        "EnglishLong": "Forms a rock barrier around yourself that automatically counterattacks <style=\"accent-gn\">High-threat Skill</style> for a set duration. <linktext=1092><style=\"ItemQuality_5\">Taunts</style></linktext> nearby enemies and increases <style=\"accent-gn\">Block DMG RED</style>. For <style=\"accent-gn\">each</style> <style=\"accent-gn\">Sand Crystal</style> consumed, the duration is extended by <style=\"accent-gn\">1</style> second, up to a maximum extension of <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Time it well to significantly increase your Block DMG RED to mitigate incoming Attack Damage as much as possible.</style></size>"
+        "EnglishLong": "Forms a rock barrier around yourself that automatically counterattacks <style=\"accent-gn\">Lethal Skills</style> for a set duration. <linktext=1092><style=\"ItemQuality_5\">Taunts</style></linktext> nearby enemies and increases <style=\"accent-gn\">Block DMG Reduction</style>. For <style=\"accent-gn\">each</style> <style=\"accent-gn\">Sand Crystal</style> consumed, the duration is extended by <style=\"accent-gn\">1</style> second, up to a maximum extension of <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Time it well to significantly increase your Block DMG Reduction to mitigate incoming Attack Damage as much as possible.</style></size>"
     },
     "1939": {
         "ChineseShort": "杰拉德复仇·无消耗KX-05",
@@ -1083,17 +1089,17 @@
     "1940": {
         "ChineseShort": "杰拉德怒爆·叠层",
         "EnglishShort": "Rage Burst",
-        "EnglishLong": "Consumes <style=\"accent-gn\">50</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">5</style> <style=\"accent-gn\">Sand Crystals</style> to unleash a mighty roar, dealing <style=\"physical\">Attack Damage</style> to nearby enemies, <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> their actions, and granting an all-DMG-absorbing <linktext=1035><style=\"ItemQuality_5\">Shield</style></linktext>. (Shields may stack up to <style=\"accent-gn\">50%</style> Max HP.) Reduces <style=\"physical\">Attack Damage</style> taken from the target by <style=\"accent-gn\">10%</style> for <style=\"accent-gn\">12s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Provides output capabilities when survival pressure is minimal and grants greater armor under conditions where enemy units predominantly inflict Attack Damage.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">50</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">5</style> <style=\"accent-gn\">Sand Crystals</style> to unleash a mighty roar, dealing <style=\"physical\">Attack Damage</style> to nearby enemies, <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> their actions, and granting an all-DMG-absorbing <linktext=1035><style=\"ItemQuality_5\">shield</style></linktext>. (Shields may stack up to <style=\"accent-gn\">50%</style> Max HP.) Reduces <style=\"physical\">Attack Damage</style> taken from the target by <style=\"accent-gn\">10%</style> for <style=\"accent-gn\">12s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Provides output capabilities when survival pressure is minimal and grants greater armor under conditions where enemy units predominantly inflict Attack Damage.</style></size>"
     },
     "1941": {
         "ChineseShort": "杰拉德冲锋ex",
         "EnglishShort": "Starfall",
-        "EnglishLong": "Enhanced <linktext=1537><style=\"ItemQuality_5\">Star Shatter</style></linktext>. Leaps at the enemy, dealing <style=\"physical\">Attack Damage</style> equal to <style=\"accent-gn\">500%</style> ATK, knocking them airborne. Scales with the Level/Tier of <linktext=1537><style=\"ItemQuality_5\">Star Shatter</style></linktext>. <br>Gains double <style=\"accent-gn\">Rage</style> and becomes <linktext=1135><style=\"ItemQuality_5\">Enraged</style></linktext>."
+        "EnglishLong": "Enhanced <linktext=1537><style=\"ItemQuality_5\">Star Shatter</style></linktext>. Lunges at the enemy, dealing <style=\"physical\">Attack Damage</style> equal to <style=\"accent-gn\">500%</style> ATK, knocking them airborne. Scales with the Level/Tier of <linktext=1537><style=\"ItemQuality_5\">Star Shatter</style></linktext>. <br>Gains double <style=\"accent-gn\">Rage</style> and becomes <linktext=1135><style=\"ItemQuality_5\">Enraged</style></linktext>."
     },
     "1942": {
         "ChineseShort": "杰拉德ATK_01",
         "EnglishShort": "Rupture",
-        "EnglishLong": "Raise your weapon for a mighty blow, dealing <style=\"physical\">Attack Damage</style> equal to <style=\"accent-gn\">300%</style> ATK, and knocking the target airborne. Scales with the Leve/Tier of <style=\"accent-gn\">Basic Attack</style>.<br>Gain <style=\"accent-gn\">25</style><style=\"accent-gn\">Rage</style> upon casting."
+        "EnglishLong": "Raises your weapon for a mighty blow, dealing <style=\"physical\">Attack Damage</style> equal to <style=\"accent-gn\">300%</style> ATK, and knocking the target airborne. Scales with the Leve/Tier of <style=\"accent-gn\">Basic Attack</style>.<br>Gain <style=\"accent-gn\">25</style><style=\"accent-gn\">Rage</style> upon casting."
     },
     "1943": {
         "ChineseShort": "杰拉德岩拳轰击",
@@ -1103,7 +1109,7 @@
     "1944": {
         "ChineseShort": "杰拉德怒吼KX-06",
         "EnglishShort": "Rage Burst",
-        "EnglishLong": "Consumes <style=\"accent-gn\">50</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">5</style> <style=\"accent-gn\">Sand Crystals</style>. Unleashes a mighty roar, dealing <style=\"physical\">Attack Damage</style> to nearby enemies, <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> their actions, and granting an all-DMG-absorbing <linktext=1035><style=\"ItemQuality_5\">shield</style></linktext>. (Shields may be stacked, with a maximum capacity equivalent to <style=\"accent-gn\">100%</style> of maximum HP.) Reduces <style=\"physical\">Attack Damage</style> taken from the target by <style=\"accent-gn\">10%</style> for <style=\"accent-gn\">12s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Provides output capabilities when survival pressure is minimal and grants greater Armor under conditions where enemy units predominantly inflict Attack Damage.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">50</style> <style=\"accent-gn\">Rage</style> and <style=\"accent-gn\">5</style> <style=\"accent-gn\">Sand Crystals</style>. Unleashes a mighty roar, dealing <style=\"physical\">Attack Damage</style> to nearby enemies, <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> their actions, and granting an all-DMG-absorbing <linktext=1035><style=\"ItemQuality_5\">shield</style></linktext>. (Shields may be stacked, with a maximum capacity equivalent to <style=\"accent-gn\">100%</style> of maximum HP.) Reduces <style=\"physical\">Attack Damage</style> taken from the target by <style=\"accent-gn\">10%</style> for <style=\"accent-gn\">12s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Provides damage out when survival pressure is minimal and grants greater Armor in situations where enemy units predominantly inflict Attack Damage.</style></size>"
     },
     "1999": {
         "ChineseShort": "杰拉德Passive",
@@ -1286,12 +1292,12 @@
     "2232": {
         "ChineseShort": "箭雨",
         "EnglishShort": "Arrow Rain",
-        "EnglishLong": "Fires a rain of arrows over a target area, dealing continuous <style=\"physical\">Attack Damage</style>. Grants <style=\"accent-gn\">20</style> <style=\"accent-gn\">Photon Energy</style> upon cast, plus <style=\"accent-gn\">2</style> additional <style=\"accent-gn\">Photon Energy</style> per enemy hit, up to <style=\"accent-gn\">10</style> extra.<br><br><size=22><style=\"tipsYellow\">Tips: The more enimies hit, the more energy you gain.</style></size>"
+        "EnglishLong": "Fires a rain of arrows over a target area, dealing continuous <style=\"physical\">Attack Damage</style>. Grants <style=\"accent-gn\">20</style> <style=\"accent-gn\">Photon Energy</style> upon cast, plus <style=\"accent-gn\">2</style> additional <style=\"accent-gn\">Photon Energy</style> per enemy hit, up to <style=\"accent-gn\">10</style> extra.<br><br><size=22><style=\"tipsYellow\">Tips: The more enemies hit, the more energy you gain.</style></size>"
     },
     "2233": {
         "ChineseShort": "贯穿箭",
         "EnglishShort": "Powerdraw",
-        "EnglishLong": "Charges and then fires a piercing arrow that deals <style=\"physical\">Attack Damage</style> and <style=\"accent-gn\">Knockback</style> to all enemies in its path. Reduces targets' Resilience. <style=\"accent-gn\">Powerdraw</style> deals a bonus <style=\"accent-gn\">100%</style> Crit DMG<br>.This skill holds <style=\"accent-gn\">2</style> charges.<br>No charge time required when in <style=\"accent-gn\">Photon Reforge</style> state.<br><br><size=22><style=\"tipsYellow\">Tips: Great for reducing enemies' Resilience while dealing area damage.</style></size>"
+        "EnglishLong": "Charges and then fires a piercing arrow that deals <style=\"physical\">Attack Damage</style> and <style=\"accent-gn\">Knockback</style> to all enemies in its path. Reduces targets' Resilience. <style=\"accent-gn\">Powerdraw</style> deals a bonus <style=\"accent-gn\">100%</style> Crit DMG.<br>This skill holds <style=\"accent-gn\">2</style> charges.<br>No charge time required when in <style=\"accent-gn\">Photon Reforge</style> state.<br><br><size=22><style=\"tipsYellow\">Tips: Great for reducing enemies' Resilience while dealing area damage.</style></size>"
     },
     "2234": {
         "ChineseShort": "聚能射击",
@@ -1309,12 +1315,12 @@
     "2237": {
         "ChineseShort": "驯兽",
         "EnglishShort": "Wildcall",
-        "EnglishLong": "Summons a powerful combat Companion to provide assistance in battle. <br><br><style=\"accent-gn\">Summon Wild Wolf</style>: The summoned Wild Wolf pounces on the current target, dealing <style=\"physical\">Attack Damage</style> to the target and nearby enemies, then joins the battle for <style=\"accent-gn\">20s</style> before disappearing. <br><br><style=\"accent-gn\">Summon Falcon</style>: The summoned Falcon dives in a straight line, dealing <style=\"physical\">Attack Damage</style> to all enemies in its path before disappearing. <br><br><size=22><style=\"tipsYellow\">Tips: Boosts the number of active pets during the battle. Casting is recommended when all buffs are prepared to ensure maximum efficiency.</style></size>"
+        "EnglishLong": "Summons a powerful combat Companion to provide assistance in battle. <br><br><style=\"accent-gn\">Summon Wild Wolf</style>: The summoned Wild Wolf pounces on the current target, dealing <style=\"physical\">Attack Damage</style> to the target and nearby enemies, then joins the battle for <style=\"accent-gn\">20s</style> before disappearing. <br><br><style=\"accent-gn\">Summon Falcon</style>: The summoned Falcon dives in a straight line, dealing <style=\"physical\">Attack Damage</style> to all enemies in its path before disappearing. <br><br><size=22><style=\"tipsYellow\">Tips: Boosts the number of active Companions during the battle. Casting is recommended when all buffs are prepared to ensure maximum efficiency.</style></size>"
     },
     "2238": {
         "ChineseShort": "爆炸箭一段",
         "EnglishShort": "Blast Shot",
-        "EnglishLong": "Fires an <style=\"accent-gn\">Explosive Arrow</style> at the target that detonates on impact. The <style=\"accent-gn\">Explosive Arrow</style> detonates on impact, dealing <style=\"physical\">Attack Damage</style> to all nearby enemies. <br>Each time when a <style=\"accent-gn\">Class Skill</style> deals Crit DMG, <style=\"accent-gn\">Explosive Arrow</style> gains <style=\"accent-gn\">1</style> charge. At <style=\"accent-gn\">5</style> charges or after <style=\"accent-gn\">6s</style>, the <style=\"accent-gn\">Explosive Arrow</style> explodes, <style=\"accent-gn\">each</style> charge increases the DMG of <style=\"accent-gn\">Explosive Arrow</style> by <style=\"accent-gn\">100%</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Better paired with Falconry Spec. Focus on Crit DMG to power up the explosion.</style></size>"
+        "EnglishLong": "Fires an <style=\"accent-gn\">Explosive Arrow</style> at the target that detonates on impact. The <style=\"accent-gn\">Explosive Arrow</style> deals <style=\"physical\">Attack Damage</style> to all nearby enemies. <br>Each time when a <style=\"accent-gn\">Class Skill</style> deals Crit DMG, <style=\"accent-gn\">Explosive Arrow</style> gains <style=\"accent-gn\">1</style> charge. At <style=\"accent-gn\">5</style> charges or after <style=\"accent-gn\">6s</style>, the <style=\"accent-gn\">Explosive Arrow</style> explodes, <style=\"accent-gn\">each</style> charge increases the DMG of <style=\"accent-gn\">Explosive Arrow</style> by <style=\"accent-gn\">100%</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Better paired with Falconry Spec. Focus on Crit DMG to power up the explosion.</style></size>"
     },
     "2239": {
         "ChineseShort": "爆炸箭二段",
@@ -1401,47 +1407,47 @@
     "2308": {
         "ChineseShort": "灵魂乐手可选SKILL_01",
         "EnglishShort": "Harmonic Anthem",
-        "EnglishLong": "Leap high and slam your guitar into the ground to burst sparks, dealing <style=\"magic\">Magic Damage</style> to the enemies within range. <br>Each instance of DMG dealt by Amplified Beat (only once per multi-target hit) increases the hit count of <style=\"accent-gn\">Harmonic Anthem</style> by <style=\"accent-gn\">1</style>, up to <style=\"accent-gn\">3</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Master the Amplified Beat's mechanic of increasing hit count to boost Harmonic Anthem's Attack.</size></style>"
+        "EnglishLong": "Leaps high and slams your guitar into the ground to burst sparks, dealing <style=\"magic\">Magic Damage</style> to the enemies within range. <br>Each instance of DMG dealt by Amplified Beat (only once per multi-target hit) increases the hit count of <style=\"accent-gn\">Harmonic Anthem</style> by <style=\"accent-gn\">1</style>, up to <style=\"accent-gn\">3</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Master the Amplified Beat's mechanic of increasing hit count to boost Harmonic Anthem's Attack.</size></style>"
     },
     "2309": {
         "ChineseShort": "灵魂乐手可选SKILL_02",
         "EnglishShort": "Rhapsody of Flame",
-        "EnglishLong": "My Passion Still Burns! Consumes <style=\"accent-gn\">5</style> points of <style=\"accent-gn\">Performance Passion</style> to summon a randomly shaped graffiti on the ground, healing <style=\"accent-gn\">10</style> allies (Party Members Prioritized), dispelling <linktext=3021><style=\"ItemQuality_5\">negative effects</style></linktext> on them, and dealing <style=\"magic\">Magic Damage</style> to enemies within range. <br>While standing within the graffiti, the summoner gains <style=\"accent-gn\">10%</style> Fire Bonus. <br><br><style=\"accent-gn\">Performance Passion</style>: Required to perform music. <style=\"accent-gn\">1</style> point is regenerated every <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: This skill has the widest range for both healing and DMG. Cast it once the CD ends for max effectiveness.</size></style>"
+        "EnglishLong": "My Passion Still Burns! Consumes <style=\"accent-gn\">5</style> points of <style=\"accent-gn\">Performance Passion</style> to summon a randomly shaped graffiti on the ground, healing <style=\"accent-gn\">10</style> allies (Party Members Prioritized), dispelling <linktext=3021><style=\"ItemQuality_5\">debuffs</style></linktext> on them, and dealing <style=\"magic\">Magic Damage</style> to enemies within range. <br>While standing within the graffiti, the summoner gains <style=\"accent-gn\">10%</style> Fire Bonus. <br><br><style=\"accent-gn\">Performance Passion</style>: Required to perform music. <style=\"accent-gn\">1</style> point is regenerated every <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: This skill has the widest range for both healing and DMG. Cast it once the CD ends for max effectiveness.</size></style>"
     },
     "2310": {
         "ChineseShort": "灵魂乐手可选SKILL_03",
         "EnglishShort": "Heroic Melody",
-        "EnglishLong": "A rousing melody. When <style=\"accent-gn\">Performance Energy</style> exceeds <style=\"accent-gn\">15</style> stacks, you can begin the performance, which cannot be stopped once started. CD: <style=\"accent-gn\">5s</style>. <br>While <style=\"accent-gn\">Heroic Melody</style> is being performed, <style=\"accent-gn\">6</style> <style=\"accent-gn\">Performance Energy</style> is consumed <style=\"accent-gn\">per</style> second, and every <style=\"accent-gn\">3s</style>, <style=\"accent-gn\">10</style> allies restore HP (Interval affected by Haste). <br>While <style=\"accent-gn\">Heroic Melody</style> is being performed, every <style=\"accent-gn\">7s</style>, your <style=\"accent-gn\">String Strike</style> transforms into <linktext=1615><style=\"ItemQuality_5\">Fierce Strike</style></linktext>. <br>While <style=\"accent-gn\">Heroic Melody</style> is being performed, the conversion rate of <style=\"accent-gn\">Peaceful Tune</style> +<style=\"accent-gn\">50%</style>. <br><br><style=\"accent-gn\">Performance Energy</style>: Required to play Melody skills (<style=\"accent-gn\">Heroic Melody</style> and <style=\"accent-gn\">Healing Melody</style>). <style=\"accent-gn\">1</style> point of energy is regenerated <style=\"accent-gn\">per</style> second. <br><br><size=22><style=\"tipsYellow\">Tips: The skill can't be stopped manually, so time its activation wisely to maximize synergy with Peaceful Tune and Fierce Strike.</size></style>"
+        "EnglishLong": "A rousing melody. When <style=\"accent-gn\">Performance Energy</style> exceeds <style=\"accent-gn\">15</style> stacks, you can begin the performance, which cannot be stopped once started. CD: <style=\"accent-gn\">5s</style>. <br>While performing <style=\"accent-gn\">Heroic Melody</style>, you consume <style=\"accent-gn\">6</style> <style=\"accent-gn\">Performance Energy</style> <style=\"accent-gn\">per</style> second, and every <style=\"accent-gn\">3s</style>, <style=\"accent-gn\">10</style> allies restore HP (Interval affected by Haste). <br>While you perform <style=\"accent-gn\">Heroic Melody</style>, every <style=\"accent-gn\">7s</style>, your <style=\"accent-gn\">String Strike</style> transforms into <linktext=1615><style=\"ItemQuality_5\">Fierce Strike</style></linktext>. <br>While you perform <style=\"accent-gn\">Heroic Melody</style>, the conversion rate of <style=\"accent-gn\">Peaceful Tune</style> +<style=\"accent-gn\">50%</style>. <br><br><style=\"accent-gn\">Performance Energy</style>: Required to play Melody skills (<style=\"accent-gn\">Heroic Melody</style> and <style=\"accent-gn\">Healing Melody</style>). <style=\"accent-gn\">1</style> point of energy is regenerated <style=\"accent-gn\">per</style> second. <br><br><size=22><style=\"tipsYellow\">Tips: The skill can't be stopped manually, so time its activation wisely to maximize synergy with Peaceful Tune and Fierce Strike.</size></style>"
     },
     "2311": {
         "ChineseShort": "灵魂乐手可选SKILL_04",
         "EnglishShort": "Healing Melody",
-        "EnglishLong": "A soothing melody. When <style=\"accent-gn\">Performance Energy</style> is above <style=\"accent-gn\">15</style>, you can start the performance freely and stop at will. Each time you start, a <style=\"accent-gn\">speaker</style> is deployed to perform a Concerto. (<style=\"accent-gn\">Speaker</style> disappears when <style=\"accent-gn\">Healing Melody</style> ends.) CD: <style=\"accent-gn\">5s</style>. <br>While performing <style=\"accent-gn\">Healing Melody</style>, consumes <style=\"accent-gn\">3</style> <style=\"accent-gn\">Performance Energy</style> <style=\"accent-gn\">per</style> second, and heals <style=\"accent-gn\">10</style> allies every <style=\"accent-gn\">1</style> second (Interval affected by Haste). <br><style=\"accent-gn\">Speaker</style>: When you cast <style=\"accent-gn\">Healing Beat</style>, <style=\"accent-gn\">Fivefold Crescendo</style>, <style=\"accent-gn\">Rock the Stage</style>, <style=\"accent-gn\">Concert Circuit</style>, the <style=\"accent-gn\">speaker</style> will simultaneously cast the same skill.<br><br><style=\"accent-gn\">Performance Energy</style>: Required to play Melody skills (<style=\"accent-gn\">Heroic Melody</style>, <style=\"accent-gn\">Healing Melody</style>). Regenerates <style=\"accent-gn\">1</style> point <style=\"accent-gn\">per</style> second. <br><br><size=22><style=\"tipsYellow\">Tips: Mastering where and when to place the speaker is essential.</size></style>"
+        "EnglishLong": "A soothing melody. When <style=\"accent-gn\">Performance Energy</style> exceeds <style=\"accent-gn\">15</style>, you can start the performance freely and stop at will. Each time you start, a <style=\"accent-gn\">speaker</style> is deployed to perform a Concerto. (<style=\"accent-gn\">Speaker</style> disappears when <style=\"accent-gn\">Healing Melody</style> ends.) CD: <style=\"accent-gn\">5s</style>. <br>While performing <style=\"accent-gn\">Healing Melody</style>, consumes <style=\"accent-gn\">3</style> <style=\"accent-gn\">Performance Energy</style> <style=\"accent-gn\">per</style> second, and heals <style=\"accent-gn\">10</style> allies every <style=\"accent-gn\">1</style> second (Interval affected by Haste). <br><style=\"accent-gn\">Speaker</style>: When you cast <style=\"accent-gn\">Healing Beat</style>, <style=\"accent-gn\">Fivefold Crescendo</style>, <style=\"accent-gn\">Rock the Stage</style>, <style=\"accent-gn\">Concert Circuit</style>, the <style=\"accent-gn\">speaker</style> will simultaneously cast the same skill.<br><br><style=\"accent-gn\">Performance Energy</style>: Required to play Melody skills (<style=\"accent-gn\">Heroic Melody</style>, <style=\"accent-gn\">Healing Melody</style>). Regenerates <style=\"accent-gn\">1</style> point <style=\"accent-gn\">per</style> second. <br><br><size=22><style=\"tipsYellow\">Tips: Mastering where and when to place the speaker is essential.</size></style>"
     },
     "2312": {
         "ChineseShort": "灵魂乐手可选SKILL_05",
         "EnglishShort": "Fivefold Crescendo",
-        "EnglishLong": "Let the Passion Flow Again! Consumes <style=\"accent-gn\">3</style> <style=\"accent-gn\">Performance Passion</style>, reigniting the spirits of the weary. Performs a sequence of notes that heals <style=\"accent-gn\">10</style> allies. <br><br><style=\"accent-gn\">Performance Passion</style>: Required to perform music. Regenerates <style=\"accent-gn\">1</style> stack every <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Highest healing potential. Monitor team health to avoid overhealing.</size></style>"
+        "EnglishLong": "Let the Passion Flow Again! Consumes <style=\"accent-gn\">3</style> <style=\"accent-gn\">Performance Passion</style>, reigniting the spirits of the weary. Performs a sequence of notes that heals <style=\"accent-gn\">10</style> allies. <br><br><style=\"accent-gn\">Performance Passion</style>: Required to perform music. Regenerates <style=\"accent-gn\">1</style> stack every <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Highest healing potential. Monitor your team's health to maximize efficiency and prevent overhealing.</size></style>"
     },
     "2313": {
         "ChineseShort": "灵魂乐手可选SKILL_06",
         "EnglishShort": "Passion Burst",
-        "EnglishLong": "Strums the strings and releases searing flames forward, dealing <style=\"magic\">Magic Damage</style> to the enemies within range and dispelling <linktext=3021><style=\"ItemQuality_5\">negative effects</style></linktext> for up to <style=\"accent-gn\">10</style> allies (Party Members Prioritized). <br>Charging changes the skill's range and DMG. <br><style=\"accent-gn\">Tier 1</style>: Chants for <style=\"accent-gn\">0.7s</style>, affects a fan-shaped area with an <style=\"accent-gn\">8</style>-meter radius in front. <br><style=\"accent-gn\">Tier 2</style>: Chants for <style=\"accent-gn\">1.4s</style>, affects a fan-shaped area with an <style=\"accent-gn\">8</style>-meter radius in front, increases the DMG dealt by <style=\"accent-gn\">50%</style>. <br><style=\"accent-gn\">Tier 3</style>: Chants for <style=\"accent-gn\">2.1s</style>, affects a fan-shaped area with an <style=\"accent-gn\">8</style>-meter radius in front, increases the DMG dealt by <style=\"accent-gn\">100%</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Delivers massive DMG. When paired with Speaker and talents, it offers potent DMG and Healing. Be mindful of your surroundings during casting.</size></style>"
+        "EnglishLong": "Strums the strings and releases searing flames forward, dealing <style=\"magic\">Magic Damage</style> to the enemies within range and dispelling <linktext=3021><style=\"ItemQuality_5\">debuffs</style></linktext> for up to <style=\"accent-gn\">10</style> allies (Party Members Prioritized). <br>Charging changes the skill's range and DMG. <br><style=\"accent-gn\">Tier 1</style>: Chants for <style=\"accent-gn\">0.7s</style>, affects a fan-shaped area with an <style=\"accent-gn\">8</style>-meter radius in front. <br><style=\"accent-gn\">Tier 2</style>: Chants for <style=\"accent-gn\">1.4s</style>, affects a fan-shaped area with an <style=\"accent-gn\">8</style>-meter radius in front, increases the DMG dealt by <style=\"accent-gn\">50%</style>. <br><style=\"accent-gn\">Tier 3</style>: Chants for <style=\"accent-gn\">2.1s</style>, affects a fan-shaped area with an <style=\"accent-gn\">8</style>-meter radius in front, increases the DMG dealt by <style=\"accent-gn\">100%</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Delivers massive DMG. When paired with Speaker and talents, it offers potent DMG and Healing. Be mindful of your surroundings during casting.</size></style>"
     },
     "2314": {
         "ChineseShort": "灵魂乐手ULT_01",
         "EnglishShort": "Rock the Stage",
-        "EnglishLong": "Let the Passion Flow Again! Consumes <style=\"accent-gn\">5</style> <style=\"accent-gn\">Performance Passion</style>, reigniting the spirits of the weary. Performs a sequence of notes that heals <style=\"accent-gn\">10</style> allies. <br><br><style=\"accent-gn\">Performance Passion</style>: Required to perform music. Regenerates <style=\"accent-gn\">1</style> stack every <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Highest healing potential. Monitor team health to avoid overhealing.</size></style>"
+        "EnglishLong": "Let the Passion Flow Again! Consumes <style=\"accent-gn\">5</style> <style=\"accent-gn\">Performance Passion</style>, reigniting the spirits of the weary. Performs a sequence of notes that heals <style=\"accent-gn\">10</style> allies. <br><br><style=\"accent-gn\">Performance Passion</style>: Required to perform music. Regenerates <style=\"accent-gn\">1</style> stack every <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Highest healing potential. Monitor your team's health to maximize efficiency and prevent overhealing.</size></style>"
     },
     "2315": {
         "ChineseShort": "灵魂乐手可选SKILL_07",
         "EnglishShort": "Encore",
-        "EnglishLong": "The perfect piece for fan interaction. Grants <style=\"accent-gn\">Encore</style> effect to <style=\"accent-gn\">10</style> allies for <style=\"accent-gn\">10s</style>. <br><style=\"accent-gn\">Encore</style>: <style=\"accent-gn\">Super Armor</style>. Each time an offensive or healing <style=\"accent-gn\">Expertise Skill</style> is cast, there is a <style=\"accent-gn\">50%</style> fixed chance to trigger <style=\"accent-gn\">Encore Strings</style> once, dealing DMG to the current target or healing the lowest-HP ally. <br><br><size=22><style=\"tipsYellow\">Tips: Cast during team burst windows for optimal DMG and Healing of Encore.</size></style>"
+        "EnglishLong": "The perfect piece for fan interaction. Grants <style=\"accent-gn\">Encore</style> effect to <style=\"accent-gn\">10</style> allies for <style=\"accent-gn\">10s</style>. <br><style=\"accent-gn\">Encore</style>: Grants <style=\"accent-gn\">Super Armor</style>. Each time an offensive or healing <style=\"accent-gn\">Expertise Skill</style> is cast, there is a <style=\"accent-gn\">50%</style> fixed chance to trigger <style=\"accent-gn\">Encore Strings</style> once, dealing DMG to the current target or healing the lowest-HP ally. <br><br><size=22><style=\"tipsYellow\">Tips: Cast during your team's burst window for optimal DMG and healing of Encore.</size></style>"
     },
     "2316": {
         "ChineseShort": "灵魂乐手可选SKILL_08",
         "EnglishShort": "Center Stage",
-        "EnglishLong": "Increases your <style=\"accent-gn\">MATK</style> for some time and amplifies the next skill you cast. <br><br><style=\"accent-gn\">Special Attack</style>: Your next <style=\"accent-gn\">2</style> Special Attacks do not consume <style=\"accent-gn\">Performance Passion</style>. <br><linktext=1607><style=\"ItemQuality_5\">Fivefold Crescendo</style></linktext>: Doubles the healing instances. <br><linktext=1614><style=\"ItemQuality_5\">Heroic Melody</style></linktext>: Halves the time needed to trigger <linktext=1615><style=\"ItemQuality_5\">Fierce Strike</style></linktext>. <br><linktext=1605><style=\"ItemQuality_5\">Harmonic Anthem</style></linktext>: Doubles the DMG dealt. <br><linktext=1608><style=\"ItemQuality_5\">Passion Burst</style></linktext>: Allows for direct cast in its strongest form, no chanting required. <br><br><size=22><style=\"tipsYellow\">Tips: Evaluate the battle environment and your combat style, then apply the appropriate enhancement at the optimal moment.</size></style>"
+        "EnglishLong": "Increases your <style=\"accent-gn\">MATK</style> for a period of time and amplifies the next skill you cast. <br><br><style=\"accent-gn\">Special Attack</style>: Your next <style=\"accent-gn\">2</style> Special Attacks do not consume <style=\"accent-gn\">Performance Passion</style>. <br><linktext=1607><style=\"ItemQuality_5\">Fivefold Crescendo</style></linktext>: Doubles the healing instances. <br><linktext=1614><style=\"ItemQuality_5\">Heroic Melody</style></linktext>: Halves the time needed to trigger <linktext=1615><style=\"ItemQuality_5\">Fierce Strike</style></linktext>. <br><linktext=1605><style=\"ItemQuality_5\">Harmonic Anthem</style></linktext>: Doubles the DMG dealt. <br><linktext=1608><style=\"ItemQuality_5\">Passion Burst</style></linktext>: Allows for direct cast in its strongest form, no chanting required. <br><br><size=22><style=\"tipsYellow\">Tips: Evaluate the battle environment and your combat style, then apply the appropriate enhancement at the optimal moment.</size></style>"
     },
     "2317": {
         "ChineseShort": "灵魂乐手SKILL_03_Hack",
@@ -1500,7 +1506,7 @@
     },
     "2332": {
         "ChineseShort": "灵魂乐手绚烂焰火",
-        "EnglishShort": "Passion Burst",
+        "EnglishShort": "Passion Fury",
         "EnglishLong": "Channels for <style=\"accent-gn\">6s</style> and continuously spews searing flames forward, dealing <style=\"magic\">Magic Damage</style> equal to <style=\"accent-gn\">1000%</style> ATK in total to the enemies within range. <br><br><size=22><style=\"tipsYellow\">Tips: Move continuously and try to maximize DMG dealt while staying safe.</size></style>"
     },
     "2333": {
@@ -1588,12 +1594,12 @@
     "2406": {
         "ChineseShort": "剑盾特攻B",
         "EnglishShort": "Vanguard Strike",
-        "EnglishLong": "Consumes <style=\"accent-gn\">1</style> <style=\"accent-gn\">Holy Sigil</style>. After a brief charge, perform a fierce sweep forward, dealing<style=\"physical\">Attack Damage</style> and gaining <style=\"accent-gn\">2</style> stacks of <style=\"accent-gn\">Lightforged Barrier</style>.<br><br><style=\"accent-gn\">Lightforged Barrier</style>: Each stack increases max HP by <style=\"accent-gn\">2%</style>, up to <style=\"accent-gn\">10</style> stacks. Taking any DMG consumes <style=\"accent-gn\">1</style> stack. The Barrier lasts <style=\"accent-gn\">25s</style> or until all stacks are consumed. Gaining a new stack refreshes the duration.<br><br><size=22><style=\"tipsYellow\">Tips: Maintain high stacks of Lightforged Barrier while weaving in attacks. Pay attention to the use of Vanguard Hunt to trigger bonus effects.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">1</style> <style=\"accent-gn\">Holy Sigil</style>. After a brief charge, performs a fierce sweep forward, dealing<style=\"physical\">Attack Damage</style> and gaining <style=\"accent-gn\">2</style> stacks of <style=\"accent-gn\">Lightforged Barrier</style>.<br><br><style=\"accent-gn\">Lightforged Barrier</style>: Each stack increases max HP by <style=\"accent-gn\">2%</style>, up to <style=\"accent-gn\">10</style> stacks. Taking any DMG consumes <style=\"accent-gn\">1</style> stack. The Barrier lasts <style=\"accent-gn\">25s</style> or until all stacks are consumed. Gaining a new stack refreshes the duration.<br><br><size=22><style=\"tipsYellow\">Tips: Maintain high stacks of Lightforged Barrier while weaving in attacks. Pay attention to the use of Vanguard Hunt to trigger bonus effects.</style></size>"
     },
     "2407": {
         "ChineseShort": "剑盾大招",
         "EnglishShort": "Radiant Infusion",
-        "EnglishLong": "Unleashes holy energy to strike nearby enemies, dealing <style=\"physical\">Attack Damage</style> and inflicting <linktext=3009><style=\"ItemQuality_5\">Dazzled</style></linktext> for <style=\"accent-gn\">5s</style>. Grants a <style=\"accent-gn\">Radiant Shield</style> equal to <style=\"accent-gn\">300%</style> ATK. For the next <style=\"accent-gn\">10s</style>, instantly refreshes <style=\"accent-gn\">1</style> <style=\"accent-gn\">Holy Seal</style> for every <style=\"accent-gn\">2s</style> (prioritizing the <style=\"accent-gn\">Holy Seal</style> with the longest remaining CD), and generates <style=\"accent-gn\">10</style> <style=\"accent-gn\">Photon Energy</style> each time. <br><br><style=\"accent-gn\">Radiant Shield</style>: Infuses the Shield with light, absorbing <style=\"accent-gn\">50%</style> of incoming DMG. The effect can stack absorption and reset duration when the Skill is reused. Max absorption cannot exceed <style=\"accent-gn\">100%</style> of Max HP. <br><br><size=22><style=\"tipsYellow\">Tips: Instantly boosts survivability and generates Holy Sigil and Photon Energy. Time the casts wisely.</style></size>"
+        "EnglishLong": "Unleashes holy energy to strike nearby enemies, dealing <style=\"physical\">Attack Damage</style> and inflicting <linktext=3009><style=\"ItemQuality_5\">Dazzle</style></linktext> for <style=\"accent-gn\">5s</style>. Grants a <style=\"accent-gn\">Radiant Shield</style> equal to <style=\"accent-gn\">300%</style> ATK. For the next <style=\"accent-gn\">10s</style>, instantly refreshes <style=\"accent-gn\">1</style> <style=\"accent-gn\">Holy Seal</style> for every <style=\"accent-gn\">2s</style> (prioritizing the <style=\"accent-gn\">Holy Seal</style> with the longest remaining CD), and generates <style=\"accent-gn\">10</style> <style=\"accent-gn\">Photon Energy</style> each time. <br><br><style=\"accent-gn\">Radiant Shield</style>: Infuses the Shield with light, absorbing <style=\"accent-gn\">50%</style> of incoming DMG. The effect can stack absorption and reset duration when the Skill is reused. Max absorption cannot exceed <style=\"accent-gn\">100%</style> of Max HP. <br><br><size=22><style=\"tipsYellow\">Tips: Instantly boosts survivability and generates Holy Sigil and Photon Energy. Time the casts wisely.</style></size>"
     },
     "2408": {
         "ChineseShort": "盾牌投掷",
@@ -1608,7 +1614,7 @@
     "2410": {
         "ChineseShort": "剑盾裁决",
         "EnglishShort": "Judgment",
-        "EnglishLong": "Consumes <style=\"accent-gn\">45</style> <style=\"accent-gn\">Photon Energy</style> to call down a blast of holy light on the target area, dealing <style=\"physical\">Attack Damage</style> and healing yourself based on HP lost (minimum heal: <style=\"accent-gn\">5%</style> of Max HP).<br><br><size=22><style=\"tipsYellow\">Tips: Cast when your HP is low—but not critically low—to maximize healing while staying safe.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">45</style> <style=\"accent-gn\">Photon Energy</style> to call down a blast of holy light on the target area, dealing <style=\"physical\">Attack Damage</style> and healing yourself based on HP lost (minimum heal: <style=\"accent-gn\">5%</style> of Max HP).<br><br><size=22><style=\"tipsYellow\">Tips: Cast when your HP is low-but not critically low-to maximize healing while staying safe.</style></size>"
     },
     "2411": {
         "ChineseShort": "灼热裁决",
@@ -1617,7 +1623,7 @@
     "2412": {
         "ChineseShort": "剑盾清算",
         "EnglishShort": "Reckoning",
-        "EnglishLong": "Consumes <style=\"accent-gn\">2</style> <style=\"accent-gn\">Holy Sigils</style>. Performs a fiery blade strike at all nearby enemies, dealing <style=\"physical\">Attack Damage</style>.<br><br><size=22><style=\"tipsYellow\">Tips: Powerful offensive skill. Use when survivability is not an issue..</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">2</style> <style=\"accent-gn\">Holy Sigils</style>. Performs a fiery blade strike at all nearby enemies, dealing <style=\"physical\">Attack Damage</style>.<br><br><size=22><style=\"tipsYellow\">Tips: Powerful offensive skill. Use when survivability is not an issue.</style></size>"
     },
     "2413": {
         "ChineseShort": "炽热复仇",
@@ -1632,7 +1638,7 @@
     "2415": {
         "ChineseShort": "圣光守卫",
         "EnglishShort": "Aegis Ward",
-        "EnglishLong": "Summon Aegis Ward to shield yourself, automatically counterattacking <style=\"accent-gn\">High-threat Skills</style> while increasing <style=\"accent-gn\">Armor</style> and <style=\"accent-gn\">DMG Reduction</style>. If you takes fatal amount of DMG while this skill is active, the status is consumed to prevent death and immediately restore <style=\"accent-gn\">25%</style> <style=\"accent-gn\">HP</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Powerful DMG RED effect combined with death prevention, extremely valuable when facing intense survival pressure.</style></size>"
+        "EnglishLong": "Summons Aegis Ward to shield yourself, automatically countering <style=\"accent-gn\">Lethal Skills</style> while increasing <style=\"accent-gn\">Armor</style> and <style=\"accent-gn\">DMG Reduction</style>. If you takes fatal amount of DMG while this effect is active, the effect is consumed to prevent death and immediately restore <style=\"accent-gn\">25%</style> <style=\"accent-gn\">HP</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Powerful DMG Reduction effect combined with death prevention, extremely valuable when facing extreme survival threats.</style></size>"
     },
     "2416": {
         "ChineseShort": "前戳普攻（小）",
@@ -1655,12 +1661,12 @@
     "2420": {
         "ChineseShort": "光明决心",
         "EnglishShort": "Radiance",
-        "EnglishLong": "Unwavering resolve is gained, initiating the hurling of <style=\"accent-gn\">5</style> shields toward the nearest enemy targets within a <style=\"accent-gn\">10</style>-meter radius, with priority given to those in closest proximity. <style=\"physical\">Attack Damage</style> is inflicted, and <linktext=3000><style=\"ItemQuality_5\">interruptions</style></linktext> and <linktext=1092><style=\"ItemQuality_5\">taunt</style></linktext> are applied to the targets. Subsequently, a single shield is thrown at <style=\"accent-gn\">2s</style> intervals, with <style=\"accent-gn\">1</style> throw yielding <style=\"accent-gn\">10</style> <style=\"accent-gn\">Photon Energy</style>. In the next <style=\"accent-gn\">10s</style>, reduces each instance of DMG taken by a specified percentage of Max HP, and any <style=\"accent-gn\">High-threat Skills</style> encountered during this period are automatically counterattacked. <br><br><size=22><style=\"tipsYellow\">Tips: This skill does not consume Photon Energy or Holy Sigil to cast, and it provides strong survivability, making it ideal as an opening move.</style></size>"
+        "EnglishLong": "Gains Unwavering resolve, hurling <style=\"accent-gn\">5</style> shields toward the nearest enemy targets within a <style=\"accent-gn\">10</style>-meter radius, prioritizing the closest. Each hit deals <style=\"physical\">Attack Damage</style>, <linktext=3000><style=\"ItemQuality_5\">interrupts</style></linktext>, and <linktext=1092><style=\"ItemQuality_5\">taunts</style></linktext> the targets. Afterwards, throws <style=\"accent-gn\">1</style> shield every <style=\"accent-gn\">2s</style>, each granting <style=\"accent-gn\">10</style> <style=\"accent-gn\">Photon Energy</style>. For the next <style=\"accent-gn\">10s</style>, damage taken per hit is reduced by a percentage of your Max HP, and any <style=\"accent-gn\">Lethal Skills</style> are automatically countered during this period. <br><br><size=22><style=\"tipsYellow\">Tips: This skill does not consume Photon Energy or Holy Sigil to cast, and it provides strong survivability, making it ideal as an opening move.</style></size>"
     },
     "2421": {
         "ChineseShort": "圣剑",
         "EnglishShort": "Sacred Blade",
-        "EnglishLong": "Consumes <style=\"accent-gn\">3</style> <style=\"accent-gn\">Holy Sigils</style>, summoning a sword from beneath the target's feet to deal <style=\"physical\">Attack Damage</style> to the target, while gaining <style=\"accent-gn\">5</style> layers of <style=\"accent-gn\">Lightforged Barrier</style>.<br><br><style=\"accent-gn\">Lightforged Barrier</style>: Each stack increases the final Max HP by <style=\"accent-gn\">2%</style>. You can have up to <style=\"accent-gn\">10</style> layers of Lightforged Barrier, and any damage taken will consume <style=\"accent-gn\">1</style> layer. It lasts for <style=\"accent-gn\">25s</style> or until all layers are consumed, and the duration resets each time a layer is gained.<br><br><size=22><style=\"tipsYellow\">Tips: While having considerable damage capability, it can efficiently replenish Lightforged Barrier.</style></size>"
+        "EnglishLong": "Consumes <style=\"accent-gn\">3</style> <style=\"accent-gn\">Holy Sigils</style>, summoning a sword from beneath the target's feet to deal <style=\"physical\">Attack Damage</style> to the target, while gaining <style=\"accent-gn\">5</style> stacks of <style=\"accent-gn\">Lightforged Barrier</style>.<br><br><style=\"accent-gn\">Lightforged Barrier</style>: Each stack increases the final Max HP by <style=\"accent-gn\">2%</style>. You can have up to <style=\"accent-gn\">10</style> stacks of Lightforged Barrier, and any damage taken will consume <style=\"accent-gn\">1</style> stack. It lasts for <style=\"accent-gn\">25s</style> or until all stacks are consumed, and the duration resets each time a stack is gained.<br><br><size=22><style=\"tipsYellow\">Tips: While having considerable damage capability, it can efficiently replenish Lightforged Barrier.</style></size>"
     },
     "2422": {
         "ChineseShort": "剑盾Dodge_f",
@@ -1738,7 +1744,7 @@
     },
     "3105": {
         "ChineseShort": "守护 · 审判",
-        "EnglishLong": "Smashes the ground <style=\"accent-gn\">5</style> meters ahead, causing a shockwave that <linktext=3005><style=\"ItemQuality_5\">stuns</style></linktext> all <style=\"accent-gn\">enemies</style> in the area. <br>If the enemy possesses <linktext=1091><style=\"ItemQuality_5\">Super Armor</style></linktext>, it will instead deal high Super Armor DMG. <br>Dodging a <style=\"accent-gn\">High-threat Skill</style> successfully resets its <style=\"accent-gn\">CD</style> immediately."
+        "EnglishLong": "Erects an immovable rock wall and enter a defensive stance, <linktext=1092><style=\"ItemQuality_5\">taunting</style></linktext> nearby monsters and becoming invincible. Blocking a <style=\"physical\">Lethal Skill</style> causes the wall to shatter and counterattack the target, dealing <style=\"physical\">Attack Damage</style> to all the enemies in front.<br><br><size=22><style=\"tipsYellow\">Tips: Ultimate tank skill, perfect for absorbing extreme DMG.</style></size>"
     },
     "3106": {
         "ChineseShort": "守护 · 壁垒",
@@ -1843,37 +1849,37 @@
     "3902": {
         "ChineseShort": "奥义！雷霆天引",
         "EnglishShort": "Arcane! Thunderfall Grasp",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Tempest Ogre and channels the power of thunder to generate a vortex, continuously pulling in enemies near the target and dealing AoE <style=\"magic\">Magic Damage</style> when the duration ends."
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Tempest Ogre and channels the power of thunder to generate a vortex, continuously pulling in enemies near the target and dealing AoE <style=\"magic\">Magic Damage</style> when the duration ends."
     },
     "3903": {
         "ChineseShort": "奥义！炽炎战斧",
         "EnglishShort": "Arcane! Blazing Axe",
-        "EnglishLong": "<style=\"accent-gn\">Transform into Boss</style>: The Bear and summons a blazing giant axe, increasing <style=\"accent-gn\">ATK</style> of the Allies within range for a period and granting yourself additional <style=\"accent-gn\">ATK</style> boost. <br><style=\"accent-gn\">(This effect cannot stack and only one can be active at a time.)</style>"
+        "EnglishLong": "<style=\"accent-gn\">Transforms into Boss</style>: The Bear and summons a blazing giant axe, increasing <style=\"accent-gn\">ATK</style> of the Allies within range for a period and granting yourself additional <style=\"accent-gn\">ATK</style> boost. <br><style=\"accent-gn\">(This effect cannot stack and only one can be active at a time.)</style>"
     },
     "3904": {
         "ChineseShort": "绝技！超会心",
         "EnglishShort": "Stunt! Super Critical",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Muku Warrior to leap forward and deliver a powerful strike, dealing AoE <style=\"physical\">Attack Damage</style>. This attack is guaranteed to Crit. <br>Upon the skill cast, your <style=\"accent-gn\">Crit</style> and <style=\"accent-gn\">Crit DMG</style> are increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Muku Warrior to leap forward and deliver a powerful strike, dealing AoE <style=\"physical\">Attack Damage</style>. This attack is guaranteed to Crit. <br>Upon the skill cast, your <style=\"accent-gn\">Crit</style> and <style=\"accent-gn\">Crit DMG</style> are increased for a period."
     },
     "3905": {
         "ChineseShort": "绝技！猪突猛进",
         "EnglishShort": "Stunt! Boarrier Rush",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Boarrier Tyrant and charges forward with tusks for <style=\"accent-gn\">3s</style>. Deals <style=\"physical\">Attack Damage</style> and knocks enemies airborne during the charge. Boarrier tusks tear through flesh, inflicting <style=\"accent-gn\">100%</style> <linktext=3004><style=\"ItemQuality_5\">Wounds</style></linktext> on enemies hit for <style=\"accent-gn\">15s</style>. <br>Upon the skill cast, the DMG dealt and healing of your <style=\"accent-gn\">Special Attack</style> are increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Boarrier Tyrant to charge forward with tusks for <style=\"accent-gn\">3s</style>. Deals <style=\"physical\">Attack Damage</style> and knocks enemies airborne during the charge. Boarrier tusks tear through flesh, inflicting <style=\"accent-gn\">100%</style> <linktext=3004><style=\"ItemQuality_5\">Wounds</style></linktext> on enemies hit for <style=\"accent-gn\">15s</style>. <br>Upon the skill cast, the DMG dealt and healing of your <style=\"accent-gn\">Special Attack</style> are increased for a period."
     },
     "3906": {
         "ChineseShort": "奥义！冰霜震荡",
         "EnglishShort": "Arcane! Frostquake",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Frost Ogre to execute a spinning attack with an ice hammer, resulting in <style=\"physical\">Attack Damage</style> and <linktext=1171><style=\"ItemQuality_5\">freezing</style></linktext> of all targets struck. <br>Upon the skill cast, your <style=\"accent-gn\">Resilience Break Bonus</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Frost Ogre to execute a spinning attack with an ice hammer, resulting in <style=\"physical\">Attack Damage</style> and <linktext=1171><style=\"ItemQuality_5\">frozen</style></linktext> all targets struck. <br>Upon the skill cast, your <style=\"accent-gn\">Resilience Break Bonus</style> is increased for a period."
     },
     "3907": {
         "ChineseShort": "绝技！碎星陨落",
         "EnglishShort": "Stunt! Falling Star",
-        "EnglishLong": "<style=\"accent-gn\">Transform into Elite</style>: Inferno Goblin Mage and summons meteors from the sky, dealing <style=\"magic\">Magic Damage</style> and <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> their actions. <br>Upon the skill cast, your <style=\"accent-gn\">Intellect</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Transforms into Elite</style>: Inferno Goblin Mage and summons meteors from the sky, dealing <style=\"magic\">Magic Damage</style> and <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> their actions. <br>Upon the skill cast, your <style=\"accent-gn\">Intellect</style> is increased for a period."
     },
     "3908": {
         "ChineseShort": "奥义！脉冲祝祷",
         "EnglishShort": "Arcane! Pulse Benediction",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Muku King to channel Forest Energy, <style=\"accent-gn\">healing</style> up to <style=\"accent-gn\">10</style> allies over time and dispelling <linktext=3021><style=\"ItemQuality_5\">debuffs</style></linktext>. <br>Upon the skill cast, your <style=\"accent-gn\">healing received</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Muku King to channel Forest Energy, <style=\"accent-gn\">healing</style> up to <style=\"accent-gn\">10</style> allies over time and dispelling <linktext=3021><style=\"ItemQuality_5\">debuffs</style></linktext>. <br>Upon the skill cast, your <style=\"accent-gn\">healing received</style> is increased for a period."
     },
     "3909": {
         "ChineseShort": "绝技！灵狐突袭",
@@ -1883,27 +1889,27 @@
     "3910": {
         "ChineseShort": "绝技！缭乱飞弹",
         "EnglishShort": "Stunt! Chaotic Barrage",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Void Ogre, roars in place, and fires 6 whirlwind-like Void Projectiles at the target, dealing <style=\"physical\">Attack Damage</style>. Inflicts Void Corruption Decay on the target for <style=\"accent-gn\">10s</style>, dealing <style=\"magic\">Magic Damage</style> per second, up to <style=\"accent-gn\">5</style> stacks. <style=\"accent-gn\">100%</style> of the DMG dealt over time is converted into your HP."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Void Ogre, roars in place, and fires 6 whirlwind-like Void Projectiles at the target, dealing <style=\"physical\">Attack Damage</style>. Inflicts Void Corruption Decay on the target for <style=\"accent-gn\">10s</style>, dealing <style=\"magic\">Magic Damage</style> per second, up to <style=\"accent-gn\">5</style> stacks. <style=\"accent-gn\">100%</style> of the DMG dealt over time is converted into your HP."
     },
     "3911": {
         "ChineseShort": "奥义！烈焰之心",
         "EnglishShort": "Arcane! Heart of Flame",
-        "EnglishLong": "<style=\"accent-gn\">Summon</style> Tatta to grant Battle Will to the entire team, preventing all allies from being defeated and ensuring their HP does not fall below a certain threshold for a period of time. <br><style=\"accent-gn\">Exhausted: Cannot be affected by the same type of effect within 60s (Exhausted effects are enhanced in party dungeons of Nightmare mode).</style>"
+        "EnglishLong": "<style=\"accent-gn\">Summons</style> Tatta to grant Battle Will to the entire team, preventing all allies from being defeated and ensuring their HP does not fall below a certain threshold for a period of time. <br><style=\"accent-gn\">Exhausted: Cannot be affected by the same type of effect within 60s (Exhausted effects are enhanced in party dungeons of Nightmare mode).</style>"
     },
     "3913": {
         "ChineseShort": "绝技！电磁爆弹",
         "EnglishShort": "Stunt! Electro Bomb",
-        "EnglishLong": "<style=\"accent-gn\">Transform into Elite</style>: Dark Mist Captain to launch an Electro Bomb at the designated target, dealing AoE <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> their actions. <br>Upon the skill cast, the DMG dealt and healing of your <style=\"accent-gn\">Expertise Skill</style> are increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Transforms into Elite</style>: Dark Mist Captain to launch an Electro Bomb at the designated target, dealing AoE <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> their actions. <br>Upon the skill cast, the DMG dealt and healing of your <style=\"accent-gn\">Expertise Skill</style> are increased for a period."
     },
     "3914": {
         "ChineseShort": "绝技！剑刃横扫",
         "EnglishShort": "Stunt! Blade Sweep",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Goblin Guard to perform multiple sword energy attacks forward, dealing <style=\"physical\">Attack Damage</style>. Sword energy hits will reduce the target's <style=\"accent-gn\">Armor</style>. <br><style=\"accent-gn\">(The effect cannot stack, and only one effect of the same type will be effective.)</style><br>Upon the skill cast, your <style=\"accent-gn\">Block DMG reduction</style> is increased for a period."
+        "EnglishLong": "Forms a rock barrier around yourself that automatically counters <style=\"accent-gn\">Lethal Skills</style> for a set duration. <linktext=1092><style=\"ItemQuality_5\">Taunts</style></linktext> nearby enemies and increases <style=\"accent-gn\">Block DMG Reduction</style>. For <style=\"accent-gn\">each</style> <style=\"accent-gn\">Sand Crystal</style> consumed, the duration is extended by <style=\"accent-gn\">1</style> second, up to a maximum extension of <style=\"accent-gn\">5s</style>. <br><br><size=22><style=\"tipsYellow\">Tips: Time it well to significantly increase your Block DMG Reduction to mitigate incoming Attack Damage as much as possible.</style></size>"
     },
     "3915": {
         "ChineseShort": "绝技！乱射",
         "EnglishShort": "Stunt! Frenzied Shot",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Goblin Warrior to shoot in a fan-shaped area in front, dealing <style=\"physical\">Attack Damage</style>. <br>Upon the skill cast, your <style=\"accent-gn\">Luck</style> and <style=\"accent-gn\">Lucky Strike Chance</style> are increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Goblin Warrior to shoot in a fan-shaped area in front, dealing <style=\"physical\">Attack Damage</style>. <br>Upon the skill cast, your <style=\"accent-gn\">Luck</style> and <style=\"accent-gn\">Lucky Strike Chance</style> are increased for a period."
     },
     "3916": {
         "ChineseShort": "绝技！贯穿矢",
@@ -1913,7 +1919,7 @@
     "3917": {
         "ChineseShort": "绝技！超重斩",
         "EnglishShort": "Stunt! Heavy Slash",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Dark Mist Commander to execute a forward flurry of slashes, inflicting <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> the target's actions. All Heavy Slash charges are consumed in the process to significantly amplify the DMG inflicted."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Dark Mist Commander to execute a forward flurry of slashes, inflicting <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> the target's actions. All Heavy Slash charges are consumed in the process to significantly amplify the DMG inflicted."
     },
     "3918": {
         "ChineseShort": "奥义！狐影破袭",
@@ -1928,17 +1934,17 @@
     "3920": {
         "ChineseShort": "奥义！生命祈愿",
         "EnglishShort": "Arcane! Blessing of Life",
-        "EnglishLong": "When healing is done, there is a <style=\"accent-gn\">30%</style> chance to grant a Shield equal to <style=\"accent-gn\">{*Decision.unmarkpercent(1)*}</style> of ATK. When the shield expires, it releases a gust of wind, dealing <style=\"physical\">Attack Damage</style> equal to <style=\"accent-gn\">{*Decision.unmarkpercent(2)*}</style> of ATK."
+        "EnglishLong": "<style=\"accent-gn\">Summons</style> Airona. After a brief cast, revives up to <style=\"accent-gn\">4</style> nearby teammates. <style=\"accent-gn\">Weakness: Cannot be affected by the same type of effect within 60s (Weakness effects are enhanced in party dungeons of Nightmare mode).</style>"
     },
     "3921": {
         "ChineseShort": "奥义！时间法令",
         "EnglishShort": "Arcane! Time Decree",
-        "EnglishLong": "<style=\"accent-gn\">Summon</style> Tina to infuse time power, reducing the <style=\"accent-gn\">Skill CDs</style> of yourself and up to <style=\"accent-gn\">10</style> surrounding allies for a period. <br><style=\"accent-gn\">(Cannot be affected by the same type of effect within 60s.)</style>"
+        "EnglishLong": "<style=\"accent-gn\">Summons</style> Tina to infuse time power, reducing the <style=\"accent-gn\">Skill CDs</style> of yourself and up to <style=\"accent-gn\">10</style> surrounding allies for a certain period. <br><style=\"accent-gn\">(Cannot be affected by the same type of effect within 60s.)</style>"
     },
     "3922": {
         "ChineseShort": "奥义！瞬即斩",
         "EnglishShort": "Arcane! Flash Execution",
-        "EnglishLong": "<style=\"accent-gn\">Summon</style> Olvera to shuttle back and forth in a forward direction, drawing in enemies encountered along the path, dealing <style=\"physical\">Attack Damage</style>, and <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> their actions. When dealing DMG, there is a chance to inflict Seed of Lightning on the targets for <style=\"accent-gn\">10s</style>. Dealing DMG to targets with Seed of Lightning will cause an explosion (CD: <style=\"accent-gn\">2s</style>), dealing <style=\"magic\">Magic Damage</style>. Any target with Seed of Lightning defeated will reduce CD time by <style=\"accent-gn\">20s</style>."
+        "EnglishLong": "<style=\"accent-gn\">Summons</style> Olvera to shuttle back and forth in a forward direction, drawing in enemies encountered along the path, dealing <style=\"physical\">Attack Damage</style>, and <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> their actions. When dealing DMG, there is a chance to inflict Seed of Lightning on the targets for <style=\"accent-gn\">10s</style>. Dealing DMG to targets with Seed of Lightning will cause an explosion (CD: <style=\"accent-gn\">2s</style>), dealing <style=\"magic\">Magic Damage</style>. Any target with Seed of Lightning defeated will reduce CD time by <style=\"accent-gn\">20s</style>."
     },
     "3923": {
         "ChineseShort": "奥义！重锤狂袭",
@@ -1948,37 +1954,37 @@
     "3924": {
         "ChineseShort": "绝技！风影缄默",
         "EnglishShort": "Stunt! Gale of Silence",
-        "EnglishLong": "Resonate with the power of Elite: Goblin Wind Mage to transform into its form. Executes a frontal cone attack that deals <style=\"physical\">Attack Damage</style> and <linktext=3001><style=\"ItemQuality_5\">silences</style></linktext> all affected targets."
+        "EnglishLong": "Resonates with the power of Elite: Goblin Wind Mage to transform into its form. Executes a frontal cone attack that deals <style=\"physical\">Attack Damage</style> and <linktext=3001><style=\"ItemQuality_5\">silences</style></linktext> all affected targets."
     },
     "3925": {
         "ChineseShort": "绝技！无形冲击",
         "EnglishShort": "Stunt! Invisible Impact",
-        "EnglishLong": "<style=\"accent-gn\">Transform into Elite</style>: Mighty Colossus to charge and deal <style=\"physical\">Attack Damage</style>. The longer the charge, the higher the Resilience Break Efficiency. Each stack increases the Resilience Break done by <style=\"accent-gn\">50%</style>. (<style=\"accent-gn\">3</style> stacks at Tier 3 and <style=\"accent-gn\">6</style> stacks at Tier 5.)<br>Upon the skill cast, your <style=\"accent-gn\">Resilience Break Bonus</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Transforms into Elite</style>: Mighty Colossus to charge and deal <style=\"physical\">Attack Damage</style>. The longer you charge, the greater the effect on Resilience breaking. Each stack increases the Resilience Break done by <style=\"accent-gn\">50%</style>. (<style=\"accent-gn\">3</style> stacks at Tier 3 and <style=\"accent-gn\">6</style> stacks at Tier 5.)<br>Upon the skill cast, your <style=\"accent-gn\">Resilience Break Bonus</style> is increased for a period."
     },
     "3926": {
         "ChineseShort": "奥义！流星陨落",
         "EnglishShort": "Arcane! Meteor Shower",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Storm Goblin King to release a meteor shower at the target, dealing <style=\"magic\">Magic Damage</style>. Upon the skill cast, your <style=\"accent-gn\">Luck</style> and DMG dealt and healing of <style=\"accent-gn\">Luck effects</style> are increased for a period. <br>Tier 5: While active, trigger​ all unlocked ​passive Luck effects​ from your Battle Imagines."
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Storm Goblin King to release a meteor shower at the target, dealing <style=\"magic\">Magic Damage</style>. Upon the skill cast, your <style=\"accent-gn\">Luck</style> and DMG dealt and healing of <style=\"accent-gn\">Luck effects</style> are increased for a period. <br>Tier 5: While active, trigger​ all unlocked ​passive Luck effects​ from your Battle Imagines."
     },
     "3927": {
         "ChineseShort": "绝技！怒吼指令",
         "EnglishShort": "Stunt! Commanding Roar",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Jungle Goblin Warrior and roars. <br>Casts the skill, temporarily boosting <style=\"accent-gn\">Strength</style>, empowering the next attack to deal bonus <style=\"physical\">Attack Damage</style> in a limited area, and <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> the target's actions."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Jungle Goblin Warrior and roars. <br>Casts the skill, temporarily boosting <style=\"accent-gn\">Strength</style>, empowering the next attack to deal bonus <style=\"physical\">Attack Damage</style> in a limited area, and <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> the target's actions."
     },
     "3928": {
         "ChineseShort": "绝技！追猎猛斩",
         "EnglishShort": "Stunt! Predator Slash",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Muku Scout to chase the target, dealing <style=\"physical\">Attack Damage</style>. <br>Upon the skill cast, immediately gains full passive effects, and the stack count is doubled within <style=\"accent-gn\">20s</style>."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Muku Scout to chase the target, dealing <style=\"physical\">Attack Damage</style>. <br>Upon the skill cast, immediately gains full passive effects, and the stack count is doubled within <style=\"accent-gn\">20s</style>."
     },
     "3929": {
         "ChineseShort": "绝技！缩壳防御",
         "EnglishShort": "Stunt! Shell Defense",
-        "EnglishLong": "<style=\"accent-gn\">Transform into Elite</style>: Void Arachnocrab, and gains <style=\"accent-gn\">Invincibility</style> for <style=\"accent-gn\">5s</style>."
+        "EnglishLong": "<style=\"accent-gn\">Transforms into Elite</style>: Void Arachnocrab, and gains <style=\"accent-gn\">Invincibility</style> for <style=\"accent-gn\">5s</style>."
     },
     "3930": {
         "ChineseShort": "绝技！大地之盾",
         "EnglishShort": "Stunt! Earth Shield",
-        "EnglishLong": "<style=\"accent-gn\">Transform into Elite</style>: Brigand Guard Captain to grant Earth Shield, recovering a percentage of lost HP when you are attacked, up to <style=\"accent-gn\">9</style> times. During this, your <style=\"accent-gn\">Endurance</style> is increased."
+        "EnglishLong": "<style=\"accent-gn\">Transforms into Elite</style>: Brigand Guard Captain to grant Earth Shield, recovering a percentage of lost HP when you are attacked, up to <style=\"accent-gn\">9</style> times. During this, your <style=\"accent-gn\">Endurance</style> is increased."
     },
     "3931": {
         "ChineseShort": "奥义！护佑领域",
@@ -1988,7 +1994,7 @@
     "3932": {
         "ChineseShort": "绝技！飞轮火舞",
         "EnglishShort": "Stunt! Flamewheel Dance",
-        "EnglishLong": "Resonate with the power of Elite: Crimson Sprayer to transform into its form. Deals <style=\"physical\">Attack Damage</style> to nearby enemies and inflicts <style=\"accent-gn\">100%</style> <linktext=3004><style=\"ItemQuality_5\"> Wound</style></linktext> for <style=\"accent-gn\">15s</style>."
+        "EnglishLong": "Resonates with the power of Elite: Crimson Sprayer to transform into its form. Deals <style=\"physical\">Attack Damage</style> to nearby enemies and inflicts <style=\"accent-gn\">100%</style> <linktext=3004><style=\"ItemQuality_5\"> Wound</style></linktext> for <style=\"accent-gn\">15s</style>."
     },
     "3933": {
         "ChineseShort": "绝技！挫志咆哮",
@@ -1998,72 +2004,72 @@
     "3934": {
         "ChineseShort": "绝技！瞬步奇袭",
         "EnglishShort": "Stunt! Blink Ambush",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>: Brigand Scout Leader to execute continuous attacks on the designated target, dealing <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> their actions. <br>Upon the skill cast, your <style=\"accent-gn\">Agility</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Brigand Scout Leader to execute continuous attacks on the designated target, dealing <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> their actions. <br>Upon the skill cast, your <style=\"accent-gn\">Agility</style> is increased for a period."
     },
     "3935": {
         "ChineseShort": "奥义！雷霆咆哮",
         "EnglishShort": "Arcane! Thunder Roar",
-        "EnglishLong": "<style=\"accent-gn\">Transform into Boss</style>: Golden Juggernaut, granting yourself and <style=\"accent-gn\">10</style> allies <style=\"accent-gn\">Shield</style>. When dealing DMG, the shielded targets generate Thunderstrike (CD: <style=\"accent-gn\">0.5s</style>), and the DMG dealt depends on the friendly ATK. <br><style=\"accent-gn\">(This effect cannot stack and only one will be effective.)</style>"
+        "EnglishLong": "<style=\"accent-gn\">Transforms into Boss</style>: Golden Juggernaut, granting yourself and <style=\"accent-gn\">10</style> allies <style=\"accent-gn\">Shield</style>. When dealing DMG, the shielded targets generate Thunderstrike (CD: <style=\"accent-gn\">0.5s</style>), and the DMG dealt depends on the friendly ATK. <br><style=\"accent-gn\">(This effect cannot stack and only one will be effective.)</style>"
     },
     "3936": {
         "ChineseShort": "绝技！静默之水",
         "EnglishShort": "Stunt! Water of Silence",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>: Lizardman Mage to conjure the Water of Silence at the target's location, dealing <style=\"magic\">Magic Damage</style> and inflicting <linktext=3011><style=\"ItemQuality_5\">Slow</style></linktext>. <br>Upon the skill cast, your <style=\"accent-gn\">Ice Bonus</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Lizardman Mage to conjure the Water of Silence at the target's location, dealing <style=\"magic\">Magic Damage</style> and inflicting <linktext=3011><style=\"ItemQuality_5\">Slow</style></linktext>. <br>Upon the skill cast, your <style=\"accent-gn\">Ice Bonus</style> is increased for a period."
     },
     "3937": {
         "ChineseShort": "绝技！强压之雷",
         "EnglishShort": "Stunt! Thunder Suppress",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Lizardman Hunter to chant briefly, dealing <style=\"magic\">Magic Damage</style>. <br>Upon the skill cast, your <style=\"accent-gn\">Luck</style> and <style=\"accent-gn\">Lucky Strike Chance</style> are increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Lizardman Hunter to chant briefly, dealing <style=\"magic\">Magic Damage</style>. <br>Upon the skill cast, your <style=\"accent-gn\">Luck</style> and <style=\"accent-gn\">Lucky Strike Chance</style> are increased for a period."
     },
     "3938": {
         "ChineseShort": "奥义！茧房术",
         "EnglishShort": "Arcane! Cocoon Tech",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Phantom Arachnocrab and transforms into a cocoon. Following a brief delay, the cocoon bursts, dealing <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> the actions of the affected target. Your <style=\"accent-gn\">Mastery</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Phantom Arachnocrab and transforms into a cocoon. Following a brief delay, the cocoon bursts, dealing <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> the actions of the affected target. Your <style=\"accent-gn\">Mastery</style> is increased for a period."
     },
     "3939": {
         "ChineseShort": "绝技！雷光球",
-        "EnglishShort": "Stunt! Thunder Orb",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Great Warhog to release a Lightning Orb forward, dealing <style=\"physical\">Attack Damage</style>. <br>Upon the skill cast, your <style=\"accent-gn\">Light Bonus</style> is increased for a period."
+        "EnglishShort": "Stunt! Lightning Orb",
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Great Warhog to release a Lightning Orb forward, dealing <style=\"physical\">Attack Damage</style>. <br>Upon the skill cast, your <style=\"accent-gn\">Light Bonus</style> is increased for a period."
     },
     "3940": {
         "ChineseShort": "绝技！旋风打击",
         "EnglishShort": "Stunt! Whirlwind Strike",
-        "EnglishLong": "<style=\"accent-gn\">Summon Elite</style>:  Storm Goblin Warrior to continuously release Whirlwind Slash, dealing <style=\"physical\">Attack Damage</style> and <style=\"accent-gn\">pulling in</style> all surrounding units. <br>Upon the skill cast, your <style=\"accent-gn\">Wind Bonus</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons Elite</style>: Storm Goblin Warrior to continuously release Whirlwind Slash, dealing <style=\"physical\">Attack Damage</style> and <style=\"accent-gn\">pulling in</style> all surrounding units. <br>Upon the skill cast, your <style=\"accent-gn\">Wind Bonus</style> is increased for a period."
     },
     "3941": {
         "ChineseShort": "绝技！变身蜜蜂",
         "EnglishShort": "Stunt! Transform into Bee",
-        "EnglishLong": "<style=\"accent-gn\">Transform into Elite</style>: Void Bzzar for a period of time, during which you can release stings and projectiles."
+        "EnglishLong": "<style=\"accent-gn\">Transforms into Elite</style>: Void Bzzar for a period of time, during which you can release stings and projectiles."
     },
     "3942": {
         "ChineseShort": "奥义！毒爆",
         "EnglishShort": "Arcane! Poison Explosion",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Venobzzar Incubator to continuously attack surrounding units, dealing <style=\"physical\">Attack Damage</style>. Each attack inflicts <style=\"accent-gn\">Vulnerability</style> on the target, and your <style=\"accent-gn\">DMG</style> dealt to the target is increased. <br><style=\"accent-gn\">(This effect cannot stack and only one will be effective.)</style>"
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Venobzzar Incubator to continuously attack surrounding units, dealing <style=\"physical\">Attack Damage</style>. Each attack inflicts <style=\"accent-gn\">Vulnerability</style> on the target, and your <style=\"accent-gn\">DMG</style> dealt to the target is increased. <br><style=\"accent-gn\">(This effect cannot stack and only one will be effective.)</style>"
     },
     "3943": {
         "ChineseShort": "奥义！地狱突刺",
         "EnglishShort": "Arcane! Hell Thrust",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Iron Fang to deliver AoE <style=\"physical\">Attack Damage</style> to nearby enemies, inflicting a <style=\"accent-gn\">100%</style> <linktext=3004><style=\"ItemQuality_5\">Wound</style></linktext> on all affected targets for <style=\"accent-gn\">15s</style>."
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Iron Fang to deliver AoE <style=\"physical\">Attack Damage</style> to nearby enemies, inflicting a <style=\"accent-gn\">100%</style> <linktext=3004><style=\"ItemQuality_5\">Wound</style></linktext> on all affected targets for <style=\"accent-gn\">15s</style>."
     },
     "3944": {
         "ChineseShort": "奥义！沧澜风啸",
         "EnglishShort": "Arcane! Azure Gale",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Celestial Flier to charge forward, dealing Ice <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">disrupting</style></linktext> the targets' actions. After casting, your <style=\"accent-gn\">Haste</style> is increased for a period of time."
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Celestial Flier to charge forward, dealing Ice <style=\"physical\">Attack Damage</style> and <linktext=3000><style=\"ItemQuality_5\">interrupting</style></linktext> the targets' actions. After casting, your <style=\"accent-gn\">Haste</style> is increased for a period of time."
     },
     "3945": {
         "ChineseShort": "奥义！静默潮汐",
         "EnglishShort": "Arcane! Silent Tide",
-        "EnglishLong": "<style=\"accent-gn\">Summon Boss</style>: Lizardman King to deal Ice <style=\"physical\">Attack Damage</style> to nearby enemies and <style=\"accent-gn\">Silence</style> them for <linktext=3001><style=\"ItemQuality_5\">10s</style></linktext>."
+        "EnglishLong": "<style=\"accent-gn\">Summons Boss</style>: Lizardman King to deal Ice <style=\"physical\">Attack Damage</style> to nearby enemies and <style=\"accent-gn\">Silence</style> them for <linktext=3001><style=\"ItemQuality_5\">10s</style></linktext>."
     },
     "3946": {
         "ChineseShort": "奥义！哥布林大行军",
         "EnglishShort": "Arcane! Goblin March",
-        "EnglishLong": "Resonate with the power of Boss: Goblin King, summoning <style=\"accent-gn\">1 to 3</style> goblins at random to cast skills. <br><style=\"accent-gn\">Always</style> summons 1 random goblin from Elite: Goblin Sword and Elite: Goblin Crossbow. <br>Has <style=\"accent-gn\">a chance</style> to additionally summon 1 Elite: Jungle Goblin Warrior. <br>Has <style=\"accent-gn\">a chance</style> to additionally summon 1 from Elite: Hurricane Goblin Giant Axe or Boss: Wind Goblin King. Has a <style=\"accent-gn\">30% chance</style> to summon the Boss."
+        "EnglishLong": "Resonates with the power of Boss: Goblin King, summoning <style=\"accent-gn\">1 to 3</style> goblins at random to cast skills. <br><style=\"accent-gn\">Always</style> summons 1 random goblin from Elite: Goblin Sword and Elite: Goblin Crossbow. <br>Has <style=\"accent-gn\">a chance</style> to additionally summon 1 Elite: Jungle Goblin Warrior. <br>Has <style=\"accent-gn\">a chance</style> to additionally summon 1 from Elite: Hurricane Goblin Giant Axe or Boss: Wind Goblin King. Has a <style=\"accent-gn\">30% chance</style> to summon the Boss."
     },
     "3947": {
         "ChineseShort": "绝技！螺旋断界",
         "EnglishShort": "Stunt! Spiral Severance",
-        "EnglishLong": "<style=\"accent-gn\">Summon</style> Elite Muku Vanguard to charge forward, dealing <style=\"physical\">Attack Damage</style>. <br>Upon the skill cast, your <style=\"accent-gn\">Thunder Bonus</style> is increased for a period."
+        "EnglishLong": "<style=\"accent-gn\">Summons</style> Elite Muku Vanguard to charge forward, dealing <style=\"physical\">Attack Damage</style>. <br>Upon the skill cast, your <style=\"accent-gn\">Thunder Bonus</style> is increased for a period."
     },
     "3948": {
         "ChineseShort": "奥义！罗罗拉",
@@ -2078,7 +2084,7 @@
     "4000": {
         "ChineseShort": "退出变身",
         "EnglishShort": "Exit transformation",
-        "EnglishLong": "Click to exit transformation"
+        "EnglishLong": "Exit the transformation"
     },
     "4001": {
         "ChineseShort": "次元切换",
@@ -2109,16 +2115,16 @@
     },
     "4008": {
         "ChineseShort": "显影术",
-        "EnglishShort": "Reveal Technique",
-        "EnglishLong": "Reveal Technique"
+        "EnglishShort": "Revealing Spell",
+        "EnglishLong": "Revealing Spell"
     },
     "4009": {
         "ChineseShort": "拉回检查点-大世界",
-        "EnglishShort": "Teleport back to the checkpoint"
+        "EnglishShort": "Reset"
     },
     "4010": {
         "ChineseShort": "蒂娜本传染技能",
-        "EnglishShort": "Void Corruption Transfer"
+        "EnglishShort": "Pass on"
     },
     "4011": {
         "ChineseShort": "雷枪-击破屏障",
@@ -2212,7 +2218,7 @@
     },
     "4502": {
         "ChineseShort": "小猪快跑",
-        "EnglishShort": "Piggy Run",
+        "EnglishShort": "Boars Run",
         "EnglishLong": "While running continuously, you can break the speed limit and gain a speed boost."
     },
     "4508": {
@@ -2238,12 +2244,12 @@
     "4513": {
         "ChineseShort": "掘影突袭",
         "EnglishShort": "Digger Strike",
-        "EnglishLong": "Ready to Strike! Hold to charge, and the Golem claws the ground for charging. Release at the right moment to dash forward and reduces the skill CD of Hunter’s Pounce."
+        "EnglishLong": "Ready to Strike! Hold to charge, and the Golem claws the ground for charging. Release at the right moment to dash forward and reduces the skill CD of Hunter's Pounce."
     },
     "4514": {
         "ChineseShort": "渊影突袭",
         "EnglishShort": "Shadow Strike",
-        "EnglishLong": "Ready to Strike! Hold to charge, and the Golem claws the ground for charging. Release at the right moment to dash forward and reset the CD of Hunter’s Pounce."
+        "EnglishLong": "Ready to Strike! Hold to charge, and the Golem claws the ground for charging. Release at the right moment to dash forward and reset the CD of Hunter's Pounce."
     },
     "4521": {
         "ChineseShort": "反重力",
@@ -2258,12 +2264,12 @@
     "4528": {
         "ChineseShort": "腾空冲刺",
         "EnglishShort": "Aerial Dash",
-        "EnglishLong": "Launches into the air and flies forward. Tap the skill again while flying to end the flight."
+        "EnglishLong": "Launch into the air and fly forward."
     },
     "4529": {
         "ChineseShort": "泡泡飘浮",
         "EnglishShort": "Bubble Float",
-        "EnglishLong": "Float along, leaving a trail of dreamy bubbles! Charging speed +200% while in mid-air."
+        "EnglishLong": "Float through the air with a trail of dreamy bubbles! Charging speed +200% while in mid-air."
     },
     "4531": {
         "ChineseShort": "极限漂移",
@@ -2373,7 +2379,7 @@
     "5000": {
         "ChineseShort": "退出玩具",
         "EnglishShort": "Exit Toy",
-        "EnglishLong": "Click to Exit Toy"
+        "EnglishLong": "Tap to Exit Toy"
     },
     "5101": {
         "ChineseShort": "白色烟花"
@@ -2901,7 +2907,7 @@
     },
     "100517": {
         "ChineseShort": "巫师哥布林分摊陨石-随机-职业试炼",
-        "EnglishLong": "Mage Goblin Shared Meteor - Random - Class Trial"
+        "EnglishLong": "Goblin Mage Shared Meteor - Random - Class Trial"
     },
     "100518": {
         "ChineseShort": "巫师哥布林召唤小怪-职业试炼"
@@ -2917,23 +2923,23 @@
     },
     "100522": {
         "ChineseShort": "巫师哥布林分散-职业试炼",
-        "EnglishLong": "Mage Goblin Dispersed - Class Trial"
+        "EnglishLong": "Goblin Mage Dispersed - Class Trial"
     },
     "100523": {
         "ChineseShort": "巫师哥布林分摊陨石-点队友-职业试炼",
-        "EnglishLong": "Mage Goblin Shared Meteor - Point Ally - Class Trial"
+        "EnglishLong": "Goblin Mage Shared Meteor - Point Ally - Class Trial"
     },
     "100524": {
         "ChineseShort": "巫师哥布林点H陨石术-职业试炼"
     },
     "100525": {
         "ChineseShort": "巫师哥布林分摊陨石-多人队时点一个队友-职业试炼",
-        "EnglishLong": "Mage Goblin Shared Meteor - Targets one Ally in a multiplayer party - Class Trial"
+        "EnglishLong": "Goblin Mage Shared Meteor - Targets one Ally in a multiplayer party - Class Trial"
     },
     "100527": {
         "ChineseShort": "巫师哥布林危险火圈-无硬直-职业试炼",
-        "EnglishShort": "Mage Goblin Dangerous Fire Circle - No Stiffness - Class Trial",
-        "EnglishLong": "Mage Goblin Dangerous Fire Circle - No Stiffness - Class Trial"
+        "EnglishShort": "Goblin Mage Dangerous Fire Circle - No Stiffness - Class Trial",
+        "EnglishLong": "Goblin Mage Dangerous Fire Circle - No Stiffness - Class Trial"
     },
     "100530": {
         "ChineseShort": "巫师哥布林-减治疗-职业试炼"
@@ -2970,7 +2976,7 @@
     },
     "100550": {
         "ChineseShort": "巫师哥布林陨石高伤虚拟体-职业试炼",
-        "EnglishLong": "Mage Goblin High Damage Meteor Virtual Body - Class Trial"
+        "EnglishLong": "Goblin Mage High Damage Meteor Virtual Body - Class Trial"
     },
     "100551": {
         "ChineseShort": "巫师哥布林拉屎陨石虚拟体-职业试炼"
@@ -2983,11 +2989,11 @@
     },
     "100554": {
         "ChineseShort": "巫师哥布林分散火圈-职业试炼",
-        "EnglishLong": "Mage Goblin Scatter Fire Circle - Class Trial"
+        "EnglishLong": "Goblin Mage Scatter Fire Circle - Class Trial"
     },
     "100560": {
         "ChineseShort": "巫师哥布林陨石虚拟体-英雄本",
-        "EnglishLong": "Mage Goblin Meteor Virtual Body - Heroic Instance"
+        "EnglishLong": "Goblin Mage Meteor Virtual Body - Heroic Instance"
     },
     "100561": {
         "ChineseShort": "甬道火焰机关-英雄本"
@@ -3338,7 +3344,7 @@
     },
     "101112": {
         "ChineseShort": "宠物雄鹰快速回旋",
-        "EnglishShort": "Pet Eagle Quick Spin"
+        "EnglishShort": "Companion Eagle Quick Spin"
     },
     "101201": {
         "ChineseShort": "火焰兽人践踏"
@@ -3833,7 +3839,7 @@
     },
     "102632": {
         "ChineseShort": "野猪普攻",
-        "EnglishShort": "Wild Boarrier Basic Attack"
+        "EnglishShort": "Boarrierrier Basic Attack"
     },
     "102640": {
         "ChineseShort": "绝技！猪突猛进",
@@ -3859,7 +3865,7 @@
     "102658": {
         "ChineseShort": "绝技！猪突猛进",
         "EnglishShort": "Stunt! Boarrier Rush",
-        "EnglishLong": "Summon Elite: Boarrier Tyrant for a <style=\"accent-gn\">3s</style> charge with extended tusks. Deals <style=\"physical\">Attack Damage</style> and knocks enemies airborne during the charge. Boarrier tusks tear through flesh, inflicting <style=\"accent-gn\">100%</style> <linktext=3004><style=\"ItemQuality_5\">Wounds</style></linktext> on enemies hit for <style=\"accent-gn\">15s</style>."
+        "EnglishLong": "Summons Elite: Boarrier Tyrant for a <style=\"accent-gn\">3s</style> charge with extended tusks. Deals <style=\"physical\">Attack Damage</style> and knocks enemies airborne during the charge. Boarrier tusks tear through flesh, inflicting <style=\"accent-gn\">100%</style> <linktext=3004><style=\"ItemQuality_5\">Wounds</style></linktext> on enemies hit for <style=\"accent-gn\">15s</style>."
     },
     "102659": {
         "ChineseShort": "猛猪突击",
@@ -4514,8 +4520,8 @@
     },
     "111087": {
         "ChineseShort": "次元毁灭！！！",
-        "EnglishShort": "Dimensional Annihilation!!!",
-        "EnglishLong": "Dimensional Annihilation!!!"
+        "EnglishShort": "Dimensional Oblivion!!!",
+        "EnglishLong": "Dimensional Oblivion!!!"
     },
     "111088": {
         "ChineseShort": "电磁风暴"
@@ -5675,8 +5681,8 @@
     },
     "300453": {
         "ChineseShort": "阿卡多的枪兵队圆地板（安德拉）",
-        "EnglishShort": "Arcado's Spearmen (Andra)",
-        "EnglishLong": "Arcado's Spearmen (Andra)"
+        "EnglishShort": "Arcado's Spearman (Andra)",
+        "EnglishLong": "Arcado's Spearman(Andra)"
     },
     "300460": {
         "ChineseShort": "普攻1·无位移(无朝向）"
@@ -6449,7 +6455,7 @@
     "420140": {
         "ChineseShort": "绝技！缭乱飞弹",
         "EnglishShort": "Stunt! Chaotic Barrage",
-        "EnglishLong": "Resonates with the power from Elite Void Ogre and roars on the spot, launching 6 wildly dancing Void Corruption energy substances at the target, dealing <style=\"physical\">Attack Damage</style>. applies Void Corruption Decay to the target for <style=\"accent-gn\">10s</style>, dealing <style=\"magic\">Magic Damage</style> per second, stacks up to <style=\"accent-gn\">5</style> times. <style=\"accent-gn\">100%</style>of the DOT dealt restores your HP."
+        "EnglishLong": "Resonates with the power from Elite Void Ogre and roars on the spot, launching 6 wildly dancing Void Corruption energy substances at the target, dealing <style=\"physical\">Attack Damage</style>. applies Void Corruption Decay to the target for <style=\"accent-gn\">10s</style>, dealing <style=\"magic\">Magic Damage</style> per second, stacks up to <style=\"accent-gn\">5</style> times. <style=\"accent-gn\">100%</style>of the DoT dealt restores your HP."
     },
     "420160": {
         "ChineseShort": "协会环形aoe"
@@ -7905,7 +7911,7 @@
     "1008640": {
         "ChineseShort": "绝技！碎星陨落",
         "EnglishShort": "Stunt! Falling Star",
-        "EnglishLong": "Resonates with the power from Elite Flame Mage Goblin, summoning meteors to fall from the sky, dealing <style=\"magic\">Magic Damage</style>. After the skill is cast, your <style=\"accent-gn\">Intellect</style> is increased for a period."
+        "EnglishLong": "Resonates with the power from Elite Flame Goblin Mage, summoning meteors to fall from the sky, dealing <style=\"magic\">Magic Damage</style>. After the skill is cast, your <style=\"accent-gn\">Intellect</style> is increased for a period."
     },
     "1008641": {
         "ChineseShort": "绝技！旋风打击",
@@ -8542,19 +8548,19 @@
     },
     "1700825": {
         "ChineseShort": "宠物-地狐飞扑",
-        "EnglishShort": "Pet - Foxen Pounce"
+        "EnglishShort": "Companion - Foxen Pounce"
     },
     "1700826": {
         "ChineseShort": "宠物-强力飞扑",
-        "EnglishShort": "Pet - Powerful Pounce"
+        "EnglishShort": "Companion - Powerful Pounce"
     },
     "1700827": {
         "ChineseShort": "宠物-普攻",
-        "EnglishShort": "Pet - Basic Attack"
+        "EnglishShort": "Companion - Basic Attack"
     },
     "1700828": {
         "ChineseShort": "宠物-共鸣赤玉地狐强击",
-        "EnglishShort": "Pet - Resonance Crimson Foxen Strong Strike"
+        "EnglishShort": "Companion - Resonance Crimson Foxen Strong Strike"
     },
     "1700830": {
         "ChineseShort": "赤玉地狐-共鸣技能参考"
@@ -9373,13 +9379,13 @@
     },
     "2009602": {
         "ChineseShort": "木桩小技能-职业试炼",
-        "EnglishShort": "Pile Small Skill - Class Trial",
-        "EnglishLong": "Pile Small Skill - Class Trial"
+        "EnglishShort": "Wooden Dummy - Class Trial",
+        "EnglishLong": "Wooden Dummy - Class Trial"
     },
     "2009603": {
         "ChineseShort": "木桩大技能-职业试炼",
-        "EnglishShort": "Pile Large Skill - Class Trial",
-        "EnglishLong": "Pile Large Skill - Class Trial"
+        "EnglishShort": "Wooden Dummy - Class Trial",
+        "EnglishLong": "Wooden Dummy - Class Trial"
     },
     "2009611": {},
     "2800101": {
@@ -9513,7 +9519,7 @@
     "2900440": {
         "ChineseShort": "共鸣-雷弹穿行",
         "EnglishShort": "Thunder Traverse",
-        "EnglishLong": "<style=\"accent-gn\">Thunder Traverse</style><br>Unleashes a relentless stream of homing thunder orbs that track enemies and deal <style=\"electro\">Thunder Element damage</style> on impact. Hold the skill button to continue the barrage, consuming the heat gauge to extend its duration.<br><br><size=22><style=\"tipsYellow\">Pro Tips: Best used when fully charged—hold the skill to unleash an overwhelming barrage for dealing massive DMG.</style></size>"
+        "EnglishLong": "<style=\"accent-gn\">Thunder Traverse</style><br>Unleashes a relentless stream of homing thunder orbs that track enemies and deal <style=\"electro\">Thunder Element damage</style> on impact. Hold the skill button to continue the barrage, consuming the heat gauge to extend its duration.<br><br><size=22><style=\"tipsYellow\">Pro Tips: Best used when fully charged-hold the skill to unleash an overwhelming barrage for dealing massive DMG.</style></size>"
     },
     "2900501": {
         "ChineseShort": "奥尔维拉太刀普攻"
@@ -10357,8 +10363,8 @@
     },
     "4040016": {
         "ChineseShort": "撼山裂地斩！",
-        "EnglishShort": "Mountain Shattering Slash!",
-        "EnglishLong": "Mountain Shattering Slash!"
+        "EnglishShort": "Mountain Shattering!",
+        "EnglishLong": "Mountain Shattering!"
     },
     "4040020": {
         "ChineseShort": "地狱火",

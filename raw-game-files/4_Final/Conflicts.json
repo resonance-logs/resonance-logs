@@ -106,7 +106,7 @@
       "ChineseShort": "霹雳升龙斩",
       "AIEnglishShort": "Thunderbolt Dragon Slash"
     },
-    "EnglishShortManualOverride": "Thundercleave",
+    "EnglishShortManualOverride": null,
     "Comment": null
   },
   "1932": {
@@ -122,7 +122,7 @@
       "ChineseShort": "护盾猛击",
       "AIEnglishShort": "Shield Strike"
     },
-    "EnglishShortManualOverride": "Shield Bash",
+    "EnglishShortManualOverride": null,
     "Comment": null
   },
   "1935": {
@@ -172,7 +172,7 @@
       "ChineseShort": "天翔贯星击-强化怒涛射击",
       "AIEnglishShort": "Tianxiang Guanxing Strike-Strength Rage Shooting"
     },
-    "EnglishShortManualOverride": "Lumi Torrent",
+    "EnglishShortManualOverride": null,
     "Comment": null
   },
   "2296": {
@@ -378,7 +378,7 @@
       "ChineseShort": "地崩山摧",
       "AIEnglishShort": "The earth collapses and mountains"
     },
-    "EnglishShortManualOverride": "Terra Sunder",
+    "EnglishShortManualOverride": null,
     "Comment": null
   },
   "1700826": {
@@ -394,7 +394,7 @@
       "ChineseShort": "狂野召唤",
       "AIEnglishShort": "Wild Summon"
     },
-    "EnglishShortManualOverride": "Wild Wolf - Summon Pounce",
+    "EnglishShortManualOverride": null,
     "Comment": null
   },
   "1700827": {
@@ -410,7 +410,7 @@
       "ChineseShort": "狼普攻",
       "AIEnglishShort": "Wolf attack"
     },
-    "EnglishShortManualOverride": "Pets - Basic Attack",
+    "EnglishShortManualOverride": null,
     "Comment": null
   }
 }

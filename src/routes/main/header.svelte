@@ -6,7 +6,6 @@
 
   import { SIDEBAR_ROUTES } from "./routes.svelte";
 
-
   let currentPage = $derived(SIDEBAR_ROUTES[page.url.pathname]);
 </script>
 

@@ -36,7 +36,7 @@ export function createSvelteTable<TData extends RowData>(options: TableOptions<T
   const resolvedOptions: TableOptionsResolved<TData> = mergeObjects(
     {
       state: {},
-      onStateChange() {},
+      onStateChange() { },
       renderFallbackValue: null,
       mergeOptions: (
         defaultOptions: TableOptions<TData>,
