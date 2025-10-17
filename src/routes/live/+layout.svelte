@@ -9,7 +9,7 @@
   import Header from "./header.svelte";
 
   let { children } = $props();
-  let screenshotDiv: HTMLDivElement | undefined = $state();
+  // let screenshotDiv: HTMLDivElement | undefined = $state();
 
   let unlisten: (() => void) | null = null;
   let lastEventTime = Date.now();
@@ -90,8 +90,8 @@
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-<div class="flex h-screen flex-col text-sm text-white" bind:this={screenshotDiv}>
-  <Header {screenshotDiv} />
+<div class="flex h-screen flex-col text-sm text-white">
+  <Header />
   <main class={cn("flex-1 overflow-y-auto", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/25")}>
     {@render children()}
   </main>
