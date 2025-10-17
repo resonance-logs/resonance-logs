@@ -16,7 +16,7 @@
     getCoreRowModel: getCoreRowModel(),
     state: {
       get columnVisibility() {
-        return SETTINGS.live.dps.players.state;
+        return settings.state.live.dps.players;
       },
     },
   });
@@ -46,7 +46,7 @@
           {#each row.getVisibleCells() as cell (cell.id)}
             <td class="text-right"><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
           {/each}
-          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {SETTINGS.general.state.relativeToTopDPSPlayer ? (maxDamage > 0 ? (row.original.totalDmg / maxDamage) * 100 : 0) : row.original.dmgPct}%;"></td>
+          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {settings.state.general.relativeToTopDPSPlayer ? (maxDamage > 0 ? (row.original.totalDmg / maxDamage) * 100 : 0) : row.original.dmgPct}%;"></td>
         </tr>
       {/each}
     </tbody>

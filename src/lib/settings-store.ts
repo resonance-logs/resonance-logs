@@ -1,6 +1,5 @@
 import { version } from '@tauri-apps/plugin-os';
 import { RuneStore } from '@tauri-store/svelte';
-import Accessibility from '../routes/main/settings/accessibility.svelte';
 
 const IS_WIN_11 = parseInt(version().split(".")[2] || "0", 10) >= 22000;
 
@@ -104,19 +103,23 @@ export const SETTINGS = {
     RUNE_STORE_OPTIONS
   ),
 };
-function mergeDefaults<T extends Record<string, any>>(target: T, defaults: T): T {
-  for (const key in defaults) {
-    if (!(key in target)) {
-      target[key] = defaults[key];
-    } else if (
-      typeof defaults[key] === "object" &&
-      defaults[key] !== null &&
-      !Array.isArray(defaults[key])
-    ) {
-      mergeDefaults(target[key], defaults[key]);
-    }
-  }
-  return target;
-}
 
-mergeDefaults(settings.state, DEFAULT_SETTINGS);
+// Create flattened settings object for backwards compatibility
+export const settings = {
+  state: {
+    general: SETTINGS.general.state,
+    accessibility: SETTINGS.accessibility.state,
+    shortcuts: SETTINGS.shortcuts.state,
+    live: {
+      dps: {
+        players: SETTINGS.live.dps.players.state,
+        skillBreakdown: SETTINGS.live.dps.skillBreakdown.state,
+      },
+      heal: {
+        players: SETTINGS.live.heal.players.state,
+        skillBreakdown: SETTINGS.live.heal.skillBreakdown.state,
+      },
+    },
+    misc: SETTINGS.misc.state,
+  },
+};

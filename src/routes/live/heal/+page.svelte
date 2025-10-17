@@ -16,15 +16,15 @@
     getCoreRowModel: getCoreRowModel(),
     state: {
       get columnVisibility() {
-        return SETTINGS.live.heal.players.state;
+        return settings.state.live.heal.players;
       },
     },
   });
 
   let maxHeal = $derived(getHealPlayers().playerRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
 
-  let SETTINGS_YOUR_NAME = $derived(SETTINGS.general.state.showYourName);
-  let SETTINGS_OTHERS_NAME = $derived(SETTINGS.general.state.showOthersName);
+  let SETTINGS_YOUR_NAME = $derived(settings.state.general.showYourName);
+  let SETTINGS_OTHERS_NAME = $derived(settings.state.general.showOthersName);
 </script>
 
 <div class="relative flex flex-col">
@@ -45,7 +45,7 @@
           {#each row.getVisibleCells() as cell (cell.id)}
             <td class="text-right"><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
           {/each}
-          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {settings.state.general.relativeToTop ? maxHeal > 0 ? (row.original.totalDmg / maxHeal) * 100 : 0 :  row.original.dmgPct}%;"></td>
+          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {settings.state.general.relativeToTopHealPlayer ? maxHeal > 0 ? (row.original.totalDmg / maxHeal) * 100 : 0 :  row.original.dmgPct}%;"></td>
         </tr>
       {/each}
     </tbody>

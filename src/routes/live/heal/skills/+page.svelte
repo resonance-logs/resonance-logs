@@ -23,7 +23,7 @@
     getCoreRowModel: getCoreRowModel(),
     state: {
       get columnVisibility() {
-        return SETTINGS.live.heal.skillBreakdown.state;
+        return settings.state.live.heal.skillBreakdown;
       },
     },
   });
@@ -36,7 +36,7 @@
     getCoreRowModel: getCoreRowModel(),
     state: {
       get columnVisibility() {
-        return SETTINGS.live.heal.skillBreakdown.state;
+        return settings.state.live.heal.skillBreakdown;
       },
     },
   });

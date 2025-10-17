@@ -38,8 +38,6 @@ pub fn run() {
             live::commands::get_player_skills,
             live::commands::subscribe_player_skills,
             live::commands::unsubscribe_player_skills,
-            live::commands::get_test_player_window,
-            live::commands::get_test_skill_window,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

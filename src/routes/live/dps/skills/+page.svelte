@@ -23,7 +23,7 @@
     getCoreRowModel: getCoreRowModel(),
     state: {
       get columnVisibility() {
-        return SETTINGS.live.dps.skillBreakdown.state;
+        return settings.state.live.dps.skillBreakdown;
       },
     },
   });
@@ -36,7 +36,7 @@
     getCoreRowModel: getCoreRowModel(),
     state: {
       get columnVisibility() {
-        return SETTINGS.live.dps.skillBreakdown.state;
+        return settings.state.live.dps.skillBreakdown;
       },
     },
   });
