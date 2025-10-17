@@ -3,6 +3,7 @@ mod packets;
 
 use crate::live::opcodes_models::EncounterMutex;
 use crate::live::event_manager::EventManagerMutex;
+use crate::live::skills_store::SkillsStoreMutex;
 use log::{info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use std::process::Command;
@@ -38,6 +39,9 @@ pub fn run() {
             live::commands::disable_blur,
             live::commands::reset_encounter,
             live::commands::toggle_pause_encounter,
+            live::commands::get_player_skills,
+            live::commands::subscribe_player_skills,
+            live::commands::unsubscribe_player_skills,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -74,6 +78,7 @@ pub fn run() {
 
             app.manage(EncounterMutex::default());
             app.manage(EventManagerMutex::default());
+            app.manage(SkillsStoreMutex::default());
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks

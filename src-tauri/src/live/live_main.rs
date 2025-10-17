@@ -3,6 +3,7 @@ use crate::live::event_manager::{
     generate_skills_window_dps, generate_skills_window_heal, EventManagerMutex,
 };
 use crate::live::opcodes_models::EncounterMutex;
+use crate::live::skills_store::SkillsStoreMutex;
 use crate::live::opcodes_process::{
     on_server_change, process_aoi_sync_delta, process_sync_container_data,
     process_sync_container_dirty_data, process_sync_near_entities, process_sync_to_me_delta_info,
@@ -55,6 +56,11 @@ pub async fn start(app_handle: AppHandle) {
                 if event_manager.should_emit_events() {
                     event_manager.emit_encounter_reset();
                 }
+
+                // Clear skills store and subscriptions
+                let skills_store_state = app_handle.state::<SkillsStoreMutex>();
+                let mut skills_store = skills_store_state.lock().unwrap();
+                skills_store.clear();
             }
             packets::opcodes::Pkt::SyncNearEntities => {
                 // info!("Received {op:?}");
@@ -193,7 +199,10 @@ pub async fn start(app_handle: AppHandle) {
                         let heal_players = generate_players_window_heal(&encounter_state);
                         event_manager.emit_heal_players_update(heal_players);
 
-                        // Emit skills updates for all players with damage/heal data
+                        // Update skills store for all players with damage/heal data
+                        let skills_store_state = app_handle.state::<SkillsStoreMutex>();
+                        let mut skills_store = skills_store_state.lock().unwrap();
+
                         for (&entity_uid, entity) in &encounter_state.entity_uid_to_entity {
                             let is_player =
                                 entity.entity_type == blueprotobuf::EEntityType::EntChar;
@@ -204,7 +213,7 @@ pub async fn start(app_handle: AppHandle) {
                                 if let Some(skills_window) =
                                     generate_skills_window_dps(&encounter_state, entity_uid)
                                 {
-                                    event_manager.emit_dps_skills_update(entity_uid, skills_window);
+                                    skills_store.update_dps_skills(entity_uid, skills_window);
                                 }
                             }
 
@@ -212,8 +221,21 @@ pub async fn start(app_handle: AppHandle) {
                                 if let Some(skills_window) =
                                     generate_skills_window_heal(&encounter_state, entity_uid)
                                 {
-                                    event_manager
-                                        .emit_heal_skills_update(entity_uid, skills_window);
+                                    skills_store.update_heal_skills(entity_uid, skills_window);
+                                }
+                            }
+                        }
+
+                        // Emit skills updates only for subscribed players
+                        for (&entity_uid, _) in &encounter_state.entity_uid_to_entity {
+                            if skills_store.is_subscribed(entity_uid, "dps") {
+                                if let Some(skills_window) = skills_store.get_dps_skills(entity_uid) {
+                                    event_manager.emit_dps_skills_update(entity_uid, skills_window.clone());
+                                }
+                            }
+                            if skills_store.is_subscribed(entity_uid, "heal") {
+                                if let Some(skills_window) = skills_store.get_heal_skills(entity_uid) {
+                                    event_manager.emit_heal_skills_update(entity_uid, skills_window.clone());
                                 }
                             }
                         }

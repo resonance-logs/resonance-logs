@@ -1,68 +1,19 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { onDpsSkillsUpdate, type SkillsWindow } from "$lib/api";
   import { getClassColor } from "$lib/utils.svelte";
   import { page } from "$app/state";
   import { createSvelteTable, FlexRender } from "$lib/svelte-table";
   import { dpsPlayersColumnDefs, dpsSkillsColumnDefs } from "$lib/table-info";
   import { getCoreRowModel } from "@tanstack/table-core";
   import { settings } from "$lib/settings-store";
+  import { commands } from "$lib/bindings";
+  import { onDpsSkillsUpdate } from "$lib/api";
+  import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
 
   const playerUid: string = page.url.searchParams.get("playerUid") ?? "-1";
 
-  let unlisten: (() => void) | null = null;
-  let lastEventTime = Date.now();
-  let reconnectInterval: ReturnType<typeof setInterval> | null = null;
-  let isReconnecting = false;
-  const RECONNECT_DELAY = 1000;
-  const DISCONNECT_THRESHOLD = 5000;
-
-  async function setupEventListener() {
-    if (isReconnecting) return;
-    try {
-      const unlistenFn = await onDpsSkillsUpdate((event) => {
-        lastEventTime = Date.now();
-        // Only update if this is the correct player
-        if (event.payload.playerUid.toString() === playerUid) {
-          dpsSkillBreakdownWindow = event.payload.skillsWindow;
-        }
-      });
-      unlisten = unlistenFn;
-      console.log("Event listener set up for dps skills");
-    } catch (e) {
-      console.error("Failed to set up event listener for dps skills:", e);
-      isReconnecting = true;
-      setTimeout(() => {
-        isReconnecting = false;
-        setupEventListener();
-      }, RECONNECT_DELAY);
-    }
-  }
-
-  function startReconnectCheck() {
-    reconnectInterval = setInterval(() => {
-      if (Date.now() - lastEventTime > DISCONNECT_THRESHOLD) {
-        console.warn("Event stream disconnected for dps skills, attempting reconnection");
-        if (unlisten) {
-          unlisten();
-          unlisten = null;
-        }
-        setupEventListener();
-      }
-    }, 1000);
-  }
-
-  onMount(() => {
-    setupEventListener();
-    startReconnectCheck();
-
-    return () => {
-      if (reconnectInterval) clearInterval(reconnectInterval);
-      if (unlisten) unlisten();
-    };
-  });
-
   let dpsSkillBreakdownWindow: SkillsWindow = $state({ currPlayer: [], skillRows: [] });
+  let unlisten: (() => void) | null = null;
 
   const currPlayerTable = createSvelteTable({
     get data() {
@@ -90,10 +41,55 @@
     },
   });
 
-  let maxSkillValue = $derived(dpsSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0n));
+  let maxSkillValue = $derived(dpsSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
 
   let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
   let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
+
+  async function subscribePlayerSkills() {
+    try {
+      // Subscribe and get initial data
+      const result = await commands.subscribePlayerSkills(parseInt(playerUid), "dps");
+      if (result.status === "ok") {
+        dpsSkillBreakdownWindow = result.data;
+      } else {
+        console.error("Failed to subscribe to player skills:", result.error);
+      }
+
+      // Set up websocket listener for updates
+      unlisten = await onDpsSkillsUpdate((event: { payload: SkillsUpdatePayload }) => {
+        // Only update if this is the correct player
+        if (event.payload.playerUid.toString() === playerUid) {
+          dpsSkillBreakdownWindow = event.payload.skillsWindow;
+        }
+      });
+    } catch (error) {
+      console.error("Failed to subscribe to player skills:", error);
+    }
+  }
+
+  async function unsubscribePlayerSkills() {
+    try {
+      // Unsubscribe from backend
+      await commands.unsubscribePlayerSkills(parseInt(playerUid), "dps");
+
+      // Remove websocket listener
+      if (unlisten) {
+        unlisten();
+        unlisten = null;
+      }
+    } catch (error) {
+      console.error("Failed to unsubscribe from player skills:", error);
+    }
+  }
+
+  onMount(() => {
+    subscribePlayerSkills();
+
+    return () => {
+      unsubscribePlayerSkills();
+    };
+  });
 </script>
 
 <svelte:window oncontextmenu={() => window.history.back()} />
@@ -131,7 +127,7 @@
             {#each row.getVisibleCells() as cell (cell.id)}
               <td><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
             {/each}
-            <td class="-z-1 absolute left-0 h-7" style="background-color: {`color-mix(in srgb, ${getClassColor(className)} 80%, white ${i % 2 === 0 ? '50%' : '20%'})`}; width: {maxSkillValue > 0n ? (Number(row.original.totalDmg) / Number(maxSkillValue)) * 100 : 0}%;"></td>
+            <td class="-z-1 absolute left-0 h-7" style="background-color: {`color-mix(in srgb, ${getClassColor(className)} 80%, white ${i % 2 === 0 ? '50%' : '20%'})`}; width: {maxSkillValue > 0 ? (Number(row.original.totalDmg) / Number(maxSkillValue)) * 100 : 0}%;"></td>
           </tr>
         {/if}
       {/each}
