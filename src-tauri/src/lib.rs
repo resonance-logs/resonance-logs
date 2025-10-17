@@ -1,6 +1,8 @@
 mod live;
 mod packets;
+mod build_app;
 
+use crate::build_app::build_and_run;
 use crate::live::opcodes_models::EncounterMutex;
 use crate::live::event_manager::EventManagerMutex;
 use crate::live::skills_store::SkillsStoreMutex;
@@ -8,6 +10,7 @@ use log::{info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use std::process::Command;
 
+use chrono_tz;
 use tauri::menu::{MenuBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, WindowEvent};
@@ -25,13 +28,6 @@ pub fn run() {
     //     unload_and_remove_windivert();
     // }));
 
-    let time_now = Some(format!(
-        "{:?}",
-        chrono::Utc::now()
-            .timestamp_nanos_opt()
-            .expect("time out of bounds")
-    ));
-
     let builder = Builder::<tauri::Wry>::new()
         // Then register them (separated by a comma)
         .commands(collect_commands![
@@ -42,6 +38,8 @@ pub fn run() {
             live::commands::get_player_skills,
             live::commands::subscribe_player_skills,
             live::commands::unsubscribe_player_skills,
+            live::commands::get_test_player_window,
+            live::commands::get_test_skill_window,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -52,12 +50,14 @@ pub fn run() {
         )
         .expect("Failed to export typescript bindings");
 
-    tauri::Builder::default()
+    let tauri_builder = tauri::Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
             info!("starting app v{}", app.package_info().version);
+            stop_windivert();
+            remove_windivert();
 
             // // Check app updates
             // // https://v2.tauri.app/plugin/updater/#checking-for-updates
@@ -73,6 +73,9 @@ pub fn run() {
 
             let app_handle = app.handle().clone();
 
+            // Setup logs
+            setup_logs(&app_handle);
+
             // Setup tray icon
             setup_tray(&app_handle).expect("failed to setup tray");
 
@@ -82,6 +85,7 @@ pub fn run() {
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks
+            app.manage(EncounterMutex::default()); // setup encounter state
             tauri::async_runtime::spawn(
                 async move { live::live_main::start(app_handle.clone()).await },
             );
@@ -91,43 +95,30 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init()) // used to read/write to the clipboard
         .plugin(tauri_plugin_window_state::Builder::default().build()) // used to remember window size/position https://v2.tauri.app/plugin/window-state/
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {})) // used to enforce only 1 instance of the app https://v2.tauri.app/plugin/single-instance/
-        .plugin(tauri_plugin_svelte::init()) // used for settings file
-        .plugin(
-            tauri_plugin_log::Builder::new() // https://v2.tauri.app/plugin/logging/
-                .clear_targets()
-                .with_colors(ColoredLevelConfig::default())
-                .targets([
-                    #[cfg(debug_assertions)]
-                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout)
-                        .filter(|metadata| metadata.level() <= log::LevelFilter::Info),
-                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
-                        file_name: time_now,
-                    })
-                    // .filter(|metadata| metadata.level() <= log::LevelFilter::Info), // todo: remove info filter
-                ])
-                .build(),
-        )
-        .build(tauri::generate_context!())
-        .expect("error while running tauri application")
-        .run(|_app_handle, event| {
-            if let tauri::RunEvent::ExitRequested { api, .. } = event {
-                info!("App is closing! Cleaning up resources...");
-                // unload_and_remove_windivert();
-            }
-        });
+        .plugin(tauri_plugin_svelte::init()); // used for settings file
+    build_and_run(tauri_builder);
 }
 
-fn unload_and_remove_windivert() {
+fn start_windivert() {
+    let status = Command::new("sc").args(["create", "windivert", "type=", "kernel", "binPath=", "WinDivert64.sys", "start=", "demand"]).status();
+    if status.is_ok_and(|status| status.success()) {
+        info!("started driver");
+    } else {
+        warn!("could not execute command to stop driver");
+    }
+}
+
+fn stop_windivert() {
     let status = Command::new("sc").args(["stop", "windivert"]).status();
     if status.is_ok_and(|status| status.success()) {
         info!("stopped driver");
     } else {
         warn!("could not execute command to stop driver");
     }
+}
 
-    let status = Command::new("sc")
-        .args(["delete", "windivert", "start=", "demand"])
-        .status();
+fn remove_windivert() {
+    let status = Command::new("sc").args(["delete", "windivert", "start=", "demand"]).status();
     if status.is_ok_and(|status| status.success()) {
         info!("deleted driver");
     } else {
@@ -155,6 +146,34 @@ fn unload_and_remove_windivert() {
 //     }
 //     Ok(())
 // }
+
+fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()>  {
+    let app_version = &app.package_info().version;
+    let pst_time = chrono::Utc::now()
+        .with_timezone(&chrono_tz::America::Los_Angeles)
+        .format("%m-%d-%Y %H_%M_%S")
+        .to_string();
+    let log_file_name = format!("log v{app_version} {pst_time} PST", );
+
+    let mut tauri_log = tauri_plugin_log::Builder::new() // https://v2.tauri.app/plugin/logging/
+        .clear_targets()
+        .with_colors(ColoredLevelConfig::default())
+        .targets([
+            #[cfg(debug_assertions)]
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout).filter(|metadata| metadata.level() <= log::LevelFilter::Trace),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
+                file_name: Some(log_file_name),
+            })
+        ])
+        .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(10)); // keep the last 10 logs
+    #[cfg(not(debug_assertions))]
+    {
+        tauri_log = tauri_log.max_file_size(1_073_741_824 /* 1 gb */);
+    }
+    app.plugin(tauri_log.build())?;
+    Ok(())
+}
 
 fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     fn show_window(window: &tauri::WebviewWindow) {
@@ -222,6 +241,7 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                 live_meter_window.set_ignore_cursor_events(false).unwrap();
             }
             "quit" => {
+                stop_windivert();
                 tray_app.exit(0);
             }
             _ => {}

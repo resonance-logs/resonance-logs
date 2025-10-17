@@ -48,6 +48,7 @@ async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<void> {
 
 /** user-defined types **/
 
+export type HeaderInfo = { totalDps: number; totalDmg: number; elapsedMs: number; timeLastCombatPacketMs: number }
 export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }

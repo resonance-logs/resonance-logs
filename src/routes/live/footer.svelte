@@ -5,7 +5,7 @@
   import { getVersion } from "@tauri-apps/api/app";
 </script>
 
-<footer class="sticky bottom-0 h-7 flex items-center justify-between bg-neutral-800/70 px-1.5">
+<footer class="sticky bottom-0 flex h-7 items-center justify-between bg-neutral-800/70 px-1.5">
   <span class="flex h-full items-center">
     <button
       class={`rounded-xs px-1.5 ${page.url.pathname.includes("dps") ? "bg-primary" : ""}`}

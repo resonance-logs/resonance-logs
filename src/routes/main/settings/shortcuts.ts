@@ -1,12 +1,12 @@
 import { commands } from "$lib/bindings";
-import { settings } from "$lib/settings-store";
+import { SETTINGS } from "$lib/settings-store";
 import { setClickthrough, toggleClickthrough } from "$lib/utils.svelte";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { register, unregisterAll } from "@tauri-apps/plugin-global-shortcut";
 
 export async function setupShortcuts() {
   await unregisterAll();
-  for (const [cmdId, shortcutKey] of Object.entries(settings.state.shortcuts)) {
+  for (const [cmdId, shortcutKey] of Object.entries(SETTINGS.shortcuts.state)) {
     registerShortcut(cmdId, shortcutKey);
   }
 }

@@ -18,7 +18,6 @@
     values: string[];
   } = $props();
 
-  
   let open = $state(false);
 </script>
 
@@ -26,10 +25,10 @@
   <!-- https://shadcn-svelte.com/docs/components/combobox -->
   <Popover.Root bind:open>
     <Popover.Trigger>
-        <Button variant="outline" class="w-[200px] justify-between" role="combobox">
-          {selected}
-          <ChevronsUpDownIcon />
-        </Button>
+      <Button variant="outline" class="w-[200px] justify-between" role="combobox">
+        {selected}
+        <ChevronsUpDownIcon />
+      </Button>
     </Popover.Trigger>
     <Popover.Content class="w-[200px] p-0">
       <Command.Root>

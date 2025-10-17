@@ -388,7 +388,7 @@
             "ChineseShort": "冻结寒风",
             "AIEnglishShort": "Freeze cold wind"
         },
-        "EnglishShortManualOverride": "Frozen Gale",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1241": {
@@ -405,7 +405,7 @@
             "ChineseShort": "寒冰射线",
             "AIEnglishShort": "Ice ray"
         },
-        "EnglishShortManualOverride": "Frostbeam",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1242": {
@@ -522,7 +522,7 @@
             "ChineseShort": "极寒·冰雪颂歌",
             "AIEnglishShort": "Extreme Cold and Snow Ode to Ice and Snow"
         },
-        "EnglishShortManualOverride": "Glacier Hymn",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1249": {
@@ -546,7 +546,7 @@
             "ChineseShort": "水之涡流",
             "AIEnglishShort": "The vortex of water"
         },
-        "EnglishShortManualOverride": "Maelstrom",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1251": {
@@ -602,7 +602,7 @@
             "ChineseShort": "浪潮汇聚-水龙卷",
             "AIEnglishShort": "The convergence of the waves-water tornado"
         },
-        "EnglishShortManualOverride": "Tidepool - Tidal Vortex",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1257": {
@@ -614,7 +614,7 @@
             "ChineseShort": "寒冰风暴",
             "AIEnglishShort": "Ice Storm"
         },
-        "EnglishShortManualOverride": "Blizzard",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1258": {
@@ -629,8 +629,8 @@
             "ChineseShort": "天赋-冰晶落",
             "AIEnglishShort": "Talent-Ice Crystal"
         },
-        "EnglishShortManualOverride": "?Ice Crystal?",
-        "Comment": "Not sure"
+        "EnglishShortManualOverride": null,
+        "Comment": null
     },
     "1259": {
         "SkillTable_Clean.json": {
@@ -641,7 +641,7 @@
             "ChineseShort": "冰霜彗星",
             "AIEnglishShort": "Frost Comet"
         },
-        "EnglishShortManualOverride": "Frost Comet",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1260": {
@@ -660,10 +660,10 @@
         },
         "skill_names_Clean.json": {
             "ChineseShort": "瞬发寒冰风暴",
-            "AIEnglishShort": "Blizzard"
+            "AIEnglishShort": "Instant Ice Storm"
         },
-        "EnglishShortManualOverride": "Blizzard (Instant)",
-        "Comment": "No idea what this instant is referring to"
+        "EnglishShortManualOverride": null,
+        "Comment": null
     },
     "1262": {
         "SkillTable_Clean.json": {
@@ -675,7 +675,7 @@
             "ChineseShort": "陨星风暴",
             "AIEnglishShort": "Meteorite Storm"
         },
-        "EnglishShortManualOverride": "Meteor Storm",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1263": {
@@ -1637,7 +1637,7 @@
             "ChineseShort": "狂野绽放",
             "AIEnglishShort": "Blooming wildly"
         },
-        "EnglishShortManualOverride": "Wild Bloom",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1550": {
@@ -1650,7 +1650,7 @@
             "ChineseShort": "不羁之种3段(陨石)",
             "AIEnglishShort": "Unruly Seed 3 Sections (Meteorite)"
         },
-        "EnglishShortManualOverride": "Feral Seed (Meteor)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1551": {
@@ -1662,7 +1662,7 @@
             "ChineseShort": "狂野之种",
             "AIEnglishShort": "Wild seeds"
         },
-        "EnglishShortManualOverride": "Wild Seeds",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1552": {
@@ -2186,7 +2186,7 @@
             "ChineseShort": "极诣·大破灭连斩",
             "AIEnglishShort": "The Great Destruction and Death"
         },
-        "EnglishShortManualOverride": "Oblivion Combo",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1714": {
@@ -2203,7 +2203,7 @@
             "ChineseShort": "居合斩",
             "AIEnglishShort": "Juhezhan"
         },
-        "EnglishShortManualOverride": "Iaido Slash",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1715": {
@@ -2251,7 +2251,7 @@
             "ChineseShort": "一闪",
             "AIEnglishShort": "A flash"
         },
-        "EnglishShortManualOverride": "Flash Strike",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1718": {
@@ -2285,7 +2285,7 @@
             "ChineseShort": "镰车",
             "AIEnglishShort": "Scythe car"
         },
-        "EnglishShortManualOverride": "Scythe Wheel",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1720": {
@@ -2456,7 +2456,7 @@
             "ChineseShort": "千雷闪影之意",
             "AIEnglishShort": "Thousands of Thunders Flashing"
         },
-        "EnglishShortManualOverride": "Stormflash",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1733": {
@@ -2541,7 +2541,7 @@
             "ChineseShort": "神罚之镰",
             "AIEnglishShort": "The Scythe of God's Punishment"
         },
-        "EnglishShortManualOverride": "Divine Sickle",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1738": {
@@ -2570,7 +2570,7 @@
             "ChineseShort": "看破斩",
             "AIEnglishShort": "See through"
         },
-        "EnglishShortManualOverride": "Piercing Slash",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1740": {
@@ -2584,8 +2584,8 @@
             "ChineseShort": "雷霆之镰(触发霹雳升龙斩时)",
             "AIEnglishShort": "Thunder Scythe (when triggering Thunder Dragon Slash)"
         },
-        "EnglishShortManualOverride": "Storm Scythe (During Stormflash)",
-        "Comment": "not sure if its stormflash see 171 in talenttable"
+        "EnglishShortManualOverride": null,
+        "Comment": null
     },
     "1741": {
         "SkillTable_Clean.json": {
@@ -2598,7 +2598,7 @@
             "ChineseShort": "雷霆之镰",
             "AIEnglishShort": "Thunder Scythe"
         },
-        "EnglishShortManualOverride": "Thunder Scythe",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1742": {
@@ -2615,7 +2615,7 @@
             "ChineseShort": "霹雳升龙斩",
             "AIEnglishShort": "Thunderbolt Dragon Slash"
         },
-        "EnglishShortManualOverride": "Thundercleave",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1790": {
@@ -2844,7 +2844,7 @@
             "ChineseShort": "止战之锋1/岩弹",
             "AIEnglishShort": "The front of the battle 1/rock bomb"
         },
-        "EnglishShortManualOverride": "Earth Shard",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1902": {
@@ -2925,7 +2925,7 @@
             "ChineseShort": "岩御·崩裂回环",
             "AIEnglishShort": "Rock Yu·Crackback"
         },
-        "EnglishShortManualOverride": "Tectonic Ring",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1908": {
@@ -3055,7 +3055,7 @@
             "ChineseShort": "护盾猛击",
             "AIEnglishShort": "Shield Strike"
         },
-        "EnglishShortManualOverride": "Shield Bash",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1923": {
@@ -3085,7 +3085,7 @@
             "ChineseShort": "碎星冲",
             "AIEnglishShort": "Star break"
         },
-        "EnglishShortManualOverride": "Star Shatter",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1925": {
@@ -3136,7 +3136,7 @@
             "ChineseShort": "砂石斗篷（初始）",
             "AIEnglishShort": "Sand and Gravel Cloak (Initial)"
         },
-        "EnglishShortManualOverride": "Sandshroud",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1928": {
@@ -3210,7 +3210,7 @@
             "ChineseShort": "护盾猛击",
             "AIEnglishShort": "Shield Strike"
         },
-        "EnglishShortManualOverride": "Shield Bash",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1933": {
@@ -3334,7 +3334,7 @@
             "ChineseShort": "怒爆",
             "AIEnglishShort": "Angry"
         },
-        "EnglishShortManualOverride": "Rage Burst",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1941": {
@@ -3351,7 +3351,7 @@
             "ChineseShort": "碎星崩裂",
             "AIEnglishShort": "Stars collapse"
         },
-        "EnglishShortManualOverride": "Starfall",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1942": {
@@ -3368,7 +3368,7 @@
             "ChineseShort": "崩裂",
             "AIEnglishShort": "crack"
         },
-        "EnglishShortManualOverride": "Rupture",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1943": {
@@ -3955,7 +3955,7 @@
             "ChineseShort": "光能轰炸",
             "AIEnglishShort": "Light energy bombing"
         },
-        "EnglishShortManualOverride": "Radiance barrage",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2235": {
@@ -4041,7 +4041,7 @@
             "ChineseShort": "天翔贯星击-强化怒涛射击",
             "AIEnglishShort": "Tianxiang Guanxing Strike-Strength Rage Shooting"
         },
-        "EnglishShortManualOverride": "Lumi Torrent",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2241": {
@@ -4082,7 +4082,7 @@
             "ChineseShort": "光能轰炸",
             "AIEnglishShort": "Light energy bombing"
         },
-        "EnglishShortManualOverride": "Radiance Barrage",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2289": {
@@ -4094,7 +4094,7 @@
             "ChineseShort": "箭雨",
             "AIEnglishShort": "Arrow Rain"
         },
-        "EnglishShortManualOverride": "Arrow Rain",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2290": {
@@ -4157,7 +4157,7 @@
             "AIEnglishShort": "Deadly shooting virtual bodies"
         },
         "skill_names_Clean.json": {
-            "ChineseShort": "Meteor - Quadraflare: Radiance Rift",
+            "ChineseShort": "光意·四连矢",
             "AIEnglishShort": "Light and Four Continuous Arrows"
         },
         "EnglishShortManualOverride": null,
@@ -4173,7 +4173,7 @@
             "ChineseShort": "锐眼·光能巨箭（箭阵伤害）",
             "AIEnglishShort": "Sharp Eyes and Light Energy Giant Arrow (Arrow Array Damage)"
         },
-        "EnglishShortManualOverride": "Luminary Bolt",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2296": {
@@ -4282,7 +4282,7 @@
             "ChineseShort": "增幅节拍",
             "AIEnglishShort": "Amplification beat"
         },
-        "EnglishShortManualOverride": "Amplified Beat",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2307": {
@@ -4384,7 +4384,7 @@
             "ChineseShort": "激涌五重奏伤害",
             "AIEnglishShort": "Rising Quintet Damage"
         },
-        "EnglishShortManualOverride": "Fivefold Crescendo",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2313": {
@@ -4401,7 +4401,7 @@
             "ChineseShort": "热情挥洒",
             "AIEnglishShort": "Passionately"
         },
-        "EnglishShortManualOverride": "Passion Burst",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2314": {
@@ -4469,7 +4469,7 @@
             "ChineseShort": "猛烈挥击1",
             "AIEnglishShort": "Fierce swing 1"
         },
-        "EnglishShortManualOverride": "Fierce Strike (1)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2318": {
@@ -4528,7 +4528,7 @@
             "ChineseShort": "琴弦叩击2",
             "AIEnglishShort": "Strings 2"
         },
-        "EnglishShortManualOverride": "Strike Strike (2)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2322": {
@@ -4541,7 +4541,7 @@
             "ChineseShort": "琴弦叩击3",
             "AIEnglishShort": "Strings 3"
         },
-        "EnglishShortManualOverride": "Strike Strike (3)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2323": {
@@ -4554,7 +4554,7 @@
             "ChineseShort": "琴弦叩击4",
             "AIEnglishShort": "Strings 4"
         },
-        "EnglishShortManualOverride": "Strike Strike (4)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2324": {
@@ -4626,7 +4626,7 @@
             "ChineseShort": "火柱冲击-炎舞奏者强化",
             "AIEnglishShort": "Fire column impact-Fire dancer enhancement"
         },
-        "EnglishShortManualOverride": "Flame Pillar Blast (Enhanced)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2331": {
@@ -4641,7 +4641,7 @@
             "ChineseShort": "音浪烈焰",
             "AIEnglishShort": "Sound waves"
         },
-        "EnglishShortManualOverride": "Soundwave",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2332": {
@@ -4658,7 +4658,7 @@
             "ChineseShort": "激昂·热情挥洒",
             "AIEnglishShort": "Passionate and passionate"
         },
-        "EnglishShortManualOverride": "Passion Burst (Enhanced)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2333": {
@@ -4688,7 +4688,7 @@
             "ChineseShort": "升格·无限狂想",
             "AIEnglishShort": "Upgrade · Unlimited fantasy"
         },
-        "EnglishShortManualOverride": "Infinite Rhapsody",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2336": {
@@ -4705,7 +4705,7 @@
             "ChineseShort": "升格·巡演曲",
             "AIEnglishShort": "Upgrade tour song"
         },
-        "EnglishShortManualOverride": "Concert Circuit",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2337": {
@@ -4770,7 +4770,7 @@
             "ChineseShort": "音波裁决",
             "AIEnglishShort": "Sound wave ruling"
         },
-        "EnglishShortManualOverride": "Sonic Verdict",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2363": {
@@ -4822,7 +4822,7 @@
             "ChineseShort": "升格·巡演曲copy",
             "AIEnglishShort": "Upgrade tour song copy"
         },
-        "EnglishShortManualOverride": "Concert Circuit",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2398": {
@@ -4865,7 +4865,7 @@
             "ChineseShort": "公正之剑-1段",
             "AIEnglishShort": "Sword of Justice - 1 paragraph"
         },
-        "EnglishShortManualOverride": "Blade of Justice",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2402": {
@@ -4918,7 +4918,7 @@
             "ChineseShort": "英勇盾击",
             "AIEnglishShort": "Heroic shield strike"
         },
-        "EnglishShortManualOverride": "Valor Bash",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2406": {
@@ -4935,7 +4935,7 @@
             "ChineseShort": "先锋打击/先锋追击",
             "AIEnglishShort": "Pioneer strike/Pioneer chase"
         },
-        "EnglishShortManualOverride": "Vanguard Strike",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2407": {
@@ -4952,7 +4952,7 @@
             "ChineseShort": "凛威·圣光灌注",
             "AIEnglishShort": "Rinwei Holy Light Infuses"
         },
-        "EnglishShortManualOverride": "Radiant Infusion",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2408": {
@@ -5003,7 +5003,7 @@
             "ChineseShort": "裁决",
             "AIEnglishShort": "ruling"
         },
-        "EnglishShortManualOverride": "Judgment",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2411": {
@@ -5036,7 +5036,7 @@
             "ChineseShort": "清算",
             "AIEnglishShort": "Clearing"
         },
-        "EnglishShortManualOverride": "Reckoning",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2413": {
@@ -5053,7 +5053,7 @@
             "ChineseShort": "炽热清算",
             "AIEnglishShort": "Hot liquidation"
         },
-        "EnglishShortManualOverride": "Inferno Reckon",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2414": {
@@ -5101,7 +5101,7 @@
             "ChineseShort": "断罪",
             "AIEnglishShort": "Crime"
         },
-        "EnglishShortManualOverride": "Condemn",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2417": {
@@ -5118,7 +5118,7 @@
             "ChineseShort": "强化断罪",
             "AIEnglishShort": "Strengthen the verdict"
         },
-        "EnglishShortManualOverride": "Enhanced Condemn",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2418": {
@@ -5177,7 +5177,7 @@
             "ChineseShort": "圣剑",
             "AIEnglishShort": "Holy Sword"
         },
-        "EnglishShortManualOverride": "Sacred Blade",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2422": {
@@ -5239,7 +5239,7 @@
             "ChineseShort": "光明冲击",
             "AIEnglishShort": "Light impact"
         },
-        "EnglishShortManualOverride": "Radiant Impact",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2451": {
@@ -8133,7 +8133,7 @@
             "ChineseShort": "生命绽放",
             "AIEnglishShort": "Life blooms"
         },
-        "EnglishShortManualOverride": "Life Bloom",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "20401": {
@@ -8253,9 +8253,9 @@
         },
         "skill_names_Clean.json": {
             "ChineseShort": "滋养",
-            "AIEnglishShort": "Nourish"
+            "AIEnglishShort": "nourish"
         },
-        "EnglishShortManualOverride": "Nourish",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "21405": {
@@ -8437,7 +8437,7 @@
             "ChineseShort": "荆棘",
             "AIEnglishShort": "thorns"
         },
-        "EnglishShortManualOverride": "Thorns",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "21425": {
@@ -9089,7 +9089,7 @@
             "ChineseShort": "勇气风环",
             "AIEnglishShort": "Courage wind ring"
         },
-        "EnglishShortManualOverride": null,
+        "EnglishShortManualOverride": "Gale Assault",
         "Comment": null
     },
     "32001": {
@@ -9599,7 +9599,7 @@
             "ChineseShort": "月刃",
             "AIEnglishShort": "Moon Blade"
         },
-        "EnglishShortManualOverride": "Moon Blade",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "45101": {
@@ -10014,7 +10014,7 @@
             "ChineseShort": "弱点打击",
             "AIEnglishShort": "Weakness strike"
         },
-        "EnglishShortManualOverride": "Weak Point Strike",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "50037": {
@@ -10132,7 +10132,7 @@
             "ChineseShort": "砂石斗篷（持续）",
             "AIEnglishShort": "Sand and Gravel Cloak (continued)"
         },
-        "EnglishShortManualOverride": "Sand and gravel cloak",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "50050": {
@@ -10658,7 +10658,7 @@
             "ChineseShort": "爆炸箭BUFF引爆",
             "AIEnglishShort": "Explosion arrow BUFF triggers explosion"
         },
-        "EnglishShortManualOverride": "Blast Shot - Initial",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "55232": {
@@ -10752,7 +10752,10 @@
             "ChineseShort": "光能轰炸伤害区域BUFF",
             "AIEnglishShort": "Light energy bombing damage area BUFF"
         },
-        "EnglishShortManualOverride": "Radiance Barrage",
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Light energy bombardment area"
+        },
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "55290": {
@@ -11210,7 +11213,7 @@
             "ChineseShort": "英勇乐章",
             "AIEnglishShort": "The heroic music"
         },
-        "EnglishShortManualOverride": "Heroic Melody",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "55342": {
@@ -11466,7 +11469,7 @@
             "ChineseShort": "圣环BUFF",
             "AIEnglishShort": "Holy Ring BUFF"
         },
-        "EnglishShortManualOverride": "Divine Circle",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "55405": {
@@ -11589,7 +11592,7 @@
             "ChineseShort": "冷酷征伐",
             "AIEnglishShort": "Furious battle"
         },
-        "EnglishShortManualOverride": "Zeal Crusade",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "55418": {
@@ -11631,7 +11634,7 @@
             "ChineseShort": "裁决",
             "AIEnglishShort": "ruling"
         },
-        "EnglishShortManualOverride": "Judgment Healing",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "55422": {
@@ -11729,6 +11732,9 @@
             "ChineseShort": "冷酷征伐伤害buff",
             "AIEnglishShort": "Furious Conquest Damage Buff"
         },
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Ruthless Conquest damage buff"
+        },
         "EnglishShortManualOverride": null,
         "Comment": null
     },
@@ -11736,6 +11742,9 @@
         "skill_names_Clean.json": {
             "ChineseShort": "冷冷酷征伐伤害buff",
             "AIEnglishShort": "Cold and cold battle damage buff"
+        },
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Ruthless Crusade damage buff"
         },
         "EnglishShortManualOverride": null,
         "Comment": null
@@ -16895,7 +16904,7 @@
             "ChineseShort": "贯穿冰矛",
             "AIEnglishShort": "Through the ice spear"
         },
-        "EnglishShortManualOverride": "Piercing Ice Spear",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "120902": {
@@ -16907,7 +16916,7 @@
             "ChineseShort": "冰矛",
             "AIEnglishShort": "Ice spear"
         },
-        "EnglishShortManualOverride": "Ice Spear",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "121201": {
@@ -16931,7 +16940,7 @@
             "ChineseShort": "冰箭",
             "AIEnglishShort": "Ice arrow"
         },
-        "EnglishShortManualOverride": "Ice Arrow",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "121401": {
@@ -16951,7 +16960,7 @@
             "ChineseShort": "清滝绕珠",
             "AIEnglishShort": "Clean beads"
         },
-        "EnglishShortManualOverride": "Crystal Veil",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "121502": {
@@ -17637,7 +17646,7 @@
             "ChineseShort": "神影螺旋",
             "AIEnglishShort": "Divine Shadow Spiral"
         },
-        "EnglishShortManualOverride": "Vortex Strike",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "140401": {
@@ -18138,7 +18147,7 @@
             "ChineseShort": "鹿之奔袭",
             "AIEnglishShort": "The Deer Raids"
         },
-        "EnglishShortManualOverride": "Deer Charge",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "150103": {
@@ -18146,7 +18155,7 @@
             "ChineseShort": "不羁之种1段",
             "AIEnglishShort": "Unruly Seed 1"
         },
-        "EnglishShortManualOverride": "Feral Seed (1)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "150104": {
@@ -18154,7 +18163,7 @@
             "ChineseShort": "不羁之种2段",
             "AIEnglishShort": "2 unruly seeds"
         },
-        "EnglishShortManualOverride": "Feral Seed (2)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "150106": {
@@ -18162,7 +18171,7 @@
             "ChineseShort": "灌注(左手)",
             "AIEnglishShort": "Perfusion (left hand)"
         },
-        "EnglishShortManualOverride": "Infusion (L)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "150107": {
@@ -18170,13 +18179,13 @@
             "ChineseShort": "灌注(右手)",
             "AIEnglishShort": "Perfusion (right hand)"
         },
-        "EnglishShortManualOverride": "Infusion (R)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "150110": {
         "skill_names_Clean.json": {
             "ChineseShort": "灌注(双重灌注额外部分)",
-            "AIEnglishShort": "Infusion (Double Infusion)"
+            "AIEnglishShort": "Perfusion (double perfusion extra section)"
         },
         "EnglishShortManualOverride": null,
         "Comment": null
@@ -18697,7 +18706,7 @@
             "ChineseShort": "月刃回旋",
             "AIEnglishShort": "Moon Blade Rotating"
         },
-        "EnglishShortManualOverride": "Moonstrike Whirl",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "179907": {
@@ -18727,7 +18736,7 @@
             "ChineseShort": "刀意雷击",
             "AIEnglishShort": "Strike of lightning"
         },
-        "EnglishShortManualOverride": "Blade Intent Thunder Strike",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "179909": {
@@ -18771,7 +18780,7 @@
             "ChineseShort": "地崩山摧",
             "AIEnglishShort": "The earth collapses and mountains"
         },
-        "EnglishShortManualOverride": "Terra Sunder",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "199903": {
@@ -18793,7 +18802,7 @@
             "ChineseShort": "弹无虚发",
             "AIEnglishShort": "Unstoppable bullets"
         },
-        "EnglishShortManualOverride": "?Bullseye?",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220102": {
@@ -18801,7 +18810,7 @@
             "ChineseShort": "怒涛射击",
             "AIEnglishShort": "Shooting of rage"
         },
-        "EnglishShortManualOverride": "Torrent Volley",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220103": {
@@ -18817,7 +18826,7 @@
             "ChineseShort": "二连矢/暴风箭矢",
             "AIEnglishShort": "Two consecutive arrows/Storm arrows"
         },
-        "EnglishShortManualOverride": "Storm Arrow",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220105": {
@@ -18825,7 +18834,7 @@
             "ChineseShort": "光追箭",
             "AIEnglishShort": "Ray chase arrow"
         },
-        "EnglishShortManualOverride": "Lightseeker Arrow",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220106": {
@@ -18833,8 +18842,8 @@
             "ChineseShort": "空中射击",
             "AIEnglishShort": "Aerial shooting"
         },
-        "EnglishShortManualOverride": "Qaudraflare",
-        "Comment": ""
+        "EnglishShortManualOverride": null,
+        "Comment": null
     },
     "220107": {
         "skill_names_Clean.json": {
@@ -18849,7 +18858,7 @@
             "ChineseShort": "爆炸箭矢",
             "AIEnglishShort": "Explosion arrow"
         },
-        "EnglishShortManualOverride": "Explosive arrow",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220109": {
@@ -18857,7 +18866,7 @@
             "ChineseShort": "威慑射击",
             "AIEnglishShort": "Deterrent shooting"
         },
-        "EnglishShortManualOverride": "Deter Shot",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220110": {
@@ -18865,7 +18874,7 @@
             "ChineseShort": "爆炸箭",
             "AIEnglishShort": "Explosion arrow"
         },
-        "EnglishShortManualOverride": "Explosive Arrow",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220111": {
@@ -18873,7 +18882,7 @@
             "ChineseShort": "光意·四连矢",
             "AIEnglishShort": "Light and Four Continuous Arrows"
         },
-        "EnglishShortManualOverride": "Double Arrow",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220112": {
@@ -18881,7 +18890,7 @@
             "ChineseShort": "光能裂隙",
             "AIEnglishShort": "Photoelectric cracks"
         },
-        "EnglishShortManualOverride": "Radiance Rift",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220113": {
@@ -18889,7 +18898,7 @@
             "ChineseShort": "幻影猎鹰",
             "AIEnglishShort": "Phantom Falcon"
         },
-        "EnglishShortManualOverride": "Phantom Falcon",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220203": {
@@ -18897,7 +18906,7 @@
             "ChineseShort": "光意·四连矢",
             "AIEnglishShort": "Light and Four Continuous Arrows"
         },
-        "EnglishShortManualOverride": "Focused Shot",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "220301": {
@@ -18946,7 +18955,7 @@
             "ChineseShort": "聚合乐章单段",
             "AIEnglishShort": "Aggregational Movement Single Section"
         },
-        "EnglishShortManualOverride": "Harmonic Anthem (1)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "230102": {
@@ -18958,7 +18967,7 @@
             "ChineseShort": "聚合乐章二段",
             "AIEnglishShort": "Two paragraphs of the aggregated movement"
         },
-        "EnglishShortManualOverride": "Harmonic Anthem (2)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "230103": {
@@ -18970,8 +18979,8 @@
             "ChineseShort": "聚合乐章三段",
             "AIEnglishShort": "Three paragraphs of the aggregated movement"
         },
-        "EnglishShortManualOverride": "Harmonic Anthem (3)",
-        "Comment": "not sure"
+        "EnglishShortManualOverride": null,
+        "Comment": null
     },
     "230104": {
         "SkillTable_Clean.json": {
@@ -18982,7 +18991,7 @@
             "ChineseShort": "聚合乐章四段",
             "AIEnglishShort": "Four paragraphs of the aggregated movement"
         },
-        "EnglishShortManualOverride": "Harmonic Anthem (4)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "230105": {
@@ -18997,7 +19006,7 @@
             "ChineseShort": "炎律狂踏伤害",
             "AIEnglishShort": "Yanlu tramples damage"
         },
-        "EnglishShortManualOverride": "Flame's Rampage",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "230106": {
@@ -19012,7 +19021,7 @@
             "ChineseShort": "烈焰音符伤害",
             "AIEnglishShort": "Flame Note Damage"
         },
-        "EnglishShortManualOverride": "Flame Note",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "230401": {
@@ -19020,7 +19029,7 @@
             "ChineseShort": "安可伤害",
             "AIEnglishShort": "Encore damage"
         },
-        "EnglishShortManualOverride": "Encore",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "230501": {
@@ -19036,7 +19045,7 @@
             "ChineseShort": "烈焰狂想伤害",
             "AIEnglishShort": "Flame fantasy damage"
         },
-        "EnglishShortManualOverride": "Rhapsody of Flame",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "240101": {
@@ -19044,7 +19053,7 @@
             "ChineseShort": "投掷盾牌",
             "AIEnglishShort": "Throw a shield"
         },
-        "EnglishShortManualOverride": "Shield Toss",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "240102": {
@@ -19052,7 +19061,7 @@
             "ChineseShort": "光明决心",
             "AIEnglishShort": "Bright determination"
         },
-        "EnglishShortManualOverride": "Radiance",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "250036": {
@@ -52847,7 +52856,7 @@
             "ChineseShort": "剧毒蜂巢（初始）",
             "AIEnglishShort": "Poisonous hive (initial)"
         },
-        "EnglishShortManualOverride": "Arcane! Poison Explosion",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1007798": {
@@ -54783,7 +54792,7 @@
             "ChineseShort": "狼协同攻击",
             "AIEnglishShort": "Wolf Cooperative Attack"
         },
-        "EnglishShortManualOverride": "Wild Wolf - Coordinated Attack",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1700821": {
@@ -54835,7 +54844,7 @@
             "ChineseShort": "狼突击",
             "AIEnglishShort": "Wolf Assault"
         },
-        "EnglishShortManualOverride": "Wild Wolf - Pounce",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1700826": {
@@ -54851,7 +54860,7 @@
             "ChineseShort": "狂野召唤",
             "AIEnglishShort": "Wild Summon"
         },
-        "EnglishShortManualOverride": "Wild Wolf - Summon Pounce",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1700827": {
@@ -54867,7 +54876,7 @@
             "ChineseShort": "狼普攻",
             "AIEnglishShort": "Wolf attack"
         },
-        "EnglishShortManualOverride": "Pets - Basic Attack",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "1700828": {
@@ -57299,7 +57308,7 @@
             "ChineseShort": "幸运一击(太刀)",
             "AIEnglishShort": "Lucky blow (Taidao)"
         },
-        "EnglishShortManualOverride": "Tachi - Lucky",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2031102": {
@@ -57312,7 +57321,7 @@
             "ChineseShort": "幸运一击(冰法)",
             "AIEnglishShort": "Lucky blow (ice method)"
         },
-        "EnglishShortManualOverride": "Staff - Lucky",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2031103": {
@@ -57347,7 +57356,7 @@
             "ChineseShort": "幸运一击(森语)",
             "AIEnglishShort": "Lucky blow (Song language)"
         },
-        "EnglishShortManualOverride": "Rune Ring - Lucky",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2031106": {
@@ -57373,7 +57382,7 @@
             "ChineseShort": "幸运一击(巨刃)",
             "AIEnglishShort": "Lucky blow (giant blade)"
         },
-        "EnglishShortManualOverride": "Guardblade - Lucky",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2031108": {
@@ -57399,7 +57408,7 @@
             "ChineseShort": "幸运一击(弓箭)",
             "AIEnglishShort": "Lucky strike (Bow and Arrow)"
         },
-        "EnglishShortManualOverride": "Bow - Lucky",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2031110": {
@@ -57412,7 +57421,7 @@
             "ChineseShort": "幸运一击(剑盾)",
             "AIEnglishShort": "Lucky strike (Sword and Shield)"
         },
-        "EnglishShortManualOverride": "Sword and Shield - Lucky",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2031111": {
@@ -57425,7 +57434,7 @@
             "ChineseShort": "幸运一击(吉他)",
             "AIEnglishShort": "Lucky blow (guitar)"
         },
-        "EnglishShortManualOverride": "Guitar - Lucky",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2032001": {
@@ -59620,7 +59629,7 @@
             "ChineseShort": "虚蚀食人魔",
             "AIEnglishShort": "Ogre"
         },
-        "EnglishShortManualOverride": "Tempest Ogre (Vortex)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2110091": {
@@ -59713,7 +59722,7 @@
             "ChineseShort": "剧毒蜂巢（持续）",
             "AIEnglishShort": "Poisonous hive (continued)"
         },
-        "EnglishShortManualOverride": "Venobzzar Incubator",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2110100": {
@@ -60880,7 +60889,9 @@
         "Comment": null
     },
     "2201172": {
-        "BuffTable_Clean.json": {},
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Deletes all shields and causes damage"
+        },
         "skill_names_Clean.json": {
             "ChineseShort": "坚毅之息",
             "AIEnglishShort": "Break of perseverance"
@@ -60965,7 +60976,7 @@
             "ChineseShort": "护盾回声",
             "AIEnglishShort": "Shield echo"
         },
-        "EnglishShortManualOverride": "Shield Echo",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2201241": {
@@ -61507,7 +61518,7 @@
             "ChineseShort": "岩护",
             "AIEnglishShort": "Rock Guard"
         },
-        "EnglishShortManualOverride": "Rock Guard",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2201580": {
@@ -61880,7 +61891,7 @@
             "ChineseShort": "治疗:治疗链接",
             "AIEnglishShort": "Treatment: Treatment link"
         },
-        "EnglishShortManualOverride": "Healing Chain",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2202100": {
@@ -62335,7 +62346,7 @@
             "ChineseShort": "治疗:滋养之种",
             "AIEnglishShort": "Treatment: nourishing seeds"
         },
-        "EnglishShortManualOverride": "Nourishing Seeds",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2202320": {
@@ -63141,7 +63152,7 @@
             "ChineseShort": "生命流失（扑咬引爆）",
             "AIEnglishShort": "Loss of life (biting and detonating)"
         },
-        "EnglishShortManualOverride": "Bleed (Pounce and Bite)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2203100": {
@@ -63161,8 +63172,8 @@
             "ChineseShort": "生命流失",
             "AIEnglishShort": "Loss of life"
         },
-        "EnglishShortManualOverride": "Bleed (?Tail Sweep?)",
-        "Comment": "theres 2 tail sweeps for some reason"
+        "EnglishShortManualOverride": null,
+        "Comment": null
     },
     "2203102": {
         "BuffTable_Clean.json": {
@@ -63174,7 +63185,7 @@
             "ChineseShort": "生命流失（协同攻击引爆）",
             "AIEnglishShort": "Life loss (cooperative attack detonation)"
         },
-        "EnglishShortManualOverride": "Bleed (Coordinated Attack)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2203110": {
@@ -63236,7 +63247,7 @@
             "ChineseShort": "生命流失（光追箭引爆）",
             "AIEnglishShort": "Life loss (light chase arrow detonated)"
         },
-        "EnglishShortManualOverride": "Bleed (Lightseeker Arrow)",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2203150": {
@@ -63290,7 +63301,7 @@
             "ChineseShort": "闪电冲击",
             "AIEnglishShort": "Lightning shock"
         },
-        "EnglishShortManualOverride": "Lightning Strike",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2203182": {
@@ -63456,7 +63467,7 @@
             "ChineseShort": "猎鹰出击",
             "AIEnglishShort": "Falcon attacks"
         },
-        "EnglishShortManualOverride": "Falcon strikes",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2203292": {
@@ -63504,8 +63515,8 @@
             "ChineseShort": "生命流失（扫尾引爆）",
             "AIEnglishShort": "Life loss (sweeping and detonating)"
         },
-        "EnglishShortManualOverride": "Bleed (?Tail Sweep?)",
-        "Comment": "theres 2 tail sweeps for some reason"
+        "EnglishShortManualOverride": null,
+        "Comment": null
     },
     "2203310": {
         "BuffTable_Clean.json": {
@@ -63739,7 +63750,7 @@
             "ChineseShort": "践踏",
             "AIEnglishShort": "trample"
         },
-        "EnglishShortManualOverride": "Pets - Trample",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2203520": {
@@ -63759,7 +63770,7 @@
             "ChineseShort": "内爆(钢制喙触发)",
             "AIEnglishShort": "Impact (Steel beak triggered)"
         },
-        "EnglishShortManualOverride": "Steel Beak",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2203530": {
@@ -63897,7 +63908,7 @@
             "ChineseShort": "光棱",
             "AIEnglishShort": "Light edge"
         },
-        "EnglishShortManualOverride": "Light Prism",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2203622": {
@@ -64084,8 +64095,8 @@
             "ChineseShort": "冰箭爆炸",
             "AIEnglishShort": "Ice arrow explosion"
         },
-        "EnglishShortManualOverride": "Ice Arrow - ?Explosion?",
-        "Comment": "not sure what explosion is referring to"
+        "EnglishShortManualOverride": null,
+        "Comment": null
     },
     "2204090": {
         "BuffTable_Clean.json": {
@@ -64446,7 +64457,7 @@
             "ChineseShort": "冰冷脉冲",
             "AIEnglishShort": "Cold pulse"
         },
-        "EnglishShortManualOverride": "Cold Pulse",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2204321": {
@@ -66131,7 +66142,7 @@
             "ChineseShort": "神圣光辉",
             "AIEnglishShort": "Holy Glory"
         },
-        "EnglishShortManualOverride": "Holy Radiance",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2206241": {
@@ -66163,7 +66174,10 @@
             "ChineseShort": "神圣印记伤害",
             "AIEnglishShort": "Divine Seal Damage"
         },
-        "EnglishShortManualOverride": "Holy Mark",
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "holy mark damage"
+        },
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2206250": {
@@ -66395,7 +66409,7 @@
             "ChineseShort": "神圣之击",
             "AIEnglishShort": "The Holy Strike"
         },
-        "EnglishShortManualOverride": "Holy Strike",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2206410": {
@@ -66609,7 +66623,7 @@
             "ChineseShort": "光明核心",
             "AIEnglishShort": "Light core"
         },
-        "EnglishShortManualOverride": "Radiant Core",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2206560": {
@@ -67305,7 +67319,7 @@
             "ChineseShort": "炎律狂踏治疗",
             "AIEnglishShort": "Yanlu mad tread treatment"
         },
-        "EnglishShortManualOverride": "Flame's Rampage",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2207440": {
@@ -68807,7 +68821,7 @@
             "ChineseShort": "获得护盾时造成aoe（套装）",
             "AIEnglishShort": "Cause aoe when obtaining shield (set)"
         },
-        "EnglishShortManualOverride": "(Unique) [Set 4A] Triggers AoE DMG when gaining a shield",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "2406210": {
@@ -69643,7 +69657,7 @@
             "ChineseShort": "虚蚀光环",
             "AIEnglishShort": "False halo"
         },
-        "EnglishShortManualOverride": "Void Aura",
+        "EnglishShortManualOverride": null,
         "Comment": null
     },
     "3001040": {
@@ -77778,6 +77792,328 @@
     "23001170": {
         "RecountTable_Clean.json": {
             "EnglishShort": "Void Corruption Fluctuation"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "32401": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Tornadoes gradually reduce damage caused"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "32301": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Break the chase timer"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "21431": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "perfusion mark"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "21432": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Imbued target dies"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "44801": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Thunderbolt Continuous Slash Detection"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "21413": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "15% element reduction"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "44901": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "The cooldown of the sickle is reduced when you die, and the moon blade is killed."
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "510099": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Master's basic attack damage reduction"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683168": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Motorcycle Acceleration"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683171": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Advanced Mechanical Fox Tag"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683173": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical Fox Mobile Charging"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683172": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical Fox Sprinting Special Effects"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683169": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-motorcycle charging"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683170": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical Fox Acceleration"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683174": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical QTE"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683178": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle - motorcycle stunt performance effects (QTE failed)"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683176": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-advanced motorcycle tag"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683175": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-Mechanical Validity Determination"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683177": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle - motorcycle stunt performance effects (QTE successful)"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "881216": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Wooden Man-After starting, Xiaoyi sends himself the start ai event."
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965300": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Building an optical bridge-skills management"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965301": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a light bridge - get random skills"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683179": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-motorcycle head-up section short spray"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "683180": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Vehicle-mechanical system reduces CD"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "882252": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Infield monsters are not attracted"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965302": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Summon Clouds"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965303": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Stamina Restoration Potion"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965304": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Summon Extra Clouds"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965306": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Summon Swimming Pool"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965305": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Build a Light Bridge-Skill-Low Gravity Potion"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965312": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Building a light bridge - managing the layers of cloud particles carried by the player"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965311": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Building a light bridge - low gravity"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "974006": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Big World-Lock Toy Use BUFF"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "974201": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Bubble Spot Patrol-Patrol Captain"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "965313": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Suspended bomb-standby state"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "974202": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Bubble Spot Patrol-Patrol Team"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "2110113": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Pollution Crab Spider-Invincible"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "2200740": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Thunder God"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "2200730": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Thunder God"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "2200401": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Thunder Talisman Knife Intent reduces damage"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "2205141": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Instant combo critical hits doubled"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "2201173": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "with shield mark"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "7000247": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Parkour - starting line (5 times the length)"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "7000248": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Parkour - Finish Line (5x length)"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "7100023": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "balloon-disappear"
+        },
+        "EnglishShortManualOverride": null,
+        "Comment": null
+    },
+    "7100022": {
+        "BuffTable_Clean.json": {
+            "AIEnglishShort": "Balloon - Standby"
         },
         "EnglishShortManualOverride": null,
         "Comment": null

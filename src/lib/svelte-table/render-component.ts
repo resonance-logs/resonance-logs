@@ -20,7 +20,7 @@ export class RenderComponentConfig<TComponent extends Component> {
   constructor(
     public component: TComponent,
     public props: ComponentProps<TComponent> | Record<string, never> = {}
-  ) {}
+  ) { }
 }
 
 /**
@@ -42,7 +42,7 @@ export class RenderSnippetConfig<TProps> {
   constructor(
     public snippet: Snippet<[TProps]>,
     public params: TProps
-  ) {}
+  ) { }
 }
 
 /**

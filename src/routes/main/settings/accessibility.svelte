@@ -1,13 +1,12 @@
 <script lang="ts">
   import * as Tabs from "$lib/components/ui/tabs/index.js";
-  import { settings } from "$lib/settings-store";
+  import { SETTINGS } from "$lib/settings-store";
   import SettingsSwitch from "./settings-switch.svelte";
 
-  const SETTINGS_CATEGORY = "accessibility"
-  const ACCESSIBILITY_SETTINGS = $derived(settings.state[SETTINGS_CATEGORY]);
+  const SETTINGS_CATEGORY = "accessibility";
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
-  <SettingsSwitch bind:checked={ACCESSIBILITY_SETTINGS["blur"]} label="Blur Meter Background" description="Adds background blur effect to live meter (Windows 10 only). Bad performance when resizing/dragging the window on Windows 11 build 22621+ unless you need to disable Transparency effects in Windows accessibility settings."/>
-  <SettingsSwitch bind:checked={ACCESSIBILITY_SETTINGS["transparency"]} label="Transparent Meter" description="Toggle transparent background for live meter." />
+  <SettingsSwitch bind:checked={SETTINGS.accessibility.state["blur"]} label="Blur Meter Background" description="Adds background blur effect to live meter (Windows 10 only). Bad performance when resizing/dragging the window on Windows 11 build 22621+ unless you to disable Transparency effects in Windows accessibility SETTINGS." />
+  <SettingsSwitch bind:checked={SETTINGS.accessibility.state["transparency"]} label="Transparent Meter" description="Toggle transparent background for live meter." />
 </Tabs.Content>

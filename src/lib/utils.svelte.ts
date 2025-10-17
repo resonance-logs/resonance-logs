@@ -31,7 +31,7 @@ export function getClassIcon(class_name: string): string {
 // https://svelte.dev/docs/svelte/@attach#Attachment-factories
 export function tooltip(getContent: () => string): Attachment {
   return (element: Element) => {
-    const tooltip = tippy(element, { 
+    const tooltip = tippy(element, {
       content: "",
     });
     $effect(() => {
