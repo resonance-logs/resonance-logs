@@ -33,6 +33,10 @@ pub async fn start(app_handle: AppHandle) {
     let mut last_emit_time = Instant::now();
     let emit_throttle_duration = Duration::from_millis(100);
 
+    // Track previous state to detect changes
+    let mut last_header_info: Option<crate::live::commands_models::HeaderInfo> = None;
+    let mut last_is_paused: Option<bool> = None;
+
     // 2. Use the channel to receive packets back and process them
     while let Some((op, data)) = rx.recv().await {
         {
@@ -49,6 +53,10 @@ pub async fn start(app_handle: AppHandle) {
                 let encounter_state = app_handle.state::<EncounterMutex>();
                 let mut encounter_state = encounter_state.lock().unwrap();
                 on_server_change(&mut encounter_state);
+
+                // Reset cached state
+                last_header_info = None;
+                last_is_paused = None;
 
                 // Emit encounter reset event
                 let event_manager_state = app_handle.state::<EventManagerMutex>();
@@ -183,21 +191,30 @@ pub async fn start(app_handle: AppHandle) {
                     let event_manager_state = app_handle.state::<EventManagerMutex>();
                     let event_manager = event_manager_state.lock().unwrap();
                     if event_manager.should_emit_events() {
-                        // Generate and emit encounter update
+                        // Generate and emit encounter update only if it changed
                         if let Some(header_info) = generate_header_info(&encounter_state) {
-                            event_manager.emit_encounter_update(
-                                header_info,
-                                encounter_state.is_encounter_paused,
-                            );
+                            let is_paused = encounter_state.is_encounter_paused;
+                            let should_emit = last_header_info.as_ref() != Some(&header_info)
+                                || last_is_paused != Some(is_paused);
+
+                            if should_emit {
+                                event_manager.emit_encounter_update(header_info.clone(), is_paused);
+                                last_header_info = Some(header_info);
+                                last_is_paused = Some(is_paused);
+                            }
                         }
 
-                        // Generate and emit DPS players update
+                        // Generate and emit DPS players update only if there's data
                         let dps_players = generate_players_window_dps(&encounter_state);
-                        event_manager.emit_dps_players_update(dps_players);
+                        if !dps_players.player_rows.is_empty() {
+                            event_manager.emit_dps_players_update(dps_players);
+                        }
 
-                        // Generate and emit heal players update
+                        // Generate and emit heal players update only if there's data
                         let heal_players = generate_players_window_heal(&encounter_state);
-                        event_manager.emit_heal_players_update(heal_players);
+                        if !heal_players.player_rows.is_empty() {
+                            event_manager.emit_heal_players_update(heal_players);
+                        }
 
                         // Update skills store for all players with damage/heal data
                         let skills_store_state = app_handle.state::<SkillsStoreMutex>();

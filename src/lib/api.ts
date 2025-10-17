@@ -5,7 +5,8 @@ import { commands } from "./bindings";
 export type HeaderInfo = {
   totalDps: number;
   totalDmg: number;
-  elapsedMs: number
+  elapsedMs: number;
+  fightStartTimestampMs: number; // Unix timestamp when fight started
 };
 
 export type PlayerRow = {

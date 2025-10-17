@@ -2,12 +2,13 @@ use crate::WINDOW_LIVE_LABEL;
 use tauri::Manager;
 use window_vibrancy::apply_blur;
 
-#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct HeaderInfo {
     pub total_dps: f64,
     pub total_dmg: u128,
     pub elapsed_ms: u128,
+    pub fight_start_timestamp_ms: u128, // Unix timestamp when fight started
 }
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]

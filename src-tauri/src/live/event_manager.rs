@@ -34,18 +34,16 @@ impl EventManager {
 
     pub fn emit_dps_players_update(&self, players_window: PlayersWindow) {
         if let Some(app_handle) = &self.app_handle {
-            match app_handle.emit("dps-players-update", players_window) {
-                Ok(_) => trace!("Emitted dps-players-update event"),
-                Err(e) => error!("Failed to emit dps-players-update event: {}", e),
+            if let Err(e) = app_handle.emit("dps-players-update", players_window) {
+                error!("Failed to emit dps-players-update event: {}", e);
             }
         }
     }
 
     pub fn emit_heal_players_update(&self, players_window: PlayersWindow) {
         if let Some(app_handle) = &self.app_handle {
-            match app_handle.emit("heal-players-update", players_window) {
-                Ok(_) => trace!("Emitted heal-players-update event"),
-                Err(e) => error!("Failed to emit heal-players-update event: {}", e),
+            if let Err(e) = app_handle.emit("heal-players-update", players_window) {
+                error!("Failed to emit heal-players-update event: {}", e);
             }
         }
     }
@@ -472,5 +470,6 @@ pub fn generate_header_info(encounter: &Encounter) -> Option<HeaderInfo> {
         total_dps: nan_is_zero(encounter.total_dmg as f64 / time_elapsed_secs),
         total_dmg: encounter.total_dmg,
         elapsed_ms: time_elapsed_ms,
+        fight_start_timestamp_ms: encounter.time_fight_start_ms,
     })
 }
