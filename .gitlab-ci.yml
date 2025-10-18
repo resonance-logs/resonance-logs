@@ -6,7 +6,7 @@ variables:
   NODE_ENV: production
 
 # Node image with Rust setup (needed for Tauri)
-image: node:20
+image: node:22
 
 before_script:
   # Install Linux dependencies required by Tauri
@@ -14,16 +14,21 @@ before_script:
   # Install Rust
   - curl https://sh.rustup.rs -sSf | sh -s -- -y
   - . "$HOME/.cargo/env"
-  # Install Node dependencies
-  - npm ci
+  # Install Node dependencies (using npm install as requested)
+  - npm install
   # Install Tauri CLI locally so it's available to npm
   - npm install -D @tauri-apps/cli
+  
+  - echo "Running cargo check inside src-tauri..."
+  - cd src-tauri
+  - cargo check
+  - cd .. # Navigate back to the project root
 
 build_tauri:
   stage: build
   script:
-    - npm run tauri build
-    - npm run tauri bundle  # equivalent to npm run tauri bundle
+    # Use one command to build and bundle (--bundles is a common shortcut for tauri bundle)
+    - npm run tauri build -- --bundles
   artifacts:
     paths:
       - src-tauri/target/release/bundle/
@@ -41,8 +46,8 @@ release:
 
       # Upload the built exe to GitLab uploads
       UPLOAD_RESPONSE=$(curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-                             --upload-file "$FILE" \
-                             "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads")
+                            --upload-file "$FILE" \
+                            "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads")
 
       echo "Upload response: $UPLOAD_RESPONSE"
 
@@ -51,12 +56,12 @@ release:
 
       # Create a new release linking to the uploaded file
       curl --request POST --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-           "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases" \
-           --form "name=Auto Release - $CI_COMMIT_SHORT_SHA" \
-           --form "tag_name=auto-$CI_COMMIT_SHORT_SHA" \
-           --form "description=Automated release for commit $CI_COMMIT_SHA" \
-           --form "assets[links][][name]=Download .exe" \
-           --form "assets[links][][url]=$CI_PROJECT_URL$URL"
+            "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases" \
+            --form "name=Auto Release - $CI_COMMIT_SHORT_SHA" \
+            --form "tag_name=auto-$CI_COMMIT_SHORT_SHA" \
+            --form "description=Automated release for commit $CI_COMMIT_SHA" \
+            --form "assets[links][][name]=Download .exe" \
+            --form "assets[links][][url]=$CI_PROJECT_URL$URL"
   needs:
     - build_tauri
   only:
