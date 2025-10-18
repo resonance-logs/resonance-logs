@@ -1,6 +1,6 @@
 use crate::live::event_manager::{
     generate_header_info, generate_players_window_dps, generate_players_window_heal,
-    generate_skills_window_dps, generate_skills_window_heal, EventManagerMutex,
+    generate_skills_window_dps, generate_skills_window_heal, EventManagerMutex, MetricType,
 };
 use crate::live::opcodes_models::EncounterMutex;
 use crate::live::skills_store::SkillsStoreMutex;
@@ -207,13 +207,13 @@ pub async fn start(app_handle: AppHandle) {
                         // Generate and emit DPS players update only if there's data
                         let dps_players = generate_players_window_dps(&encounter_state);
                         if !dps_players.player_rows.is_empty() {
-                            event_manager.emit_dps_players_update(dps_players);
+                            event_manager.emit_players_update(MetricType::Dps, dps_players);
                         }
 
                         // Generate and emit heal players update only if there's data
                         let heal_players = generate_players_window_heal(&encounter_state);
                         if !heal_players.player_rows.is_empty() {
-                            event_manager.emit_heal_players_update(heal_players);
+                            event_manager.emit_players_update(MetricType::Heal, heal_players);
                         }
 
                         // Update skills store for all players with damage/heal data
@@ -247,12 +247,12 @@ pub async fn start(app_handle: AppHandle) {
                         for (&entity_uid, _) in &encounter_state.entity_uid_to_entity {
                             if skills_store.is_subscribed(entity_uid, "dps") {
                                 if let Some(skills_window) = skills_store.get_dps_skills(entity_uid) {
-                                    event_manager.emit_dps_skills_update(entity_uid, skills_window.clone());
+                                    event_manager.emit_skills_update(MetricType::Dps, entity_uid, skills_window.clone());
                                 }
                             }
                             if skills_store.is_subscribed(entity_uid, "heal") {
                                 if let Some(skills_window) = skills_store.get_heal_skills(entity_uid) {
-                                    event_manager.emit_heal_skills_update(entity_uid, skills_window.clone());
+                                    event_manager.emit_skills_update(MetricType::Heal, entity_uid, skills_window.clone());
                                 }
                             }
                         }
