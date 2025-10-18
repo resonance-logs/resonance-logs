@@ -5,20 +5,25 @@ stages:
 variables:
   NODE_ENV: production
 
-# Use a Node image with Rust (needed for Tauri)
+# Node image with Rust setup (needed for Tauri)
 image: node:20
 
 before_script:
-  - apt-get update && apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev curl
+  # Install Linux dependencies required by Tauri
+  - apt-get update && apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev curl jq
+  # Install Rust
   - curl https://sh.rustup.rs -sSf | sh -s -- -y
-  - source $HOME/.cargo/env
-  - npm i
+  - . "$HOME/.cargo/env"
+  # Install Node dependencies
+  - npm ci
+  # Install Tauri CLI locally so it's available to npm
+  - npm install -D @tauri-apps/cli
 
 build_tauri:
   stage: build
   script:
-    - npm run tauri build
-    - npm run tauri bundle
+    - npx tauri build
+    - npx tauri build --bundles  # equivalent to npm run tauri bundle
   artifacts:
     paths:
       - src-tauri/target/release/bundle/
@@ -30,19 +35,21 @@ release:
   stage: release
   script:
     - |
-      # Find the built exe (adjust path pattern to your app name)
+      # Find the built executable (adjust pattern if needed)
       FILE=$(find src-tauri/target/release/bundle -type f -name "*.exe" | head -n 1)
       echo "Found file: $FILE"
-      # Create GitLab release with asset upload
-      curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-           --upload-file "$FILE" \
-           "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads"
-      # Get the uploaded file URL from the response
-      URL=$(curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-                 --upload-file "$FILE" \
-                 "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads" \
-                 | jq -r '.url')
-      # Create a release pointing to that file
+
+      # Upload the built exe to GitLab uploads
+      UPLOAD_RESPONSE=$(curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+                             --upload-file "$FILE" \
+                             "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads")
+
+      echo "Upload response: $UPLOAD_RESPONSE"
+
+      # Extract URL from JSON response
+      URL=$(echo "$UPLOAD_RESPONSE" | jq -r '.url')
+
+      # Create a new release linking to the uploaded file
       curl --request POST --header "JOB-TOKEN: $CI_JOB_TOKEN" \
            "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases" \
            --form "name=Auto Release - $CI_COMMIT_SHORT_SHA" \
