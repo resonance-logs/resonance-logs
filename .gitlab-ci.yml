@@ -10,7 +10,7 @@ image: node:22
 
 before_script:
   # Install Linux dependencies required by Tauri
-  - apt-get update && apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev curl jq
+  - apt-get update && apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev curl jq libsoup-3.0-dev
   # Install Rust
   - curl https://sh.rustup.rs -sSf | sh -s -- -y
   - . "$HOME/.cargo/env"
