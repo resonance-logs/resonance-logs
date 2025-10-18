@@ -30,7 +30,7 @@ publish-tauri-windows:
   # You must have a GitLab Runner configured with the 'windows' tag.
   # This replaces 'runs-on: windows-latest'.
   tags:
-    - gitlab-org
+    - gitlab-org-docker
 
   # Commands that run before the main `script` block.
   # Used here for setting up the build environment.
