@@ -1,94 +1,102 @@
+# This file is a conversion of your GitHub Actions workflow for GitLab CI/CD.
+# It builds a Tauri application and creates a release when you push to the 'release' branch.
+
+# Defines the execution order of jobs. In this case, there's only one stage.
 stages:
-  - build
-  - release
+  - publish
 
-variables:
-  NODE_ENV: production
-  # Define the target triple for the Windows build
-  WINDOWS_TARGET: x86_64-pc-windows-msvc
+# Cache dependencies to speed up subsequent pipeline runs.
+# This replaces the 'swatinem/rust-cache@v2' action.
+cache:
+  # The cache is identified by a key generated from the lock file.
+  # A new cache will be created only when your dependencies change.
+  key:
+    files:
+      - package-lock.json # Or yarn.lock, pnpm-lock.yaml, etc.
+  # List of directories to cache between jobs.
+  paths:
+    - node_modules/
+    - src-tauri/target/
+    - .cargo/
+  # 'pull-push' policy means the job will download the cache at the start
+  # and upload the updated cache at the end.
+  policy: pull-push
 
-# ==========================================================================
-# WINDOWS BUILD JOB
-# ==========================================================================
-build_tauri_windows:
-  stage: build
-  # Crucial: You MUST use a Windows runner tag for this job to execute.
+# This is the main job, equivalent to 'publish-tauri' in the GitHub workflow.
+publish-tauri-windows:
+  stage: publish
+
+  # This specifies which GitLab Runner should execute the job.
+  # You must have a GitLab Runner configured with the 'windows' tag.
+  # This replaces 'runs-on: windows-latest'.
   tags:
-    - saas-windows-medium-amd64 # <--- REPLACE with the actual tag for your Windows runner
-  # Use a Windows image (adjust if your runner uses a specific image)
-  image: mcr.microsoft.com/windows/servercore:ltsc2022 
-  
+    - windows
+
+  # Commands that run before the main `script` block.
+  # Used here for setting up the build environment.
   before_script:
-    # NOTE: The commands below assume your Windows runner has a working shell
-    # (like PowerShell or Bash emulation) and that Node, Rust, and MSVC build tools
-    # are either pre-installed or installed via a package manager like Chocolatey.
-    # If the runner is a clean image, you'll need extensive setup scripts here.
+    # Check for Node.js. This assumes Node.js and npm are installed on your runner.
+    # If not, you'd add installation steps here (e.g., using a tool like Chocolatey).
+    # This replaces the 'actions/setup-node@v4' step.
+    - echo "Checking Node.js and npm versions..."
+    - node --version
+    - npm --version
 
-    # 1. Install Node dependencies (using npm install as requested, or npm ci)
-    - npm install
-    # 2. Install Tauri CLI locally
-    - npm install -D @tauri-apps/cli
-
-    # 3. Run cargo check inside src-tauri
-    - echo "Running cargo check inside src-tauri..."
-    - cd src-tauri
-    - cargo check
-    - cd .. # Navigate back to the project root
-
-  script:
-    - echo "Building for Windows ($WINDOWS_TARGET)..."
-    # Use --target flag to ensure the build targets Windows
-    - npm run tauri build -- --bundles --target $WINDOWS_TARGET
-
-  artifacts:
-    paths:
-      # Artifacts are stored in the target triple directory for cross-compilation
-      - src-tauri/target/$WINDOWS_TARGET/release/bundle/
-    expire_in: 1 week
-  only:
-    - main
-
-# ==========================================================================
-# RELEASE JOB (Uses the Windows executable)
-# ==========================================================================
-release:
-  stage: release
-  # Use a minimal Linux image for API calls if your release script is Linux-based
-  image: alpine/curl:latest
-  script:
+    # Install the Rust toolchain if it's not already present.
+    # This replaces the 'dtolnay/rust-toolchain@stable' action.
     - |
-      # Find the built Windows executable (.msi, .exe, etc.)
-      FILE=$(find src-tauri/target/$WINDOWS_TARGET/release/bundle -type f -name "*.exe" | head -n 1)
-      
-      # If .exe not found, search for any file (e.g., .msi installer)
-      if [ -z "$FILE" ]; then
-        FILE=$(find src-tauri/target/$WINDOWS_TARGET/release/bundle -type f | head -n 1)
-      fi
+      if (-not (Get-Command rustc -ErrorAction SilentlyContinue)) {
+        echo "Rust not found. Installing Rust..."
+        # Download and run the rustup installer for Windows using PowerShell.
+        Invoke-WebRequest -Uri 'https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe' -OutFile 'rustup-init.exe'
+        .\rustup-init.exe -y --default-toolchain stable
+        # Add cargo to the PATH for the current session.
+        $env:Path += ";$env:USERPROFILE\.cargo\bin"
+        rustc --version
+      } else {
+        echo "Rust is already installed."
+      }
 
-      echo "Found file: $FILE"
+    # Install frontend dependencies.
+    # This is equivalent to the 'install frontend dependencies' step.
+    - echo "Installing frontend dependencies..."
+    - npm install
 
-      # Ensure jq is installed in this release image for JSON parsing
-      apk add --no-cache jq
-      
-      # Upload the built file to GitLab uploads
-      UPLOAD_RESPONSE=$(curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-                            --upload-file "$FILE" \
-                            "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads")
+  # The main commands that build, test, and deploy your application.
+  script:
+    # 1. Get the app version from your Tauri config file. We save it to a 'build.env'
+    # file so that it can be used in other parts of the job, like naming the artifacts.
+    - $json = Get-Content -Raw -Path src-tauri/tauri.conf.json | ConvertFrom-Json
+    - $APP_VERSION = $json.package.version
+    - echo "APP_VERSION=$APP_VERSION" > build.env
+    - echo "App version is $APP_VERSION"
 
-      echo "Upload response: $UPLOAD_RESPONSE"
+    # 2. Create a predictable directory to store build output.
+    - mkdir build_output
 
-      # Extract URL from JSON response
-      URL=$(echo "$UPLOAD_RESPONSE" | jq -r '.url')
+    # 3. Build the application for production.
+    # Since this job now only runs on the 'main' branch, we'll do a production build
+    # and create artifacts. A formal GitLab Release won't be created on every commit.
+    - echo "Building release artifacts for production..."
+    - npm run tauri build
+    - Copy-Item -Path "src-tauri/target/release/bundle/*" -Destination "build_output" -Recurse
 
-      # Create a new release linking to the uploaded file
-      curl --request POST --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-            "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases" \
-            --form "name=Auto Release - $CI_COMMIT_SHORT_SHA" \
-            --form "tag_name=auto-$CI_COMMIT_SHORT_SHA" \
-            --form "description=Automated release for commit $CI_COMMIT_SHA" \
-            --form "assets[links][][name]=Download Installer" \
-            --form "assets[links][][url]=$CI_PROJECT_URL$URL"
-  needs:
-    - build_tauri_windows
-  only:
-    - main
+  # This section defines job artifacts, which are files saved after a job runs.
+  # This replaces the 'actions/upload-artifact@v4' steps.
+  artifacts:
+    # Load the variables from the .env file created in the script.
+    reports:
+      dotenv: build.env
+    # Now we can use the $APP_VERSION variable to create a dynamic artifact name.
+    name: "tauri-build-${CI_COMMIT_REF_SLUG}-v${APP_VERSION}"
+    paths:
+      # The path to the files to be archived.
+      - build_output/
+    # Set an expiration date for the artifacts to save storage space.
+    expire_in: 1 week
+
+  # The `rules` block determines when this job will run.
+  rules:
+    # This rule ensures the job runs only on pushes to the 'main' branch.
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
+
