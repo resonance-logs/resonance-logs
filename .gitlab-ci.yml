@@ -4,47 +4,73 @@ stages:
 
 variables:
   NODE_ENV: production
+  # Define the target triple for the Windows build
+  WINDOWS_TARGET: x86_64-pc-windows-msvc
 
-# Node image with Rust setup (needed for Tauri)
-image: node:22
-
-before_script:
-  # Install Linux dependencies required by Tauri
-  - apt-get update && apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev curl jq libsoup-3.0-dev
-  # Install Rust
-  - curl https://sh.rustup.rs -sSf | sh -s -- -y
-  - . "$HOME/.cargo/env"
-  # Install Node dependencies (using npm install as requested)
-  - npm install
-  # Install Tauri CLI locally so it's available to npm
-  - npm install -D @tauri-apps/cli
-  
-  - echo "Running cargo check inside src-tauri..."
-  - cd src-tauri
-  - cargo check
-  - cd .. # Navigate back to the project root
-
-build_tauri:
+# ==========================================================================
+# WINDOWS BUILD JOB
+# ==========================================================================
+build_tauri_windows:
   stage: build
+  # Crucial: You MUST use a Windows runner tag for this job to execute.
+  tags:
+    - saas-windows-medium-amd64 # <--- REPLACE with the actual tag for your Windows runner
+  # Use a Windows image (adjust if your runner uses a specific image)
+  image: mcr.microsoft.com/windows/servercore:ltsc2022 
+  
+  before_script:
+    # NOTE: The commands below assume your Windows runner has a working shell
+    # (like PowerShell or Bash emulation) and that Node, Rust, and MSVC build tools
+    # are either pre-installed or installed via a package manager like Chocolatey.
+    # If the runner is a clean image, you'll need extensive setup scripts here.
+
+    # 1. Install Node dependencies (using npm install as requested, or npm ci)
+    - npm install
+    # 2. Install Tauri CLI locally
+    - npm install -D @tauri-apps/cli
+
+    # 3. Run cargo check inside src-tauri
+    - echo "Running cargo check inside src-tauri..."
+    - cd src-tauri
+    - cargo check
+    - cd .. # Navigate back to the project root
+
   script:
-    # Use one command to build and bundle (--bundles is a common shortcut for tauri bundle)
-    - npm run tauri build -- --bundles
+    - echo "Building for Windows ($WINDOWS_TARGET)..."
+    # Use --target flag to ensure the build targets Windows
+    - npm run tauri build -- --bundles --target $WINDOWS_TARGET
+
   artifacts:
     paths:
-      - src-tauri/target/release/bundle/
+      # Artifacts are stored in the target triple directory for cross-compilation
+      - src-tauri/target/$WINDOWS_TARGET/release/bundle/
     expire_in: 1 week
   only:
     - main
 
+# ==========================================================================
+# RELEASE JOB (Uses the Windows executable)
+# ==========================================================================
 release:
   stage: release
+  # Use a minimal Linux image for API calls if your release script is Linux-based
+  image: alpine/curl:latest
   script:
     - |
-      # Find the built executable (adjust pattern if needed)
-      FILE=$(find src-tauri/target/release/bundle -type f -name "*.exe" | head -n 1)
+      # Find the built Windows executable (.msi, .exe, etc.)
+      FILE=$(find src-tauri/target/$WINDOWS_TARGET/release/bundle -type f -name "*.exe" | head -n 1)
+      
+      # If .exe not found, search for any file (e.g., .msi installer)
+      if [ -z "$FILE" ]; then
+        FILE=$(find src-tauri/target/$WINDOWS_TARGET/release/bundle -type f | head -n 1)
+      fi
+
       echo "Found file: $FILE"
 
-      # Upload the built exe to GitLab uploads
+      # Ensure jq is installed in this release image for JSON parsing
+      apk add --no-cache jq
+      
+      # Upload the built file to GitLab uploads
       UPLOAD_RESPONSE=$(curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
                             --upload-file "$FILE" \
                             "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads")
@@ -60,9 +86,9 @@ release:
             --form "name=Auto Release - $CI_COMMIT_SHORT_SHA" \
             --form "tag_name=auto-$CI_COMMIT_SHORT_SHA" \
             --form "description=Automated release for commit $CI_COMMIT_SHA" \
-            --form "assets[links][][name]=Download .exe" \
+            --form "assets[links][][name]=Download Installer" \
             --form "assets[links][][url]=$CI_PROJECT_URL$URL"
   needs:
-    - build_tauri
+    - build_tauri_windows
   only:
     - main
