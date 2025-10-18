@@ -3,7 +3,7 @@
   import { commands } from "$lib/bindings";
   import { SETTINGS } from "$lib/settings-store";
   import { cn } from "$lib/utils";
-  import { onDpsPlayersUpdate, onHealPlayersUpdate, onResetEncounter } from "$lib/api";
+  import { onPlayersUpdate, onResetEncounter } from "$lib/api";
   import { setDpsPlayers, setHealPlayers, clearMeterData } from "$lib/stores/live-meter-store.svelte";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
@@ -23,18 +23,16 @@
   async function setupEventListeners() {
     if (isReconnecting) return;
     try {
-      // Set up DPS players listener
-      const dpsUnlisten = await onDpsPlayersUpdate((event) => {
-        console.log("dmg websocket", event.payload)
+      // Set up unified players listener
+      const playersUnlisten = await onPlayersUpdate((event) => {
+        console.log("players websocket", event.payload)
         lastEventTime = Date.now();
-        setDpsPlayers(event.payload);
-      });
 
-      // Set up heal players listener
-      const healUnlisten = await onHealPlayersUpdate((event) => {
-        console.log("heal websocket", event.payload)
-        lastEventTime = Date.now();
-        setHealPlayers(event.payload);
+        if (event.payload.metricType === "dps") {
+          setDpsPlayers(event.payload.playersWindow);
+        } else if (event.payload.metricType === "heal") {
+          setHealPlayers(event.payload.playersWindow);
+        }
       });
 
       // Set up reset encounter listener
@@ -45,8 +43,7 @@
 
       // Combine all unlisten functions
       unlisten = () => {
-        dpsUnlisten();
-        healUnlisten();
+        playersUnlisten();
         resetUnlisten();
       };
 

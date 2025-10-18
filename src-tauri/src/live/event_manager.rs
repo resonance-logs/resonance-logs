@@ -5,6 +5,13 @@ use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum MetricType {
+    Dps,
+    Heal,
+}
+
 pub struct EventManager {
     app_handle: Option<AppHandle>,
 }
@@ -32,45 +39,28 @@ impl EventManager {
         }
     }
 
-    pub fn emit_dps_players_update(&self, players_window: PlayersWindow) {
+    pub fn emit_players_update(&self, metric_type: MetricType, players_window: PlayersWindow) {
         if let Some(app_handle) = &self.app_handle {
-            if let Err(e) = app_handle.emit("dps-players-update", players_window) {
-                error!("Failed to emit dps-players-update event: {}", e);
+            let payload = PlayersUpdatePayload {
+                metric_type,
+                players_window,
+            };
+            if let Err(e) = app_handle.emit("players-update", payload) {
+                error!("Failed to emit players-update event: {}", e);
             }
         }
     }
 
-    pub fn emit_heal_players_update(&self, players_window: PlayersWindow) {
-        if let Some(app_handle) = &self.app_handle {
-            if let Err(e) = app_handle.emit("heal-players-update", players_window) {
-                error!("Failed to emit heal-players-update event: {}", e);
-            }
-        }
-    }
-
-
-    pub fn emit_dps_skills_update(&self, player_uid: i64, skills_window: SkillsWindow) {
+    pub fn emit_skills_update(&self, metric_type: MetricType, player_uid: i64, skills_window: SkillsWindow) {
         if let Some(app_handle) = &self.app_handle {
             let payload = SkillsUpdatePayload {
+                metric_type,
                 player_uid,
                 skills_window,
             };
-            match app_handle.emit("dps-skills-update", payload) {
-                Ok(_) => trace!("Emitted dps-skills-update event for player {}", player_uid),
-                Err(e) => error!("Failed to emit dps-skills-update event: {}", e),
-            }
-        }
-    }
-
-    pub fn emit_heal_skills_update(&self, player_uid: i64, skills_window: SkillsWindow) {
-        if let Some(app_handle) = &self.app_handle {
-            let payload = SkillsUpdatePayload {
-                player_uid,
-                skills_window,
-            };
-            match app_handle.emit("heal-skills-update", payload) {
-                Ok(_) => trace!("Emitted heal-skills-update event for player {}", player_uid),
-                Err(e) => error!("Failed to emit heal-skills-update event: {}", e),
+            match app_handle.emit("skills-update", payload) {
+                Ok(_) => trace!("Emitted skills-update event for player {} ({})", player_uid, format!("{:?}", metric_type)),
+                Err(e) => error!("Failed to emit skills-update event: {}", e),
             }
         }
     }
@@ -105,10 +95,17 @@ pub struct EncounterUpdatePayload {
     pub is_paused: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayersUpdatePayload {
+    pub metric_type: MetricType,
+    pub players_window: PlayersWindow,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SkillsUpdatePayload {
+    pub metric_type: MetricType,
     pub player_uid: i64,
     pub skills_window: SkillsWindow,
 }

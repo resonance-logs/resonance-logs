@@ -53,7 +53,15 @@ export type EncounterUpdatePayload = {
   isPaused: boolean;
 };
 
+export type MetricType = "dps" | "heal";
+
+export type PlayersUpdatePayload = {
+  metricType: MetricType;
+  playersWindow: PlayersWindow;
+};
+
 export type SkillsUpdatePayload = {
+  metricType: MetricType;
   playerUid: number;
   skillsWindow: SkillsWindow;
 };
@@ -62,17 +70,11 @@ export type SkillsUpdatePayload = {
 export const onEncounterUpdate = (handler: (event: { payload: EncounterUpdatePayload }) => void): Promise<UnlistenFn> =>
   listen("encounter-update", handler);
 
-export const onDpsPlayersUpdate = (handler: (event: { payload: PlayersWindow }) => void): Promise<UnlistenFn> =>
-  listen("dps-players-update", handler);
+export const onPlayersUpdate = (handler: (event: { payload: PlayersUpdatePayload }) => void): Promise<UnlistenFn> =>
+  listen("players-update", handler);
 
-export const onHealPlayersUpdate = (handler: (event: { payload: PlayersWindow }) => void): Promise<UnlistenFn> =>
-  listen("heal-players-update", handler);
-
-export const onDpsSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
-  listen("dps-skills-update", handler);
-
-export const onHealSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
-  listen("heal-skills-update", handler);
+export const onSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
+  listen("skills-update", handler);
 
 export const onResetEncounter = (handler: () => void): Promise<UnlistenFn> =>
   listen("reset-encounter", handler);
