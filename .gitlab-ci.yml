@@ -1,0 +1,56 @@
+stages:
+  - build
+  - release
+
+variables:
+  NODE_ENV: production
+
+# Use a Node image with Rust (needed for Tauri)
+image: node:20
+
+before_script:
+  - apt-get update && apt-get install -y libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev curl
+  - curl https://sh.rustup.rs -sSf | sh -s -- -y
+  - source $HOME/.cargo/env
+  - npm ci
+
+build_tauri:
+  stage: build
+  script:
+    - npm run tauri build
+    - npm run tauri bundle
+  artifacts:
+    paths:
+      - src-tauri/target/release/bundle/
+    expire_in: 1 week
+  only:
+    - main
+
+release:
+  stage: release
+  script:
+    - |
+      # Find the built exe (adjust path pattern to your app name)
+      FILE=$(find src-tauri/target/release/bundle -type f -name "*.exe" | head -n 1)
+      echo "Found file: $FILE"
+      # Create GitLab release with asset upload
+      curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+           --upload-file "$FILE" \
+           "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads"
+      # Get the uploaded file URL from the response
+      URL=$(curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+                 --upload-file "$FILE" \
+                 "$CI_API_V4_URL/projects/$CI_PROJECT_ID/uploads" \
+                 | jq -r '.url')
+      # Create a release pointing to that file
+      curl --request POST --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+           "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases" \
+           --form "name=Auto Release - $CI_COMMIT_SHORT_SHA" \
+           --form "tag_name=auto-$CI_COMMIT_SHORT_SHA" \
+           --form "description=Automated release for commit $CI_COMMIT_SHA" \
+           --form "assets[links][][name]=Download .exe" \
+           --form "assets[links][][url]=$CI_PROJECT_URL$URL"
+  needs:
+    - build_tauri
+  only:
+    - main
