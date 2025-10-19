@@ -2,12 +2,12 @@ use crate::packets;
 use crate::packets::opcodes::Pkt;
 use crate::packets::packet_process::process_packet;
 use crate::packets::utils::{BinaryReader, Server, TCPReassembler};
+use crate::packets::reassembler::Reassembler;
 use etherparse::NetSlice::Ipv4;
 use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
-use log::{debug, error, info, trace, warn};
+use log::{debug, error, info, warn};
 use once_cell::sync::OnceCell;
-use std::hash::Hash;
 use tokio::sync::watch;
 use windivert::WinDivert;
 use windivert::prelude::WinDivertFlags;
@@ -58,6 +58,7 @@ async fn read_packets(
     let mut windivert_buffer = vec![0u8; 10 * 1024 * 1024];
     let mut known_server: Option<Server> = None; // nothing at start
     let mut tcp_reassembler: TCPReassembler = TCPReassembler::new();
+    let mut reassembler = Reassembler::new();
     while let Ok(packet) = windivert.recv(Some(&mut windivert_buffer)) {
         // info!("{}", line!());
         let Ok(network_slices) = SlicedPacket::from_ip(packet.data.as_ref()) else {
@@ -201,30 +202,13 @@ async fn read_packets(
             tcp_reassembler.next_seq = Some(seq.wrapping_add(cached_tcp_data.len()));
             tcp_reassembler.cache.remove(seq);
         }
-        i = 0;
-        while tcp_reassembler._data.len() > 4 {
-            i += 1;
-            if i % 1000 == 0 {
-                let sample = &tcp_reassembler._data[..tcp_reassembler._data.len().min(32)];
-                warn!("Potential infinite loop in _data processing: iteration={i}, _data_len={}, sample={:?}", tcp_reassembler._data.len(), sample);
-            }
-            let packet_size = match BinaryReader::from(tcp_reassembler._data.clone()).read_u32() {
-                Ok(sz) => sz,
-                Err(e) => {
-                    debug!("Malformed reassembled packet: failed to read_u32: {e}");
-                    break;
-                }
-            };
-            if tcp_reassembler._data.len() < packet_size as usize {
-                break;
-            }
-            if tcp_reassembler._data.len() >= packet_size as usize {
-                let (left, right) = tcp_reassembler._data.split_at(packet_size as usize);
-                let packet = left.to_vec();
-                tcp_reassembler._data = right.to_vec();
-                // info!("Processing packet at line {}: size={}", line!(), packet_size);
-                process_packet(BinaryReader::from(packet), packet_sender.clone()).await;
-            }
+    // Feed any available reassembled bytes into the new Reassembler and
+    // yield full frames via try_next()
+        if !tcp_reassembler._data.is_empty() {
+            reassembler.feed_owned(std::mem::take(&mut tcp_reassembler._data));
+        }
+        while let Some(packet) = reassembler.try_next() {
+            process_packet(BinaryReader::from(packet), packet_sender.clone()).await;
         }
         if *restart_receiver.borrow() {
             break;

@@ -45,14 +45,22 @@ export const isPaused = writable(false);
       });
 
       // Set up encounter update listener (pause/resume)
-      const encounterUnlisten = await onEncounterUpdate((event) => {
-        isPaused.set(event.payload.isPaused);
-        if (event.payload.isPaused) {
-          notificationToast?.showToast('warning', 'Encounter paused');
-        } else {
-          notificationToast?.showToast('success', 'Encounter resumed');
-        }
-      });
+          // track previous pause state locally to avoid spamming toasts on every update
+          let lastPauseState: boolean | null = null;
+          const encounterUnlisten = await onEncounterUpdate((event) => {
+            const newPaused = event.payload.isPaused;
+            // update the store regardless
+            isPaused.set(newPaused);
+            // only show a toast if the pause state actually changed
+            if (lastPauseState === null || lastPauseState !== newPaused) {
+              if (newPaused) {
+                notificationToast?.showToast('warning', 'Encounter paused');
+              } else {
+                notificationToast?.showToast('success', 'Encounter resumed');
+              }
+            }
+            lastPauseState = newPaused;
+          });
 
       // Combine all unlisten functions
       unlisten = () => {

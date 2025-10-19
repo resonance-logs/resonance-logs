@@ -2,5 +2,6 @@
 // Preferred way is to name modules with their subfolder name now (no longer mod.rs)
 pub mod opcodes;
 pub mod packet_capture;
+pub mod reassembler;
 mod packet_process;
 pub mod utils;
