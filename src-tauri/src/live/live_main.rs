@@ -29,9 +29,9 @@ pub async fn start(app_handle: AppHandle) {
         event_manager.initialize(app_handle.clone());
     }
 
-    // Throttling for events (emit at most every 100ms)
+    // Throttling for events (emit at most every 200ms)
     let mut last_emit_time = Instant::now();
-    let emit_throttle_duration = Duration::from_millis(100);
+    let emit_throttle_duration = Duration::from_millis(200);
 
     // Track previous state to detect changes
     let mut last_header_info: Option<crate::live::commands_models::HeaderInfo> = None;
