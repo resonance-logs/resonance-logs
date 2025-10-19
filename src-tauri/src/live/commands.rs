@@ -1,13 +1,12 @@
 use crate::live::event_manager::EventManagerMutex;
-use crate::live::opcodes_models::{Encounter, EncounterMutex};
+use crate::live::opcodes_models::EncounterMutex;
 use crate::live::skills_store::SkillsStoreMutex;
-use std::sync::MutexGuard;
 use crate::WINDOW_LIVE_LABEL;
 use log::info;
 use tauri::Manager;
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use window_vibrancy::{apply_blur, clear_blur};
-use crate::packets::packet_capture::request_restart;
+// request_restart is not needed in this module at present
 
 fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -> String {
     if player_uid == local_player_uid && player_name.is_empty() {
@@ -29,12 +28,12 @@ fn nan_is_zero(value: f64) -> f64 {
 
 #[tauri::command]
 #[specta::specta]
-pub fn subscribe_player_skills(
+pub async fn subscribe_player_skills(
     uid: i64,
     skill_type: String,
     skills_store: tauri::State<'_, SkillsStoreMutex>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
-    let mut skills_store = skills_store.lock().unwrap();
+    let mut skills_store = skills_store.write().await;
 
     // Add to active subscriptions
     skills_store.subscribe(uid, skill_type.clone());
@@ -57,23 +56,24 @@ pub fn subscribe_player_skills(
 
 #[tauri::command]
 #[specta::specta]
-pub fn unsubscribe_player_skills(
+pub async fn unsubscribe_player_skills(
     uid: i64,
     skill_type: String,
     skills_store: tauri::State<'_, SkillsStoreMutex>,
-) {
-    let mut skills_store = skills_store.lock().unwrap();
+)-> Result<(), String> {
+    let mut skills_store = skills_store.write().await;
     skills_store.unsubscribe(uid, skill_type);
+    Ok(())
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_player_skills(
+pub async fn get_player_skills(
     uid: i64,
     skill_type: String,
     skills_store: tauri::State<'_, SkillsStoreMutex>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
-    let skills_store = skills_store.lock().unwrap();
+    let skills_store = skills_store.read().await;
 
     match skill_type.as_str() {
         "dps" => {
@@ -108,9 +108,9 @@ pub fn disable_blur(app: tauri::AppHandle) {
 
 #[tauri::command]
 #[specta::specta]
-pub fn copy_sync_container_data(app: tauri::AppHandle) {
+pub async fn copy_sync_container_data(app: tauri::AppHandle) {
     let state = app.state::<EncounterMutex>();
-    let encounter = state.lock().unwrap();
+    let encounter = state.read().await;
     let json = serde_json::to_string_pretty(&encounter.local_player).unwrap();
     app.clipboard().write_text(json).unwrap();
 }
@@ -149,39 +149,41 @@ pub fn copy_sync_container_data(app: tauri::AppHandle) {
 
 #[tauri::command]
 #[specta::specta]
-pub fn reset_encounter(
+pub async fn reset_encounter(
     state: tauri::State<'_, EncounterMutex>,
     event_manager: tauri::State<'_, EventManagerMutex>,
     skills_store: tauri::State<'_, SkillsStoreMutex>,
-) {
-    let mut encounter = state.lock().unwrap();
-    encounter.clone_from(&Encounter::default());
+)-> Result<(), String> {
+    let mut encounter = state.write().await;
+    encounter.clone_from(&crate::live::opcodes_models::Encounter::default());
     info!("encounter reset");
 
     // Emit encounter reset event
-    let event_manager = event_manager.lock().unwrap();
+    let event_manager = event_manager.read().await;
     if event_manager.should_emit_events() {
         event_manager.emit_encounter_reset();
     }
 
     // Clear skills store and subscriptions
-    let mut skills_store = skills_store.lock().unwrap();
+    let mut skills_store = skills_store.write().await;
     skills_store.clear();
+    Ok(())
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn toggle_pause_encounter(
+pub async fn toggle_pause_encounter(
     state: tauri::State<'_, EncounterMutex>,
     event_manager: tauri::State<'_, EventManagerMutex>,
-) {
-    let mut encounter = state.lock().unwrap();
+)-> Result<(), String> {
+    let mut encounter = state.write().await;
     let _was_paused = encounter.is_encounter_paused;
     encounter.is_encounter_paused = !encounter.is_encounter_paused;
 
     // Emit pause/resume event
-    let event_manager = event_manager.lock().unwrap();
+    let event_manager = event_manager.read().await;
     if event_manager.should_emit_events() {
         event_manager.emit_encounter_pause(encounter.is_encounter_paused);
     }
+    Ok(())
 }

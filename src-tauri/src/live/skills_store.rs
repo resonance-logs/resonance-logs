@@ -1,5 +1,6 @@
 use crate::live::commands_models::SkillsWindow;
 use std::collections::{HashMap, HashSet};
+use tokio::sync::RwLock;
 
 pub struct SkillsStore {
     dps_skills: HashMap<i64, SkillsWindow>,
@@ -65,4 +66,5 @@ impl Default for SkillsStore {
     }
 }
 
-pub type SkillsStoreMutex = std::sync::Mutex<SkillsStore>;
+// Use an async RwLock so consumers can acquire read access without blocking.
+pub type SkillsStoreMutex = RwLock<SkillsStore>;

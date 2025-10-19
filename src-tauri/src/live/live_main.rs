@@ -25,7 +25,7 @@ pub async fn start(app_handle: AppHandle) {
     // Initialize event manager
     {
         let event_manager_state = app_handle.state::<EventManagerMutex>();
-        let mut event_manager = event_manager_state.lock().unwrap();
+        let mut event_manager = event_manager_state.write().await;
         event_manager.initialize(app_handle.clone());
     }
 
@@ -41,7 +41,7 @@ pub async fn start(app_handle: AppHandle) {
     while let Some((op, data)) = rx.recv().await {
         {
             let state = app_handle.state::<EncounterMutex>();
-            let encounter = state.lock().unwrap();
+            let encounter = state.read().await;
             if encounter.is_encounter_paused {
                 info!("packet dropped due to encounter paused");
                 continue;
@@ -51,7 +51,7 @@ pub async fn start(app_handle: AppHandle) {
         match op {
             packets::opcodes::Pkt::ServerChangeInfo => {
                 let encounter_state = app_handle.state::<EncounterMutex>();
-                let mut encounter_state = encounter_state.lock().unwrap();
+                let mut encounter_state = encounter_state.write().await;
                 on_server_change(&mut encounter_state);
 
                 // Reset cached state
@@ -60,14 +60,14 @@ pub async fn start(app_handle: AppHandle) {
 
                 // Emit encounter reset event
                 let event_manager_state = app_handle.state::<EventManagerMutex>();
-                let event_manager = event_manager_state.lock().unwrap();
+                let event_manager = event_manager_state.read().await;
                 if event_manager.should_emit_events() {
                     event_manager.emit_encounter_reset();
                 }
 
                 // Clear skills store and subscriptions
                 let skills_store_state = app_handle.state::<SkillsStoreMutex>();
-                let mut skills_store = skills_store_state.lock().unwrap();
+                let mut skills_store = skills_store_state.write().await;
                 skills_store.clear();
             }
             packets::opcodes::Pkt::SyncNearEntities => {
@@ -83,7 +83,7 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     };
                 let encounter_state = app_handle.state::<EncounterMutex>();
-                let mut encounter_state = encounter_state.lock().unwrap();
+                let mut encounter_state = encounter_state.write().await;
                 if process_sync_near_entities(&mut encounter_state, sync_near_entities).is_none() {
                     warn!("Error processing SyncNearEntities.. ignoring.");
                 }
@@ -101,7 +101,7 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     };
                 let encounter_state = app_handle.state::<EncounterMutex>();
-                let mut encounter_state = encounter_state.lock().unwrap();
+                let mut encounter_state = encounter_state.write().await;
                 encounter_state.local_player = sync_container_data.clone();
                 if process_sync_container_data(&mut encounter_state, sync_container_data).is_none()
                 {
@@ -120,7 +120,7 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     };
                 let encounter_state = app_handle.state::<EncounterMutex>();
-                let mut encounter_state = encounter_state.lock().unwrap();
+                let mut encounter_state = encounter_state.write().await;
                 if process_sync_container_dirty_data(
                     &mut encounter_state,
                     sync_container_dirty_data,
@@ -156,7 +156,7 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     };
                 let encounter_state = app_handle.state::<EncounterMutex>();
-                let mut encounter_state = encounter_state.lock().unwrap();
+                let mut encounter_state = encounter_state.write().await;
                 if process_sync_to_me_delta_info(&mut encounter_state, sync_to_me_delta_info)
                     .is_none()
                 {
@@ -175,7 +175,7 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     };
                 let encounter_state = app_handle.state::<EncounterMutex>();
-                let mut encounter_state = encounter_state.lock().unwrap();
+                let mut encounter_state = encounter_state.write().await;
                 for aoi_sync_delta in sync_near_delta_info.delta_infos {
                     if process_aoi_sync_delta(&mut encounter_state, aoi_sync_delta).is_none() {
                         warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
@@ -189,7 +189,7 @@ pub async fn start(app_handle: AppHandle) {
 
                     // Emit events for updated data
                     let event_manager_state = app_handle.state::<EventManagerMutex>();
-                    let event_manager = event_manager_state.lock().unwrap();
+                    let event_manager = event_manager_state.read().await;
                     if event_manager.should_emit_events() {
                         // Generate and emit encounter update only if it changed
                         if let Some(header_info) = generate_header_info(&encounter_state) {
@@ -218,7 +218,7 @@ pub async fn start(app_handle: AppHandle) {
 
                         // Update skills store for all players with damage/heal data
                         let skills_store_state = app_handle.state::<SkillsStoreMutex>();
-                        let mut skills_store = skills_store_state.lock().unwrap();
+                        let mut skills_store = skills_store_state.write().await;
 
                         for (&entity_uid, entity) in &encounter_state.entity_uid_to_entity {
                             let is_player =

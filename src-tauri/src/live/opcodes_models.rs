@@ -2,7 +2,8 @@ use crate::live::opcodes_models::class::ClassSpec;
 use blueprotobuf_lib::blueprotobuf::{EEntityType, SyncContainerData};
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
+use std::sync::LazyLock;
+use tokio::sync::RwLock;
 use windivert::layer::NetworkLayer;
 use windivert::WinDivert;
 
@@ -18,7 +19,8 @@ pub struct Encounter {
     pub local_player: SyncContainerData,
 }
 
-pub type EncounterMutex = Mutex<Encounter>;
+// Use an async-aware RwLock so readers don't block the tokio runtime threads.
+pub type EncounterMutex = RwLock<Encounter>;
 
 #[derive(Debug, Default, Clone)]
 pub struct Entity {
