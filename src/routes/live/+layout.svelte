@@ -3,7 +3,10 @@
   import { commands } from "$lib/bindings";
   import { SETTINGS } from "$lib/settings-store";
   import { cn } from "$lib/utils";
-  import { onPlayersUpdate, onResetEncounter } from "$lib/api";
+  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate } from "$lib/api";
+import { writable } from "svelte/store";
+// Store for pause state
+export const isPaused = writable(false);
   import { setDpsPlayers, setHealPlayers, clearMeterData } from "$lib/stores/live-meter-store.svelte";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
@@ -41,10 +44,29 @@
         notificationToast?.showToast('notice', 'Server change detected, resetting log');
       });
 
+      // Set up encounter update listener (pause/resume)
+          // track previous pause state locally to avoid spamming toasts on every update
+          let lastPauseState: boolean | null = null;
+          const encounterUnlisten = await onEncounterUpdate((event) => {
+            const newPaused = event.payload.isPaused;
+            // update the store regardless
+            isPaused.set(newPaused);
+            // only show a toast if the pause state actually changed
+            if (lastPauseState === null || lastPauseState !== newPaused) {
+              if (newPaused) {
+                notificationToast?.showToast('warning', 'Encounter paused');
+              } else {
+                notificationToast?.showToast('success', 'Encounter resumed');
+              }
+            }
+            lastPauseState = newPaused;
+          });
+
       // Combine all unlisten functions
       unlisten = () => {
         playersUnlisten();
         resetUnlisten();
+        encounterUnlisten();
       };
 
       console.log("Event listeners set up for live meter data");

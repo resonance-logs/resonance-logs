@@ -11,11 +11,21 @@ async enableBlur() : Promise<void> {
 async disableBlur() : Promise<void> {
     await TAURI_INVOKE("disable_blur");
 },
-async resetEncounter() : Promise<void> {
-    await TAURI_INVOKE("reset_encounter");
+async resetEncounter() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_encounter") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
-async togglePauseEncounter() : Promise<void> {
-    await TAURI_INVOKE("toggle_pause_encounter");
+async togglePauseEncounter() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_pause_encounter") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
 async getPlayerSkills(uid: number, skillType: string) : Promise<Result<SkillsWindow, string>> {
     try {
@@ -33,8 +43,13 @@ async subscribePlayerSkills(uid: number, skillType: string) : Promise<Result<Ski
     else return { status: "error", error: e  as any };
 }
 },
-async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<void> {
-    await TAURI_INVOKE("unsubscribe_player_skills", { uid, skillType });
+async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unsubscribe_player_skills", { uid, skillType }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

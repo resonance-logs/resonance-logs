@@ -4,6 +4,7 @@ use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
+use tokio::sync::RwLock;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -116,7 +117,8 @@ impl Default for EventManager {
     }
 }
 
-pub type EventManagerMutex = std::sync::Mutex<EventManager>;
+// Use an async RwLock for non-blocking access from async tasks
+pub type EventManagerMutex = RwLock<EventManager>;
 
 // Helper functions for generating data structures
 pub fn generate_players_window_dps(encounter: &Encounter) -> PlayersWindow {
