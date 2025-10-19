@@ -76,6 +76,21 @@ export const onPlayersUpdate = (handler: (event: { payload: PlayersUpdatePayload
 export const onSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
   listen("skills-update", handler);
 
+// Convenience functions for specific skill updates
+export const onDpsSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
+  listen("skills-update", (event) => {
+    if (event.payload.metricType === "dps") {
+      handler(event);
+    }
+  });
+
+export const onHealSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
+  listen("skills-update", (event) => {
+    if (event.payload.metricType === "heal") {
+      handler(event);
+    }
+  });
+
 export const onResetEncounter = (handler: () => void): Promise<UnlistenFn> =>
   listen("reset-encounter", handler);
 

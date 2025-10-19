@@ -13,6 +13,7 @@ pub enum MetricType {
     Heal,
 }
 
+#[derive(Debug)]
 pub struct EventManager {
     app_handle: Option<AppHandle>,
 }

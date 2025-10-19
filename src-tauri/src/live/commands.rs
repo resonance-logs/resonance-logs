@@ -1,6 +1,4 @@
-use crate::live::event_manager::EventManagerMutex;
-use crate::live::opcodes_models::EncounterMutex;
-use crate::live::skills_store::SkillsStoreMutex;
+use crate::live::state::AppStateManager;
 use crate::WINDOW_LIVE_LABEL;
 use log::info;
 use tauri::Manager;
@@ -31,24 +29,28 @@ fn nan_is_zero(value: f64) -> f64 {
 pub async fn subscribe_player_skills(
     uid: i64,
     skill_type: String,
-    skills_store: tauri::State<'_, SkillsStoreMutex>,
+    state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
-    let mut skills_store = skills_store.write().await;
-
-    // Add to active subscriptions
-    skills_store.subscribe(uid, skill_type.clone());
+    // Add to active subscriptions using the state manager
+    state_manager.update_skills_store(|skills_store| {
+        skills_store.subscribe(uid, skill_type.clone());
+    }).await;
 
     // Return current skills data
     match skill_type.as_str() {
         "dps" => {
-            skills_store.get_dps_skills(uid)
-                .cloned()
-                .ok_or_else(|| format!("No DPS skills found for player {}", uid))
+            state_manager.with_state(|state| {
+                state.skills_store.get_dps_skills(uid)
+                    .cloned()
+                    .ok_or_else(|| format!("No DPS skills found for player {}", uid))
+            }).await
         }
         "heal" => {
-            skills_store.get_heal_skills(uid)
-                .cloned()
-                .ok_or_else(|| format!("No heal skills found for player {}", uid))
+            state_manager.with_state(|state| {
+                state.skills_store.get_heal_skills(uid)
+                    .cloned()
+                    .ok_or_else(|| format!("No heal skills found for player {}", uid))
+            }).await
         }
         _ => Err(format!("Invalid skill type: {}", skill_type))
     }
@@ -59,10 +61,11 @@ pub async fn subscribe_player_skills(
 pub async fn unsubscribe_player_skills(
     uid: i64,
     skill_type: String,
-    skills_store: tauri::State<'_, SkillsStoreMutex>,
+    state_manager: tauri::State<'_, AppStateManager>,
 )-> Result<(), String> {
-    let mut skills_store = skills_store.write().await;
-    skills_store.unsubscribe(uid, skill_type);
+    state_manager.update_skills_store(|skills_store| {
+        skills_store.unsubscribe(uid, skill_type);
+    }).await;
     Ok(())
 }
 
@@ -71,20 +74,22 @@ pub async fn unsubscribe_player_skills(
 pub async fn get_player_skills(
     uid: i64,
     skill_type: String,
-    skills_store: tauri::State<'_, SkillsStoreMutex>,
+    state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
-    let skills_store = skills_store.read().await;
-
     match skill_type.as_str() {
         "dps" => {
-            skills_store.get_dps_skills(uid)
-                .cloned()
-                .ok_or_else(|| format!("No DPS skills found for player {}", uid))
+            state_manager.with_state(|state| {
+                state.skills_store.get_dps_skills(uid)
+                    .cloned()
+                    .ok_or_else(|| format!("No DPS skills found for player {}", uid))
+            }).await
         }
         "heal" => {
-            skills_store.get_heal_skills(uid)
-                .cloned()
-                .ok_or_else(|| format!("No heal skills found for player {}", uid))
+            state_manager.with_state(|state| {
+                state.skills_store.get_heal_skills(uid)
+                    .cloned()
+                    .ok_or_else(|| format!("No heal skills found for player {}", uid))
+            }).await
         }
         _ => Err(format!("Invalid skill type: {}", skill_type))
     }
@@ -108,11 +113,17 @@ pub fn disable_blur(app: tauri::AppHandle) {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn copy_sync_container_data(app: tauri::AppHandle) {
-    let state = app.state::<EncounterMutex>();
-    let encounter = state.read().await;
-    let json = serde_json::to_string_pretty(&encounter.local_player).unwrap();
-    app.clipboard().write_text(json).unwrap();
+pub async fn copy_sync_container_data(
+    app: tauri::AppHandle,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    let encounter = state_manager.get_encounter().await;
+    let json = serde_json::to_string_pretty(&encounter.local_player)
+        .map_err(|e| format!("Failed to serialize data: {}", e))?;
+    app.clipboard()
+        .write_text(json)
+        .map_err(|e| format!("Failed to write to clipboard: {}", e))?;
+    Ok(())
 }
 
 // #[tauri::command]
@@ -150,40 +161,46 @@ pub async fn copy_sync_container_data(app: tauri::AppHandle) {
 #[tauri::command]
 #[specta::specta]
 pub async fn reset_encounter(
-    state: tauri::State<'_, EncounterMutex>,
-    event_manager: tauri::State<'_, EventManagerMutex>,
-    skills_store: tauri::State<'_, SkillsStoreMutex>,
+    state_manager: tauri::State<'_, AppStateManager>,
 )-> Result<(), String> {
-    let mut encounter = state.write().await;
-    encounter.clone_from(&crate::live::opcodes_models::Encounter::default());
+    state_manager.update_encounter(|encounter| {
+        *encounter = crate::live::opcodes_models::Encounter::default();
+    }).await;
     info!("encounter reset");
 
     // Emit encounter reset event
-    let event_manager = event_manager.read().await;
-    if event_manager.should_emit_events() {
-        event_manager.emit_encounter_reset();
-    }
+    state_manager.with_state(|state| {
+        if state.event_manager.should_emit_events() {
+            state.event_manager.emit_encounter_reset();
+        }
+    }).await;
 
     // Clear skills store and subscriptions
-    let mut skills_store = skills_store.write().await;
-    skills_store.clear();
+    state_manager.update_skills_store(|skills_store| {
+        skills_store.clear();
+    }).await;
     Ok(())
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn toggle_pause_encounter(
-    state: tauri::State<'_, EncounterMutex>,
-    event_manager: tauri::State<'_, EventManagerMutex>,
+    state_manager: tauri::State<'_, AppStateManager>,
 )-> Result<(), String> {
-    let mut encounter = state.write().await;
-    let _was_paused = encounter.is_encounter_paused;
-    encounter.is_encounter_paused = !encounter.is_encounter_paused;
+    let is_paused = state_manager.with_state(|state| {
+        let was_paused = state.encounter.is_encounter_paused;
+        was_paused
+    }).await;
+    
+    state_manager.update_encounter(|encounter| {
+        encounter.is_encounter_paused = !is_paused;
+    }).await;
 
     // Emit pause/resume event
-    let event_manager = event_manager.read().await;
-    if event_manager.should_emit_events() {
-        event_manager.emit_encounter_pause(encounter.is_encounter_paused);
-    }
+    state_manager.with_state(|state| {
+        if state.event_manager.should_emit_events() {
+            state.event_manager.emit_encounter_pause(!is_paused);
+        }
+    }).await;
     Ok(())
 }

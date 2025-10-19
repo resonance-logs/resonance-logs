@@ -3,9 +3,6 @@ mod packets;
 mod build_app;
 
 use crate::build_app::build_and_run;
-use crate::live::opcodes_models::EncounterMutex;
-use crate::live::event_manager::EventManagerMutex;
-use crate::live::skills_store::SkillsStoreMutex;
 use log::{info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use std::process::Command;
@@ -77,13 +74,12 @@ pub fn run() {
             // Setup tray icon
             setup_tray(&app_handle).expect("failed to setup tray");
 
-            app.manage(EncounterMutex::default());
-            app.manage(EventManagerMutex::default());
-            app.manage(SkillsStoreMutex::default());
+            // Create and manage the state manager
+            let state_manager = crate::live::state::AppStateManager::new(app_handle.clone());
+            app.manage(state_manager.clone());
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks
-            app.manage(EncounterMutex::default()); // setup encounter state
             tauri::async_runtime::spawn(
                 async move { live::live_main::start(app_handle.clone()).await },
             );
