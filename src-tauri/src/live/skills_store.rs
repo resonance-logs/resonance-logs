@@ -2,6 +2,7 @@ use crate::live::commands_models::SkillsWindow;
 use std::collections::{HashMap, HashSet};
 use tokio::sync::RwLock;
 
+#[derive(Debug, Clone)]
 pub struct SkillsStore {
     dps_skills: HashMap<i64, SkillsWindow>,
     heal_skills: HashMap<i64, SkillsWindow>,
