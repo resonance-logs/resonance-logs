@@ -47,6 +47,8 @@ const DEFAULT_SETTINGS = {
     dpsSkillBreakdown: { ...DEFAULT_STATS },
     healPlayers: { ...DEFAULT_STATS },
     healSkillBreakdown: { ...DEFAULT_STATS },
+    tankedPlayers: { ...DEFAULT_STATS },
+    tankedSkillBreakdown: { ...DEFAULT_STATS },
   },
   misc: {
     testingMode: false,
@@ -96,6 +98,18 @@ export const SETTINGS = {
         RUNE_STORE_OPTIONS
       ),
     },
+    tanked: {
+      players: new RuneStore(
+        'liveTankedPlayers',
+        DEFAULT_SETTINGS.live.tankedPlayers,
+        RUNE_STORE_OPTIONS
+      ),
+      skills: new RuneStore(
+        'liveTankedSkills',
+        DEFAULT_SETTINGS.live.tankedSkillBreakdown,
+        RUNE_STORE_OPTIONS
+      ),
+    },
   },
   misc: new RuneStore(
     'misc',
@@ -118,6 +132,10 @@ export const settings = {
       heal: {
         players: SETTINGS.live.heal.players.state,
         skillBreakdown: SETTINGS.live.heal.skillBreakdown.state,
+      },
+      tanked: {
+        players: SETTINGS.live.tanked.players.state,
+        skills: SETTINGS.live.tanked.skills.state,
       },
     },
     misc: SETTINGS.misc.state,

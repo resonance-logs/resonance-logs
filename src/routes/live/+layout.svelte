@@ -7,7 +7,7 @@
 import { writable } from "svelte/store";
 // Store for pause state
 export const isPaused = writable(false);
-  import { setDpsPlayers, setHealPlayers, clearMeterData } from "$lib/stores/live-meter-store.svelte";
+  import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData } from "$lib/stores/live-meter-store.svelte";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
   import NotificationToast from "./notification-toast.svelte";
@@ -35,6 +35,8 @@ export const isPaused = writable(false);
           setDpsPlayers(event.payload.playersWindow);
         } else if (event.payload.metricType === "heal") {
           setHealPlayers(event.payload.playersWindow);
+        } else if (event.payload.metricType === "tanked") {
+          setTankedPlayers(event.payload.playersWindow);
         }
       });
 
@@ -54,9 +56,9 @@ export const isPaused = writable(false);
             // only show a toast if the pause state actually changed
             if (lastPauseState === null || lastPauseState !== newPaused) {
               if (newPaused) {
-                notificationToast?.showToast('warning', 'Encounter paused');
+                notificationToast?.showToast('notice', 'Encounter paused');
               } else {
-                notificationToast?.showToast('success', 'Encounter resumed');
+                notificationToast?.showToast('notice', 'Encounter resumed');
               }
             }
             lastPauseState = newPaused;

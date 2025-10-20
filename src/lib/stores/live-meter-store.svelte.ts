@@ -14,6 +14,12 @@ const healPlayersStore = new RuneStore<PlayersWindow>(
     { autoStart: false, saveOnChange: false }
 );
 
+const tankedPlayersStore = new RuneStore<PlayersWindow>(
+    'liveMeterTanked',
+    { playerRows: [] },
+    { autoStart: false, saveOnChange: false }
+);
+
 // Export store functions
 export function setDpsPlayers(players: PlayersWindow) {
     dpsPlayersStore.state.playerRows = players.playerRows;
@@ -23,9 +29,14 @@ export function setHealPlayers(players: PlayersWindow) {
     healPlayersStore.state.playerRows = players.playerRows;
 }
 
+export function setTankedPlayers(players: PlayersWindow) {
+    tankedPlayersStore.state.playerRows = players.playerRows;
+}
+
 export function clearMeterData() {
     dpsPlayersStore.state.playerRows = [];
     healPlayersStore.state.playerRows = [];
+    tankedPlayersStore.state.playerRows = [];
 }
 
 export function getDpsPlayers() {
@@ -34,4 +45,8 @@ export function getDpsPlayers() {
 
 export function getHealPlayers() {
     return healPlayersStore.state;
+}
+
+export function getTankedPlayers() {
+    return tankedPlayersStore.state;
 }

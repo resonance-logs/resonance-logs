@@ -65,9 +65,9 @@ impl AppStateManager {
 
     pub async fn handle_event(&self, event: StateEvent) {
         let mut state = self.state.write().await;
-        
+
         // Check if encounter is paused for events that should be dropped
-        if state.is_encounter_paused() && matches!(event, 
+        if state.is_encounter_paused() && matches!(event,
             StateEvent::SyncNearEntities(_) |
             StateEvent::SyncContainerData(_) |
             StateEvent::SyncContainerDirtyData(_) |
@@ -183,7 +183,7 @@ impl AppStateManager {
     async fn reset_encounter(&self, state: &mut AppState) {
         state.encounter = Encounter::default();
         state.skills_store.clear();
-        
+
         if state.event_manager.should_emit_events() {
             state.event_manager.emit_encounter_reset();
         }
@@ -204,7 +204,7 @@ impl AppStateManager {
         let mut state = self.state.write().await;
         update_fn(&mut state.skills_store);
     }
-    
+
     pub async fn update_encounter<F>(&self, update_fn: F)
     where
         F: FnOnce(&mut Encounter),
@@ -212,15 +212,15 @@ impl AppStateManager {
         let mut state = self.state.write().await;
         update_fn(&mut state.encounter);
     }
-    
+
     pub async fn get_encounter_ref(&self) -> tokio::sync::RwLockReadGuard<'_, AppState> {
         self.state.read().await
     }
-    
+
     pub async fn get_skills_store_ref(&self) -> tokio::sync::RwLockReadGuard<'_, AppState> {
         self.state.read().await
     }
-    
+
     pub async fn with_state<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&AppState) -> R,
@@ -228,7 +228,7 @@ impl AppStateManager {
         let state = self.state.read().await;
         f(&*state)
     }
-    
+
     pub async fn with_state_mut<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&mut AppState) -> R,
@@ -255,16 +255,19 @@ impl AppStateManager {
         let header_info = crate::live::event_manager::generate_header_info(&encounter);
         let dps_players = crate::live::event_manager::generate_players_window_dps(&encounter);
         let heal_players = crate::live::event_manager::generate_players_window_heal(&encounter);
+        let tanked_players = crate::live::event_manager::generate_players_window_tanked(&encounter);
 
         // Generate skill windows for all players
         let mut dps_skill_windows = Vec::new();
         let mut heal_skill_windows = Vec::new();
+        let mut tanked_skill_windows = Vec::new();
         let mut subscribed_players = Vec::new();
 
         for (&entity_uid, entity) in &encounter.entity_uid_to_entity {
             let is_player = entity.entity_type == blueprotobuf::EEntityType::EntChar;
             let has_dmg_skills = !entity.skill_uid_to_dmg_skill.is_empty();
             let has_heal_skills = !entity.skill_uid_to_heal_skill.is_empty();
+            let has_taken_skills = !entity.skill_uid_to_taken_skill.is_empty();
 
             if is_player && has_dmg_skills {
                 if let Some(skills_window) =
@@ -279,6 +282,14 @@ impl AppStateManager {
                     crate::live::event_manager::generate_skills_window_heal(&encounter, entity_uid)
                 {
                     heal_skill_windows.push((entity_uid, skills_window));
+                }
+            }
+
+            if is_player && has_taken_skills {
+                if let Some(skills_window) =
+                    crate::live::event_manager::generate_skills_window_tanked(&encounter, entity_uid)
+                {
+                    tanked_skill_windows.push((entity_uid, skills_window));
                 }
             }
 
@@ -307,6 +318,11 @@ impl AppStateManager {
             state.event_manager.emit_players_update(MetricType::Heal, heal_players);
         }
 
+        // Emit tanked players update
+        if !tanked_players.player_rows.is_empty() {
+            state.event_manager.emit_players_update(MetricType::Tanked, tanked_players);
+        }
+
         // Update skills store for all players with damage/heal data
         for (entity_uid, skills_window) in dps_skill_windows {
             state.skills_store.update_dps_skills(entity_uid, skills_window);
@@ -314,6 +330,10 @@ impl AppStateManager {
 
         for (entity_uid, skills_window) in heal_skill_windows {
             state.skills_store.update_heal_skills(entity_uid, skills_window);
+        }
+
+        for (entity_uid, skills_window) in tanked_skill_windows {
+            state.skills_store.update_tanked_skills(entity_uid, skills_window);
         }
 
         // Emit skills updates only for subscribed players
@@ -331,6 +351,15 @@ impl AppStateManager {
                 if let Some(skills_window) = state.skills_store.get_heal_skills(entity_uid) {
                     state.event_manager.emit_skills_update(
                         MetricType::Heal,
+                        entity_uid,
+                        skills_window.clone(),
+                    );
+                }
+            }
+            if state.skills_store.is_subscribed(entity_uid, "tanked") {
+                if let Some(skills_window) = state.skills_store.get_tanked_skills(entity_uid) {
+                    state.event_manager.emit_skills_update(
+                        MetricType::Tanked,
                         entity_uid,
                         skills_window.clone(),
                     );

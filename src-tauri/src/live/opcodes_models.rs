@@ -46,6 +46,14 @@ pub struct Entity {
     pub lucky_hits_heal: u128,
     pub hits_heal: u128,
     pub skill_uid_to_heal_skill: HashMap<i32, Skill>,
+    // Tanked/Taken (damage received)
+    pub total_taken: u128,
+    pub crit_total_taken: u128,
+    pub crit_hits_taken: u128,
+    pub lucky_total_taken: u128,
+    pub lucky_hits_taken: u128,
+    pub hits_taken: u128,
+    pub skill_uid_to_taken_skill: HashMap<i32, Skill>,
 }
 
 #[derive(Debug, Default, Clone)]
