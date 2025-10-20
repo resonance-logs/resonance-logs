@@ -8,23 +8,46 @@
   import { settings } from "$lib/settings-store";
   import { getTankedPlayers } from "$lib/stores/live-meter-store.svelte";
 
-  const tankedTable = createSvelteTable({
-    get data() {
-      return getTankedPlayers().playerRows;
-    },
+  // Create reactive data reference to avoid recreating table on every render
+  let tankedData = $state(getTankedPlayers().playerRows);
+  let columnVisibility = $state(settings.state.live.tanked?.players || {});
+
+  // Update data when store changes
+  $effect(() => {
+    tankedData = getTankedPlayers().playerRows;
+  });
+
+  // Update column visibility when settings change
+  $effect(() => {
+    columnVisibility = settings.state.live.tanked?.players || {};
+  });
+
+  // Create table reactively when data or visibility changes
+  const tankedTable = $derived(createSvelteTable({
+    data: tankedData,
     columns: tankedPlayersColumnDefs,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      get columnVisibility() {
-        return settings.state.live.tanked?.players || {};
-      },
+      columnVisibility,
     },
+  }));
+
+  // Optimize derived calculations to avoid recalculation on every render
+  let maxTaken = $state(0);
+  let SETTINGS_YOUR_NAME = $state(settings.state["general"]["showYourName"]);
+  let SETTINGS_OTHERS_NAME = $state(settings.state["general"]["showOthersName"]);
+
+  // Update maxTaken when data changes
+  $effect(() => {
+    const players = getTankedPlayers().playerRows;
+    maxTaken = players.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0);
   });
 
-  let maxTaken = $derived(getTankedPlayers().playerRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
-
-  let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
-  let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
+  // Update settings references when settings change
+  $effect(() => {
+    SETTINGS_YOUR_NAME = settings.state["general"]["showYourName"];
+    SETTINGS_OTHERS_NAME = settings.state["general"]["showOthersName"];
+  });
 
 </script>
 

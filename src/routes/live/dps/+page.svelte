@@ -8,23 +8,46 @@
   import { settings } from "$lib/settings-store";
   import { getDpsPlayers } from "$lib/stores/live-meter-store.svelte";
 
-  const dpsTable = createSvelteTable({
-    get data() {
-      return getDpsPlayers().playerRows;
-    },
+  // Create reactive references
+  let dpsData = $state(getDpsPlayers().playerRows);
+  let columnVisibility = $state(settings.state.live.dps.players);
+
+  // Update data when store changes
+  $effect(() => {
+    dpsData = getDpsPlayers().playerRows;
+  });
+
+  // Update column visibility when settings change
+  $effect(() => {
+    columnVisibility = settings.state.live.dps.players;
+  });
+
+  // Create table reactively when data or visibility changes
+  const dpsTable = $derived(createSvelteTable({
+    data: dpsData,
     columns: dpsPlayersColumnDefs,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      get columnVisibility() {
-        return settings.state.live.dps.players;
-      },
+      columnVisibility,
     },
+  }));
+
+  // Optimize derived calculations to avoid recalculation on every render
+  let maxDamage = $state(0);
+  let SETTINGS_YOUR_NAME = $state(settings.state["general"]["showYourName"]);
+  let SETTINGS_OTHERS_NAME = $state(settings.state["general"]["showOthersName"]);
+
+  // Update maxDamage when data changes
+  $effect(() => {
+    const players = getDpsPlayers().playerRows;
+    maxDamage = players.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0);
   });
 
-  let maxDamage = $derived(getDpsPlayers().playerRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
-
-  let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
-  let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
+  // Update settings references when settings change
+  $effect(() => {
+    SETTINGS_YOUR_NAME = settings.state["general"]["showYourName"];
+    SETTINGS_OTHERS_NAME = settings.state["general"]["showOthersName"];
+  });
 
 </script>
 

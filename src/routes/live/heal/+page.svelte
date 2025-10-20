@@ -8,23 +8,46 @@
   import { settings } from "$lib/settings-store";
   import { getHealPlayers } from "$lib/stores/live-meter-store.svelte";
 
-  const healTable = createSvelteTable({
-    get data() {
-      return getHealPlayers().playerRows;
-    },
+  // Create reactive data reference to avoid recreating table on every render
+  let healData = $state(getHealPlayers().playerRows);
+  let columnVisibility = $state(settings.state.live.heal.players);
+
+  // Update data when store changes
+  $effect(() => {
+    healData = getHealPlayers().playerRows;
+  });
+
+  // Update column visibility when settings change
+  $effect(() => {
+    columnVisibility = settings.state.live.heal.players;
+  });
+
+  // Create table reactively when data or visibility changes
+  const healTable = $derived(createSvelteTable({
+    data: healData,
     columns: healPlayersColumnDefs,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      get columnVisibility() {
-        return settings.state.live.heal.players;
-      },
+      columnVisibility,
     },
+  }));
+
+  // Optimize derived calculations to avoid recalculation on every render
+  let maxHeal = $state(0);
+  let SETTINGS_YOUR_NAME = $state(settings.state.general.showYourName);
+  let SETTINGS_OTHERS_NAME = $state(settings.state.general.showOthersName);
+
+  // Update maxHeal when data changes
+  $effect(() => {
+    const players = getHealPlayers().playerRows;
+    maxHeal = players.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0);
   });
 
-  let maxHeal = $derived(getHealPlayers().playerRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
-
-  let SETTINGS_YOUR_NAME = $derived(settings.state.general.showYourName);
-  let SETTINGS_OTHERS_NAME = $derived(settings.state.general.showOthersName);
+  // Update settings references when settings change
+  $effect(() => {
+    SETTINGS_YOUR_NAME = settings.state.general.showYourName;
+    SETTINGS_OTHERS_NAME = settings.state.general.showOthersName;
+  });
 </script>
 
 <div class="relative flex flex-col">

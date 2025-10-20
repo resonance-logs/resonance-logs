@@ -20,19 +20,29 @@
   // Get the playerUid from the URL query parameters
   const playerUid = Number($page.url.searchParams.get("playerUid"));
 
-  // Define the table once skillsWindow is loaded
-  const tankedSkillsTable = createSvelteTable({
-    get data() {
-      return skillsWindow?.skillRows ?? [];
-    },
+  // Create reactive data references to avoid recreating table on every render
+  let skillRowsData: any[] = $state([]);
+  let columnVisibility = $state(settings.state.live.tanked?.skills || {});
+
+  // Update data when skillsWindow changes
+  $effect(() => {
+    skillRowsData = skillsWindow?.skillRows ?? [];
+  });
+
+  // Update column visibility when settings change
+  $effect(() => {
+    columnVisibility = settings.state.live.tanked?.skills || {};
+  });
+
+  // Define the table reactively when data changes
+  const tankedSkillsTable = $derived(createSvelteTable({
+    data: skillRowsData,
     columns: tankedSkillsColumnDefs,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      get columnVisibility() {
-        return settings.state.live.tanked?.skills || {};
-      },
+      columnVisibility,
     },
-  });
+  }));
 
   onMount(() => {
     if (playerUid) {
@@ -62,16 +72,31 @@
     };
   });
 
-  let maxTakenSkill = $derived(
-    skillsWindow?.skillRows.reduce((max, s) => (s.totalDmg > max ? s.totalDmg : max), 0) ?? 0
-  );
+  // Optimize derived calculations to avoid recalculation on every render
+  let maxTakenSkill = $state(0);
+  let SETTINGS_YOUR_NAME = $state(settings.state["general"]["showYourName"]);
+  let SETTINGS_OTHERS_NAME = $state(settings.state["general"]["showOthersName"]);
 
-  let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
-  let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
+  // Update maxTakenSkill when data changes
+  $effect(() => {
+    maxTakenSkill = skillsWindow?.skillRows.reduce((max, s) => (s.totalDmg > max ? s.totalDmg : max), 0) ?? 0;
+  });
+
+  // Update settings references when settings change
+  $effect(() => {
+    SETTINGS_YOUR_NAME = settings.state["general"]["showYourName"];
+    SETTINGS_OTHERS_NAME = settings.state["general"]["showOthersName"];
+  });
 
   // Get players list for breadcrumb info
-  let tankedPlayers = $derived(getTankedPlayers().playerRows);
-  let currentPlayer = $derived(tankedPlayers.find((p) => p.uid === playerUid));
+  let tankedPlayers: any[] = $state([]);
+  let currentPlayer: any = $state(null);
+
+  // Update players list when store changes
+  $effect(() => {
+    tankedPlayers = getTankedPlayers().playerRows;
+    currentPlayer = tankedPlayers.find((p) => p.uid === playerUid);
+  });
 </script>
 
 <!-- Breadcrumb to go back to the main table -->

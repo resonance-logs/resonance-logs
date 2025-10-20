@@ -1,7 +1,7 @@
 import type { PlayersWindow } from "$lib/api";
 import { RuneStore } from '@tauri-store/svelte';
 
-// Live meter data store using RuneStore
+// Live meter data store using RuneStore with improved cleanup
 const dpsPlayersStore = new RuneStore<PlayersWindow>(
     'liveMeterDps',
     { playerRows: [] },
@@ -19,6 +19,13 @@ const tankedPlayersStore = new RuneStore<PlayersWindow>(
     { playerRows: [] },
     { autoStart: false, saveOnChange: false }
 );
+
+// Cleanup function for stores - RuneStore handles its own cleanup
+// but we can ensure proper state reset
+export function cleanupStores() {
+    // The existing clearMeterData function already handles proper cleanup
+    clearMeterData();
+}
 
 // Export store functions
 export function setDpsPlayers(players: PlayersWindow) {

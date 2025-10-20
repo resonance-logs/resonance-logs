@@ -7,7 +7,7 @@
 import { writable } from "svelte/store";
 // Store for pause state
 export const isPaused = writable(false);
-  import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData } from "$lib/stores/live-meter-store.svelte";
+  import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores } from "$lib/stores/live-meter-store.svelte";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
   import NotificationToast from "./notification-toast.svelte";
@@ -25,6 +25,13 @@ export const isPaused = writable(false);
 
   async function setupEventListeners() {
     if (isReconnecting) return;
+
+    // Clean up existing listeners before setting up new ones
+    if (unlisten) {
+      unlisten();
+      unlisten = null;
+    }
+
     try {
       // Set up unified players listener
       const playersUnlisten = await onPlayersUpdate((event) => {
@@ -47,22 +54,22 @@ export const isPaused = writable(false);
       });
 
       // Set up encounter update listener (pause/resume)
-          // track previous pause state locally to avoid spamming toasts on every update
-          let lastPauseState: boolean | null = null;
-          const encounterUnlisten = await onEncounterUpdate((event) => {
-            const newPaused = event.payload.isPaused;
-            // update the store regardless
-            isPaused.set(newPaused);
-            // only show a toast if the pause state actually changed
-            if (lastPauseState === null || lastPauseState !== newPaused) {
-              if (newPaused) {
-                notificationToast?.showToast('notice', 'Encounter paused');
-              } else {
-                notificationToast?.showToast('notice', 'Encounter resumed');
-              }
-            }
-            lastPauseState = newPaused;
-          });
+      // track previous pause state locally to avoid spamming toasts on every update
+      let lastPauseState: boolean | null = null;
+      const encounterUnlisten = await onEncounterUpdate((event) => {
+        const newPaused = event.payload.isPaused;
+        // update the store regardless
+        isPaused.set(newPaused);
+        // only show a toast if the pause state actually changed
+        if (lastPauseState === null || lastPauseState !== newPaused) {
+          if (newPaused) {
+            notificationToast?.showToast('notice', 'Encounter paused');
+          } else {
+            notificationToast?.showToast('notice', 'Encounter resumed');
+          }
+        }
+        lastPauseState = newPaused;
+      });
 
       // Combine all unlisten functions
       unlisten = () => {
@@ -102,6 +109,7 @@ export const isPaused = writable(false);
     return () => {
       if (reconnectInterval) clearInterval(reconnectInterval);
       if (unlisten) unlisten();
+      cleanupStores();
     };
   });
 

@@ -15,36 +15,56 @@
   let healSkillBreakdownWindow: SkillsWindow = $state({ currPlayer: [], skillRows: [] });
   let unlisten: (() => void) | null = null;
 
-  const currPlayerTable = createSvelteTable({
-    get data() {
-      return healSkillBreakdownWindow.currPlayer;
-    },
+  // Create reactive data references to avoid recreating tables on every render
+  let currPlayerData = $state(healSkillBreakdownWindow.currPlayer);
+  let skillRowsData = $state(healSkillBreakdownWindow.skillRows);
+  let columnVisibility = $state(settings.state.live.heal.skillBreakdown);
+
+  // Update data when window changes
+  $effect(() => {
+    currPlayerData = healSkillBreakdownWindow.currPlayer;
+    skillRowsData = healSkillBreakdownWindow.skillRows;
+  });
+
+  // Update column visibility when settings change
+  $effect(() => {
+    columnVisibility = settings.state.live.heal.skillBreakdown;
+  });
+
+  // Create tables reactively when data or visibility changes
+  const currPlayerTable = $derived(createSvelteTable({
+    data: currPlayerData,
     columns: healPlayersColumnDefs,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      get columnVisibility() {
-        return settings.state.live.heal.skillBreakdown;
-      },
+      columnVisibility,
     },
-  });
+  }));
 
-  const healSkillBreakdownTable = createSvelteTable({
-    get data() {
-      return healSkillBreakdownWindow.skillRows;
-    },
+  const healSkillBreakdownTable = $derived(createSvelteTable({
+    data: skillRowsData,
     columns: healSkillsColumnDefs,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      get columnVisibility() {
-        return settings.state.live.heal.skillBreakdown;
-      },
+      columnVisibility,
     },
+  }));
+
+  // Optimize derived calculations to avoid recalculation on every render
+  let maxSkillValue = $state(0);
+  let SETTINGS_YOUR_NAME = $state(settings.state["general"]["showYourName"]);
+  let SETTINGS_OTHERS_NAME = $state(settings.state["general"]["showOthersName"]);
+
+  // Update maxSkillValue when data changes
+  $effect(() => {
+    maxSkillValue = healSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0);
   });
 
-  let maxSkillValue = $derived(healSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
-
-  let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
-  let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
+  // Update settings references when settings change
+  $effect(() => {
+    SETTINGS_YOUR_NAME = settings.state["general"]["showYourName"];
+    SETTINGS_OTHERS_NAME = settings.state["general"]["showOthersName"];
+  });
 
   async function subscribePlayerSkills() {
     try {

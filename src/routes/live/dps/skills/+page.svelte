@@ -15,36 +15,56 @@
   let dpsSkillBreakdownWindow: SkillsWindow = $state({ currPlayer: [], skillRows: [] });
   let unlisten: (() => void) | null = null;
 
-  const currPlayerTable = createSvelteTable({
-    get data() {
-      return dpsSkillBreakdownWindow.currPlayer;
-    },
+  // Create reactive data references to avoid recreating tables on every render
+  let currPlayerData = $state(dpsSkillBreakdownWindow.currPlayer);
+  let skillRowsData = $state(dpsSkillBreakdownWindow.skillRows);
+  let columnVisibility = $state(settings.state.live.dps.skillBreakdown);
+
+  // Update data when window changes
+  $effect(() => {
+    currPlayerData = dpsSkillBreakdownWindow.currPlayer;
+    skillRowsData = dpsSkillBreakdownWindow.skillRows;
+  });
+
+  // Update column visibility when settings change
+  $effect(() => {
+    columnVisibility = settings.state.live.dps.skillBreakdown;
+  });
+
+  // Create tables reactively when data or visibility changes
+  const currPlayerTable = $derived(createSvelteTable({
+    data: currPlayerData,
     columns: dpsPlayersColumnDefs,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      get columnVisibility() {
-        return settings.state.live.dps.skillBreakdown;
-      },
+      columnVisibility,
     },
-  });
+  }));
 
-  const dpsSkillBreakdownTable = createSvelteTable({
-    get data() {
-      return dpsSkillBreakdownWindow.skillRows;
-    },
+  const dpsSkillBreakdownTable = $derived(createSvelteTable({
+    data: skillRowsData,
     columns: dpsSkillsColumnDefs,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      get columnVisibility() {
-        return settings.state.live.dps.skillBreakdown;
-      },
+      columnVisibility,
     },
+  }));
+
+  // Optimize derived calculations to avoid recalculation on every render
+  let maxSkillValue = $state(0);
+  let SETTINGS_YOUR_NAME = $state(settings.state["general"]["showYourName"]);
+  let SETTINGS_OTHERS_NAME = $state(settings.state["general"]["showOthersName"]);
+
+  // Update maxSkillValue when data changes
+  $effect(() => {
+    maxSkillValue = dpsSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0);
   });
 
-  let maxSkillValue = $derived(dpsSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0));
-
-  let SETTINGS_YOUR_NAME = $derived(settings.state["general"]["showYourName"]);
-  let SETTINGS_OTHERS_NAME = $derived(settings.state["general"]["showOthersName"]);
+  // Update settings references when settings change
+  $effect(() => {
+    SETTINGS_YOUR_NAME = settings.state["general"]["showYourName"];
+    SETTINGS_OTHERS_NAME = settings.state["general"]["showOthersName"];
+  });
 
   async function subscribePlayerSkills() {
     try {
