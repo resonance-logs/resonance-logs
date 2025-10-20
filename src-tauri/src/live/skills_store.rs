@@ -6,6 +6,7 @@ use tokio::sync::RwLock;
 pub struct SkillsStore {
     dps_skills: HashMap<i64, SkillsWindow>,
     heal_skills: HashMap<i64, SkillsWindow>,
+    tanked_skills: HashMap<i64, SkillsWindow>,
     active_subscriptions: HashSet<(i64, String)>,
 }
 
@@ -14,6 +15,7 @@ impl SkillsStore {
         Self {
             dps_skills: HashMap::new(),
             heal_skills: HashMap::new(),
+            tanked_skills: HashMap::new(),
             active_subscriptions: HashSet::new(),
         }
     }
@@ -32,6 +34,14 @@ impl SkillsStore {
 
     pub fn get_heal_skills(&self, player_uid: i64) -> Option<&SkillsWindow> {
         self.heal_skills.get(&player_uid)
+    }
+
+    pub fn update_tanked_skills(&mut self, player_uid: i64, skills_window: SkillsWindow) {
+        self.tanked_skills.insert(player_uid, skills_window);
+    }
+
+    pub fn get_tanked_skills(&self, player_uid: i64) -> Option<&SkillsWindow> {
+        self.tanked_skills.get(&player_uid)
     }
 
     pub fn subscribe(&mut self, player_uid: i64, skill_type: String) {
@@ -57,6 +67,7 @@ impl SkillsStore {
     pub fn clear(&mut self) {
         self.dps_skills.clear();
         self.heal_skills.clear();
+        self.tanked_skills.clear();
         self.active_subscriptions.clear();
     }
 }

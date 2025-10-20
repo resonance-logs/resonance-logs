@@ -91,6 +91,13 @@ pub async fn get_player_skills(
                     .ok_or_else(|| format!("No heal skills found for player {}", uid))
             }).await
         }
+        "tanked" => {
+            state_manager.with_state(|state| {
+                state.skills_store.get_tanked_skills(uid)
+                    .cloned()
+                    .ok_or_else(|| format!("No tanked skills found for player {}", uid))
+            }).await
+        }
         _ => Err(format!("Invalid skill type: {}", skill_type))
     }
 }
@@ -191,7 +198,7 @@ pub async fn toggle_pause_encounter(
         let was_paused = state.encounter.is_encounter_paused;
         was_paused
     }).await;
-    
+
     state_manager.update_encounter(|encounter| {
         encounter.is_encounter_paused = !is_paused;
     }).await;

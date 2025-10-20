@@ -53,7 +53,7 @@ export type EncounterUpdatePayload = {
   isPaused: boolean;
 };
 
-export type MetricType = "dps" | "heal";
+export type MetricType = "dps" | "heal" | "tanked";
 
 export type PlayersUpdatePayload = {
   metricType: MetricType;
@@ -87,6 +87,13 @@ export const onDpsSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayloa
 export const onHealSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
   listen("skills-update", (event) => {
     if (event.payload.metricType === "heal") {
+      handler(event);
+    }
+  });
+
+export const onTankedSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
+  listen("skills-update", (event) => {
+    if (event.payload.metricType === "tanked") {
       handler(event);
     }
   });

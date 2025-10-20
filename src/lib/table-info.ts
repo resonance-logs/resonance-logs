@@ -451,3 +451,219 @@ export const healSkillsColumnDefs = [
     }
   }),
 ];
+
+const tankedPlayersColumnHelper = createColumnHelper<PlayerRow>();
+export const tankedPlayersColumnDefs = [
+  tankedPlayersColumnHelper.display({
+    id: 'playerInfo',
+    cell: ({ row }) =>
+      renderComponent(PlayerInfo, {
+        className: row.original.className,
+        classSpecName: row.original.classSpecName,
+        abilityScore: row.original.abilityScore,
+        name: row.original.name,
+        uid: row.original.uid
+      }),
+    meta: {
+      class: "w-full",
+      label: "Player Info",
+      description: "Show ability score and name with UID tooltip (click to copy #UID)"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('totalDmg', {
+    header: 'Taken',
+    cell: ({ cell }) => renderComponent(AbbreviatedNumber, { num: cell.getValue() }),
+    meta: {
+      class: "w-12",
+      label: "Taken",
+      description: "Show player's total damage taken"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('dps', {
+    header: 'DTPS',
+    cell: ({ cell }) => renderComponent(AbbreviatedNumber, { num: cell.getValue() }),
+    meta: {
+      class: "w-12",
+      label: "DTPS",
+      description: "Show player's damage taken per second"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('dmgPct', {
+    header: () => renderComponent(PercentFormat, { val: "T" }),
+    cell: ({ cell }) =>
+      renderComponent(PercentFormat, { val: cell.getValue(), fractionDigits: 0 }),
+    meta: {
+      class: "w-12",
+      label: "T%",
+      description: "Show player's damage taken % contribution"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('critRate', {
+    header: () => renderComponent(PercentFormat, { val: "CR" }),
+    cell: ({ cell }) => renderComponent(PercentFormat, { val: cell.getValue() }),
+    meta: {
+      class: "w-12",
+      label: "CR",
+      description: "Show player's critical rate (on damage taken)"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('critDmgRate', {
+    header: () => renderComponent(PercentFormat, { val: "CDMG" }),
+    cell: ({ cell }) => renderComponent(PercentFormat, { val: cell.getValue() }),
+    meta: {
+      class: "w-13",
+      label: "CDMG",
+      description: "Show player's % damage taken that was crit"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('luckyRate', {
+    header: () => renderComponent(PercentFormat, { val: "LR" }),
+    cell: ({ cell }) => renderComponent(PercentFormat, { val: cell.getValue() }),
+    meta: {
+      class: "w-12",
+      label: "LR%",
+      description: "Show player's lucky rate (on damage taken)"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('luckyDmgRate', {
+    header: () => renderComponent(PercentFormat, { val: "LDMG" }),
+    cell: ({ cell }) => renderComponent(PercentFormat, { val: cell.getValue() }),
+    meta: {
+      class: "w-13",
+      label: "LDMG%",
+      description: "Show player's % damage taken that was lucky"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('hits', {
+    header: 'Hits',
+    meta: {
+      class: "w-13",
+      label: "Hits",
+      description: "Show player's total number of hits taken"
+    }
+  }),
+
+  tankedPlayersColumnHelper.accessor('hitsPerMinute', {
+    header: 'HPM',
+    cell: ({ cell }) => cell.getValue().toFixed(1),
+    meta: {
+      class: "w-12",
+      label: "HPM",
+      description: "Show player's number of hits taken per minute"
+    }
+  }),
+];
+
+const tankedSkillsColumnHelper = createColumnHelper<SkillRow>();
+export const tankedSkillsColumnDefs = [
+  tankedSkillsColumnHelper.display({
+    id: 'skillName',
+    cell: ({ row }) =>
+      renderComponent(SkillInfo, {
+        skillName: row.original.name
+      }),
+    meta: {
+      class: "w-full",
+      label: "Skill Name",
+      description: "Show skill name (source of damage)"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('totalDmg', {
+    header: 'Taken',
+    cell: ({ cell }) => renderComponent(AbbreviatedNumber, { num: cell.getValue() }),
+    meta: {
+      class: "w-12",
+      label: "Taken",
+      description: "Show skill's total damage taken"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('dps', {
+    header: 'DTPS',
+    cell: ({ cell }) => renderComponent(AbbreviatedNumber, { num: cell.getValue() }),
+    meta: {
+      class: "w-12",
+      label: "DTPS",
+      description: "Show skill's damage taken per second"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('dmgPct', {
+    header: () => renderComponent(PercentFormat, { val: "T" }),
+    cell: ({ cell }) =>
+      renderComponent(PercentFormat, { val: cell.getValue(), fractionDigits: 0 }),
+    meta: {
+      class: "w-12",
+      label: "T%",
+      description: "Show skill's damage taken % contribution"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('critRate', {
+    header: () => renderComponent(PercentFormat, { val: "CR" }),
+    cell: ({ cell }) => renderComponent(PercentFormat, { val: cell.getValue() }),
+    meta: {
+      class: "w-12",
+      label: "CR",
+      description: "Show skill's critical rate"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('critDmgRate', {
+    header: () => renderComponent(PercentFormat, { val: "CDMG" }),
+    cell: ({ cell }) => renderComponent(PercentFormat, { val: cell.getValue() }),
+    meta: {
+      class: "w-13",
+      label: "CDMG",
+      description: "Show skill's % damage taken that was crit"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('luckyRate', {
+    header: () => renderComponent(PercentFormat, { val: "LR" }),
+    cell: ({ cell }) => renderComponent(PercentFormat, { val: cell.getValue() }),
+    meta: {
+      class: "w-12",
+      label: "LR%",
+      description: "Show skill's lucky rate"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('luckyDmgRate', {
+    header: () => renderComponent(PercentFormat, { val: "LDMG" }),
+    cell: ({ cell }) => renderComponent(PercentFormat, { val: cell.getValue() }),
+    meta: {
+      class: "w-13",
+      label: "LDMG%",
+      description: "Show skill's % damage taken that was lucky"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('hits', {
+    header: 'Hits',
+    meta: {
+      class: "w-13",
+      label: "Hits",
+      description: "Show skill's total number of hits"
+    }
+  }),
+
+  tankedSkillsColumnHelper.accessor('hitsPerMinute', {
+    header: 'HPM',
+    cell: ({ cell }) => cell.getValue().toFixed(1),
+    meta: {
+      class: "w-12",
+      label: "HPM",
+      description: "Show skill's number of hits per minute"
+    }
+  }),
+];

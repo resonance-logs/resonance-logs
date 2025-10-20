@@ -206,6 +206,47 @@ pub fn process_aoi_sync_delta(
             //     "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
             //     skill.total_value
             // );
+
+            // Track damage taken
+            if attacker_entity.entity_type != EEntityType::EntChar {
+                let hp_loss = sync_damage_info.hp_lessen_value.unwrap_or(0).max(0) as u128;
+                let shield_loss = sync_damage_info.shield_lessen_value.unwrap_or(0).max(0) as u128;
+                let taken_value = if hp_loss + shield_loss > 0 {
+                    hp_loss + shield_loss
+                } else {
+                    actual_value
+                };
+
+                let defender_entity = encounter
+                    .entity_uid_to_entity
+                    .entry(target_uid)
+                    .or_insert_with(|| Entity {
+                        entity_type: EEntityType::from(target_uuid),
+                        ..Default::default()
+                    });
+
+                let taken_skill = defender_entity
+                    .skill_uid_to_taken_skill
+                    .entry(skill_uid)
+                    .or_insert_with(|| Skill::default());
+
+                if is_crit {
+                    defender_entity.crit_hits_taken += 1;
+                    defender_entity.crit_total_taken += taken_value;
+                    taken_skill.crit_hits += 1;
+                    taken_skill.crit_total_value += taken_value;
+                }
+                if is_lucky {
+                    defender_entity.lucky_hits_taken += 1;
+                    defender_entity.lucky_total_taken += taken_value;
+                    taken_skill.lucky_hits += 1;
+                    taken_skill.lucky_total_value += taken_value;
+                }
+                defender_entity.hits_taken += 1;
+                defender_entity.total_taken += taken_value;
+                taken_skill.hits += 1;
+                taken_skill.total_value += taken_value;
+            }
         }
     }
 
