@@ -1,8 +1,10 @@
-use crate::live::opcodes_models;
+// NOTE: opcodes_process works on Encounter directly; avoid importing opcodes_models at top-level.
 use crate::live::opcodes_models::class::{
     get_class_id_from_spec, get_class_spec_from_skill_id, ClassSpec,
 };
 use crate::live::opcodes_models::{attr_type, Encounter, Entity, Skill};
+// Note: we will call AppStateManager::add_recent_name from the caller side where
+// AppStateManager is available. opcodes_process operates on Encounter directly.
 use crate::packets::utils::BinaryReader;
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
@@ -54,6 +56,10 @@ pub fn process_sync_container_data(
         .or_default();
     let char_base = v_data.char_base?;
     target_entity.name = char_base.name?;
+    // Update recent names cache if caller has wired this in via AppStateManager.
+    // Caller (AppStateManager) will call process_sync_container_data and can then
+    // add the name via add_recent_name if desired. We keep this function focused
+    // on encounter mutation.
     target_entity.entity_type = EEntityType::EntChar;
     target_entity.class_id = v_data.profession_list?.cur_profession_id?;
     target_entity.ability_score = char_base.fight_point?;
@@ -63,8 +69,8 @@ pub fn process_sync_container_data(
 }
 
 pub fn process_sync_container_dirty_data(
-    encounter: &mut Encounter,
-    sync_container_dirty_data: blueprotobuf::SyncContainerDirtyData,
+    _encounter: &mut Encounter,
+    _sync_container_dirty_data: blueprotobuf::SyncContainerDirtyData,
 ) -> Option<()> {
     Some(())
 }
@@ -275,8 +281,11 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                 // todo: fix these brackets
                 raw_bytes.remove(0); // not sure why, there's some weird character as the first e.g. "\u{6}Sketal"
                 let player_name = BinaryReader::from(raw_bytes).read_string().unwrap();
-                player_entity.name = player_name;
+                player_entity.name = player_name.clone();
                 info! {"Found player {} with UID {}", player_entity.name, target_uid}
+                // Note: AppStateManager::handle_event() wraps calls to this
+                // module; after processing the event the manager can call
+                // add_recent_name() to persist the name into the backend cache.
             }
             #[allow(clippy::cast_possible_truncation)]
             attr_type::ATTR_PROFESSION_ID => {
