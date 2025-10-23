@@ -1,13 +1,14 @@
 use crate::packets;
-use crate::packets::opcodes::{FragmentType, Pkt};
+use crate::packets::opcodes::FragmentType;
+use crate::packets::parser;
 use crate::packets::utils::BinaryReader;
-use log::{debug, info, trace};
+use log::debug;
 
 pub async fn process_packet(
     mut packets_reader: BinaryReader,
     packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
 ) {
-    let mut debug_ctr = 0;
+    let mut _debug_ctr = 0;
     while packets_reader.remaining() > 0 {
         let packet_size = match packets_reader.peek_u32() {
             Ok(sz) => sz,
@@ -42,64 +43,23 @@ pub async fn process_packet(
         let is_zstd_compressed = packet_type & 0x8000;
         let msg_type_id = packet_type & 0x7fff;
 
-        debug_ctr += 1;
+        _debug_ctr += 1;
         match packets::opcodes::FragmentType::from(msg_type_id) {
             FragmentType::Notify => {
-                let service_uuid = match reader.read_u64() {
-                    Ok(su) => su,
-                    Err(e) => {
-                        debug!("Malformed Notify: failed to read_u64 service_uuid: {e}");
-                        continue;
+                // Use parser helper to extract components and payload.
+                if let Some((method_id, payload)) = parser::parse_notify_fragment(&mut reader, is_zstd_compressed != 0) {
+                    if let Err(err) = packet_sender.send((method_id, payload)).await {
+                        debug!("Failed to send packet: {err}");
                     }
-                };
-                let stub_id = match reader.read_u32() {
-                    Ok(sid) => sid,
-                    Err(e) => {
-                        debug!("Malformed Notify: failed to read_u32 stub_id: {e}");
-                        continue;
-                    }
-                };
-                let method_id_raw = match reader.read_u32() {
-                    Ok(mid) => mid,
-                    Err(e) => {
-                        debug!("Malformed Notify: failed to read_u32 method_id: {e}");
-                        continue;
-                    }
-                };
-
-                if service_uuid != 0x0000000063335342 {
-                    debug!("Notify: service_uuid mismatch: {service_uuid:x}");
+                } else {
+                    // parse_notify_fragment logged details
                     continue;
-                }
-
-                let msg_payload = reader.read_remaining();
-                let mut tcp_fragment_vec = msg_payload.to_vec();
-                if is_zstd_compressed != 0 {
-                    match zstd::decode_all(tcp_fragment_vec.as_slice()) {
-                        Ok(decoded) => tcp_fragment_vec = decoded,
-                        Err(e) => {
-                            debug!("Notify: zstd decompression failed: {e}");
-                            continue;
-                        }
-                    }
-                }
-
-                let method_id = match Pkt::try_from(method_id_raw) {
-                    Ok(mid) => mid,
-                    Err(_) => {
-                        debug!("Notify: Skipping unknown methodId: {method_id_raw}");
-                        continue;
-                    }
-                };
-
-                if let Err(err) = packet_sender.send((method_id, tcp_fragment_vec)).await {
-                    debug!("Failed to send packet: {err}");
                 }
             }
             FragmentType::FrameDown => {
-                let server_sequence_id = match reader.read_u32() {
+                let _server_sequence_id = match reader.read_u32() {
                     Ok(sid) => sid,
-                    Err(e) => {
+                    Err(_e) => {
                         // debug!("FrameDown: failed to read_u32 server_sequence_id: {e}");
                         continue;
                     }
@@ -115,8 +75,8 @@ pub async fn process_packet(
                         Ok(tcp_fragment_decompressed) => {
                             packets_reader = BinaryReader::from(tcp_fragment_decompressed);
                         }
-                        Err(e) => {
-                            // debug!("FrameDown: zstd decompression failed: {e}");
+                        Err(_e) => {
+                            // debug!("FrameDown: zstd decompression failed");
                             continue;
                         }
                     }
