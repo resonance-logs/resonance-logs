@@ -76,27 +76,17 @@ export const onPlayersUpdate = (handler: (event: { payload: PlayersUpdatePayload
 export const onSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
   listen("skills-update", handler);
 
-// Convenience functions for specific skill updates
-export const onDpsSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
-  listen("skills-update", (event) => {
-    if (event.payload.metricType === "dps") {
-      handler(event);
-    }
-  });
+// Convenience: factory to create metric-filtered listeners
+export const makeSkillsUpdateFilter =
+  (metric: MetricType) =>
+  (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
+    listen("skills-update", (event) => {
+      if (event.payload.metricType === metric) handler(event);
+    });
 
-export const onHealSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
-  listen("skills-update", (event) => {
-    if (event.payload.metricType === "heal") {
-      handler(event);
-    }
-  });
-
-export const onTankedSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
-  listen("skills-update", (event) => {
-    if (event.payload.metricType === "tanked") {
-      handler(event);
-    }
-  });
+export const onDpsSkillsUpdate = makeSkillsUpdateFilter("dps");
+export const onHealSkillsUpdate = makeSkillsUpdateFilter("heal");
+export const onTankedSkillsUpdate = makeSkillsUpdateFilter("tanked");
 
 export const onResetEncounter = (handler: () => void): Promise<UnlistenFn> =>
   listen("reset-encounter", handler);
@@ -105,7 +95,9 @@ export const onPauseEncounter = (handler: (event: { payload: boolean }) => void)
   listen("pause-encounter", handler);
 
 // Command wrappers (still using generated bindings)
-export const resetEncounter = () => commands.resetEncounter();
-export const togglePauseEncounter = () => commands.togglePauseEncounter();
-export const enableBlur = () => commands.enableBlur();
-export const disableBlur = () => commands.disableBlur();
+import type { Result } from "./bindings";
+
+export const resetEncounter = (): Promise<Result<null, string>> => commands.resetEncounter();
+export const togglePauseEncounter = (): Promise<Result<null, string>> => commands.togglePauseEncounter();
+export const enableBlur = (): Promise<void> => commands.enableBlur();
+export const disableBlur = (): Promise<void> => commands.disableBlur();
