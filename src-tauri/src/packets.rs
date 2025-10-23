@@ -4,4 +4,5 @@ pub mod opcodes;
 pub mod packet_capture;
 pub mod reassembler;
 mod packet_process;
+pub mod parser;
 pub mod utils;
