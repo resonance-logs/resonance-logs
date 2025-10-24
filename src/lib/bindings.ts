@@ -50,6 +50,22 @@ async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<Result<n
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getRecentEncounters(limit: number) : Promise<Result<EncounterSummaryDto[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_recent_encounters", { limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getEncounterActorStats(encounterId: number) : Promise<Result<ActorEncounterStatDto[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_encounter_actor_stats", { encounterId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -63,6 +79,8 @@ async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<Result<n
 
 /** user-defined types **/
 
+export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; isPlayer: boolean; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number }
+export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number }
 export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }

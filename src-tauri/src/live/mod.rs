@@ -6,4 +6,4 @@ pub mod opcodes_models;
 pub mod opcodes_process;
 pub mod skills_store;
 pub mod state;
-pub mod name_cache;
+pub mod player_names;
