@@ -91,6 +91,7 @@ pub struct DamageEventRow {
     pub is_lucky: i32,
     pub hp_loss: i64,
     pub shield_loss: i64,
+    pub is_boss: i32,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -106,6 +107,7 @@ pub struct NewDamageEvent {
     pub is_lucky: i32,
     pub hp_loss: i64,
     pub shield_loss: i64,
+    pub is_boss: i32,
 }
 
 #[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
@@ -159,6 +161,12 @@ pub struct ActorEncounterStatRow {
     pub lucky_total_dealt: i64,
     pub lucky_total_heal: i64,
     pub lucky_total_taken: i64,
+    pub boss_damage_dealt: i64,
+    pub boss_hits_dealt: i64,
+    pub boss_crit_hits_dealt: i64,
+    pub boss_lucky_hits_dealt: i64,
+    pub boss_crit_total_dealt: i64,
+    pub boss_lucky_total_dealt: i64,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -184,4 +192,10 @@ pub struct NewActorEncounterStat {
     pub lucky_total_dealt: i64,
     pub lucky_total_heal: i64,
     pub lucky_total_taken: i64,
+    pub boss_damage_dealt: i64,
+    pub boss_hits_dealt: i64,
+    pub boss_crit_hits_dealt: i64,
+    pub boss_lucky_hits_dealt: i64,
+    pub boss_crit_total_dealt: i64,
+    pub boss_lucky_total_dealt: i64,
 }

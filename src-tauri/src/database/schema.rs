@@ -47,6 +47,7 @@ diesel::table! {
         is_lucky -> Integer,
         hp_loss -> BigInt,
         shield_loss -> BigInt,
+        is_boss -> Integer,
     }
 }
 
@@ -86,6 +87,12 @@ diesel::table! {
         lucky_total_dealt -> BigInt,
         lucky_total_heal -> BigInt,
         lucky_total_taken -> BigInt,
+        boss_damage_dealt -> BigInt,
+        boss_hits_dealt -> BigInt,
+        boss_crit_hits_dealt -> BigInt,
+        boss_lucky_hits_dealt -> BigInt,
+        boss_crit_total_dealt -> BigInt,
+        boss_lucky_total_dealt -> BigInt,
     }
 }
 

@@ -129,6 +129,7 @@ pub enum DbTask {
         is_lucky: bool,
         hp_loss: i64,
         shield_loss: i64,
+        is_boss: bool,
     },
 
     InsertHealEvent {
@@ -242,7 +243,7 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     .map_err(|e| e.to_string())?;
             }
         }
-        DbTask::InsertDamageEvent { timestamp_ms, attacker_id, defender_id, skill_id, value, is_crit, is_lucky, hp_loss, shield_loss } => {
+        DbTask::InsertDamageEvent { timestamp_ms, attacker_id, defender_id, skill_id, value, is_crit, is_lucky, hp_loss, shield_loss, is_boss } => {
             if let Some(enc_id) = *current_encounter_id {
                 use sch::damage_events::dsl as d;
                 let ins = m::NewDamageEvent {
@@ -256,6 +257,7 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     is_lucky: if is_lucky {1} else {0},
                     hp_loss,
                     shield_loss,
+                    is_boss: if is_boss {1} else {0},
                 };
                 diesel::insert_into(d::damage_events)
                     .values(&ins)
@@ -270,7 +272,7 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
 
                 // Materialize per-actor stats: attacker damage_dealt; defender damage_taken
                 // Attacker
-                upsert_stats_add_damage_dealt(conn, enc_id, attacker_id, value, is_crit, is_lucky)?;
+                upsert_stats_add_damage_dealt(conn, enc_id, attacker_id, value, is_crit, is_lucky, is_boss)?;
 
                 // Defender (damage taken). Follow live semantics: only count taken when attacker is not a player.
                 if let Some(def_id) = defender_id {
@@ -332,19 +334,26 @@ fn get_entity_type(conn: &mut SqliteConnection, entity_id: i64) -> Result<Option
     Ok(exists.map(|_| blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32))
 }
 
-fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool) -> Result<(), String> {
+fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool, is_boss: bool) -> Result<(), String> {
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
+    let boss_hit = if is_boss { 1_i64 } else { 0_i64 };
     diesel::sql_query(
-        "INSERT INTO actor_encounter_stats (encounter_id, actor_id, damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt) \
-         VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7) \
+        "INSERT INTO actor_encounter_stats (encounter_id, actor_id, damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt, boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt, boss_crit_total_dealt, boss_lucky_total_dealt) \
+         VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13) \
          ON CONFLICT(encounter_id, actor_id) DO UPDATE SET \
            damage_dealt = damage_dealt + excluded.damage_dealt, \
            hits_dealt = hits_dealt + excluded.hits_dealt, \
            crit_hits_dealt = crit_hits_dealt + excluded.crit_hits_dealt, \
            lucky_hits_dealt = lucky_hits_dealt + excluded.lucky_hits_dealt, \
            crit_total_dealt = crit_total_dealt + excluded.crit_total_dealt, \
-           lucky_total_dealt = lucky_total_dealt + excluded.lucky_total_dealt"
+           lucky_total_dealt = lucky_total_dealt + excluded.lucky_total_dealt, \
+           boss_damage_dealt = boss_damage_dealt + excluded.boss_damage_dealt, \
+           boss_hits_dealt = boss_hits_dealt + excluded.boss_hits_dealt, \
+           boss_crit_hits_dealt = boss_crit_hits_dealt + excluded.boss_crit_hits_dealt, \
+           boss_lucky_hits_dealt = boss_lucky_hits_dealt + excluded.boss_lucky_hits_dealt, \
+           boss_crit_total_dealt = boss_crit_total_dealt + excluded.boss_crit_total_dealt, \
+           boss_lucky_total_dealt = boss_lucky_total_dealt + excluded.boss_lucky_total_dealt"
     )
     .bind::<diesel::sql_types::Integer, _>(encounter_id)
     .bind::<diesel::sql_types::BigInt, _>(actor_id)
@@ -353,6 +362,12 @@ fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32,
     .bind::<diesel::sql_types::BigInt, _>(lucky_hit)
     .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
     .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(boss_hit)
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_crit { 1 } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_lucky { 1 } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_crit { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_lucky { value } else { 0 })
     .execute(conn)
     .map(|_| ())
     .map_err(|e| e.to_string())
@@ -458,6 +473,7 @@ mod tests {
             is_lucky: false,
             hp_loss: 100,
             shield_loss: 50,
+            is_boss: false,
         }, &mut enc_opt).unwrap();
 
         // Verify stats

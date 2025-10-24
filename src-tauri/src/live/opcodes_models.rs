@@ -54,6 +54,11 @@ pub struct Entity {
     pub lucky_hits_taken: u128,
     pub hits_taken: u128,
     pub skill_uid_to_taken_skill: HashMap<i32, Skill>,
+
+    // Monster metadata and per-target aggregates (for boss-only filtering)
+    pub monster_type_id: Option<i32>,
+    pub dmg_to_target: HashMap<i64, u128>,
+    pub skill_dmg_to_target: HashMap<i32, HashMap<i64, u128>>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -69,6 +74,12 @@ pub struct Skill {
 static SKILL_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     let data = include_str!("../../meter-data/SkillName.json");
     serde_json::from_str(data).expect("invalid skills.json")
+});
+
+// Monster names mapping (id -> name)
+static MONSTER_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+    let data = include_str!("../../meter-data/MonsterName.json");
+    serde_json::from_str(data).expect("invalid MonsterName.json")
 });
 
 impl Skill {
@@ -109,6 +120,8 @@ impl Encounter {
             entity.lucky_hits_dmg = 0;
             entity.hits_dmg = 0;
             entity.skill_uid_to_dmg_skill.clear();
+            entity.dmg_to_target.clear();
+            entity.skill_dmg_to_target.clear();
 
             // Healing
             entity.total_heal = 0;
@@ -133,7 +146,7 @@ impl Encounter {
 
 pub mod attr_type {
     pub const ATTR_NAME: i32 = 0x01;
-    // pub const ATTR_ID: i32 = 0x0a;
+    pub const ATTR_ID: i32 = 0x0a;
     pub const ATTR_PROFESSION_ID: i32 = 0xdc;
     pub const ATTR_FIGHT_POINT: i32 = 0x272e;
     pub const ATTR_LEVEL: i32 = 0x2710;
@@ -267,5 +280,28 @@ pub mod class {
             ClassSpec::Dissonance => "Dissonance",
             ClassSpec::Concerto => "Concerto",
         })
+    }
+}
+
+impl Entity {
+    /// Assign monster type id and update display name from mapping if available.
+    pub fn set_monster_type(&mut self, monster_id: i32) {
+        self.monster_type_id = Some(monster_id);
+        if let Some(name) = MONSTER_NAMES.get(&monster_id.to_string()) {
+            self.name = name.clone();
+        }
+    }
+
+    /// Determine whether this entity is a boss based on its mapped or direct name.
+    pub fn is_boss(&self) -> bool {
+        if self.entity_type != EEntityType::EntMonster {
+            return false;
+        }
+        if let Some(monster_id) = self.monster_type_id {
+            if let Some(name) = MONSTER_NAMES.get(&monster_id.to_string()) {
+                return name.contains("Boss");
+            }
+        }
+        !self.name.is_empty() && self.name.contains("Boss")
     }
 }
