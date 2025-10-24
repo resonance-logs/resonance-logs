@@ -7,6 +7,7 @@ use log::{info, warn};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tauri::AppHandle;
+use crate::database::{enqueue, DbTask, now_ms};
 
 #[derive(Debug, Clone)]
 pub enum StateEvent {
@@ -194,6 +195,8 @@ impl AppStateManager {
 
     async fn on_server_change(&self, state: &mut AppState) {
         use crate::live::opcodes_process::on_server_change;
+        // End any active encounter in DB
+        enqueue(DbTask::EndEncounter { ended_at_ms: now_ms() });
         on_server_change(&mut state.encounter);
 
         // Emit encounter reset event
@@ -263,6 +266,8 @@ impl AppStateManager {
     }
 
     async fn reset_encounter(&self, state: &mut AppState) {
+        // End any active encounter in DB
+        enqueue(DbTask::EndEncounter { ended_at_ms: now_ms() });
         state.encounter = Encounter::default();
         state.skills_store.clear();
 

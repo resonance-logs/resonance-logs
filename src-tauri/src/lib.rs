@@ -14,6 +14,7 @@ use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, Windo
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tauri_specta::{Builder, collect_commands};
+mod database;
 
 pub const WINDOW_LIVE_LABEL: &str = "live";
 pub const WINDOW_MAIN_LABEL: &str = "main";
@@ -70,6 +71,11 @@ pub fn run() {
 
             // Setup logs
             setup_logs(&app_handle);
+
+            // Initialize database and background writer
+            if let Err(e) = crate::database::init_and_spawn_writer() {
+                warn!("Failed to initialize database: {}", e);
+            }
 
             // Setup tray icon
             setup_tray(&app_handle).expect("failed to setup tray");
