@@ -9,6 +9,7 @@ use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
 use log::info;
 use std::default::Default;
+use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn on_server_change(encounter: &mut Encounter) {
@@ -36,7 +37,9 @@ pub fn process_sync_near_entities(
             EEntityType::EntChar => {
                 process_player_attrs(target_entity, target_uid, pkt_entity.attrs?.attrs);
             }
-            // EEntityType::EntMonster => {process_monster_attrs();} // todo
+            EEntityType::EntMonster => {
+                process_monster_attrs(target_entity, pkt_entity.attrs?.attrs);
+            }
             _ => {}
         }
 
@@ -134,7 +137,9 @@ pub fn process_aoi_sync_delta(
             EEntityType::EntChar => {
                 process_player_attrs(&mut target_entity, target_uid, attrs_collection.attrs);
             }
-            // EEntityType::EntMonster => { process_monster_attrs(attrs); } // todo
+            EEntityType::EntMonster => {
+                process_monster_attrs(&mut target_entity, attrs_collection.attrs);
+            }
             _ => {}
         }
 
@@ -280,6 +285,23 @@ pub fn process_aoi_sync_delta(
             attacker_entity.total_dmg += actual_value;
             skill.hits += 1;
             skill.total_value += actual_value;
+
+            // Track per-target totals for boss-only calculations
+            {
+                use std::collections::hash_map::Entry;
+                match attacker_entity.dmg_to_target.entry(target_uid) {
+                    Entry::Occupied(mut e) => { *e.get_mut() += actual_value; }
+                    Entry::Vacant(e) => { e.insert(actual_value); }
+                }
+                let per_skill = attacker_entity
+                    .skill_dmg_to_target
+                    .entry(skill_uid)
+                    .or_insert_with(HashMap::new);
+                match per_skill.entry(target_uid) {
+                    Entry::Occupied(mut e) => { *e.get_mut() += actual_value; }
+                    Entry::Vacant(e) => { e.insert(actual_value); }
+                }
+            }
             // Persist attacker and skill lazily
             let attacker_name_opt = if attacker_entity.name.is_empty() { None } else { Some(attacker_entity.name.clone()) };
             let attacker_entity_type_copy = attacker_entity.entity_type;
@@ -429,6 +451,31 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                     prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
             }
             _ => (),
+        }
+    }
+}
+
+fn process_monster_attrs(monster_entity: &mut Entity, attrs: Vec<Attr>) {
+    use crate::live::opcodes_models::attr_type;
+    for attr in attrs {
+        let Some(mut raw_bytes) = attr.raw_data else { continue; };
+        let Some(attr_id) = attr.id else { continue };
+        match attr_id {
+            attr_type::ATTR_ID => {
+                let monster_id = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap_or(0) as i32;
+                if monster_id > 0 {
+                    monster_entity.set_monster_type(monster_id);
+                }
+            }
+            attr_type::ATTR_NAME => {
+                if !raw_bytes.is_empty() { raw_bytes.remove(0); }
+                if let Ok(name) = BinaryReader::from(raw_bytes).read_string() {
+                    if monster_entity.monster_type_id.is_none() {
+                        monster_entity.name = name;
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }

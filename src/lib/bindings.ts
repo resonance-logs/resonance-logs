@@ -51,6 +51,14 @@ async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<Result<n
     else return { status: "error", error: e  as any };
 }
 },
+async setBossOnlyDps(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_boss_only_dps", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getRecentEncounters(limit: number) : Promise<Result<EncounterSummaryDto[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_recent_encounters", { limit }) };

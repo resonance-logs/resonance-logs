@@ -28,6 +28,7 @@ pub struct AppState {
     pub event_manager: EventManager,
     pub skill_subscriptions: HashSet<(i64, String)>,
     pub app_handle: AppHandle,
+    pub boss_only_dps: bool,
 }
 
 impl AppState {
@@ -37,6 +38,7 @@ impl AppState {
             event_manager: EventManager::new(),
             skill_subscriptions: HashSet::new(),
             app_handle,
+            boss_only_dps: false,
         }
     }
 
@@ -269,9 +271,9 @@ impl AppStateManager {
 
     pub async fn update_and_emit_events(&self) {
         // First, read the encounter data to generate all the necessary information
-        let (encounter, should_emit) = {
+        let (encounter, should_emit, boss_only) = {
             let state = self.state.read().await;
-            (state.encounter.clone(), state.event_manager.should_emit_events())
+            (state.encounter.clone(), state.event_manager.should_emit_events(), state.boss_only_dps)
         };
 
         if !should_emit {
@@ -279,8 +281,8 @@ impl AppStateManager {
         }
 
         // Generate all the data we need without holding the lock
-        let header_info = crate::live::event_manager::generate_header_info(&encounter);
-        let dps_players = crate::live::event_manager::generate_players_window_dps(&encounter);
+        let header_info = crate::live::event_manager::generate_header_info(&encounter, boss_only);
+        let dps_players = crate::live::event_manager::generate_players_window_dps(&encounter, boss_only);
         let heal_players = crate::live::event_manager::generate_players_window_heal(&encounter);
         let tanked_players = crate::live::event_manager::generate_players_window_tanked(&encounter);
 
@@ -298,7 +300,7 @@ impl AppStateManager {
 
             if is_player && has_dmg_skills {
                 if let Some(skills_window) =
-                    crate::live::event_manager::generate_skills_window_dps(&encounter, entity_uid)
+                    crate::live::event_manager::generate_skills_window_dps(&encounter, entity_uid, boss_only)
                 {
                     dps_skill_windows.push((entity_uid, skills_window));
                 }

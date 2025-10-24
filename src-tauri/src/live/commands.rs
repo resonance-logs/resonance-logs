@@ -39,8 +39,9 @@ pub async fn subscribe_player_skills(
 
     // Compute and return initial window directly from Encounter
     state_manager.with_state(|state| {
+        let boss_only = state.boss_only_dps;
         match skill_type.as_str() {
-            "dps" => event_manager::generate_skills_window_dps(&state.encounter, uid)
+            "dps" => event_manager::generate_skills_window_dps(&state.encounter, uid, boss_only)
                 .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
             "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
                 .ok_or_else(|| format!("No heal skills found for player {}", uid)),
@@ -72,8 +73,9 @@ pub async fn get_player_skills(
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
     state_manager.with_state(|state| {
+        let boss_only = state.boss_only_dps;
         match skill_type.as_str() {
-            "dps" => event_manager::generate_skills_window_dps(&state.encounter, uid)
+            "dps" => event_manager::generate_skills_window_dps(&state.encounter, uid, boss_only)
                 .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
             "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
                 .ok_or_else(|| format!("No heal skills found for player {}", uid)),
@@ -82,6 +84,20 @@ pub async fn get_player_skills(
             _ => Err(format!("Invalid skill type: {}", skill_type))
         }
     }).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn set_boss_only_dps(
+    enabled: bool,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    state_manager.with_state_mut(|state| {
+        state.boss_only_dps = enabled;
+    }).await;
+    // Recompute and emit updates immediately
+    state_manager.update_and_emit_events().await;
+    Ok(())
 }
 
 #[tauri::command]

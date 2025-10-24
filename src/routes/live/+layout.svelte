@@ -57,11 +57,14 @@ export const isPaused = writable(false);
       // track previous pause state locally to avoid spamming toasts on every update
       let lastPauseState: boolean | null = null;
       const encounterUnlisten = await onEncounterUpdate((event) => {
+        // Treat encounter updates as keep-alive too so reconnect logic doesn't fire
+        lastEventTime = Date.now();
         const newPaused = event.payload.isPaused;
+        const elapsedMs = event.payload.headerInfo.elapsedMs;
         // update the store regardless
         isPaused.set(newPaused);
-        // only show a toast if the pause state actually changed
-        if (lastPauseState === null || lastPauseState !== newPaused) {
+        // only show a toast if the pause state actually changed AND we've started receiving combat data
+        if (elapsedMs > 0 && (lastPauseState === null || lastPauseState !== newPaused)) {
           if (newPaused) {
             notificationToast?.showToast('notice', 'Encounter paused');
           } else {

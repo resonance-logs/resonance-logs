@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
     relativeToTopHealSkill: false,
     shortenAbilityScore: true,
     resetElapsed: 60,
+    bossOnlyDps: false,
   },
   accessibility: {
     blur: !IS_WIN_11,

@@ -1,4 +1,5 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import { commands } from "./bindings";
 
 // Type definitions for event payloads
@@ -101,3 +102,6 @@ export const resetEncounter = (): Promise<Result<null, string>> => commands.rese
 export const togglePauseEncounter = (): Promise<Result<null, string>> => commands.togglePauseEncounter();
 export const enableBlur = (): Promise<void> => commands.enableBlur();
 export const disableBlur = (): Promise<void> => commands.disableBlur();
+
+// New: toggle boss-only DPS filtering on the backend
+export const setBossOnlyDps = (enabled: boolean): Promise<void> => invoke("set_boss_only_dps", { enabled });

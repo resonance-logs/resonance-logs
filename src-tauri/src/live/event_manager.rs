@@ -122,8 +122,17 @@ impl Default for EventManager {
 // Use an async RwLock for non-blocking access from async tasks
 pub type EventManagerMutex = RwLock<EventManager>;
 
+// Helper: check if a target UID represents a boss entity
+fn is_boss_target(encounter: &Encounter, target_uid: &i64) -> bool {
+    encounter
+        .entity_uid_to_entity
+        .get(target_uid)
+        .map(|e| e.is_boss())
+        .unwrap_or(false)
+}
+
 // Helper functions for generating data structures
-pub fn generate_players_window_dps(encounter: &Encounter) -> PlayersWindow {
+pub fn generate_players_window_dps(encounter: &Encounter, boss_only: bool) -> PlayersWindow {
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
         .saturating_sub(encounter.time_fight_start_ms);
@@ -135,12 +144,29 @@ pub fn generate_players_window_dps(encounter: &Encounter) -> PlayersWindow {
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
-    if encounter.total_dmg == 0 {
+    let total_scope_dmg: u128 = if boss_only {
+        encounter
+            .entity_uid_to_entity
+            .iter()
+            .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
+            .map(|(_, e)| {
+                e.dmg_to_target
+                    .iter()
+                    .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+                    .map(|(_, v)| *v)
+                    .sum::<u128>()
+            })
+            .sum()
+    } else {
+        encounter.total_dmg
+    };
+
+    if total_scope_dmg == 0 {
         return players_window;
     }
 
     for (&entity_uid, entity) in &encounter.entity_uid_to_entity {
-        if let Some(player_row) = generate_player_row(entity_uid, entity, encounter) {
+        if let Some(player_row) = generate_player_row_filtered(entity_uid, entity, encounter, boss_only, total_scope_dmg, time_elapsed_secs) {
             players_window.player_rows.push(player_row);
         }
     }
@@ -290,7 +316,7 @@ pub fn generate_players_window_tanked(encounter: &Encounter) -> PlayersWindow {
     players_window
 }
 
-pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64) -> Option<SkillsWindow> {
+pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64, boss_only: bool) -> Option<SkillsWindow> {
     let entity = encounter.entity_uid_to_entity.get(&player_uid)?;
 
     let time_elapsed_ms = encounter
@@ -298,6 +324,35 @@ pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64) -> Opt
         .saturating_sub(encounter.time_fight_start_ms);
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
+
+    // Compute encounter and player totals within scope
+    let total_scope_dmg: u128 = if boss_only {
+        encounter
+            .entity_uid_to_entity
+            .iter()
+            .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
+            .map(|(_, e)| {
+                e.dmg_to_target
+                    .iter()
+                    .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+                    .map(|(_, v)| *v)
+                    .sum::<u128>()
+            })
+            .sum()
+    } else {
+        encounter.total_dmg
+    };
+
+    let player_total: u128 = if boss_only {
+        entity
+            .dmg_to_target
+            .iter()
+            .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+            .map(|(_, v)| *v)
+            .sum()
+    } else {
+        entity.total_dmg
+    };
 
     // Player DPS Stats
     #[allow(clippy::cast_precision_loss)]
@@ -308,9 +363,9 @@ pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64) -> Opt
             class_name: class::get_class_name(entity.class_id),
             class_spec_name: class::get_class_spec(entity.class_spec),
             ability_score: entity.ability_score as u128,
-            total_dmg: entity.total_dmg,
-            dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs),
-            dmg_pct: nan_is_zero(entity.total_dmg as f64 / encounter.total_dmg as f64 * 100.0),
+            total_dmg: player_total,
+            dps: nan_is_zero(player_total as f64 / time_elapsed_secs),
+            dmg_pct: if total_scope_dmg == 0 { 0.0 } else { nan_is_zero(player_total as f64 / total_scope_dmg as f64 * 100.0) },
             crit_rate: nan_is_zero(entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
                 entity.crit_total_dmg as f64 / entity.total_dmg as f64 * 100.0,
@@ -327,12 +382,26 @@ pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64) -> Opt
 
     // Skills for this player
     for (&skill_uid, skill) in &entity.skill_uid_to_dmg_skill {
+        let skill_total: u128 = if boss_only {
+            entity
+                .skill_dmg_to_target
+                .get(&skill_uid)
+                .map(|m| {
+                    m.iter()
+                        .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+                        .map(|(_, v)| *v)
+                        .sum()
+                })
+                .unwrap_or(0)
+        } else {
+            skill.total_value
+        };
         #[allow(clippy::cast_precision_loss)]
         let skill_row = SkillRow {
             name: Skill::get_skill_name(skill_uid),
-            total_dmg: skill.total_value,
-            dps: nan_is_zero(skill.total_value as f64 / time_elapsed_secs),
-            dmg_pct: nan_is_zero(skill.total_value as f64 / entity.total_dmg as f64 * 100.0),
+            total_dmg: skill_total,
+            dps: nan_is_zero(skill_total as f64 / time_elapsed_secs),
+            dmg_pct: if player_total == 0 { 0.0 } else { nan_is_zero(skill_total as f64 / player_total as f64 * 100.0) },
             crit_rate: nan_is_zero(skill.crit_hits as f64 / skill.hits as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
                 skill.crit_total_value as f64 / skill.total_value as f64 * 100.0,
@@ -516,10 +585,13 @@ fn nan_is_zero(value: f64) -> f64 {
     }
 }
 
-pub fn generate_player_row(
+pub fn generate_player_row_filtered(
     entity_uid: i64,
     entity: &Entity,
     encounter: &Encounter,
+    boss_only: bool,
+    total_scope_dmg: u128,
+    time_elapsed_secs: f64,
 ) -> Option<PlayerRow> {
     let is_player = entity.entity_type == EEntityType::EntChar;
     let did_damage = !entity.skill_uid_to_dmg_skill.is_empty();
@@ -528,14 +600,17 @@ pub fn generate_player_row(
         return None;
     }
 
-    let time_elapsed_ms = encounter
-        .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
-
-    #[allow(clippy::cast_precision_loss)]
-    let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
-
-    if encounter.total_dmg == 0 {
+    let entity_total: u128 = if boss_only {
+        entity
+            .dmg_to_target
+            .iter()
+            .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+            .map(|(_, v)| *v)
+            .sum()
+    } else {
+        entity.total_dmg
+    };
+    if total_scope_dmg == 0 {
         return None;
     }
 
@@ -546,9 +621,9 @@ pub fn generate_player_row(
         class_name: class::get_class_name(entity.class_id),
         class_spec_name: class::get_class_spec(entity.class_spec),
         ability_score: entity.ability_score as u128,
-        total_dmg: entity.total_dmg,
-        dps: nan_is_zero(entity.total_dmg as f64 / time_elapsed_secs),
-        dmg_pct: nan_is_zero(entity.total_dmg as f64 / encounter.total_dmg as f64 * 100.0),
+        total_dmg: entity_total,
+        dps: nan_is_zero(entity_total as f64 / time_elapsed_secs),
+        dmg_pct: nan_is_zero(entity_total as f64 / total_scope_dmg as f64 * 100.0),
         crit_rate: nan_is_zero(entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
         crit_dmg_rate: nan_is_zero(entity.crit_total_dmg as f64 / entity.total_dmg as f64 * 100.0),
         lucky_rate: nan_is_zero(entity.lucky_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
@@ -595,10 +670,7 @@ pub fn generate_skill_rows(entity: &Entity, time_elapsed_secs: f64) -> Vec<Skill
     skill_rows
 }
 
-pub fn generate_header_info(encounter: &Encounter) -> Option<HeaderInfo> {
-    if encounter.total_dmg == 0 {
-        return None;
-    }
+pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<HeaderInfo> {
 
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
@@ -607,10 +679,27 @@ pub fn generate_header_info(encounter: &Encounter) -> Option<HeaderInfo> {
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
+    let total_scope_dmg: u128 = if boss_only {
+        encounter
+            .entity_uid_to_entity
+            .iter()
+            .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
+            .map(|(_, e)| {
+                e.dmg_to_target
+                    .iter()
+                    .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+                    .map(|(_, v)| *v)
+                    .sum::<u128>()
+            })
+            .sum()
+    } else {
+        encounter.total_dmg
+    };
+
     #[allow(clippy::cast_precision_loss)]
     Some(HeaderInfo {
-        total_dps: nan_is_zero(encounter.total_dmg as f64 / time_elapsed_secs),
-        total_dmg: encounter.total_dmg,
+        total_dps: nan_is_zero(total_scope_dmg as f64 / time_elapsed_secs),
+        total_dmg: total_scope_dmg,
         elapsed_ms: time_elapsed_ms,
         fight_start_timestamp_ms: encounter.time_fight_start_ms,
     })
