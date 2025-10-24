@@ -38,6 +38,8 @@ pub fn run() {
             live::commands::unsubscribe_player_skills,
             database::commands::get_recent_encounters,
             database::commands::get_encounter_actor_stats,
+            database::commands::get_recent_players_command,
+            database::commands::get_player_name_command,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

@@ -4,8 +4,6 @@ use crate::live::opcodes_models::class::{
 };
 use crate::live::opcodes_models::{attr_type, Encounter, Entity, Skill};
 use crate::database::{enqueue, DbTask, now_ms};
-// Note: we will call AppStateManager::add_recent_name from the caller side where
-// AppStateManager is available. opcodes_process operates on Encounter directly.
 use crate::packets::utils::BinaryReader;
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
@@ -71,10 +69,8 @@ pub fn process_sync_container_data(
         .or_default();
     let char_base = v_data.char_base?;
     target_entity.name = char_base.name?;
-    // Update recent names cache if caller has wired this in via AppStateManager.
-    // Caller (AppStateManager) will call process_sync_container_data and can then
-    // add the name via add_recent_name if desired. We keep this function focused
-    // on encounter mutation.
+    // Player names are automatically stored in the database via UpsertEntity tasks
+    // No need to maintain a separate cache anymore
     target_entity.entity_type = EEntityType::EntChar;
     target_entity.class_id = v_data.profession_list?.cur_profession_id?;
     target_entity.ability_score = char_base.fight_point?;
@@ -396,7 +392,7 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                 info! {"Found player {} with UID {}", player_entity.name, target_uid}
                 // Note: AppStateManager::handle_event() wraps calls to this
                 // module; after processing the event the manager can call
-                // add_recent_name() to persist the name into the backend cache.
+                // Player names are automatically stored in the database via UpsertEntity tasks.
                 // Also persist the name into the DB lazily
                 enqueue(DbTask::UpsertEntity {
                     entity_id: target_uid,

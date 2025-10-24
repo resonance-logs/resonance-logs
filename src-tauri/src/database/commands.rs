@@ -135,3 +135,48 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
         lucky_hits_taken,
     }).collect())
 }
+
+/// Get player name by UID from database
+pub fn get_name_by_uid(uid: i64) -> Result<Option<String>, String> {
+    let mut conn = get_conn()?;
+    use sch::entities::dsl as en;
+
+    let name: Option<Option<String>> = en::entities
+        .select(en::name)
+        .filter(en::entity_id.eq(uid).and(en::is_player.eq(1)))
+        .first::<Option<String>>(&mut conn)
+        .optional()
+        .map_err(|e| e.to_string())?;
+
+    Ok(name.flatten())
+}
+
+/// Get recent players ordered by last_seen_ms (most recent first) kinda scuffed maybe update in future
+pub fn get_recent_players(limit: i64) -> Result<Vec<(i64, String)>, String> {
+    let mut conn = get_conn()?;
+    use sch::entities::dsl as en;
+
+    let rows: Vec<(i64, Option<String>)> = en::entities
+        .select((en::entity_id, en::name))
+        .filter(en::is_player.eq(1).and(en::name.is_not_null()))
+        .order(en::last_seen_ms.desc())
+        .limit(limit)
+        .load(&mut conn)
+        .map_err(|e: diesel::result::Error| e.to_string())?;
+
+    Ok(rows.into_iter()
+        .filter_map(|(uid, name_opt)| name_opt.map(|name| (uid, name)))
+        .collect())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_recent_players_command(limit: i32) -> Result<Vec<(i64, String)>, String> {
+    get_recent_players(limit as i64)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_player_name_command(uid: i64) -> Result<Option<String>, String> {
+    get_name_by_uid(uid)
+}

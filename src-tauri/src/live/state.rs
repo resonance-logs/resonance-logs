@@ -1,5 +1,5 @@
 use crate::live::opcodes_models::Encounter;
-use crate::live::name_cache::RecentNamesCache;
+use crate::live::player_names::PlayerNames;
 use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::skills_store::SkillsStore;
 use blueprotobuf_lib::blueprotobuf;
@@ -28,19 +28,15 @@ pub struct AppState {
     pub event_manager: EventManager,
     pub skills_store: SkillsStore,
     pub app_handle: AppHandle,
-    pub recent_names: RecentNamesCache,
 }
 
 impl AppState {
     pub fn new(app_handle: AppHandle) -> Self {
-        // Attempt to read capacity from capabilities live.json, fallback to default
-        let cap = RecentNamesCache::capacity_from_capabilities();
         Self {
             encounter: Encounter::default(),
             event_manager: EventManager::new(),
             skills_store: SkillsStore::new(),
             app_handle,
-            recent_names: RecentNamesCache::with_capacity(cap),
         }
     }
 
@@ -87,55 +83,17 @@ impl AppStateManager {
                 self.on_server_change(&mut state).await;
             }
             StateEvent::SyncNearEntities(data) => {
-                // Collect UIDs present in this packet so we can update recent_names
-                let uids: Vec<i64> = data
-                    .appear
-                    .iter()
-                    .filter_map(|pkt_entity| pkt_entity.uuid)
-                    .map(|uuid| uuid >> 16)
-                    .collect();
-
                 self.process_sync_near_entities(&mut state, data).await;
-
-                // Update cache for any names discovered
-                for uid in uids {
-                    let maybe_name = if let Some(entity) = state.encounter.entity_uid_to_entity.get(&uid) {
-                        Some(entity.name.clone())
-                    } else {
-                        None
-                    };
-
-                    if let Some(name) = maybe_name {
-                        if !name.is_empty() {
-                            state.recent_names.add_name(uid, name);
-                        }
-                    }
-                }
+                // Note: Player names are automatically stored in the database via UpsertEntity tasks
+                // No need to maintain a separate cache anymore
             }
             StateEvent::SyncContainerData(data) => {
                 // store local_player copy
                 state.encounter.local_player = data.clone();
 
-                // extract player uid (if available) so we can update cache after processing
-                let player_uid_opt = data
-                    .v_data
-                    .as_ref()
-                    .and_then(|v| v.char_id);
-
                 self.process_sync_container_data(&mut state, data).await;
-
-                if let Some(player_uid) = player_uid_opt {
-                    let maybe_name = if let Some(entity) = state.encounter.entity_uid_to_entity.get(&player_uid) {
-                        Some(entity.name.clone())
-                    } else {
-                        None
-                    };
-                    if let Some(name) = maybe_name {
-                        if !name.is_empty() {
-                            state.recent_names.add_name(player_uid, name);
-                        }
-                    }
-                }
+                // Note: Player names are automatically stored in the database via UpsertEntity tasks
+                // No need to maintain a separate cache anymore
             }
             StateEvent::SyncContainerDirtyData(data) => {
                 self.process_sync_container_dirty_data(&mut state, data).await;
@@ -144,45 +102,14 @@ impl AppStateManager {
                 // todo: this is skipped, not sure what info it has
             }
             StateEvent::SyncToMeDeltaInfo(data) => {
-                // delta_info may contain a single entity's uid
-                let uid_opt = data.delta_info.as_ref().and_then(|d| d.uuid).map(|u| u >> 16);
                 self.process_sync_to_me_delta_info(&mut state, data).await;
-                if let Some(uid) = uid_opt {
-                    let maybe_name = if let Some(entity) = state.encounter.entity_uid_to_entity.get(&uid) {
-                        Some(entity.name.clone())
-                    } else {
-                        None
-                    };
-                    if let Some(name) = maybe_name {
-                        if !name.is_empty() {
-                            state.recent_names.add_name(uid, name);
-                        }
-                    }
-                }
+                // Note: Player names are automatically stored in the database via UpsertEntity tasks
+                // No need to maintain a separate cache anymore
             }
             StateEvent::SyncNearDeltaInfo(data) => {
-                // collect uids from delta infos
-                let uids: Vec<i64> = data
-                    .delta_infos
-                    .iter()
-                    .filter_map(|d| d.uuid)
-                    .map(|uuid| uuid >> 16)
-                    .collect();
-
                 self.process_sync_near_delta_info(&mut state, data).await;
-
-                for uid in uids {
-                    let maybe_name = if let Some(entity) = state.encounter.entity_uid_to_entity.get(&uid) {
-                        Some(entity.name.clone())
-                    } else {
-                        None
-                    };
-                    if let Some(name) = maybe_name {
-                        if !name.is_empty() {
-                            state.recent_names.add_name(uid, name);
-                        }
-                    }
-                }
+                // Note: Player names are automatically stored in the database via UpsertEntity tasks
+                // No need to maintain a separate cache anymore
             }
             StateEvent::PauseEncounter(paused) => {
                 state.set_encounter_paused(paused);
@@ -292,11 +219,24 @@ impl AppStateManager {
         update_fn(&mut state.skills_store);
     }
 
-    /// Add a recent name entry into the backend cache. This is safe to call
-    /// from packet processing paths; it acquires the AppState write lock.
-    pub async fn add_recent_name(&self, uid: i64, name: String) {
-        let mut state = self.state.write().await;
-        state.recent_names.add_name(uid, name);
+    /// Get player name by UID from database
+    pub async fn get_player_name(&self, uid: i64) -> Option<String> {
+        PlayerNames::get_name_by_uid(uid)
+    }
+
+    /// Get recent players ordered by last seen (most recent first)
+    pub async fn get_recent_players(&self, limit: usize) -> Vec<(i64, String)> {
+        PlayerNames::get_recent_players(limit)
+    }
+
+    /// Get multiple names by UIDs (batch query for performance)
+    pub async fn get_player_names(&self, uids: &[i64]) -> std::collections::HashMap<i64, String> {
+        PlayerNames::get_names_by_uids(uids)
+    }
+
+    /// Check if a player exists in the database
+    pub async fn contains_player(&self, uid: i64) -> bool {
+        PlayerNames::contains_player(uid)
     }
 
     pub async fn update_encounter<F>(&self, update_fn: F)
