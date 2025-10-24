@@ -33,6 +33,12 @@ pub struct ActorEncounterStatDto {
     pub lucky_hits_dealt: i64,
     pub lucky_hits_heal: i64,
     pub lucky_hits_taken: i64,
+    pub boss_damage_dealt: i64,
+    pub boss_hits_dealt: i64,
+    pub boss_crit_hits_dealt: i64,
+    pub boss_lucky_hits_dealt: i64,
+    pub boss_crit_total_dealt: i64,
+    pub boss_lucky_total_dealt: i64,
 }
 
 fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
@@ -92,9 +98,15 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
             s::lucky_hits_dealt,
             s::lucky_hits_heal,
             s::lucky_hits_taken,
+            s::boss_damage_dealt,
+            s::boss_hits_dealt,
+            s::boss_crit_hits_dealt,
+            s::boss_lucky_hits_dealt,
+            s::boss_crit_total_dealt,
+            s::boss_lucky_total_dealt,
         ))
         .order((s::damage_dealt.desc(), s::heal_dealt.desc(), s::damage_taken.desc()))
-        .load::<(i32, i64, Option<String>, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
+        .load::<(i32, i64, Option<String>, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
         .map_err(|e| e.to_string())?;
 
     Ok(rows.into_iter().map(|(
@@ -113,6 +125,12 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
         lucky_hits_dealt,
         lucky_hits_heal,
         lucky_hits_taken,
+        boss_damage_dealt,
+        boss_hits_dealt,
+        boss_crit_hits_dealt,
+        boss_lucky_hits_dealt,
+        boss_crit_total_dealt,
+        boss_lucky_total_dealt,
     )| ActorEncounterStatDto {
         encounter_id,
         actor_id,
@@ -129,6 +147,12 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
         lucky_hits_dealt,
         lucky_hits_heal,
         lucky_hits_taken,
+        boss_damage_dealt,
+        boss_hits_dealt,
+        boss_crit_hits_dealt,
+        boss_lucky_hits_dealt,
+        boss_crit_total_dealt,
+        boss_lucky_total_dealt,
     }).collect())
 }
 

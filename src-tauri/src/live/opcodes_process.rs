@@ -352,6 +352,7 @@ pub fn process_aoi_sync_delta(
             }
 
             // Insert damage event
+            let is_boss = defender_entity.is_boss();
             enqueue(DbTask::InsertDamageEvent {
                 timestamp_ms: timestamp_ms as i64,
                 attacker_id: attacker_uid,
@@ -362,6 +363,7 @@ pub fn process_aoi_sync_delta(
                 is_lucky,
                 hp_loss: hp_loss as i64,
                 shield_loss: shield_loss as i64,
+                is_boss,
             });
 
             // Maintain taken stats only when defender is player (attacker not player)

@@ -103,7 +103,7 @@ async getPlayerNameCommand(uid: number) : Promise<Result<string | null, string>>
 
 /** user-defined types **/
 
-export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number }
+export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number; bossDamageDealt: number; bossHitsDealt: number; bossCritHitsDealt: number; bossLuckyHitsDealt: number; bossCritTotalDealt: number; bossLuckyTotalDealt: number }
 export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number }
 export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
