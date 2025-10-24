@@ -1,7 +1,7 @@
 use crate::live::opcodes_models::class::ClassSpec;
 use blueprotobuf_lib::blueprotobuf::{EEntityType, SyncContainerData};
 use once_cell::sync::Lazy;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 use tokio::sync::RwLock;
 use windivert::layer::NetworkLayer;
@@ -80,6 +80,37 @@ static SKILL_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
 static MONSTER_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     let data = include_str!("../../meter-data/MonsterName.json");
     serde_json::from_str(data).expect("invalid MonsterName.json")
+});
+
+/// Build a normalized set of boss names from MONSTER_NAMES.
+///
+/// Normalization rules:
+/// - case-insensitive
+/// - if the name starts with a boss prefix (e.g. "Boss", "Boss:", "Boss -"), strip the prefix and any following separators
+/// - trim whitespace
+///
+/// Example: "Boss - Tempest Ogre" -> "tempest ogre" (stored in the set)
+static BOSS_NORMALIZED_NAMES: LazyLock<HashSet<String>> = LazyLock::new(|| {
+    fn normalize_boss_name(s: &str) -> String {
+        let mut s = s.trim().to_lowercase();
+        if let Some(rest) = s.strip_prefix("boss") {
+            // Strip typical separators after the boss label
+            let rest = rest.trim_start_matches(|c: char| c == ' ' || c == '-' || c == ':' );
+            return rest.trim().to_string();
+        }
+        s
+    }
+
+    let mut set = HashSet::new();
+    for name in MONSTER_NAMES.values() {
+        if name.to_lowercase().contains("boss") {
+            let n = normalize_boss_name(name);
+            if !n.is_empty() {
+                set.insert(n);
+            }
+        }
+    }
+    set
 });
 
 impl Skill {
@@ -297,11 +328,71 @@ impl Entity {
         if self.entity_type != EEntityType::EntMonster {
             return false;
         }
-        if let Some(monster_id) = self.monster_type_id {
-            if let Some(name) = MONSTER_NAMES.get(&monster_id.to_string()) {
-                return name.contains("Boss");
+        // Helper to normalize names similar to how the boss set was built
+        fn normalize_candidate_name(s: &str) -> String {
+            let mut s = s.trim().to_lowercase();
+            if let Some(rest) = s.strip_prefix("boss") {
+                let rest = rest.trim_start_matches(|c: char| c == ' ' || c == '-' || c == ':' );
+                return rest.trim().to_string();
             }
+            s
         }
-        !self.name.is_empty() && self.name.contains("Boss")
+
+        // Prefer mapped monster name when id is known
+        let candidate = if let Some(monster_id) = self.monster_type_id {
+            MONSTER_NAMES
+                .get(&monster_id.to_string())
+                .cloned()
+                .unwrap_or_else(|| self.name.clone())
+        } else {
+            self.name.clone()
+        };
+
+        if candidate.is_empty() {
+            return false;
+        }
+
+        // Fast path: if the mapped name explicitly contains "Boss" (any case)
+        if candidate.to_lowercase().contains("boss") {
+            return true;
+        }
+
+        // Normalized match against known boss names (e.g. "Tempest Ogre" should match "Boss - Tempest Ogre")
+        let normalized = normalize_candidate_name(&candidate);
+        BOSS_NORMALIZED_NAMES.contains(&normalized)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tempest_ogre_detected_as_boss_via_normalization() {
+        // 10010 -> "Tempest Ogre" (no Boss prefix)
+        let mut e = Entity::default();
+        e.entity_type = EEntityType::EntMonster;
+        e.set_monster_type(10010);
+        assert_eq!(e.name, "Tempest Ogre");
+        assert!(e.is_boss(), "Tempest Ogre should be recognized as a boss");
+    }
+
+    #[test]
+    fn explicit_boss_prefix_is_boss() {
+        // Use an id that maps to "Boss - Tempest Ogre"
+        let mut e = Entity::default();
+        e.entity_type = EEntityType::EntMonster;
+        e.set_monster_type(20088); // Boss - Tempest Ogre
+        assert!(e.name.to_lowercase().contains("boss"));
+        assert!(e.is_boss());
+    }
+
+    #[test]
+    fn non_boss_is_not_boss() {
+        // Goblin Mage id mapping without boss label
+        let mut e = Entity::default();
+        e.entity_type = EEntityType::EntMonster;
+        e.set_monster_type(40015); // Goblin Mage
+        assert!(!e.is_boss());
     }
 }
