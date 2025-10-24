@@ -75,6 +75,31 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    actor_encounter_stats (encounter_id, actor_id) {
+        encounter_id -> Integer,
+        actor_id -> BigInt,
+        damage_dealt -> BigInt,
+        heal_dealt -> BigInt,
+        damage_taken -> BigInt,
+        hits_dealt -> BigInt,
+        hits_heal -> BigInt,
+        hits_taken -> BigInt,
+        crit_hits_dealt -> BigInt,
+        crit_hits_heal -> BigInt,
+        crit_hits_taken -> BigInt,
+        lucky_hits_dealt -> BigInt,
+        lucky_hits_heal -> BigInt,
+        lucky_hits_taken -> BigInt,
+        crit_total_dealt -> BigInt,
+        crit_total_heal -> BigInt,
+        crit_total_taken -> BigInt,
+        lucky_total_dealt -> BigInt,
+        lucky_total_heal -> BigInt,
+        lucky_total_taken -> BigInt,
+    }
+}
+
 // Joins
 
 diesel::joinable!(damage_events -> encounters (encounter_id));
@@ -87,4 +112,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     encounters,
     damage_events,
     heal_events,
+    actor_encounter_stats,
 );

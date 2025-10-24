@@ -159,3 +159,54 @@ pub struct NewHealEvent {
     pub is_crit: i32,
     pub is_lucky: i32,
 }
+
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::actor_encounter_stats, primary_key(encounter_id, actor_id))]
+#[diesel(belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct ActorEncounterStatRow {
+    pub encounter_id: i32,
+    pub actor_id: i64,
+    pub damage_dealt: i64,
+    pub heal_dealt: i64,
+    pub damage_taken: i64,
+    pub hits_dealt: i64,
+    pub hits_heal: i64,
+    pub hits_taken: i64,
+    pub crit_hits_dealt: i64,
+    pub crit_hits_heal: i64,
+    pub crit_hits_taken: i64,
+    pub lucky_hits_dealt: i64,
+    pub lucky_hits_heal: i64,
+    pub lucky_hits_taken: i64,
+    pub crit_total_dealt: i64,
+    pub crit_total_heal: i64,
+    pub crit_total_taken: i64,
+    pub lucky_total_dealt: i64,
+    pub lucky_total_heal: i64,
+    pub lucky_total_taken: i64,
+}
+
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::actor_encounter_stats)]
+pub struct NewActorEncounterStat {
+    pub encounter_id: i32,
+    pub actor_id: i64,
+    pub damage_dealt: i64,
+    pub heal_dealt: i64,
+    pub damage_taken: i64,
+    pub hits_dealt: i64,
+    pub hits_heal: i64,
+    pub hits_taken: i64,
+    pub crit_hits_dealt: i64,
+    pub crit_hits_heal: i64,
+    pub crit_hits_taken: i64,
+    pub lucky_hits_dealt: i64,
+    pub lucky_hits_heal: i64,
+    pub lucky_hits_taken: i64,
+    pub crit_total_dealt: i64,
+    pub crit_total_heal: i64,
+    pub crit_total_taken: i64,
+    pub lucky_total_dealt: i64,
+    pub lucky_total_heal: i64,
+    pub lucky_total_taken: i64,
+}

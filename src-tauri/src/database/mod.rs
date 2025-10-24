@@ -1,5 +1,6 @@
 pub mod models;
 pub mod schema;
+pub mod commands;
 
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -273,6 +274,24 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     .bind::<diesel::sql_types::Integer, _>(enc_id)
                     .execute(conn)
                     .ok();
+
+                // Materialize per-actor stats: attacker damage_dealt; defender damage_taken
+                // Attacker
+                upsert_stats_add_damage_dealt(conn, enc_id, attacker_id, value, is_crit, is_lucky)?;
+
+                // Defender (damage taken). Follow live semantics: only count taken when attacker is not a player.
+                if let Some(def_id) = defender_id {
+                    if let Some(attacker_type) = get_entity_type(conn, attacker_id)? {
+                        // EEntityType::EntChar == 1 (verify enum mapping). In our code we store entity_type as i32 from blueprotobuf.
+                        if attacker_type != (blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32) {
+                            // Prefer hp_loss + shield_loss if provided; but 'value' has already been set to that when >0 in producer.
+                            upsert_stats_add_damage_taken(conn, enc_id, def_id, value, is_crit, is_lucky)?;
+                        }
+                    } else {
+                        // If attacker type unknown, conservatively include as taken
+                        upsert_stats_add_damage_taken(conn, enc_id, def_id, value, is_crit, is_lucky)?;
+                    }
+                }
             }
         }
         DbTask::InsertHealEvent { timestamp_ms, healer_id, target_id, skill_id, value, is_crit, is_lucky } => {
@@ -298,8 +317,181 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     .bind::<diesel::sql_types::Integer, _>(enc_id)
                     .execute(conn)
                     .ok();
+
+                // Materialize per-actor stats: healer heal_dealt
+                upsert_stats_add_heal_dealt(conn, enc_id, healer_id, value, is_crit, is_lucky)?;
             }
         }
     }
     Ok(())
+}
+
+fn get_entity_type(conn: &mut SqliteConnection, entity_id: i64) -> Result<Option<i32>, String> {
+    use sch::entities::dsl as en;
+    en::entities
+        .select(en::entity_type)
+        .filter(en::entity_id.eq(entity_id))
+        .first::<i32>(conn)
+        .optional()
+        .map_err(|e| e.to_string())
+}
+
+fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool) -> Result<(), String> {
+    let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
+    let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
+    diesel::sql_query(
+        "INSERT INTO actor_encounter_stats (encounter_id, actor_id, damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt) \
+         VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7) \
+         ON CONFLICT(encounter_id, actor_id) DO UPDATE SET \
+           damage_dealt = damage_dealt + excluded.damage_dealt, \
+           hits_dealt = hits_dealt + excluded.hits_dealt, \
+           crit_hits_dealt = crit_hits_dealt + excluded.crit_hits_dealt, \
+           lucky_hits_dealt = lucky_hits_dealt + excluded.lucky_hits_dealt, \
+           crit_total_dealt = crit_total_dealt + excluded.crit_total_dealt, \
+           lucky_total_dealt = lucky_total_dealt + excluded.lucky_total_dealt"
+    )
+    .bind::<diesel::sql_types::Integer, _>(encounter_id)
+    .bind::<diesel::sql_types::BigInt, _>(actor_id)
+    .bind::<diesel::sql_types::BigInt, _>(value)
+    .bind::<diesel::sql_types::BigInt, _>(crit_hit)
+    .bind::<diesel::sql_types::BigInt, _>(lucky_hit)
+    .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+    .execute(conn)
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
+fn upsert_stats_add_heal_dealt(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool) -> Result<(), String> {
+    let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
+    let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
+    diesel::sql_query(
+        "INSERT INTO actor_encounter_stats (encounter_id, actor_id, heal_dealt, hits_heal, crit_hits_heal, lucky_hits_heal, crit_total_heal, lucky_total_heal) \
+         VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7) \
+         ON CONFLICT(encounter_id, actor_id) DO UPDATE SET \
+           heal_dealt = heal_dealt + excluded.heal_dealt, \
+           hits_heal = hits_heal + excluded.hits_heal, \
+           crit_hits_heal = crit_hits_heal + excluded.crit_hits_heal, \
+           lucky_hits_heal = lucky_hits_heal + excluded.lucky_hits_heal, \
+           crit_total_heal = crit_total_heal + excluded.crit_total_heal, \
+           lucky_total_heal = lucky_total_heal + excluded.lucky_total_heal"
+    )
+    .bind::<diesel::sql_types::Integer, _>(encounter_id)
+    .bind::<diesel::sql_types::BigInt, _>(actor_id)
+    .bind::<diesel::sql_types::BigInt, _>(value)
+    .bind::<diesel::sql_types::BigInt, _>(crit_hit)
+    .bind::<diesel::sql_types::BigInt, _>(lucky_hit)
+    .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+    .execute(conn)
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
+fn upsert_stats_add_damage_taken(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool) -> Result<(), String> {
+    let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
+    let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
+    diesel::sql_query(
+        "INSERT INTO actor_encounter_stats (encounter_id, actor_id, damage_taken, hits_taken, crit_hits_taken, lucky_hits_taken, crit_total_taken, lucky_total_taken) \
+         VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7) \
+         ON CONFLICT(encounter_id, actor_id) DO UPDATE SET \
+           damage_taken = damage_taken + excluded.damage_taken, \
+           hits_taken = hits_taken + excluded.hits_taken, \
+           crit_hits_taken = crit_hits_taken + excluded.crit_hits_taken, \
+           lucky_hits_taken = lucky_hits_taken + excluded.lucky_hits_taken, \
+           crit_total_taken = crit_total_taken + excluded.crit_total_taken, \
+           lucky_total_taken = lucky_total_taken + excluded.lucky_total_taken"
+    )
+    .bind::<diesel::sql_types::Integer, _>(encounter_id)
+    .bind::<diesel::sql_types::BigInt, _>(actor_id)
+    .bind::<diesel::sql_types::BigInt, _>(value)
+    .bind::<diesel::sql_types::BigInt, _>(crit_hit)
+    .bind::<diesel::sql_types::BigInt, _>(lucky_hit)
+    .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+    .execute(conn)
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use diesel::prelude::*;
+
+    fn setup_conn() -> SqliteConnection {
+        use diesel::sqlite::SqliteConnection;
+        let mut conn = SqliteConnection::establish(":memory:").expect("in-memory sqlite");
+        // Apply migrations
+        run_migrations(&mut conn).expect("migrations");
+        // Pragmas similar to production
+        diesel::sql_query("PRAGMA foreign_keys=ON;").execute(&mut conn).ok();
+        conn
+    }
+
+    #[test]
+    fn test_damage_taken_materialized() {
+        let mut conn = setup_conn();
+
+        // Begin encounter
+        let mut enc_opt = None;
+        handle_task(&mut conn, DbTask::BeginEncounter { started_at_ms: 1000, local_player_id: Some(1) }, &mut enc_opt).unwrap();
+        let enc_id = enc_opt.expect("encounter started");
+
+        // Upsert attacker (monster)
+        handle_task(&mut conn, DbTask::UpsertEntity {
+            entity_id: 200,
+            entity_type: blueprotobuf_lib::blueprotobuf::EEntityType::EntMonster as i32,
+            is_player: false,
+            name: Some("Goblin".into()),
+            class_id: None,
+            class_spec: None,
+            ability_score: None,
+            level: None,
+            seen_at_ms: 1000,
+        }, &mut enc_opt).unwrap();
+
+        // Upsert defender (player)
+        handle_task(&mut conn, DbTask::UpsertEntity {
+            entity_id: 100,
+            entity_type: blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32,
+            is_player: true,
+            name: Some("Hero".into()),
+            class_id: Some(1),
+            class_spec: Some(1),
+            ability_score: Some(1000),
+            level: Some(10),
+            seen_at_ms: 1000,
+        }, &mut enc_opt).unwrap();
+
+        // Insert damage event: attacker 200 -> defender 100, value 150, hp_loss 100, shield_loss 50
+        handle_task(&mut conn, DbTask::InsertDamageEvent {
+            timestamp_ms: 1100,
+            attacker_id: 200,
+            defender_id: Some(100),
+            skill_id: Some(123),
+            value: 150,
+            is_crit: true,
+            is_lucky: false,
+            hp_loss: 100,
+            shield_loss: 50,
+        }, &mut enc_opt).unwrap();
+
+        // Verify stats
+        use sch::actor_encounter_stats::dsl as s;
+        let dmg_dealt: i64 = s::actor_encounter_stats
+            .select(s::damage_dealt)
+            .filter(s::encounter_id.eq(enc_id).and(s::actor_id.eq(200_i64)))
+            .first::<i64>(&mut conn)
+            .unwrap();
+        assert_eq!(dmg_dealt, 150);
+
+        let (dmg_taken, crit_hits_taken): (i64, i64) = s::actor_encounter_stats
+            .select((s::damage_taken, s::crit_hits_taken))
+            .filter(s::encounter_id.eq(enc_id).and(s::actor_id.eq(100_i64)))
+            .first::<(i64, i64)>(&mut conn)
+            .unwrap();
+        assert_eq!(dmg_taken, 150);
+        assert_eq!(crit_hits_taken, 1);
+    }
 }
