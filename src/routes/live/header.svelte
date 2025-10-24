@@ -9,7 +9,6 @@
   import PointerIcon from "virtual:icons/lucide/pointer";
   import SettingsIcon from "virtual:icons/lucide/settings";
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
-  import CrownIcon from "virtual:icons/lucide/crown";
 
   import { onMount, tick } from "svelte";
   import { onEncounterUpdate, onResetEncounter, resetEncounter, togglePauseEncounter, setBossOnlyDps, type HeaderInfo } from "$lib/api";
@@ -45,9 +44,6 @@
   onMount(() => {
     let encounterUnlisten: (() => void) | null = null;
     let resetUnlisten: (() => void) | null = null;
-
-    // Sync initial boss-only setting when header mounts
-    setBossOnlyDps(SETTINGS.general.state.bossOnlyDps).catch(() => {});
 
     onEncounterUpdate((event) => {
       const newHeaderInfo = event.payload.headerInfo;
@@ -122,12 +118,6 @@
       await emitTo("main", "navigate", "/main/settings");
     }
   }
-
-  function toggleBossOnly() {
-    const next = !SETTINGS.general.state.bossOnlyDps;
-    SETTINGS.general.state.bossOnlyDps = next;
-    setBossOnlyDps(next);
-  }
 </script>
 
 <!-- justify-between to create left/right sides -->
@@ -140,14 +130,6 @@
   </span>
   <!-- Right side -->
   <span class="flex gap-1">
-    <!-- Boss-only toggle -->
-    <button
-      class={SETTINGS.general.state.bossOnlyDps ? "text-yellow-400" : "text-neutral-300"}
-      onclick={toggleBossOnly}
-      {@attach tooltip(() => SETTINGS.general.state.bossOnlyDps ? "Boss-only damage: ON" : "Boss-only damage: OFF")}
-    >
-      <CrownIcon />
-    </button>
     <!-- TODO: add responsive clicks, toaster -->
     <!-- <button
       onclick={async () => takeScreenshot(screenshotDiv)}
@@ -155,19 +137,19 @@
     >
       <CameraIcon />
     </button> -->
-        <button onclick={() => resetEncounter()} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon /></button>
-        <button
-          onclick={() => {
-            togglePauseEncounter();
-            isEncounterPaused = !isEncounterPaused;
-          }}
-        >
-          {#if isEncounterPaused}
-            <PlayIcon {@attach tooltip(() => "Resume Encounter")} />
-          {:else}
-            <PauseIcon {@attach tooltip(() => "Pause Encounter")} />
-          {/if}
-        </button>
+    <button onclick={() => resetEncounter()} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon /></button>
+    <button
+      onclick={() => {
+        togglePauseEncounter();
+        isEncounterPaused = !isEncounterPaused;
+      }}
+    >
+      {#if isEncounterPaused}
+        <PlayIcon {@attach tooltip(() => "Resume Encounter")} />
+      {:else}
+        <PauseIcon {@attach tooltip(() => "Pause Encounter")} />
+      {/if}
+    </button>
     <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon /></button>
     <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon /></button>
     <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon /></button>
