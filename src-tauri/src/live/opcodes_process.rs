@@ -13,7 +13,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn on_server_change(encounter: &mut Encounter) {
     info!("on server change");
-    encounter.clone_from(&Encounter::default());
+    // Preserve entity identity and local player info; only reset combat state
+    encounter.reset_combat_state();
 }
 
 pub fn process_sync_near_entities(
@@ -39,19 +40,19 @@ pub fn process_sync_near_entities(
             _ => {}
         }
 
-        // Lazy upsert entity into DB
-        let name_opt = if target_entity.name.is_empty() { None } else { Some(target_entity.name.clone()) };
-        enqueue(DbTask::UpsertEntity {
-            entity_id: target_uid,
-            entity_type: target_entity_type as i32,
-            is_player: matches!(target_entity_type, EEntityType::EntChar),
-            name: name_opt,
-            class_id: Some(target_entity.class_id),
-            class_spec: Some(target_entity.class_spec as i32),
-            ability_score: Some(target_entity.ability_score),
-            level: Some(target_entity.level),
-            seen_at_ms: now_ms(),
-        });
+        // Lazy upsert entity into DB (only players are persisted)
+        if matches!(target_entity_type, EEntityType::EntChar) {
+            let name_opt = if target_entity.name.is_empty() { None } else { Some(target_entity.name.clone()) };
+            enqueue(DbTask::UpsertEntity {
+                entity_id: target_uid,
+                name: name_opt,
+                class_id: Some(target_entity.class_id),
+                class_spec: Some(target_entity.class_spec as i32),
+                ability_score: Some(target_entity.ability_score),
+                level: Some(target_entity.level),
+                seen_at_ms: now_ms(),
+            });
+        }
     }
     Some(())
 }
@@ -78,17 +79,18 @@ pub fn process_sync_container_data(
 
     // Lazy upsert with richer info
     let name_opt = if target_entity.name.is_empty() { None } else { Some(target_entity.name.clone()) };
-    enqueue(DbTask::UpsertEntity {
-        entity_id: player_uid,
-        entity_type: EEntityType::EntChar as i32,
-        is_player: true,
-        name: name_opt,
-        class_id: Some(target_entity.class_id),
-        class_spec: Some(target_entity.class_spec as i32),
-        ability_score: Some(target_entity.ability_score),
-        level: Some(target_entity.level),
-        seen_at_ms: now_ms(),
-    });
+    // Only store players in the database
+    if matches!(target_entity.entity_type, EEntityType::EntChar) {
+        enqueue(DbTask::UpsertEntity {
+            entity_id: player_uid,
+            name: name_opt,
+            class_id: Some(target_entity.class_id),
+            class_spec: Some(target_entity.class_spec as i32),
+            ability_score: Some(target_entity.ability_score),
+            level: Some(target_entity.level),
+            seen_at_ms: now_ms(),
+        });
+    }
 
     Some(())
 }
@@ -138,17 +140,18 @@ pub fn process_aoi_sync_delta(
 
         // Lazy upsert target entity after attrs
         let name_opt = if target_entity.name.is_empty() { None } else { Some(target_entity.name.clone()) };
-        enqueue(DbTask::UpsertEntity {
-            entity_id: target_uid,
-            entity_type: target_entity_type as i32,
-            is_player: matches!(target_entity_type, EEntityType::EntChar),
-            name: name_opt,
-            class_id: Some(target_entity.class_id),
-            class_spec: Some(target_entity.class_spec as i32),
-            ability_score: Some(target_entity.ability_score),
-            level: Some(target_entity.level),
-            seen_at_ms: now_ms(),
-        });
+        // Only store players in the database
+        if matches!(target_entity_type, EEntityType::EntChar) {
+            enqueue(DbTask::UpsertEntity {
+                entity_id: target_uid,
+                name: name_opt,
+                class_id: Some(target_entity.class_id),
+                class_spec: Some(target_entity.class_spec as i32),
+                ability_score: Some(target_entity.ability_score),
+                level: Some(target_entity.level),
+                seen_at_ms: now_ms(),
+            });
+        }
     }
 
     let Some(skill_effect) = aoi_sync_delta.skill_effects else {
@@ -223,17 +226,18 @@ pub fn process_aoi_sync_delta(
             skill.total_value += actual_value;
             // Persist entities and skill lazily
             let attacker_name_opt = if attacker_entity.name.is_empty() { None } else { Some(attacker_entity.name.clone()) };
-            enqueue(DbTask::UpsertEntity {
-                entity_id: attacker_uid,
-                entity_type: attacker_entity.entity_type as i32,
-                is_player: matches!(attacker_entity.entity_type, EEntityType::EntChar),
-                name: attacker_name_opt,
-                class_id: Some(attacker_entity.class_id),
-                class_spec: Some(attacker_entity.class_spec as i32),
-                ability_score: Some(attacker_entity.ability_score),
-                level: Some(attacker_entity.level),
-                seen_at_ms: timestamp_ms as i64,
-            });
+            // Only store players in the database
+            if matches!(attacker_entity.entity_type, EEntityType::EntChar) {
+                enqueue(DbTask::UpsertEntity {
+                    entity_id: attacker_uid,
+                    name: attacker_name_opt,
+                    class_id: Some(attacker_entity.class_id),
+                    class_spec: Some(attacker_entity.class_spec as i32),
+                    ability_score: Some(attacker_entity.ability_score),
+                    level: Some(attacker_entity.level),
+                    seen_at_ms: timestamp_ms as i64,
+                });
+            }
             enqueue(DbTask::UpsertSkill { skill_id: skill_uid, name: Some(Skill::get_skill_name(skill_uid)) });
             // Insert heal event
             enqueue(DbTask::InsertHealEvent {
@@ -279,17 +283,18 @@ pub fn process_aoi_sync_delta(
             // Persist attacker and skill lazily
             let attacker_name_opt = if attacker_entity.name.is_empty() { None } else { Some(attacker_entity.name.clone()) };
             let attacker_entity_type_copy = attacker_entity.entity_type;
-            enqueue(DbTask::UpsertEntity {
-                entity_id: attacker_uid,
-                entity_type: attacker_entity_type_copy as i32,
-                is_player: matches!(attacker_entity_type_copy, EEntityType::EntChar),
-                name: attacker_name_opt,
-                class_id: Some(attacker_entity.class_id),
-                class_spec: Some(attacker_entity.class_spec as i32),
-                ability_score: Some(attacker_entity.ability_score),
-                level: Some(attacker_entity.level),
-                seen_at_ms: timestamp_ms as i64,
-            });
+            // Only store players in the database
+            if matches!(attacker_entity_type_copy, EEntityType::EntChar) {
+                enqueue(DbTask::UpsertEntity {
+                    entity_id: attacker_uid,
+                    name: attacker_name_opt,
+                    class_id: Some(attacker_entity.class_id),
+                    class_spec: Some(attacker_entity.class_spec as i32),
+                    ability_score: Some(attacker_entity.ability_score),
+                    level: Some(attacker_entity.level),
+                    seen_at_ms: timestamp_ms as i64,
+                });
+            }
             enqueue(DbTask::UpsertSkill { skill_id: skill_uid, name: Some(Skill::get_skill_name(skill_uid)) });
             // info!(
             //     "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
@@ -311,17 +316,18 @@ pub fn process_aoi_sync_delta(
                     ..Default::default()
                 });
             let defender_name_opt = if defender_entity.name.is_empty() { None } else { Some(defender_entity.name.clone()) };
-            enqueue(DbTask::UpsertEntity {
-                entity_id: target_uid,
-                entity_type: defender_entity.entity_type as i32,
-                is_player: matches!(defender_entity.entity_type, EEntityType::EntChar),
-                name: defender_name_opt,
-                class_id: Some(defender_entity.class_id),
-                class_spec: Some(defender_entity.class_spec as i32),
-                ability_score: Some(defender_entity.ability_score),
-                level: Some(defender_entity.level),
-                seen_at_ms: timestamp_ms as i64,
-            });
+            // Only store players in the database
+            if matches!(defender_entity.entity_type, EEntityType::EntChar) {
+                enqueue(DbTask::UpsertEntity {
+                    entity_id: target_uid,
+                    name: defender_name_opt,
+                    class_id: Some(defender_entity.class_id),
+                    class_spec: Some(defender_entity.class_spec as i32),
+                    ability_score: Some(defender_entity.ability_score),
+                    level: Some(defender_entity.level),
+                    seen_at_ms: timestamp_ms as i64,
+                });
+            }
 
             // Insert damage event
             enqueue(DbTask::InsertDamageEvent {
@@ -394,17 +400,18 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                 // module; after processing the event the manager can call
                 // Player names are automatically stored in the database via UpsertEntity tasks.
                 // Also persist the name into the DB lazily
-                enqueue(DbTask::UpsertEntity {
-                    entity_id: target_uid,
-                    entity_type: player_entity.entity_type as i32,
-                    is_player: matches!(player_entity.entity_type, EEntityType::EntChar),
-                    name: Some(player_name),
-                    class_id: Some(player_entity.class_id),
-                    class_spec: Some(player_entity.class_spec as i32),
-                    ability_score: Some(player_entity.ability_score),
-                    level: Some(player_entity.level),
-                    seen_at_ms: now_ms(),
-                });
+                // Only store players in the database
+                if matches!(player_entity.entity_type, EEntityType::EntChar) {
+                    enqueue(DbTask::UpsertEntity {
+                        entity_id: target_uid,
+                        name: Some(player_name),
+                        class_id: Some(player_entity.class_id),
+                        class_spec: Some(player_entity.class_spec as i32),
+                        ability_score: Some(player_entity.ability_score),
+                        level: Some(player_entity.level),
+                        seen_at_ms: now_ms(),
+                    });
+                }
             }
             #[allow(clippy::cast_possible_truncation)]
             attr_type::ATTR_PROFESSION_ID => {

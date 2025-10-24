@@ -21,7 +21,6 @@ pub struct ActorEncounterStatDto {
     pub encounter_id: i32,
     pub actor_id: i64,
     pub name: Option<String>,
-    pub is_player: bool,
     pub damage_dealt: i64,
     pub heal_dealt: i64,
     pub damage_taken: i64,
@@ -81,7 +80,6 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
             s::encounter_id,
             s::actor_id,
             en::name.nullable(),
-            en::is_player,
             s::damage_dealt,
             s::heal_dealt,
             s::damage_taken,
@@ -96,14 +94,13 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
             s::lucky_hits_taken,
         ))
         .order((s::damage_dealt.desc(), s::heal_dealt.desc(), s::damage_taken.desc()))
-        .load::<(i32, i64, Option<String>, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
+        .load::<(i32, i64, Option<String>, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
         .map_err(|e| e.to_string())?;
 
     Ok(rows.into_iter().map(|(
         encounter_id,
         actor_id,
         name_opt,
-        is_player_int,
         damage_dealt,
         heal_dealt,
         damage_taken,
@@ -120,7 +117,6 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
         encounter_id,
         actor_id,
         name: name_opt,
-        is_player: is_player_int != 0,
         damage_dealt,
         heal_dealt,
         damage_taken,
@@ -143,7 +139,7 @@ pub fn get_name_by_uid(uid: i64) -> Result<Option<String>, String> {
 
     let name: Option<Option<String>> = en::entities
         .select(en::name)
-        .filter(en::entity_id.eq(uid).and(en::is_player.eq(1)))
+        .filter(en::entity_id.eq(uid))
         .first::<Option<String>>(&mut conn)
         .optional()
         .map_err(|e| e.to_string())?;
@@ -158,7 +154,7 @@ pub fn get_recent_players(limit: i64) -> Result<Vec<(i64, String)>, String> {
 
     let rows: Vec<(i64, Option<String>)> = en::entities
         .select((en::entity_id, en::name))
-        .filter(en::is_player.eq(1).and(en::name.is_not_null()))
+        .filter(en::name.is_not_null())
         .order(en::last_seen_ms.desc())
         .limit(limit)
         .load(&mut conn)

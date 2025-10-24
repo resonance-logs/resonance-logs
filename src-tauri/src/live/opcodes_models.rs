@@ -80,6 +80,57 @@ impl Skill {
     }
 }
 
+impl Encounter {
+    /// Reset only combat-specific state while preserving player identity fields and cache.
+    ///
+    /// Preserves:
+    /// - is_encounter_paused
+    /// - local_player_uid
+    /// - local_player (sync container data)
+    /// - entity_uid_to_entity identity fields (name, class, spec, ability score, level, type)
+    ///
+    /// Clears:
+    /// - encounter totals and timestamps
+    /// - per-entity combat counters and per-encounter skill maps
+    pub fn reset_combat_state(&mut self) {
+        // Reset encounter-level combat state
+        self.time_last_combat_packet_ms = 0;
+        self.time_fight_start_ms = 0;
+        self.total_dmg = 0;
+        self.total_heal = 0;
+
+        // Reset per-entity combat stats while preserving identity
+        for entity in self.entity_uid_to_entity.values_mut() {
+            // Damage
+            entity.total_dmg = 0;
+            entity.crit_total_dmg = 0;
+            entity.crit_hits_dmg = 0;
+            entity.lucky_total_dmg = 0;
+            entity.lucky_hits_dmg = 0;
+            entity.hits_dmg = 0;
+            entity.skill_uid_to_dmg_skill.clear();
+
+            // Healing
+            entity.total_heal = 0;
+            entity.crit_total_heal = 0;
+            entity.crit_hits_heal = 0;
+            entity.lucky_total_heal = 0;
+            entity.lucky_hits_heal = 0;
+            entity.hits_heal = 0;
+            entity.skill_uid_to_heal_skill.clear();
+
+            // Taken
+            entity.total_taken = 0;
+            entity.crit_total_taken = 0;
+            entity.crit_hits_taken = 0;
+            entity.lucky_total_taken = 0;
+            entity.lucky_hits_taken = 0;
+            entity.hits_taken = 0;
+            entity.skill_uid_to_taken_skill.clear();
+        }
+    }
+}
+
 pub mod attr_type {
     pub const ATTR_NAME: i32 = 0x01;
     // pub const ATTR_ID: i32 = 0x0a;

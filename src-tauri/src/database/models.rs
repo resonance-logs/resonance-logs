@@ -3,31 +3,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::database::schema as sch;
 
-#[derive(Debug, Clone, Queryable, Identifiable, Serialize, Deserialize)]
-#[diesel(table_name = sch::sessions)]
-pub struct Session {
-    pub id: i32,
-    pub started_at_ms: i64,
-    pub ended_at_ms: Option<i64>,
-    pub version: Option<String>,
-    pub platform: Option<String>,
-}
 
-#[derive(Debug, Clone, Insertable)]
-#[diesel(table_name = sch::sessions)]
-pub struct NewSession {
-    pub started_at_ms: i64,
-    pub ended_at_ms: Option<i64>,
-    pub version: Option<String>,
-    pub platform: Option<String>,
-}
 
 #[derive(Debug, Clone, Queryable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = sch::entities, primary_key(entity_id))]
 pub struct EntityRow {
     pub entity_id: i64,
-    pub entity_type: i32,
-    pub is_player: i32,
     pub name: Option<String>,
     pub class_id: Option<i32>,
     pub class_spec: Option<i32>,
@@ -41,8 +22,6 @@ pub struct EntityRow {
 #[diesel(table_name = sch::entities)]
 pub struct NewEntity<'a> {
     pub entity_id: i64,
-    pub entity_type: i32,
-    pub is_player: i32,
     pub name: Option<&'a str>,
     pub class_id: Option<i32>,
     pub class_spec: Option<i32>,
@@ -55,8 +34,6 @@ pub struct NewEntity<'a> {
 #[derive(Debug, Clone, AsChangeset)]
 #[diesel(table_name = sch::entities)]
 pub struct UpdateEntity<'a> {
-    pub entity_type: Option<i32>,
-    pub is_player: Option<i32>,
     pub name: Option<&'a str>,
     pub class_id: Option<i32>,
     pub class_spec: Option<i32>,
@@ -83,7 +60,6 @@ pub struct NewSkill<'a> {
 #[diesel(table_name = sch::encounters)]
 pub struct EncounterRow {
     pub id: i32,
-    pub session_id: Option<i32>,
     pub started_at_ms: i64,
     pub ended_at_ms: Option<i64>,
     pub local_player_id: Option<i64>,
@@ -94,7 +70,6 @@ pub struct EncounterRow {
 #[derive(Debug, Clone, Insertable)]
 #[diesel(table_name = sch::encounters)]
 pub struct NewEncounter {
-    pub session_id: Option<i32>,
     pub started_at_ms: i64,
     pub ended_at_ms: Option<i64>,
     pub local_player_id: Option<i64>,

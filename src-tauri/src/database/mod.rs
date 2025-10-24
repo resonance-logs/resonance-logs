@@ -109,8 +109,6 @@ pub enum DbTask {
 
     UpsertEntity {
         entity_id: i64,
-        entity_type: i32,
-        is_player: bool,
         name: Option<String>,
         class_id: Option<i32>,
         class_spec: Option<i32>,
@@ -160,7 +158,6 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
             if current_encounter_id.is_some() { return Ok(()); }
             use sch::encounters::dsl as e;
             let new_enc = m::NewEncounter {
-                session_id: None,
                 started_at_ms,
                 ended_at_ms: None,
                 local_player_id,
@@ -183,7 +180,7 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     .map_err(|er| er.to_string())?;
             }
         }
-        DbTask::UpsertEntity { entity_id, entity_type, is_player, name, class_id, class_spec, ability_score, level, seen_at_ms } => {
+        DbTask::UpsertEntity { entity_id, name, class_id, class_spec, ability_score, level, seen_at_ms } => {
             use sch::entities::dsl as en;
             let exists: Option<i64> = en::entities
                 .select(en::entity_id)
@@ -193,8 +190,6 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                 .map_err(|e| e.to_string())?;
             if exists.is_some() {
                 let update = m::UpdateEntity {
-                    entity_type: Some(entity_type),
-                    is_player: Some(if is_player {1} else {0}),
                     name: name.as_deref(),
                     class_id,
                     class_spec,
@@ -209,8 +204,6 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
             } else {
                 let insert = m::NewEntity {
                     entity_id,
-                    entity_type,
-                    is_player: if is_player {1} else {0},
                     name: name.as_deref(),
                     class_id,
                     class_spec,
@@ -327,13 +320,16 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
 }
 
 fn get_entity_type(conn: &mut SqliteConnection, entity_id: i64) -> Result<Option<i32>, String> {
+    // Entities table no longer stores entity_type; we only persist players.
+    // If an entity exists here, treat it as a player (EntChar); otherwise unknown.
     use sch::entities::dsl as en;
-    en::entities
-        .select(en::entity_type)
+    let exists: Option<i64> = en::entities
+        .select(en::entity_id)
         .filter(en::entity_id.eq(entity_id))
-        .first::<i32>(conn)
+        .first::<i64>(conn)
         .optional()
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    Ok(exists.map(|_| blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32))
 }
 
 fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool) -> Result<(), String> {
@@ -438,24 +434,11 @@ mod tests {
         handle_task(&mut conn, DbTask::BeginEncounter { started_at_ms: 1000, local_player_id: Some(1) }, &mut enc_opt).unwrap();
         let enc_id = enc_opt.expect("encounter started");
 
-        // Upsert attacker (monster)
-        handle_task(&mut conn, DbTask::UpsertEntity {
-            entity_id: 200,
-            entity_type: blueprotobuf_lib::blueprotobuf::EEntityType::EntMonster as i32,
-            is_player: false,
-            name: Some("Goblin".into()),
-            class_id: None,
-            class_spec: None,
-            ability_score: None,
-            level: None,
-            seen_at_ms: 1000,
-        }, &mut enc_opt).unwrap();
+        // Note: Monsters are no longer stored in the database, only players
 
         // Upsert defender (player)
         handle_task(&mut conn, DbTask::UpsertEntity {
             entity_id: 100,
-            entity_type: blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32,
-            is_player: true,
             name: Some("Hero".into()),
             class_id: Some(1),
             class_spec: Some(1),

@@ -171,7 +171,7 @@ pub async fn reset_encounter(
     state_manager: tauri::State<'_, AppStateManager>,
 )-> Result<(), String> {
     state_manager.update_encounter(|encounter| {
-        *encounter = crate::live::opcodes_models::Encounter::default();
+        encounter.reset_combat_state();
     }).await;
     info!("encounter reset");
 

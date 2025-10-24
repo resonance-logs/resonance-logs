@@ -195,7 +195,7 @@ impl AppStateManager {
     async fn reset_encounter(&self, state: &mut AppState) {
         // End any active encounter in DB
         enqueue(DbTask::EndEncounter { ended_at_ms: now_ms() });
-        state.encounter = Encounter::default();
+        state.encounter.reset_combat_state();
         state.skills_store.clear();
 
         if state.event_manager.should_emit_events() {

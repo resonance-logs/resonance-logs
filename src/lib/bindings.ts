@@ -66,6 +66,22 @@ async getEncounterActorStats(encounterId: number) : Promise<Result<ActorEncounte
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getRecentPlayersCommand(limit: number) : Promise<Result<([number, string])[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_recent_players_command", { limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getPlayerNameCommand(uid: number) : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_player_name_command", { uid }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -79,7 +95,7 @@ async getEncounterActorStats(encounterId: number) : Promise<Result<ActorEncounte
 
 /** user-defined types **/
 
-export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; isPlayer: boolean; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number }
+export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number }
 export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number }
 export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }

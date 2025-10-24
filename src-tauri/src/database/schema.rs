@@ -1,21 +1,11 @@
 // @generated automatically by Diesel CLI, but maintained manually here.
 // Keep in sync with migrations.
 
-diesel::table! {
-    sessions (id) {
-        id -> Integer,
-        started_at_ms -> BigInt,
-        ended_at_ms -> Nullable<BigInt>,
-        version -> Nullable<Text>,
-        platform -> Nullable<Text>,
-    }
-}
+
 
 diesel::table! {
     entities (entity_id) {
         entity_id -> BigInt,
-        entity_type -> Integer,
-        is_player -> Integer,
         name -> Nullable<Text>,
         class_id -> Nullable<Integer>,
         class_spec -> Nullable<Integer>,
@@ -36,7 +26,6 @@ diesel::table! {
 diesel::table! {
     encounters (id) {
         id -> Integer,
-        session_id -> Nullable<Integer>,
         started_at_ms -> BigInt,
         ended_at_ms -> Nullable<BigInt>,
         local_player_id -> Nullable<BigInt>,
@@ -106,7 +95,6 @@ diesel::joinable!(damage_events -> encounters (encounter_id));
 diesel::joinable!(heal_events -> encounters (encounter_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    sessions,
     entities,
     skills,
     encounters,
