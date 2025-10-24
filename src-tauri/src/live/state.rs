@@ -1,9 +1,9 @@
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
 use crate::live::event_manager::{EventManager, MetricType};
-use crate::live::skills_store::SkillsStore;
 use blueprotobuf_lib::blueprotobuf;
 use log::{info, warn};
+use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tauri::AppHandle;
@@ -26,7 +26,7 @@ pub enum StateEvent {
 pub struct AppState {
     pub encounter: Encounter,
     pub event_manager: EventManager,
-    pub skills_store: SkillsStore,
+    pub skill_subscriptions: HashSet<(i64, String)>,
     pub app_handle: AppHandle,
 }
 
@@ -35,7 +35,7 @@ impl AppState {
         Self {
             encounter: Encounter::default(),
             event_manager: EventManager::new(),
-            skills_store: SkillsStore::new(),
+            skill_subscriptions: HashSet::new(),
             app_handle,
         }
     }
@@ -131,8 +131,8 @@ impl AppStateManager {
             state.event_manager.emit_encounter_reset();
         }
 
-        // Clear skills store
-        state.skills_store.clear();
+        // Clear skill subscriptions
+        state.skill_subscriptions.clear();
     }
 
     async fn process_sync_near_entities(
@@ -196,7 +196,7 @@ impl AppStateManager {
         // End any active encounter in DB
         enqueue(DbTask::EndEncounter { ended_at_ms: now_ms() });
         state.encounter.reset_combat_state();
-        state.skills_store.clear();
+        state.skill_subscriptions.clear();
 
         if state.event_manager.should_emit_events() {
             state.event_manager.emit_encounter_reset();
@@ -207,16 +207,13 @@ impl AppStateManager {
         self.state.read().await.encounter.clone()
     }
 
-    pub async fn get_skills_store(&self) -> SkillsStore {
-        self.state.read().await.skills_store.clone()
-    }
-
-    pub async fn update_skills_store<F>(&self, update_fn: F)
+    // Manage skill subscriptions
+    pub async fn update_skill_subscriptions<F>(&self, update_fn: F)
     where
-        F: FnOnce(&mut SkillsStore),
+        F: FnOnce(&mut HashSet<(i64, String)>),
     {
         let mut state = self.state.write().await;
-        update_fn(&mut state.skills_store);
+        update_fn(&mut state.skill_subscriptions);
     }
 
     /// Get player name by UID from database
@@ -248,10 +245,6 @@ impl AppStateManager {
     }
 
     pub async fn get_encounter_ref(&self) -> tokio::sync::RwLockReadGuard<'_, AppState> {
-        self.state.read().await
-    }
-
-    pub async fn get_skills_store_ref(&self) -> tokio::sync::RwLockReadGuard<'_, AppState> {
         self.state.read().await
     }
 
@@ -357,47 +350,32 @@ impl AppStateManager {
             state.event_manager.emit_players_update(MetricType::Tanked, tanked_players);
         }
 
-        // Update skills store for all players with damage/heal data
-        for (entity_uid, skills_window) in dps_skill_windows {
-            state.skills_store.update_dps_skills(entity_uid, skills_window);
-        }
-
-        for (entity_uid, skills_window) in heal_skill_windows {
-            state.skills_store.update_heal_skills(entity_uid, skills_window);
-        }
-
-        for (entity_uid, skills_window) in tanked_skill_windows {
-            state.skills_store.update_tanked_skills(entity_uid, skills_window);
-        }
-
-        // Emit skills updates only for subscribed players
-        for entity_uid in subscribed_players {
-            if state.skills_store.is_subscribed(entity_uid, "dps") {
-                if let Some(skills_window) = state.skills_store.get_dps_skills(entity_uid) {
-                    state.event_manager.emit_skills_update(
-                        MetricType::Dps,
-                        entity_uid,
-                        skills_window.clone(),
-                    );
-                }
+        // Emit skills updates only for subscribed players using precomputed windows
+        for (entity_uid, skills_window) in &dps_skill_windows {
+            if state.skill_subscriptions.contains(&(*entity_uid, "dps".to_string())) {
+                state.event_manager.emit_skills_update(
+                    MetricType::Dps,
+                    *entity_uid,
+                    skills_window.clone(),
+                );
             }
-            if state.skills_store.is_subscribed(entity_uid, "heal") {
-                if let Some(skills_window) = state.skills_store.get_heal_skills(entity_uid) {
-                    state.event_manager.emit_skills_update(
-                        MetricType::Heal,
-                        entity_uid,
-                        skills_window.clone(),
-                    );
-                }
+        }
+        for (entity_uid, skills_window) in &heal_skill_windows {
+            if state.skill_subscriptions.contains(&(*entity_uid, "heal".to_string())) {
+                state.event_manager.emit_skills_update(
+                    MetricType::Heal,
+                    *entity_uid,
+                    skills_window.clone(),
+                );
             }
-            if state.skills_store.is_subscribed(entity_uid, "tanked") {
-                if let Some(skills_window) = state.skills_store.get_tanked_skills(entity_uid) {
-                    state.event_manager.emit_skills_update(
-                        MetricType::Tanked,
-                        entity_uid,
-                        skills_window.clone(),
-                    );
-                }
+        }
+        for (entity_uid, skills_window) in &tanked_skill_windows {
+            if state.skill_subscriptions.contains(&(*entity_uid, "tanked".to_string())) {
+                state.event_manager.emit_skills_update(
+                    MetricType::Tanked,
+                    *entity_uid,
+                    skills_window.clone(),
+                );
             }
         }
     }

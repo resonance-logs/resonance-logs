@@ -5,6 +5,7 @@ use tauri::Manager;
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use window_vibrancy::{apply_blur, clear_blur};
 // request_restart is not needed in this module at present
+use crate::live::event_manager; // for generate_skills_window_*
 
 fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -> String {
     if player_uid == local_player_uid && player_name.is_empty() {
@@ -31,29 +32,23 @@ pub async fn subscribe_player_skills(
     skill_type: String,
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
-    // Add to active subscriptions using the state manager
-    state_manager.update_skills_store(|skills_store| {
-        skills_store.subscribe(uid, skill_type.clone());
+    // Register subscription
+    state_manager.update_skill_subscriptions(|subs| {
+        subs.insert((uid, skill_type.clone()));
     }).await;
 
-    // Return current skills data
-    match skill_type.as_str() {
-        "dps" => {
-            state_manager.with_state(|state| {
-                state.skills_store.get_dps_skills(uid)
-                    .cloned()
-                    .ok_or_else(|| format!("No DPS skills found for player {}", uid))
-            }).await
+    // Compute and return initial window directly from Encounter
+    state_manager.with_state(|state| {
+        match skill_type.as_str() {
+            "dps" => event_manager::generate_skills_window_dps(&state.encounter, uid)
+                .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
+            "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
+                .ok_or_else(|| format!("No heal skills found for player {}", uid)),
+            "tanked" => event_manager::generate_skills_window_tanked(&state.encounter, uid)
+                .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
+            _ => Err(format!("Invalid skill type: {}", skill_type))
         }
-        "heal" => {
-            state_manager.with_state(|state| {
-                state.skills_store.get_heal_skills(uid)
-                    .cloned()
-                    .ok_or_else(|| format!("No heal skills found for player {}", uid))
-            }).await
-        }
-        _ => Err(format!("Invalid skill type: {}", skill_type))
-    }
+    }).await
 }
 
 #[tauri::command]
@@ -63,8 +58,8 @@ pub async fn unsubscribe_player_skills(
     skill_type: String,
     state_manager: tauri::State<'_, AppStateManager>,
 )-> Result<(), String> {
-    state_manager.update_skills_store(|skills_store| {
-        skills_store.unsubscribe(uid, skill_type);
+    state_manager.update_skill_subscriptions(|subs| {
+        subs.remove(&(uid, skill_type));
     }).await;
     Ok(())
 }
@@ -76,30 +71,17 @@ pub async fn get_player_skills(
     skill_type: String,
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
-    match skill_type.as_str() {
-        "dps" => {
-            state_manager.with_state(|state| {
-                state.skills_store.get_dps_skills(uid)
-                    .cloned()
-                    .ok_or_else(|| format!("No DPS skills found for player {}", uid))
-            }).await
+    state_manager.with_state(|state| {
+        match skill_type.as_str() {
+            "dps" => event_manager::generate_skills_window_dps(&state.encounter, uid)
+                .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
+            "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
+                .ok_or_else(|| format!("No heal skills found for player {}", uid)),
+            "tanked" => event_manager::generate_skills_window_tanked(&state.encounter, uid)
+                .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
+            _ => Err(format!("Invalid skill type: {}", skill_type))
         }
-        "heal" => {
-            state_manager.with_state(|state| {
-                state.skills_store.get_heal_skills(uid)
-                    .cloned()
-                    .ok_or_else(|| format!("No heal skills found for player {}", uid))
-            }).await
-        }
-        "tanked" => {
-            state_manager.with_state(|state| {
-                state.skills_store.get_tanked_skills(uid)
-                    .cloned()
-                    .ok_or_else(|| format!("No tanked skills found for player {}", uid))
-            }).await
-        }
-        _ => Err(format!("Invalid skill type: {}", skill_type))
-    }
+    }).await
 }
 
 #[tauri::command]
@@ -182,10 +164,8 @@ pub async fn reset_encounter(
         }
     }).await;
 
-    // Clear skills store and subscriptions
-    state_manager.update_skills_store(|skills_store| {
-        skills_store.clear();
-    }).await;
+    // Clear subscriptions
+    state_manager.update_skill_subscriptions(|subs| subs.clear()).await;
     Ok(())
 }
 
