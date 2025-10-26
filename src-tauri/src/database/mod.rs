@@ -3,24 +3,30 @@ pub mod schema;
 pub mod commands;
 
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
 
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::sqlite::SqliteConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness};
 use once_cell::sync::Lazy;
-use tokio::sync::mpsc::{self, Sender};
+use tokio::sync::mpsc::{self, UnboundedSender};
 use parking_lot::Mutex;
 
 use crate::database::models as m;
 use crate::database::schema as sch;
 
+#[allow(dead_code)]
 pub type DbPool = Pool<ConnectionManager<SqliteConnection>>;
 
 pub const MIGRATIONS: EmbeddedMigrations = diesel_migrations::embed_migrations!();
 
-static DB_SENDER: Lazy<Mutex<Option<Sender<DbTask>>>> = Lazy::new(|| Mutex::new(None));
+static DB_SENDER: Lazy<Mutex<Option<UnboundedSender<DbTask>>>> = Lazy::new(|| Mutex::new(None));
+
+// Batch configuration: collect up to this many events or wait up to this many ms (whichever
+// comes first) before flushing to the DB. Chosen by user: 50ms window.
+const BATCH_MAX_EVENTS: usize = 100;
+const BATCH_MAX_WAIT_MS: u64 = 50;
 
 #[derive(Debug, thiserror::Error)]
 pub enum DbInitError {
@@ -57,8 +63,10 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
     if let Err(e) = ensure_parent_dir(&db_path) { return Err(DbInitError::Pool(format!("failed to create dir: {e}"))); }
 
     let manager = ConnectionManager::<SqliteConnection>::new(db_path.to_string_lossy().to_string());
+    // Increase connection pool size to reduce contention for DB connections
+    // under concurrent UI reads + writer work. Tuned to 8 as a reasonable default (probably)
     let pool = Pool::builder()
-        .max_size(4)
+        .max_size(8)
         .build(manager)
         .map_err(|e| DbInitError::Pool(e.to_string()))?;
 
@@ -72,23 +80,63 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
         diesel::sql_query("PRAGMA foreign_keys=ON;").execute(&mut conn).ok();
     }
 
-    // Spawn writer worker
-    let (tx, mut rx) = mpsc::channel::<DbTask>(10_000);
+    // Spawn writer worker using an unbounded channel (grow-on-demand) and batch
+    // incoming tasks for up to BATCH_MAX_WAIT_MS or until BATCH_MAX_EVENTS is
+    // reached. Using an unbounded channel avoids silent drops on overflow and
+    // satisfies the requirement to "increase queue size" when under pressure.
+    let (tx, mut rx) = mpsc::unbounded_channel::<DbTask>();
     {
         let mut guard = DB_SENDER.lock();
         *guard = Some(tx.clone());
     }
 
     std::thread::spawn(move || {
-        // blocking writer thread
         let mut current_encounter_id: Option<i32> = None;
         loop {
-            let task = rx.blocking_recv();
-            let Some(task) = task else { break; };
+            // Block until we receive the first task
+            let first = rx.blocking_recv();
+            let Some(first) = first else { break; };
+
+            // Collect a batch: include the first task, then try to drain more
+            // tasks for up to BATCH_MAX_WAIT_MS or until BATCH_MAX_EVENTS.
+            let mut tasks = Vec::with_capacity(BATCH_MAX_EVENTS);
+            tasks.push(first);
+            let start = Instant::now();
+            while tasks.len() < BATCH_MAX_EVENTS && start.elapsed() < Duration::from_millis(BATCH_MAX_WAIT_MS) {
+                match rx.try_recv() {
+                    Ok(t) => tasks.push(t),
+                    Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {
+                        // No immediate task available; sleep a little to avoid busy-looping
+                        std::thread::sleep(Duration::from_millis(1));
+                    }
+                    Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => break,
+                }
+            }
+
+            // Acquire a connection and attempt to execute the batch in a single
+            // transaction for better throughput. If the batch transaction fails,
+            // fall back to processing tasks individually so we don't lose work.
             let mut conn = match pool.get() { Ok(c) => c, Err(e) => { log::error!("DB get conn: {e}"); continue; } };
-            match handle_task(&mut conn, task, &mut current_encounter_id) {
-                Ok(_) => {}
-                Err(e) => log::error!("DB task error: {e}")
+
+            let batch_result = conn.transaction::<(), diesel::result::Error, _>(|tx_conn| {
+                for task in tasks.iter().cloned() {
+                    handle_task(tx_conn, task, &mut current_encounter_id).map_err(|e| {
+                        log::error!("DB task in batch failed: {}", e);
+                        diesel::result::Error::RollbackTransaction
+                    })?;
+                }
+                Ok(())
+            });
+
+            if let Err(e) = batch_result {
+                log::error!("Batch transaction failed: {:?}. Falling back to per-task execution.", e);
+                // Try to process tasks individually; this uses the same connection
+                // (and therefore the same transaction semantics as earlier).
+                for task in tasks {
+                    if let Err(e) = handle_task(&mut conn, task, &mut current_encounter_id) {
+                        log::error!("DB task error (fallback): {}", e);
+                    }
+                }
             }
         }
     });
@@ -102,7 +150,7 @@ fn run_migrations(conn: &mut SqliteConnection) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DbTask {
     BeginEncounter { started_at_ms: i64, local_player_id: Option<i64> },
     EndEncounter { ended_at_ms: i64 },
@@ -147,8 +195,9 @@ pub fn enqueue(task: DbTask) {
     // fire-and-forget; drop if not initialized
     let guard = DB_SENDER.lock();
     if let Some(tx) = guard.as_ref() {
-        if let Err(e) = tx.try_send(task) {
-            log::warn!("DB queue full or closed, dropping task: {}", e);
+        if let Err(e) = tx.send(task) {
+            // Unbounded sender should not overflow; an error means the receiver was dropped.
+            log::warn!("DB queue send failed (receiver closed): {}", e);
         }
     }
 }
@@ -428,7 +477,7 @@ fn upsert_stats_add_damage_taken(conn: &mut SqliteConnection, encounter_id: i32,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use diesel::prelude::*;
+    // diesel prelude not needed in this scope; use fully-qualified paths where required
 
     fn setup_conn() -> SqliteConnection {
         use diesel::sqlite::SqliteConnection;
