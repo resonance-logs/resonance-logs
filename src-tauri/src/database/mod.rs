@@ -63,8 +63,10 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
     if let Err(e) = ensure_parent_dir(&db_path) { return Err(DbInitError::Pool(format!("failed to create dir: {e}"))); }
 
     let manager = ConnectionManager::<SqliteConnection>::new(db_path.to_string_lossy().to_string());
+    // Increase connection pool size to reduce contention for DB connections
+    // under concurrent UI reads + writer work. Tuned to 8 as a reasonable default (probably)
     let pool = Pool::builder()
-        .max_size(4)
+        .max_size(8)
         .build(manager)
         .map_err(|e| DbInitError::Pool(e.to_string()))?;
 
