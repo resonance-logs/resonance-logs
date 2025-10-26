@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::database::schema as sch;
 use crate::database::models as m;
 use crate::database::{default_db_path, ensure_parent_dir};
+use crate::live::commands_models as lc;
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -13,6 +14,13 @@ pub struct EncounterSummaryDto {
     pub ended_at_ms: Option<i64>,
     pub total_dmg: i64,
     pub total_heal: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentEncountersResult {
+    pub rows: Vec<EncounterSummaryDto>,
+    pub total_count: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -50,17 +58,23 @@ fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_recent_encounters(limit: i32) -> Result<Vec<EncounterSummaryDto>, String> {
+pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncountersResult, String> {
     let mut conn = get_conn()?;
     use sch::encounters::dsl as e;
     let rows: Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>)> = e::encounters
         .order(e::started_at_ms.desc())
         .select((e::id, e::started_at_ms, e::ended_at_ms, e::total_dmg, e::total_heal))
         .limit(limit as i64)
+        .offset(offset as i64)
         .load(&mut conn)
         .map_err(|er| er.to_string())?;
 
-    Ok(rows
+    let total_count: i64 = e::encounters
+        .count()
+        .get_result(&mut conn)
+        .map_err(|er| er.to_string())?;
+
+    let mapped: Vec<EncounterSummaryDto> = rows
         .into_iter()
         .map(|(id, started, ended, td, th)| EncounterSummaryDto {
             id,
@@ -69,7 +83,9 @@ pub fn get_recent_encounters(limit: i32) -> Result<Vec<EncounterSummaryDto>, Str
             total_dmg: td.unwrap_or(0),
             total_heal: th.unwrap_or(0),
         })
-        .collect())
+        .collect();
+
+    Ok(RecentEncountersResult { rows: mapped, total_count })
 }
 
 #[tauri::command]
@@ -199,4 +215,253 @@ pub fn get_recent_players_command(limit: i32) -> Result<Vec<(i64, String)>, Stri
 #[specta::specta]
 pub fn get_player_name_command(uid: i64) -> Result<Option<String>, String> {
     get_name_by_uid(uid)
+}
+
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, String> {
+    let mut conn = get_conn()?;
+    use sch::encounters::dsl as e;
+
+    let row: (i32, i64, Option<i64>, Option<i64>, Option<i64>) = e::encounters
+        .filter(e::id.eq(encounter_id))
+        .select((e::id, e::started_at_ms, e::ended_at_ms, e::total_dmg, e::total_heal))
+        .first(&mut conn)
+        .map_err(|er| er.to_string())?;
+
+    Ok(EncounterSummaryDto {
+        id: row.0,
+        started_at_ms: row.1,
+        ended_at_ms: row.2,
+        total_dmg: row.3.unwrap_or(0),
+        total_heal: row.4.unwrap_or(0),
+    })
+}
+
+
+#[tauri::command]
+#[specta::specta]
+pub fn delete_encounter(encounter_id: i32) -> Result<(), String> {
+    let mut conn = get_conn()?;
+    use sch::damage_events::dsl as de;
+    use sch::heal_events::dsl as he;
+    use sch::actor_encounter_stats::dsl as s;
+    use sch::encounters::dsl as e;
+
+    conn.transaction::<(), diesel::result::Error, _>(|conn| {
+        diesel::delete(de::damage_events.filter(de::encounter_id.eq(encounter_id))).execute(conn)?;
+        diesel::delete(he::heal_events.filter(he::encounter_id.eq(encounter_id))).execute(conn)?;
+        diesel::delete(s::actor_encounter_stats.filter(s::encounter_id.eq(encounter_id))).execute(conn)?;
+        diesel::delete(e::encounters.filter(e::id.eq(encounter_id))).execute(conn)?;
+        Ok(())
+    })
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_encounter_player_skills(encounter_id: i32, actor_id: i64, skill_type: String) -> Result<lc::SkillsWindow, String> {
+    let mut conn = get_conn()?;
+    use diesel::dsl::{sum, count_star};
+    use sch::damage_events::dsl as de;
+    use sch::heal_events::dsl as he;
+    use sch::skills::dsl as sk;
+    use sch::actor_encounter_stats::dsl as s;
+    use sch::encounters::dsl as e;
+    use std::collections::HashMap;
+
+    // Get encounter timings
+    let encounter_row: (i32, i64, Option<i64>, Option<i64>, Option<i64>) = e::encounters
+        .filter(e::id.eq(encounter_id))
+        .select((e::id, e::started_at_ms, e::ended_at_ms, e::total_dmg, e::total_heal))
+        .first(&mut conn)
+        .map_err(|er| er.to_string())?;
+
+    let started = encounter_row.1;
+    let ended_opt = encounter_row.2;
+    let duration_secs = match ended_opt {
+        Some(ended) if ended > started => ((ended - started) as f64) / 1000.0,
+        _ => 1.0,
+    };
+
+    // Get actor totals from actor_encounter_stats
+    let actor_row_opt = s::actor_encounter_stats
+        .filter(s::encounter_id.eq(encounter_id))
+        .filter(s::actor_id.eq(actor_id))
+        .select((s::damage_dealt, s::heal_dealt, s::hits_dealt, s::crit_hits_dealt, s::lucky_hits_dealt))
+        .first::<(i64, i64, i64, i64, i64)>(&mut conn)
+        .optional()
+        .map_err(|e| e.to_string())?;
+
+    let (actor_total_dmg, actor_total_heal, actor_hits, actor_crit_hits, actor_lucky_hits) = actor_row_opt
+        .unwrap_or((0,0,0,0,0));
+
+    // Build curr_player PlayerRow (use minimal fields similar to live PlayerRow)
+    // Attempt to get name and ability_score from entities
+    use sch::entities::dsl as en;
+    let (name_opt, ability_score_opt) = en::entities
+        .filter(en::entity_id.eq(actor_id))
+        .select((en::name.nullable(), en::ability_score.nullable()))
+        .first::<(Option<String>, Option<i32>)>(&mut conn)
+        .optional()
+        .map_err(|e| e.to_string())?
+        .unwrap_or((None, None));
+
+    let player_name = name_opt.unwrap_or_else(|| String::from(""));
+
+    let curr_player = lc::PlayerRow {
+        uid: actor_id as u128,
+        name: player_name.clone(),
+        class_name: String::from("") ,
+        class_spec_name: String::from("") ,
+        ability_score: ability_score_opt.unwrap_or(0) as u128,
+        total_dmg: actor_total_dmg as u128,
+        dps: if duration_secs > 0.0 { (actor_total_dmg as f64) / duration_secs } else { 0.0 },
+        dmg_pct: 0.0, // filled per-skill below if needed
+        crit_rate: if actor_hits > 0 { (actor_crit_hits as f64) / (actor_hits as f64) } else { 0.0 },
+        crit_dmg_rate: 0.0,
+        lucky_rate: if actor_hits > 0 { (actor_lucky_hits as f64) / (actor_hits as f64) } else { 0.0 },
+        lucky_dmg_rate: 0.0,
+        hits: actor_hits as u128,
+        hits_per_minute: if duration_secs > 0.0 { (actor_hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+    };
+
+    // Aggregate skills depending on skill_type
+    let mut skill_rows: Vec<lc::SkillRow> = Vec::new();
+
+    if skill_type == "dps" || skill_type == "tanked" {
+        // Load raw damage events for this actor/encounter and aggregate in Rust to avoid Diesel grouping complexity
+        let raw = de::damage_events
+            .filter(de::encounter_id.eq(encounter_id))
+            .filter(de::attacker_id.eq(actor_id))
+            .select((de::skill_id, de::value, de::is_crit, de::is_lucky))
+            .load::<(Option<i32>, i64, i32, i32)>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        // aggregate by skill_id
+        use std::collections::hash_map::Entry;
+        let mut agg: HashMap<Option<i32>, (i64, i64, i64)> = HashMap::new(); // skill_id -> (total_dmg, crit_hits, lucky_hits)
+        let mut hits_map: HashMap<Option<i32>, i64> = HashMap::new();
+        for (sid_opt, value, is_crit, is_lucky) in raw {
+            match agg.entry(sid_opt) {
+                Entry::Vacant(e) => { e.insert((value, is_crit as i64, is_lucky as i64)); }
+                Entry::Occupied(mut e) => { let v = e.get_mut(); v.0 += value; v.1 += is_crit as i64; v.2 += is_lucky as i64; }
+            }
+            *hits_map.entry(sid_opt).or_insert(0) += 1;
+        }
+
+        // fetch skill names for non-null skill ids
+        let skill_ids: Vec<i32> = agg.keys().filter_map(|k| *k).collect();
+        let mut name_map: HashMap<i32, Option<String>> = HashMap::new();
+        if !skill_ids.is_empty() {
+            let names = sk::skills
+                .filter(sk::skill_id.eq_any(&skill_ids))
+                .select((sk::skill_id, sk::name))
+                .load::<(i32, Option<String>)>(&mut conn)
+                .map_err(|e| e.to_string())?;
+            for (id, name_opt) in names {
+                name_map.insert(id, name_opt);
+            }
+        }
+
+        // convert aggregates to SkillRow, sorted by total_dmg desc
+        let mut items: Vec<(Option<i32>, i64, i64, i64, i64)> = agg.into_iter().map(|(sid_opt, (total_dmg, crit_hits, lucky_hits))| {
+            let hits = *hits_map.get(&sid_opt).unwrap_or(&0);
+            (sid_opt, total_dmg, crit_hits, lucky_hits, hits)
+        }).collect();
+        items.sort_by_key(|t| -t.1);
+
+        for (skill_id_opt, total_dmg, crit_hits, lucky_hits, hits) in items {
+            let name = match skill_id_opt {
+                Some(sid) => name_map.get(&sid).and_then(|o| o.clone()).unwrap_or_else(|| String::from("Unknown Skill")),
+                None => String::from("Unknown Skill"),
+            };
+
+            let sr = lc::SkillRow {
+                name,
+                total_dmg: total_dmg as u128,
+                dps: if duration_secs > 0.0 { (total_dmg as f64) / duration_secs } else { 0.0 },
+                dmg_pct: if actor_total_dmg > 0 { (total_dmg as f64) * 100.0 / (actor_total_dmg as f64) } else { 0.0 },
+                crit_rate: if hits > 0 { (crit_hits as f64) / (hits as f64) } else { 0.0 },
+                crit_dmg_rate: 0.0,
+                lucky_rate: if hits > 0 { (lucky_hits as f64) / (hits as f64) } else { 0.0 },
+                lucky_dmg_rate: 0.0,
+                hits: hits as u128,
+                hits_per_minute: if duration_secs > 0.0 { (hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+            };
+            skill_rows.push(sr);
+        }
+    } else if skill_type == "heal" {
+        // Load raw heal events and aggregate in Rust
+        let raw = he::heal_events
+            .filter(he::encounter_id.eq(encounter_id))
+            .filter(he::healer_id.eq(actor_id))
+            .select((he::skill_id, he::value, he::is_crit, he::is_lucky))
+            .load::<(Option<i32>, i64, i32, i32)>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        use std::collections::hash_map::Entry;
+        let mut agg: HashMap<Option<i32>, (i64, i64, i64)> = HashMap::new();
+        let mut hits_map: HashMap<Option<i32>, i64> = HashMap::new();
+        for (sid_opt, value, is_crit, is_lucky) in raw {
+            match agg.entry(sid_opt) {
+                Entry::Vacant(e) => { e.insert((value, is_crit as i64, is_lucky as i64)); }
+                Entry::Occupied(mut e) => { let v = e.get_mut(); v.0 += value; v.1 += is_crit as i64; v.2 += is_lucky as i64; }
+            }
+            *hits_map.entry(sid_opt).or_insert(0) += 1;
+        }
+
+        let skill_ids: Vec<i32> = agg.keys().filter_map(|k| *k).collect();
+        let mut name_map: HashMap<i32, Option<String>> = HashMap::new();
+        if !skill_ids.is_empty() {
+            let names = sk::skills
+                .filter(sk::skill_id.eq_any(&skill_ids))
+                .select((sk::skill_id, sk::name))
+                .load::<(i32, Option<String>)>(&mut conn)
+                .map_err(|e| e.to_string())?;
+            for (id, name_opt) in names {
+                name_map.insert(id, name_opt);
+            }
+        }
+
+        let mut items: Vec<(Option<i32>, i64, i64, i64, i64)> = agg.into_iter().map(|(sid_opt, (total_heal, crit_hits, lucky_hits))| {
+            let hits = *hits_map.get(&sid_opt).unwrap_or(&0);
+            (sid_opt, total_heal, crit_hits, lucky_hits, hits)
+        }).collect();
+        items.sort_by_key(|t| -t.1);
+
+        for (skill_id_opt, total_heal, crit_hits, lucky_hits, hits) in items {
+            let name = match skill_id_opt {
+                Some(sid) => name_map.get(&sid).and_then(|o| o.clone()).unwrap_or_else(|| String::from("Unknown Skill")),
+                None => String::from("Unknown Skill"),
+            };
+
+            let sr = lc::SkillRow {
+                name,
+                total_dmg: total_heal as u128,
+                dps: if duration_secs > 0.0 { (total_heal as f64) / duration_secs } else { 0.0 },
+                dmg_pct: if actor_total_heal > 0 { (total_heal as f64) * 100.0 / (actor_total_heal as f64) } else { 0.0 },
+                crit_rate: if hits > 0 { (crit_hits as f64) / (hits as f64) } else { 0.0 },
+                crit_dmg_rate: 0.0,
+                lucky_rate: if hits > 0 { (lucky_hits as f64) / (hits as f64) } else { 0.0 },
+                lucky_dmg_rate: 0.0,
+                hits: hits as u128,
+                hits_per_minute: if duration_secs > 0.0 { (hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+            };
+            skill_rows.push(sr);
+        }
+    } else {
+        return Err(format!("Invalid skill type: {}", skill_type));
+    }
+
+    let sw = lc::SkillsWindow {
+        curr_player: vec![curr_player],
+        skill_rows,
+    };
+
+    Ok(sw)
 }

@@ -59,9 +59,9 @@ async setBossOnlyDps(enabled: boolean) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getRecentEncounters(limit: number) : Promise<Result<EncounterSummaryDto[], string>> {
+async getRecentEncounters(limit: number, offset: number) : Promise<Result<RecentEncountersResult, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_recent_encounters", { limit }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_recent_encounters", { limit, offset }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -70,6 +70,22 @@ async getRecentEncounters(limit: number) : Promise<Result<EncounterSummaryDto[],
 async getEncounterActorStats(encounterId: number) : Promise<Result<ActorEncounterStatDto[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_encounter_actor_stats", { encounterId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getEncounterPlayerSkills(encounterId: number, actorId: number, skillType: string) : Promise<Result<SkillsWindow, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_encounter_player_skills", { encounterId, actorId, skillType }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteEncounter(encounterId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_encounter", { encounterId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -106,6 +122,7 @@ async getPlayerNameCommand(uid: number) : Promise<Result<string | null, string>>
 export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number; bossDamageDealt: number; bossHitsDealt: number; bossCritHitsDealt: number; bossLuckyHitsDealt: number; bossCritTotalDealt: number; bossLuckyTotalDealt: number }
 export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number }
 export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
+export type RecentEncountersResult = { rows: EncounterSummaryDto[]; totalCount: number }
 export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }
 
