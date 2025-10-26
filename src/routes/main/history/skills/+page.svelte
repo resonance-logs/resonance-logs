@@ -11,8 +11,8 @@
   const encounterId = encounterIdParam ? parseInt(encounterIdParam) : null;
   const playerUid = playerUidParam ? parseInt(playerUidParam) : null;
 
-  let skillsWindow: SkillsWindow = { currPlayer: [], skillRows: [] };
-  let error: string | null = null;
+  let skillsWindow = $state<SkillsWindow>({ currPlayer: [], skillRows: [] });
+  let error = $state<string | null>(null);
 
   async function load() {
     if (!encounterId || !playerUid) return;
@@ -36,7 +36,7 @@
 
   <h2 class="text-lg font-semibold">Skill breakdown</h2>
   {#if skillsWindow.currPlayer && skillsWindow.currPlayer.length > 0}
-    <div class="mb-2">Player: {skillsWindow.currPlayer[0].name} (#{skillsWindow.currPlayer[0].uid})</div>
+    <div class="mb-2">Player: {skillsWindow.currPlayer[0]?.name} (#{skillsWindow.currPlayer[0]?.uid})</div>
   {/if}
 
   <table class="w-full table-fixed border-collapse">

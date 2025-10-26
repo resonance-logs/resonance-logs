@@ -4,55 +4,60 @@
 	import { commands } from '$lib/bindings';
 	import type { EncounterSummaryDto } from '$lib/bindings';
 
-	let encounters: EncounterSummaryDto[] = [];
-	let errorMsg: string | null = null;
+	let encounters = $state<EncounterSummaryDto[]>([]);
+	let errorMsg = $state<string | null>(null);
 
 	// Filters
-	let dateFrom: string = ""; // yyyy-mm-dd
-	let dateTo: string = "";
-	let minDmg: number | null = null;
+	let minDmg = $state<number | null>(null);
 
-	// Auto-refresh
-	let autoRefresh = true;
+	// Pagination
+	const PAGE_SIZE = 10;
+	let page = $state(0); // 0-indexed, page 0 = newest
+	let totalCount = $state(0);
+
+	// Auto-refresh (only on page 0)
+	let autoRefresh = $state(true);
 	const REFRESH_MS = 10000; // 10s
-	let limit = 200;
 
-	async function loadEncounters() {
-		try {
-			const res = await commands.getRecentEncounters(limit);
-			if (res.status === 'ok') {
-				encounters = res.data;
-				errorMsg = null;
-			} else {
-				errorMsg = String(res.error);
-			}
-		} catch (e) {
-			errorMsg = String(e);
+async function loadEncounters(p: number = page) {
+	try {
+		const offset = p * PAGE_SIZE;
+		const res = await commands.getRecentEncounters(PAGE_SIZE, offset);
+
+		if (res.status === 'ok') {
+			encounters = res.data.rows ?? [];
+			totalCount = res.data.totalCount ?? 0;
+			errorMsg = null;
+			page = p;
+			console.debug('get_recent_encounters response', res.data);
+		} else {
+			throw new Error(String(res.error));
 		}
+	} catch (e) {
+		console.error('loadEncounters error', e);
+		errorMsg = String(e);
+		encounters = [];
+		totalCount = 0;
 	}
+}
 
-	onMount(() => {
-		loadEncounters();
-		const id = setInterval(() => {
-			if (autoRefresh) loadEncounters();
-		}, REFRESH_MS);
-		return () => clearInterval(id);
-	});
+onMount(() => {
+    console.log('History page mounted, loading encounters...');
+    loadEncounters(0);
+    const id = setInterval(() => {
+        if (autoRefresh && page === 0) {
+            console.log('Auto-refreshing encounters...');
+            loadEncounters(0);
+        }
+    }, REFRESH_MS);
+    return () => clearInterval(id);
+});
 
 	function applyFilters(list: EncounterSummaryDto[]) {
 		return list.filter((enc) => {
-			if (minDmg != null && enc.totalDmg < minDmg) return false;
-			if (dateFrom) {
-				const fromMs = new Date(dateFrom).getTime();
-				if (enc.startedAtMs < fromMs) return false;
-			}
-			if (dateTo) {
-				// include full day
-				const toMs = new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1;
-				if ((enc.endedAtMs ?? enc.startedAtMs) > toMs) return false;
-			}
-			return true;
-		});
+				if (minDmg != null && enc.totalDmg < minDmg) return false;
+				return true;
+			});
 	}
 
 	function fmtDate(ms: number) {
@@ -77,7 +82,11 @@
 		if (!confirm(`Delete encounter #${enc.id}? This action cannot be undone.`)) return;
 		const res = await commands.deleteEncounter(enc.id);
 		if (res.status === 'ok') {
-			encounters = encounters.filter(e => e.id !== enc.id);
+			// Refresh current page. If it becomes empty and we're not on page 0, step back one page.
+			await loadEncounters(page);
+			if (encounters.length === 0 && page > 0) {
+				await loadEncounters(page - 1);
+			}
 		} else {
 			alert(`Failed to delete: ${res.error}`);
 		}
@@ -87,15 +96,11 @@
 
 <div class="p-4">
 	<div class="flex items-center gap-3 mb-3">
-		<label class="text-sm">From</label>
-		<input type="date" bind:value={dateFrom} class="border rounded px-2 py-1" />
-		<label class="text-sm">To</label>
-		<input type="date" bind:value={dateTo} class="border rounded px-2 py-1" />
-		<label class="text-sm">Min DMG</label>
-		<input type="number" bind:value={minDmg} placeholder="0" class="w-24 border rounded px-2 py-1" />
-		<label class="text-sm">Auto-refresh</label>
-		<input type="checkbox" bind:checked={autoRefresh} />
-		<button class="ml-auto px-3 py-1 bg-neutral-800 rounded" on:click={() => loadEncounters()}>Refresh</button>
+		<label for="minDmg" class="text-sm">Min DMG</label>
+		<input id="minDmg" type="number" bind:value={minDmg} placeholder="0" class="w-24 border rounded px-2 py-1" />
+		<label for="autoRefresh" class="text-sm">Auto-refresh</label>
+		<input id="autoRefresh" type="checkbox" bind:checked={autoRefresh} />
+		<button class="ml-auto px-3 py-1 bg-neutral-800 rounded" onclick={() => loadEncounters(page)}>Refresh</button>
 	</div>
 
 	{#if errorMsg}
@@ -122,12 +127,29 @@
 					<td class="p-2 text-right">{enc.totalDmg}</td>
 					<td class="p-2 text-right">{enc.totalHeal}</td>
 					<td class="p-2">
-						<button class="px-2 py-1 mr-2 bg-neutral-700 rounded" on:click={() => onView(enc)}>View</button>
-						<button class="px-2 py-1 bg-red-700 rounded" on:click={() => onDelete(enc)}>Delete</button>
+						<button class="px-2 py-1 mr-2 bg-neutral-700 rounded" onclick={() => onView(enc)}>View</button>
+						<button class="px-2 py-1 bg-red-700 rounded" onclick={() => onDelete(enc)}>Delete</button>
 					</td>
 				</tr>
 			{/each}
 		</tbody>
 	</table>
+
+	<!-- Pagination controls -->
+	<div class="flex justify-end mt-3">
+		<div class="flex items-center gap-2">
+			<button class="px-3 py-1 bg-neutral-700 rounded" onclick={() => { if (page > 0) loadEncounters(page - 1); }} disabled={page === 0}>Previous</button>
+			<div class="text-sm px-2">Page {page + 1} / {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}</div>
+			<button class="px-3 py-1 bg-neutral-700 rounded" onclick={() => { if ((page + 1) * PAGE_SIZE < totalCount) loadEncounters(page + 1); }} disabled={(page + 1) * PAGE_SIZE >= totalCount}>Next</button>
+		</div>
+	</div>
+
+	<!-- Debug / counts -->
+	<div class="mt-2 text-sm text-neutral-400">
+		Showing {encounters.length} encounter(s) on this page — total {totalCount}.
+		{#if encounters.length === 0}
+			<div class="text-yellow-400 mt-1">No encounters returned for this page.</div>
+		{/if}
+	</div>
 </div>
 

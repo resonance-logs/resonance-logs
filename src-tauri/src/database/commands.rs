@@ -18,6 +18,13 @@ pub struct EncounterSummaryDto {
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
+pub struct RecentEncountersResult {
+    pub rows: Vec<EncounterSummaryDto>,
+    pub total_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ActorEncounterStatDto {
     pub encounter_id: i32,
     pub actor_id: i64,
@@ -51,17 +58,23 @@ fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_recent_encounters(limit: i32) -> Result<Vec<EncounterSummaryDto>, String> {
+pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncountersResult, String> {
     let mut conn = get_conn()?;
     use sch::encounters::dsl as e;
     let rows: Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>)> = e::encounters
         .order(e::started_at_ms.desc())
         .select((e::id, e::started_at_ms, e::ended_at_ms, e::total_dmg, e::total_heal))
         .limit(limit as i64)
+        .offset(offset as i64)
         .load(&mut conn)
         .map_err(|er| er.to_string())?;
 
-    Ok(rows
+    let total_count: i64 = e::encounters
+        .count()
+        .get_result(&mut conn)
+        .map_err(|er| er.to_string())?;
+
+    let mapped: Vec<EncounterSummaryDto> = rows
         .into_iter()
         .map(|(id, started, ended, td, th)| EncounterSummaryDto {
             id,
@@ -70,7 +83,9 @@ pub fn get_recent_encounters(limit: i32) -> Result<Vec<EncounterSummaryDto>, Str
             total_dmg: td.unwrap_or(0),
             total_heal: th.unwrap_or(0),
         })
-        .collect())
+        .collect();
+
+    Ok(RecentEncountersResult { rows: mapped, total_count })
 }
 
 #[tauri::command]
