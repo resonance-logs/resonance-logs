@@ -353,10 +353,18 @@ pub fn process_aoi_sync_delta(
 
             // Insert damage event
             let is_boss = defender_entity.is_boss();
+            // Only record monster_name for monsters; prefer packet-provided name, fallback to mapped name
+            let monster_name_for_event = if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
+                defender_entity
+                    .monster_name_packet
+                    .clone()
+                    .or_else(|| if defender_entity.name.is_empty() { None } else { Some(defender_entity.name.clone()) })
+            } else { None };
             enqueue(DbTask::InsertDamageEvent {
                 timestamp_ms: timestamp_ms as i64,
                 attacker_id: attacker_uid,
                 defender_id: Some(target_uid),
+                monster_name: monster_name_for_event,
                 skill_id: Some(skill_uid),
                 value: effective_value as i64,
                 is_crit,
@@ -472,6 +480,8 @@ fn process_monster_attrs(monster_entity: &mut Entity, attrs: Vec<Attr>) {
             attr_type::ATTR_NAME => {
                 if !raw_bytes.is_empty() { raw_bytes.remove(0); }
                 if let Ok(name) = BinaryReader::from(raw_bytes).read_string() {
+                    // Always capture the raw packet name for monsters
+                    monster_entity.monster_name_packet = Some(name.clone());
                     if monster_entity.monster_type_id.is_none() {
                         monster_entity.name = name;
                     }

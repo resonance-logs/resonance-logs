@@ -41,6 +41,7 @@ diesel::table! {
         timestamp_ms -> BigInt,
         attacker_id -> BigInt,
         defender_id -> Nullable<BigInt>,
+        monster_name -> Nullable<Text>,
         skill_id -> Nullable<Integer>,
         value -> BigInt,
         is_crit -> Integer,

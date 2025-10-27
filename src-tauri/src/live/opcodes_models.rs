@@ -30,6 +30,8 @@ pub struct Entity {
     pub class_spec: ClassSpec,
     pub ability_score: i32,
     pub level: i32,
+    // Raw monster name captured from packet ATTR_NAME when available (monsters only)
+    pub monster_name_packet: Option<String>,
     // Damage
     pub total_dmg: u128,
     pub crit_total_dmg: u128,

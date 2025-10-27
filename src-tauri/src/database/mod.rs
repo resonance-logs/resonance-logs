@@ -171,6 +171,7 @@ pub enum DbTask {
         timestamp_ms: i64,
         attacker_id: i64,
         defender_id: Option<i64>,
+        monster_name: Option<String>,
         skill_id: Option<i32>,
         value: i64,
         is_crit: bool,
@@ -292,7 +293,7 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     .map_err(|e| e.to_string())?;
             }
         }
-        DbTask::InsertDamageEvent { timestamp_ms, attacker_id, defender_id, skill_id, value, is_crit, is_lucky, hp_loss, shield_loss, is_boss } => {
+        DbTask::InsertDamageEvent { timestamp_ms, attacker_id, defender_id, monster_name, skill_id, value, is_crit, is_lucky, hp_loss, shield_loss, is_boss } => {
             if let Some(enc_id) = *current_encounter_id {
                 use sch::damage_events::dsl as d;
                 let ins = m::NewDamageEvent {
@@ -300,6 +301,7 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     timestamp_ms,
                     attacker_id,
                     defender_id,
+                    monster_name,
                     skill_id,
                     value,
                     is_crit: if is_crit {1} else {0},
@@ -516,6 +518,7 @@ mod tests {
             timestamp_ms: 1100,
             attacker_id: 200,
             defender_id: Some(100),
+            monster_name: None,
             skill_id: Some(123),
             value: 150,
             is_crit: true,
@@ -541,5 +544,33 @@ mod tests {
             .unwrap();
         assert_eq!(dmg_taken, 150);
         assert_eq!(crit_hits_taken, 1);
+
+        // Insert a second damage event with a monster defender and a defender name (this is the games logic for when you attack something that is a monster)
+        handle_task(&mut conn, DbTask::InsertDamageEvent {
+            timestamp_ms: 1150,
+            attacker_id: 201,
+            defender_id: Some(9999),
+            monster_name: Some("Test Monster".into()),
+            skill_id: Some(321),
+            value: 50,
+            is_crit: false,
+            is_lucky: false,
+            hp_loss: 50,
+            shield_loss: 0,
+            is_boss: true,
+        }, &mut enc_opt).unwrap();
+
+        // Verify monster_name persisted
+        #[derive(diesel::QueryableByName)]
+        struct NameRow {
+            #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::Text>)]
+            monster_name: Option<String>,
+        }
+        let row: NameRow = diesel::sql_query("SELECT monster_name FROM damage_events WHERE attacker_id = ?1 AND defender_id = ?2")
+            .bind::<diesel::sql_types::BigInt, _>(201_i64)
+            .bind::<diesel::sql_types::BigInt, _>(9999_i64)
+            .get_result::<NameRow>(&mut conn)
+            .unwrap();
+        assert_eq!(row.monster_name.as_deref(), Some("Test Monster"));
     }
 }
