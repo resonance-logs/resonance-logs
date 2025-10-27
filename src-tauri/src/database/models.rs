@@ -145,6 +145,10 @@ pub struct NewHealEvent {
 pub struct ActorEncounterStatRow {
     pub encounter_id: i32,
     pub actor_id: i64,
+    pub name: Option<String>,
+    pub class_id: Option<i32>,
+    pub ability_score: Option<i32>,
+    pub level: Option<i32>,
     pub damage_dealt: i64,
     pub heal_dealt: i64,
     pub damage_taken: i64,
@@ -176,6 +180,10 @@ pub struct ActorEncounterStatRow {
 pub struct NewActorEncounterStat {
     pub encounter_id: i32,
     pub actor_id: i64,
+    pub name: Option<String>,
+    pub class_id: Option<i32>,
+    pub ability_score: Option<i32>,
+    pub level: Option<i32>,
     pub damage_dealt: i64,
     pub heal_dealt: i64,
     pub damage_taken: i64,
