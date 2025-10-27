@@ -1,11 +1,17 @@
 <script lang="ts">
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import { SETTINGS } from "$lib/settings-store";
+  import { setBossOnlyDps } from "$lib/api";
   import SettingsSelect from "./settings-select.svelte";
   import SettingsSlider from "./settings-slider.svelte";
   import SettingsSwitch from "./settings-switch.svelte";
 
   const SETTINGS_CATEGORY = "general";
+
+  // Sync boss damage setting to backend
+  $effect(() => {
+    setBossOnlyDps(SETTINGS.general.state.bossOnlyDps);
+  });
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>

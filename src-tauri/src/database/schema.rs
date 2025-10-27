@@ -41,6 +41,7 @@ diesel::table! {
         timestamp_ms -> BigInt,
         attacker_id -> BigInt,
         defender_id -> Nullable<BigInt>,
+        monster_name -> Nullable<Text>,
         skill_id -> Nullable<Integer>,
         value -> BigInt,
         is_crit -> Integer,
@@ -69,6 +70,10 @@ diesel::table! {
     actor_encounter_stats (encounter_id, actor_id) {
         encounter_id -> Integer,
         actor_id -> BigInt,
+        name -> Nullable<Text>,
+        class_id -> Nullable<Integer>,
+        ability_score -> Nullable<Integer>,
+        level -> Nullable<Integer>,
         damage_dealt -> BigInt,
         heal_dealt -> BigInt,
         damage_taken -> BigInt,

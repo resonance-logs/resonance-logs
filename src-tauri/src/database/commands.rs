@@ -101,6 +101,7 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
         .select((
             s::encounter_id,
             s::actor_id,
+            s::name.nullable(),
             en::name.nullable(),
             s::damage_dealt,
             s::heal_dealt,
@@ -122,13 +123,14 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
             s::boss_lucky_total_dealt,
         ))
         .order((s::damage_dealt.desc(), s::heal_dealt.desc(), s::damage_taken.desc()))
-        .load::<(i32, i64, Option<String>, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
+        .load::<(i32, i64, Option<String>, Option<String>, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
         .map_err(|e| e.to_string())?;
 
     Ok(rows.into_iter().map(|(
         encounter_id,
         actor_id,
-        name_opt,
+        snap_name_opt,
+        ent_name_opt,
         damage_dealt,
         heal_dealt,
         damage_taken,
@@ -150,7 +152,7 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
     )| ActorEncounterStatDto {
         encounter_id,
         actor_id,
-        name: name_opt,
+        name: snap_name_opt.or(ent_name_opt),
         damage_dealt,
         heal_dealt,
         damage_taken,
