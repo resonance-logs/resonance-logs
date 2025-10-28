@@ -29,9 +29,7 @@ pub async fn start(app_handle: AppHandle) {
     // 2. Use the channel to receive packets back and process them
     while let Some((op, data)) = rx.recv().await {
         let event = match op {
-            packets::opcodes::Pkt::ServerChangeInfo => {
-                StateEvent::ServerChange
-            }
+            packets::opcodes::Pkt::ServerChangeInfo => StateEvent::ServerChange,
             packets::opcodes::Pkt::SyncNearEntities => {
                 match blueprotobuf::SyncNearEntities::decode(Bytes::from(data)) {
                     Ok(v) => StateEvent::SyncNearEntities(v),

@@ -1,13 +1,13 @@
+use crate::database::{DbTask, enqueue, now_ms};
+use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
-use crate::live::event_manager::{EventManager, MetricType};
 use blueprotobuf_lib::blueprotobuf;
 use log::{info, warn};
 use std::collections::HashSet;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tauri::AppHandle;
-use crate::database::{enqueue, DbTask, now_ms};
+use tokio::sync::RwLock;
 
 #[derive(Debug, Clone)]
 pub enum StateEvent {
@@ -69,13 +69,16 @@ impl AppStateManager {
         let mut state = self.state.write().await;
 
         // Check if encounter is paused for events that should be dropped
-        if state.is_encounter_paused() && matches!(event,
-            StateEvent::SyncNearEntities(_) |
-            StateEvent::SyncContainerData(_) |
-            StateEvent::SyncContainerDirtyData(_) |
-            StateEvent::SyncToMeDeltaInfo(_) |
-            StateEvent::SyncNearDeltaInfo(_)
-        ) {
+        if state.is_encounter_paused()
+            && matches!(
+                event,
+                StateEvent::SyncNearEntities(_)
+                    | StateEvent::SyncContainerData(_)
+                    | StateEvent::SyncContainerDirtyData(_)
+                    | StateEvent::SyncToMeDeltaInfo(_)
+                    | StateEvent::SyncNearDeltaInfo(_)
+            )
+        {
             info!("packet dropped due to encounter paused");
             return;
         }
@@ -98,7 +101,8 @@ impl AppStateManager {
                 // No need to maintain a separate cache anymore
             }
             StateEvent::SyncContainerDirtyData(data) => {
-                self.process_sync_container_dirty_data(&mut state, data).await;
+                self.process_sync_container_dirty_data(&mut state, data)
+                    .await;
             }
             StateEvent::SyncServerTime(_data) => {
                 // todo: this is skipped, not sure what info it has
@@ -125,7 +129,9 @@ impl AppStateManager {
     async fn on_server_change(&self, state: &mut AppState) {
         use crate::live::opcodes_process::on_server_change;
         // End any active encounter in DB
-        enqueue(DbTask::EndEncounter { ended_at_ms: now_ms() });
+        enqueue(DbTask::EndEncounter {
+            ended_at_ms: now_ms(),
+        });
         on_server_change(&mut state.encounter);
 
         // Emit encounter reset event
@@ -165,7 +171,9 @@ impl AppStateManager {
         sync_container_dirty_data: blueprotobuf::SyncContainerDirtyData,
     ) {
         use crate::live::opcodes_process::process_sync_container_dirty_data;
-        if process_sync_container_dirty_data(&mut state.encounter, sync_container_dirty_data).is_none() {
+        if process_sync_container_dirty_data(&mut state.encounter, sync_container_dirty_data)
+            .is_none()
+        {
             warn!("Error processing SyncContainerDirtyData.. ignoring.");
         }
     }
@@ -196,7 +204,9 @@ impl AppStateManager {
 
     async fn reset_encounter(&self, state: &mut AppState) {
         // End any active encounter in DB
-        enqueue(DbTask::EndEncounter { ended_at_ms: now_ms() });
+        enqueue(DbTask::EndEncounter {
+            ended_at_ms: now_ms(),
+        });
         state.encounter.reset_combat_state();
         state.skill_subscriptions.clear();
 
@@ -268,12 +278,15 @@ impl AppStateManager {
 }
 
 impl AppStateManager {
-
     pub async fn update_and_emit_events(&self) {
         // First, read the encounter data to generate all the necessary information
         let (encounter, should_emit, boss_only) = {
             let state = self.state.read().await;
-            (state.encounter.clone(), state.event_manager.should_emit_events(), state.boss_only_dps)
+            (
+                state.encounter.clone(),
+                state.event_manager.should_emit_events(),
+                state.boss_only_dps,
+            )
         };
 
         if !should_emit {
@@ -282,7 +295,8 @@ impl AppStateManager {
 
         // Generate all the data we need without holding the lock
         let header_info = crate::live::event_manager::generate_header_info(&encounter, boss_only);
-        let dps_players = crate::live::event_manager::generate_players_window_dps(&encounter, boss_only);
+        let dps_players =
+            crate::live::event_manager::generate_players_window_dps(&encounter, boss_only);
         let heal_players = crate::live::event_manager::generate_players_window_heal(&encounter);
         let tanked_players = crate::live::event_manager::generate_players_window_tanked(&encounter);
 
@@ -299,9 +313,9 @@ impl AppStateManager {
             let has_taken_skills = !entity.skill_uid_to_taken_skill.is_empty();
 
             if is_player && has_dmg_skills {
-                if let Some(skills_window) =
-                    crate::live::event_manager::generate_skills_window_dps(&encounter, entity_uid, boss_only)
-                {
+                if let Some(skills_window) = crate::live::event_manager::generate_skills_window_dps(
+                    &encounter, entity_uid, boss_only,
+                ) {
                     dps_skill_windows.push((entity_uid, skills_window));
                 }
             }
@@ -316,7 +330,9 @@ impl AppStateManager {
 
             if is_player && has_taken_skills {
                 if let Some(skills_window) =
-                    crate::live::event_manager::generate_skills_window_tanked(&encounter, entity_uid)
+                    crate::live::event_manager::generate_skills_window_tanked(
+                        &encounter, entity_uid,
+                    )
                 {
                     tanked_skill_windows.push((entity_uid, skills_window));
                 }
@@ -339,22 +355,31 @@ impl AppStateManager {
 
         // Emit DPS players update
         if !dps_players.player_rows.is_empty() {
-            state.event_manager.emit_players_update(MetricType::Dps, dps_players);
+            state
+                .event_manager
+                .emit_players_update(MetricType::Dps, dps_players);
         }
 
         // Emit heal players update
         if !heal_players.player_rows.is_empty() {
-            state.event_manager.emit_players_update(MetricType::Heal, heal_players);
+            state
+                .event_manager
+                .emit_players_update(MetricType::Heal, heal_players);
         }
 
         // Emit tanked players update
         if !tanked_players.player_rows.is_empty() {
-            state.event_manager.emit_players_update(MetricType::Tanked, tanked_players);
+            state
+                .event_manager
+                .emit_players_update(MetricType::Tanked, tanked_players);
         }
 
         // Emit skills updates only for subscribed players using precomputed windows
         for (entity_uid, skills_window) in &dps_skill_windows {
-            if state.skill_subscriptions.contains(&(*entity_uid, "dps".to_string())) {
+            if state
+                .skill_subscriptions
+                .contains(&(*entity_uid, "dps".to_string()))
+            {
                 state.event_manager.emit_skills_update(
                     MetricType::Dps,
                     *entity_uid,
@@ -363,7 +388,10 @@ impl AppStateManager {
             }
         }
         for (entity_uid, skills_window) in &heal_skill_windows {
-            if state.skill_subscriptions.contains(&(*entity_uid, "heal".to_string())) {
+            if state
+                .skill_subscriptions
+                .contains(&(*entity_uid, "heal".to_string()))
+            {
                 state.event_manager.emit_skills_update(
                     MetricType::Heal,
                     *entity_uid,
@@ -372,7 +400,10 @@ impl AppStateManager {
             }
         }
         for (entity_uid, skills_window) in &tanked_skill_windows {
-            if state.skill_subscriptions.contains(&(*entity_uid, "tanked".to_string())) {
+            if state
+                .skill_subscriptions
+                .contains(&(*entity_uid, "tanked".to_string()))
+            {
                 state.event_manager.emit_skills_update(
                     MetricType::Tanked,
                     *entity_uid,

@@ -1,8 +1,6 @@
 // @generated automatically by Diesel CLI, but maintained manually here.
 // Keep in sync with migrations.
 
-
-
 diesel::table! {
     entities (entity_id) {
         entity_id -> BigInt,

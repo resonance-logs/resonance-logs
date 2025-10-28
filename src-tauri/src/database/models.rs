@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::database::schema as sch;
 
-
-
 #[derive(Debug, Clone, Queryable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = sch::entities, primary_key(entity_id))]
 pub struct EntityRow {

@@ -1,8 +1,8 @@
 use crate::packets;
 use crate::packets::opcodes::Pkt;
 use crate::packets::packet_process::process_packet;
-use crate::packets::utils::{BinaryReader, Server, TCPReassembler};
 use crate::packets::reassembler::Reassembler;
+use crate::packets::utils::{BinaryReader, Server, TCPReassembler};
 use etherparse::NetSlice::Ipv4;
 use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
@@ -100,7 +100,10 @@ async fn read_packets(
                             while tcp_payload_reader.remaining() >= FRAG_LENGTH_SIZE {
                                 i += 1;
                                 if i > 1000 {
-                                    info!("Line: {} - Stuck at 1. Try to identify game server via small packets?", line!());
+                                    info!(
+                                        "Line: {} - Stuck at 1. Try to identify game server via small packets?",
+                                        line!()
+                                    );
                                 }
                                 let tcp_frag_payload_len = match tcp_payload_reader.read_u32() {
                                     Ok(len) => len.saturating_sub(FRAG_LENGTH_SIZE as u32) as usize,
@@ -115,10 +118,13 @@ async fn read_packets(
                                             if tcp_frag.len() >= 5 + SIGNATURE.len()
                                                 && tcp_frag[5..5 + SIGNATURE.len()] == SIGNATURE
                                             {
-                                                info!("Got Scene Server Address (by change): {curr_server}");
+                                                info!(
+                                                    "Got Scene Server Address (by change): {curr_server}"
+                                                );
                                                 known_server = Some(curr_server);
                                                 tcp_reassembler.clear_reassembler(
-                                                    tcp_packet.sequence_number() as usize + tcp_payload_reader.len(),
+                                                    tcp_packet.sequence_number() as usize
+                                                        + tcp_payload_reader.len(),
                                                 );
                                                 if let Err(err) = packet_sender
                                                     .send((Pkt::ServerChangeInfo, Vec::new()))
@@ -129,7 +135,9 @@ async fn read_packets(
                                             }
                                         }
                                         Err(e) => {
-                                            debug!("Malformed TCP fragment: failed to read_bytes: {e}");
+                                            debug!(
+                                                "Malformed TCP fragment: failed to read_bytes: {e}"
+                                            );
                                             break;
                                         }
                                     }
@@ -190,7 +198,12 @@ async fn read_packets(
         {
             i += 1;
             if i % 1000 == 0 {
-                warn!("Potential infinite loop in cache processing: iteration={i}, next_seq={:?}, cache_size={}, _data_len={}", tcp_reassembler.next_seq, tcp_reassembler.cache.len(), tcp_reassembler._data.len());
+                warn!(
+                    "Potential infinite loop in cache processing: iteration={i}, next_seq={:?}, cache_size={}, _data_len={}",
+                    tcp_reassembler.next_seq,
+                    tcp_reassembler.cache.len(),
+                    tcp_reassembler._data.len()
+                );
             }
             let seq = &tcp_reassembler.next_seq.unwrap();
             let cached_tcp_data = tcp_reassembler.cache.get(seq).unwrap();
@@ -202,8 +215,8 @@ async fn read_packets(
             tcp_reassembler.next_seq = Some(seq.wrapping_add(cached_tcp_data.len()));
             tcp_reassembler.cache.remove(seq);
         }
-    // Feed any available reassembled bytes into the new Reassembler and
-    // yield full frames via try_next()
+        // Feed any available reassembled bytes into the new Reassembler and
+        // yield full frames via try_next()
         if !tcp_reassembler._data.is_empty() {
             reassembler.feed_owned(std::mem::take(&mut tcp_reassembler._data));
         }
@@ -214,7 +227,7 @@ async fn read_packets(
             break;
         }
     } // todo: if it errors, it breaks out of the loop but will it ever error?
-      // info!("{}", line!());
+    // info!("{}", line!());
 }
 
 // Function to send restart signal from another thread/task

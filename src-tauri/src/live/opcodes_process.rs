@@ -1,15 +1,15 @@
 // NOTE: opcodes_process works on Encounter directly; avoid importing opcodes_models at top-level.
+use crate::database::{DbTask, enqueue, now_ms};
 use crate::live::opcodes_models::class::{
-    get_class_id_from_spec, get_class_spec_from_skill_id, ClassSpec,
+    ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
 };
-use crate::live::opcodes_models::{attr_type, Encounter, Entity, Skill};
-use crate::database::{enqueue, DbTask, now_ms};
+use crate::live::opcodes_models::{Encounter, Entity, Skill, attr_type};
 use crate::packets::utils::BinaryReader;
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
 use log::info;
-use std::default::Default;
 use std::collections::HashMap;
+use std::default::Default;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn on_server_change(encounter: &mut Encounter) {
@@ -45,7 +45,11 @@ pub fn process_sync_near_entities(
 
         // Lazy upsert entity into DB (only players are persisted)
         if matches!(target_entity_type, EEntityType::EntChar) {
-            let name_opt = if target_entity.name.is_empty() { None } else { Some(target_entity.name.clone()) };
+            let name_opt = if target_entity.name.is_empty() {
+                None
+            } else {
+                Some(target_entity.name.clone())
+            };
             enqueue(DbTask::UpsertEntity {
                 entity_id: target_uid,
                 name: name_opt,
@@ -64,6 +68,8 @@ pub fn process_sync_container_data(
     encounter: &mut Encounter,
     sync_container_data: blueprotobuf::SyncContainerData,
 ) -> Option<()> {
+    use crate::live::opcodes_models::{AttrType, AttrValue};
+
     let v_data = sync_container_data.v_data?;
     let player_uid = v_data.char_id?;
 
@@ -73,15 +79,29 @@ pub fn process_sync_container_data(
         .or_default();
     let char_base = v_data.char_base?;
     target_entity.name = char_base.name?;
+    target_entity.set_attr(AttrType::Name, AttrValue::String(target_entity.name.clone()));
+
     // Player names are automatically stored in the database via UpsertEntity tasks
     // No need to maintain a separate cache anymore
     target_entity.entity_type = EEntityType::EntChar;
     target_entity.class_id = v_data.profession_list?.cur_profession_id?;
+    target_entity.set_attr(AttrType::ProfessionId, AttrValue::Int(target_entity.class_id as i64));
+
     target_entity.ability_score = char_base.fight_point?;
+    target_entity.set_attr(AttrType::FightPoint, AttrValue::Int(target_entity.ability_score as i64));
+
     target_entity.level = v_data.role_level?.level?;
+    target_entity.set_attr(AttrType::Level, AttrValue::Int(target_entity.level as i64));
+
+    // Note: HP data comes from attribute packets (ATTR_CURRENT_HP, ATTR_MAX_HP)
+    // CharBaseInfo doesn't contain HP fields
 
     // Lazy upsert with richer info
-    let name_opt = if target_entity.name.is_empty() { None } else { Some(target_entity.name.clone()) };
+    let name_opt = if target_entity.name.is_empty() {
+        None
+    } else {
+        Some(target_entity.name.clone())
+    };
     // Only store players in the database
     if matches!(target_entity.entity_type, EEntityType::EntChar) {
         enqueue(DbTask::UpsertEntity {
@@ -102,6 +122,9 @@ pub fn process_sync_container_dirty_data(
     _encounter: &mut Encounter,
     _sync_container_dirty_data: blueprotobuf::SyncContainerDirtyData,
 ) -> Option<()> {
+    // SyncContainerDirtyData.v_data is a BufferStream (raw bytes)
+    // Incremental attribute updates come through process_player_attrs via AoiSyncDelta
+    // which handles attr packets with proper typing
     Some(())
 }
 
@@ -144,7 +167,11 @@ pub fn process_aoi_sync_delta(
         }
 
         // Lazy upsert target entity after attrs
-        let name_opt = if target_entity.name.is_empty() { None } else { Some(target_entity.name.clone()) };
+        let name_opt = if target_entity.name.is_empty() {
+            None
+        } else {
+            Some(target_entity.name.clone())
+        };
         // Only store players in the database
         if matches!(target_entity_type, EEntityType::EntChar) {
             enqueue(DbTask::UpsertEntity {
@@ -230,7 +257,11 @@ pub fn process_aoi_sync_delta(
             skill.hits += 1;
             skill.total_value += actual_value;
             // Persist entities and skill lazily
-            let attacker_name_opt = if attacker_entity.name.is_empty() { None } else { Some(attacker_entity.name.clone()) };
+            let attacker_name_opt = if attacker_entity.name.is_empty() {
+                None
+            } else {
+                Some(attacker_entity.name.clone())
+            };
             // Only store players in the database
             if matches!(attacker_entity.entity_type, EEntityType::EntChar) {
                 enqueue(DbTask::UpsertEntity {
@@ -243,7 +274,10 @@ pub fn process_aoi_sync_delta(
                     seen_at_ms: timestamp_ms as i64,
                 });
             }
-            enqueue(DbTask::UpsertSkill { skill_id: skill_uid, name: Some(Skill::get_skill_name(skill_uid)) });
+            enqueue(DbTask::UpsertSkill {
+                skill_id: skill_uid,
+                name: Some(Skill::get_skill_name(skill_uid)),
+            });
             // Insert heal event
             enqueue(DbTask::InsertHealEvent {
                 timestamp_ms: timestamp_ms as i64,
@@ -290,20 +324,32 @@ pub fn process_aoi_sync_delta(
             {
                 use std::collections::hash_map::Entry;
                 match attacker_entity.dmg_to_target.entry(target_uid) {
-                    Entry::Occupied(mut e) => { *e.get_mut() += actual_value; }
-                    Entry::Vacant(e) => { e.insert(actual_value); }
+                    Entry::Occupied(mut e) => {
+                        *e.get_mut() += actual_value;
+                    }
+                    Entry::Vacant(e) => {
+                        e.insert(actual_value);
+                    }
                 }
                 let per_skill = attacker_entity
                     .skill_dmg_to_target
                     .entry(skill_uid)
                     .or_insert_with(HashMap::new);
                 match per_skill.entry(target_uid) {
-                    Entry::Occupied(mut e) => { *e.get_mut() += actual_value; }
-                    Entry::Vacant(e) => { e.insert(actual_value); }
+                    Entry::Occupied(mut e) => {
+                        *e.get_mut() += actual_value;
+                    }
+                    Entry::Vacant(e) => {
+                        e.insert(actual_value);
+                    }
                 }
             }
             // Persist attacker and skill lazily
-            let attacker_name_opt = if attacker_entity.name.is_empty() { None } else { Some(attacker_entity.name.clone()) };
+            let attacker_name_opt = if attacker_entity.name.is_empty() {
+                None
+            } else {
+                Some(attacker_entity.name.clone())
+            };
             let attacker_entity_type_copy = attacker_entity.entity_type;
             // Only store players in the database
             if matches!(attacker_entity_type_copy, EEntityType::EntChar) {
@@ -317,7 +363,10 @@ pub fn process_aoi_sync_delta(
                     seen_at_ms: timestamp_ms as i64,
                 });
             }
-            enqueue(DbTask::UpsertSkill { skill_id: skill_uid, name: Some(Skill::get_skill_name(skill_uid)) });
+            enqueue(DbTask::UpsertSkill {
+                skill_id: skill_uid,
+                name: Some(Skill::get_skill_name(skill_uid)),
+            });
             // info!(
             //     "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
             //     skill.total_value
@@ -327,7 +376,11 @@ pub fn process_aoi_sync_delta(
             // Always record damage event, with hp/shield loss if present
             let hp_loss = sync_damage_info.hp_lessen_value.unwrap_or(0).max(0) as u128;
             let shield_loss = sync_damage_info.shield_lessen_value.unwrap_or(0).max(0) as u128;
-            let effective_value = if hp_loss + shield_loss > 0 { hp_loss + shield_loss } else { actual_value };
+            let effective_value = if hp_loss + shield_loss > 0 {
+                hp_loss + shield_loss
+            } else {
+                actual_value
+            };
 
             // Ensure defender exists
             let defender_entity = encounter
@@ -337,7 +390,11 @@ pub fn process_aoi_sync_delta(
                     entity_type: EEntityType::from(target_uuid),
                     ..Default::default()
                 });
-            let defender_name_opt = if defender_entity.name.is_empty() { None } else { Some(defender_entity.name.clone()) };
+            let defender_name_opt = if defender_entity.name.is_empty() {
+                None
+            } else {
+                Some(defender_entity.name.clone())
+            };
             // Only store players in the database
             if matches!(defender_entity.entity_type, EEntityType::EntChar) {
                 enqueue(DbTask::UpsertEntity {
@@ -354,12 +411,18 @@ pub fn process_aoi_sync_delta(
             // Insert damage event
             let is_boss = defender_entity.is_boss();
             // Only record monster_name for monsters; prefer packet-provided name, fallback to mapped name
-            let monster_name_for_event = if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
-                defender_entity
-                    .monster_name_packet
-                    .clone()
-                    .or_else(|| if defender_entity.name.is_empty() { None } else { Some(defender_entity.name.clone()) })
-            } else { None };
+            let monster_name_for_event =
+                if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
+                    defender_entity.monster_name_packet.clone().or_else(|| {
+                        if defender_entity.name.is_empty() {
+                            None
+                        } else {
+                            Some(defender_entity.name.clone())
+                        }
+                    })
+                } else {
+                    None
+                };
             enqueue(DbTask::InsertDamageEvent {
                 timestamp_ms: timestamp_ms as i64,
                 attacker_id: attacker_uid,
@@ -407,13 +470,18 @@ pub fn process_aoi_sync_delta(
         .as_millis();
     if encounter.time_fight_start_ms == Default::default() {
         encounter.time_fight_start_ms = timestamp_ms;
-        enqueue(DbTask::BeginEncounter { started_at_ms: timestamp_ms as i64, local_player_id: Some(encounter.local_player_uid) });
+        enqueue(DbTask::BeginEncounter {
+            started_at_ms: timestamp_ms as i64,
+            local_player_id: Some(encounter.local_player_uid),
+        });
     }
     encounter.time_last_combat_packet_ms = timestamp_ms;
     Some(())
 }
 
 fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<Attr>) {
+    use crate::live::opcodes_models::{AttrType, AttrValue};
+
     for attr in attrs {
         let Some(mut raw_bytes) = attr.raw_data else {
             continue;
@@ -427,6 +495,7 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                 raw_bytes.remove(0); // not sure why, there's some weird character as the first e.g. "\u{6}Sketal"
                 let player_name = BinaryReader::from(raw_bytes).read_string().unwrap();
                 player_entity.name = player_name.clone();
+                player_entity.set_attr(AttrType::Name, AttrValue::String(player_name.clone()));
                 info! {"Found player {} with UID {}", player_entity.name, target_uid}
                 // Note: AppStateManager::handle_event() wraps calls to this
                 // module; after processing the event the manager can call
@@ -447,20 +516,78 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
             }
             #[allow(clippy::cast_possible_truncation)]
             attr_type::ATTR_PROFESSION_ID => {
-                player_entity.class_id =
-                    prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                player_entity.class_id = value;
+                player_entity.set_attr(AttrType::ProfessionId, AttrValue::Int(value as i64));
             }
             #[allow(clippy::cast_possible_truncation)]
             attr_type::ATTR_FIGHT_POINT => {
-                player_entity.ability_score =
-                    prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                player_entity.ability_score = value;
+                player_entity.set_attr(AttrType::FightPoint, AttrValue::Int(value as i64));
             }
             #[allow(clippy::cast_possible_truncation)]
             attr_type::ATTR_LEVEL => {
-                player_entity.level =
-                    prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i32;
+                player_entity.level = value;
+                player_entity.set_attr(AttrType::Level, AttrValue::Int(value as i64));
             }
-            _ => (),
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_RANK_LEVEL => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::RankLevel, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_CRIT => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::Crit, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_LUCKY => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::Lucky, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_CURRENT_HP => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::CurrentHp, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_MAX_HP => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::MaxHp, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_HASTE => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::Haste, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_MASTERY => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::Mastery, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_ELEMENT_FLAG => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::ElementFlag, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_ENERGY_FLAG => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::EnergyFlag, AttrValue::Int(value));
+            }
+            #[allow(clippy::cast_possible_truncation)]
+            attr_type::ATTR_REDUCTION_LEVEL => {
+                let value = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap() as i64;
+                player_entity.set_attr(AttrType::ReductionLevel, AttrValue::Int(value));
+            }
+            _ => {
+                // Log unknown attribute IDs for future additions
+                if attr_id > 0 && !matches!(attr_id, attr_type::ATTR_ID | attr_type::ATTR_REDUCTION_ID) {
+                    log::debug!("Unknown player attribute ID: 0x{:x}", attr_id);
+                }
+            }
         }
     }
 }
@@ -468,17 +595,22 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
 fn process_monster_attrs(monster_entity: &mut Entity, attrs: Vec<Attr>) {
     use crate::live::opcodes_models::attr_type;
     for attr in attrs {
-        let Some(mut raw_bytes) = attr.raw_data else { continue; };
+        let Some(mut raw_bytes) = attr.raw_data else {
+            continue;
+        };
         let Some(attr_id) = attr.id else { continue };
         match attr_id {
             attr_type::ATTR_ID => {
-                let monster_id = prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap_or(0) as i32;
+                let monster_id =
+                    prost::encoding::decode_varint(&mut raw_bytes.as_slice()).unwrap_or(0) as i32;
                 if monster_id > 0 {
                     monster_entity.set_monster_type(monster_id);
                 }
             }
             attr_type::ATTR_NAME => {
-                if !raw_bytes.is_empty() { raw_bytes.remove(0); }
+                if !raw_bytes.is_empty() {
+                    raw_bytes.remove(0);
+                }
                 if let Ok(name) = BinaryReader::from(raw_bytes).read_string() {
                     // Always capture the raw packet name for monsters
                     monster_entity.monster_name_packet = Some(name.clone());
