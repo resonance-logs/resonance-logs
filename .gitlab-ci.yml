@@ -70,22 +70,20 @@ build-tauri:
 
 release-job:
   stage: release
-  tags:
-    - saas-windows-medium-amd64
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
   rules:
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_REF_NAME == "release"
   needs:
-    - build-tauri
+    - job: build-tauri
+      artifacts: true
   script:
-    - echo "Creating release for $CI_COMMIT_REF_NAME"
+    - echo "Creating release $CI_COMMIT_TAG"
   release:
     name: 'Release $CI_COMMIT_TAG'
     description: './release_body.txt'
     tag_name: '$CI_COMMIT_TAG'
     assets:
       links:
-        - name: 'Windows Installer (NSIS)'
-          url: '$CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/file/src-tauri/target/release/bundle/nsis/'
-        - name: 'Windows MSI'
-          url: '$CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/file/src-tauri/target/release/bundle/msi/'
+        - name: 'Download All Artifacts'
+          url: '$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=build-tauri'
+          link_type: 'package'
