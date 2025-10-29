@@ -193,6 +193,7 @@ pub enum DbTask {
         ability_score: Option<i32>,
         level: Option<i32>,
         seen_at_ms: i64,
+        attributes: Option<String>,
     },
 
     UpsertSkill {
@@ -285,6 +286,7 @@ fn handle_task(
             ability_score,
             level,
             seen_at_ms,
+            attributes,
         } => {
             use sch::entities::dsl as en;
             let exists: Option<i64> = en::entities
@@ -301,6 +303,7 @@ fn handle_task(
                     ability_score,
                     level,
                     last_seen_ms: Some(seen_at_ms),
+                    attributes: attributes.as_deref(),
                 };
                 diesel::update(en::entities.filter(en::entity_id.eq(entity_id)))
                     .set(&update)
@@ -316,6 +319,7 @@ fn handle_task(
                     level,
                     first_seen_ms: Some(seen_at_ms),
                     last_seen_ms: Some(seen_at_ms),
+                    attributes: attributes.as_deref(),
                 };
                 diesel::insert_into(en::entities)
                     .values(&insert)

@@ -84,6 +84,10 @@ pub async fn start(app_handle: AppHandle) {
                     }
                 }
             }
+            _ => {
+                trace!("Unhandled packet opcode: {op:?}");
+                continue;
+            }
         };
 
         // Handle the event

@@ -11,6 +11,7 @@ diesel::table! {
         level -> Nullable<Integer>,
         first_seen_ms -> Nullable<BigInt>,
         last_seen_ms -> Nullable<BigInt>,
+        attributes -> Nullable<Text>,
     }
 }
 

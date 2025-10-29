@@ -184,9 +184,8 @@ impl AppStateManager {
         sync_to_me_delta_info: blueprotobuf::SyncToMeDeltaInfo,
     ) {
         use crate::live::opcodes_process::process_sync_to_me_delta_info;
-        if process_sync_to_me_delta_info(&mut state.encounter, sync_to_me_delta_info).is_none() {
-            warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
-        }
+        // Missing fields are normal, no need to log
+        let _ = process_sync_to_me_delta_info(&mut state.encounter, sync_to_me_delta_info);
     }
 
     async fn process_sync_near_delta_info(
@@ -196,9 +195,8 @@ impl AppStateManager {
     ) {
         use crate::live::opcodes_process::process_aoi_sync_delta;
         for aoi_sync_delta in sync_near_delta_info.delta_infos {
-            if process_aoi_sync_delta(&mut state.encounter, aoi_sync_delta).is_none() {
-                warn!("Error processing SyncToMeDeltaInfo.. ignoring.");
-            }
+            // Missing fields are normal, no need to log
+            let _ = process_aoi_sync_delta(&mut state.encounter, aoi_sync_delta);
         }
     }
 

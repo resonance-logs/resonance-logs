@@ -14,6 +14,7 @@ pub struct EntityRow {
     pub level: Option<i32>,
     pub first_seen_ms: Option<i64>,
     pub last_seen_ms: Option<i64>,
+    pub attributes: Option<String>,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -27,6 +28,7 @@ pub struct NewEntity<'a> {
     pub level: Option<i32>,
     pub first_seen_ms: Option<i64>,
     pub last_seen_ms: Option<i64>,
+    pub attributes: Option<&'a str>,
 }
 
 #[derive(Debug, Clone, AsChangeset)]
@@ -38,6 +40,7 @@ pub struct UpdateEntity<'a> {
     pub ability_score: Option<i32>,
     pub level: Option<i32>,
     pub last_seen_ms: Option<i64>,
+    pub attributes: Option<&'a str>,
 }
 
 #[derive(Debug, Clone, Queryable, Identifiable, Serialize, Deserialize)]
@@ -171,6 +174,7 @@ pub struct ActorEncounterStatRow {
     pub boss_lucky_hits_dealt: i64,
     pub boss_crit_total_dealt: i64,
     pub boss_lucky_total_dealt: i64,
+    pub attributes: Option<String>,
 }
 
 #[derive(Debug, Clone, Insertable)]
