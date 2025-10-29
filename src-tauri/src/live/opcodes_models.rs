@@ -1,12 +1,9 @@
 use crate::live::opcodes_models::class::ClassSpec;
 use blueprotobuf_lib::blueprotobuf::{EEntityType, SyncContainerData};
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::LazyLock;
 use tokio::sync::RwLock;
-use windivert::WinDivert;
-use windivert::layer::NetworkLayer;
 
 #[derive(Debug, Default, Clone)]
 pub struct Encounter {
@@ -14,6 +11,7 @@ pub struct Encounter {
     pub time_last_combat_packet_ms: u128, // in ms
     pub time_fight_start_ms: u128,        // in ms
     pub total_dmg: u128,
+    pub total_dmg_boss_only: u128,
     pub total_heal: u128,
     pub local_player_uid: i64,
     pub entity_uid_to_entity: HashMap<i64, Entity>, // key: entity uid
@@ -305,6 +303,14 @@ pub struct Entity {
     pub lucky_hits_dmg: u128,
     pub hits_dmg: u128,
     pub skill_uid_to_dmg_skill: HashMap<i32, Skill>,
+    // Boss-only damage
+    pub total_dmg_boss_only: u128,
+    pub crit_total_dmg_boss_only: u128,
+    pub crit_hits_dmg_boss_only: u128,
+    pub lucky_total_dmg_boss_only: u128,
+    pub lucky_hits_dmg_boss_only: u128,
+    pub hits_dmg_boss_only: u128,
+    pub skill_uid_to_dmg_skill_boss_only: HashMap<i32, Skill>,
     // Healing
     pub total_heal: u128,
     pub crit_total_heal: u128,
@@ -349,35 +355,10 @@ static MONSTER_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     serde_json::from_str(data).expect("invalid MonsterName.json")
 });
 
-/// Build a normalized set of boss names from MONSTER_NAMES.
-///
-/// Normalization rules:
-/// - case-insensitive
-/// - if the name starts with a boss prefix (e.g. "Boss", "Boss:", "Boss -"), strip the prefix and any following separators
-/// - trim whitespace
-///
-/// Example: "Boss - Tempest Ogre" -> "tempest ogre" (stored in the set)
-static BOSS_NORMALIZED_NAMES: LazyLock<HashSet<String>> = LazyLock::new(|| {
-    fn normalize_boss_name(s: &str) -> String {
-        let mut s = s.trim().to_lowercase();
-        if let Some(rest) = s.strip_prefix("boss") {
-            // Strip typical separators after the boss label
-            let rest = rest.trim_start_matches(|c: char| c == ' ' || c == '-' || c == ':');
-            return rest.trim().to_string();
-        }
-        s
-    }
-
-    let mut set = HashSet::new();
-    for name in MONSTER_NAMES.values() {
-        if name.to_lowercase().contains("boss") {
-            let n = normalize_boss_name(name);
-            if !n.is_empty() {
-                set.insert(n);
-            }
-        }
-    }
-    set
+// Boss monster IDs (from game data main_category == "boss")
+static MONSTER_NAMES_BOSS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
+    let data = include_str!("../../meter-data/MonsterNameBoss.json");
+    serde_json::from_str(data).expect("invalid MonsterNameBoss.json")
 });
 
 impl Skill {
@@ -815,43 +796,18 @@ impl Entity {
         }
     }
 
-    /// Determine whether this entity is a boss based on its mapped or direct name.
+    /// Determine whether this entity is a boss based on game data categorization.
+    /// Uses MONSTER_NAMES_BOSS which contains IDs marked as main_category == "boss"
+    /// in the game's quest log data.
     pub fn is_boss(&self) -> bool {
         if self.entity_type != EEntityType::EntMonster {
             return false;
         }
-        // Helper to normalize names similar to how the boss set was built
-        fn normalize_candidate_name(s: &str) -> String {
-            let mut s = s.trim().to_lowercase();
-            if let Some(rest) = s.strip_prefix("boss") {
-                let rest = rest.trim_start_matches(|c: char| c == ' ' || c == '-' || c == ':');
-                return rest.trim().to_string();
-            }
-            s
-        }
 
-        // Prefer mapped monster name when id is known
-        let candidate = if let Some(monster_id) = self.monster_type_id {
-            MONSTER_NAMES
-                .get(&monster_id.to_string())
-                .cloned()
-                .unwrap_or_else(|| self.name.clone())
-        } else {
-            self.name.clone()
-        };
-
-        if candidate.is_empty() {
-            return false;
-        }
-
-        // Fast path: if the mapped name explicitly contains "Boss" (any case)
-        if candidate.to_lowercase().contains("boss") {
-            return true;
-        }
-
-        // Normalized match against known boss names (e.g. "Tempest Ogre" should match "Boss - Tempest Ogre")
-        let normalized = normalize_candidate_name(&candidate);
-        BOSS_NORMALIZED_NAMES.contains(&normalized)
+        // Check if monster_type_id exists in the boss list
+        self.monster_type_id
+            .map(|id| MONSTER_NAMES_BOSS.contains_key(&id.to_string()))
+            .unwrap_or(false)
     }
 }
 

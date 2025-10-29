@@ -235,6 +235,14 @@ pub fn process_aoi_sync_delta(
             .top_summoner_id
             .or(sync_damage_info.attacker_uuid)?;
         let attacker_uid = attacker_uuid >> 16;
+
+        // Check if target is a boss BEFORE getting mutable reference to attacker_entity
+        let is_boss_target = encounter
+            .entity_uid_to_entity
+            .get(&target_uid)
+            .map(|e| e.is_boss())
+            .unwrap_or(false);
+
         let attacker_entity = encounter
             .entity_uid_to_entity
             .entry(attacker_uid)
@@ -344,6 +352,33 @@ pub fn process_aoi_sync_delta(
             attacker_entity.total_dmg += actual_value;
             skill.hits += 1;
             skill.total_value += actual_value;
+
+            // Update boss-only stats if target is a boss
+            if is_boss_target {
+                // Update boss-only stats for this skill
+                let skill_boss_only = attacker_entity
+                    .skill_uid_to_dmg_skill_boss_only
+                    .entry(skill_uid)
+                    .or_insert_with(|| Skill::default());
+
+                if is_crit {
+                    attacker_entity.crit_hits_dmg_boss_only += 1;
+                    attacker_entity.crit_total_dmg_boss_only += actual_value;
+                    skill_boss_only.crit_hits += 1;
+                    skill_boss_only.crit_total_value += actual_value;
+                }
+                if is_lucky {
+                    attacker_entity.lucky_hits_dmg_boss_only += 1;
+                    attacker_entity.lucky_total_dmg_boss_only += actual_value;
+                    skill_boss_only.lucky_hits += 1;
+                    skill_boss_only.lucky_total_value += actual_value;
+                }
+                encounter.total_dmg_boss_only += actual_value;
+                attacker_entity.hits_dmg_boss_only += 1;
+                attacker_entity.total_dmg_boss_only += actual_value;
+                skill_boss_only.hits += 1;
+                skill_boss_only.total_value += actual_value;
+            }
 
             // Track per-target totals for boss-only calculations
             {
