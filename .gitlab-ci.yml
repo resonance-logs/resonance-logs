@@ -1,29 +1,91 @@
 stages:
   - build
+  - release
 
 variables:
-  RUST_TARGET: x86_64-pc-windows-msvc
-  CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
-  RUSTUP_HOME: "$CI_PROJECT_DIR/.rustup"
+  CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  npm_config_cache: $CI_PROJECT_DIR/.npm
 
-build-windows:
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .cargo/
+    - .npm/
+    - src-tauri/target/
+
+build-tauri:
   stage: build
-  # Run on the GitLab shared Windows runner
   tags:
     - saas-windows-medium-amd64
+  before_script:
+    # Install Node.js LTS
+    - choco install nodejs-lts -y
+    - refreshenv
+    - node --version
+    - npm --version
 
-  # Use a PowerShell-style script suitable for Windows shared runners.
-  # We avoid installing Linux packages here since the shared Windows runner
-  # already provides a Windows toolchain. Adjust or expand these steps
-  # if your runner needs additional tools (e.g. NSIS, Rust, Node).
+    # Install Rust stable
+    - |
+      if (!(Get-Command rustc -ErrorAction SilentlyContinue)) {
+        Invoke-WebRequest -Uri https://win.rustup.rs/x86_64 -OutFile rustup-init.exe
+        .\rustup-init.exe -y --default-toolchain stable
+        Remove-Item rustup-init.exe
+      }
+    - $env:PATH += ";$env:USERPROFILE\.cargo\bin"
+    - rustc --version
+    - cargo --version
+
   script:
-    - pwsh -Command "Write-Host 'Running CI on shared-windows runner'"
-    - pwsh -Command "Set-Location -Path $env:CI_PROJECT_DIR; if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) { Write-Host 'rustup not found — installing rustup'; Invoke-WebRequest -Uri 'https://win.rustup.rs' -OutFile \"$env:TEMP\\rustup-init.exe\"; & \"$env:TEMP\\rustup-init.exe\" -y } else { Write-Host 'rustup found' }; $rustupPath = Join-Path $env:USERPROFILE '.cargo\\bin\\rustup.exe'; if (Test-Path $rustupPath) { & $rustupPath default stable; & $rustupPath target add $env:RUST_TARGET } ; if (Get-Command bun -ErrorAction SilentlyContinue) { bun install --no-save } else { npm ci }"
-    - pwsh -Command "npm run build"
-    - pwsh -Command "npm run tauri build -- --target $env:RUST_TARGET"
+    # Install frontend dependencies
+    - npm install
+
+    # Read changelog for release body
+    - |
+      $RELEASE_BODY = @(
+        '# Changelog'
+        (git log -1 --pretty=%B | Select-Object -Skip 1)
+        ''
+        if (Test-Path .github/workflows/RELEASE.md) {
+          Get-Content .github/workflows/RELEASE.md
+        }
+      ) -join "`n"
+      $RELEASE_BODY | Out-File -FilePath release_body.txt -Encoding utf8
+
+    # Build Tauri app
+    - |
+      if ($CI_COMMIT_REF_NAME -eq 'release') {
+        $env:TAURI_SIGNING_PRIVATE_KEY = $env:TAURI_SIGNING_PRIVATE_KEY
+        npm run tauri build
+      } else {
+        npm run tauri build -- --debug
+      }
 
   artifacts:
+    name: "resonance-logs-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
     paths:
-      - src-tauri/target/release/*.exe
-      - src-tauri/target/release/bundle/nsis/*.exe
+      - src-tauri/target/release/bundle/
+      - src-tauri/target/debug/bundle/
+      - release_body.txt
     expire_in: 1 week
+
+release-job:
+  stage: release
+  tags:
+    - saas-windows-medium-amd64
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_REF_NAME == "release"
+  needs:
+    - build-tauri
+  script:
+    - echo "Creating release for $CI_COMMIT_REF_NAME"
+  release:
+    name: 'Release $CI_COMMIT_TAG'
+    description: './release_body.txt'
+    tag_name: '$CI_COMMIT_TAG'
+    assets:
+      links:
+        - name: 'Windows Installer (NSIS)'
+          url: '$CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/file/src-tauri/target/release/bundle/nsis/'
+        - name: 'Windows MSI'
+          url: '$CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/file/src-tauri/target/release/bundle/msi/'
