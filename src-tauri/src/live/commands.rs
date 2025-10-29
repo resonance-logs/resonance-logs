@@ -1,5 +1,5 @@
-use crate::live::state::{AppStateManager, StateEvent};
 use crate::WINDOW_LIVE_LABEL;
+use crate::live::state::{AppStateManager, StateEvent};
 use log::info;
 use tauri::Manager;
 use tauri_plugin_clipboard_manager::ClipboardExt;
@@ -33,23 +33,29 @@ pub async fn subscribe_player_skills(
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
     // Register subscription
-    state_manager.update_skill_subscriptions(|subs| {
-        subs.insert((uid, skill_type.clone()));
-    }).await;
+    state_manager
+        .update_skill_subscriptions(|subs| {
+            subs.insert((uid, skill_type.clone()));
+        })
+        .await;
 
     // Compute and return initial window directly from Encounter
-    state_manager.with_state(|state| {
-        let boss_only = state.boss_only_dps;
-        match skill_type.as_str() {
-            "dps" => event_manager::generate_skills_window_dps(&state.encounter, uid, boss_only)
-                .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
-            "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
-                .ok_or_else(|| format!("No heal skills found for player {}", uid)),
-            "tanked" => event_manager::generate_skills_window_tanked(&state.encounter, uid)
-                .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
-            _ => Err(format!("Invalid skill type: {}", skill_type))
-        }
-    }).await
+    state_manager
+        .with_state(|state| {
+            let boss_only = state.boss_only_dps;
+            match skill_type.as_str() {
+                "dps" => {
+                    event_manager::generate_skills_window_dps(&state.encounter, uid, boss_only)
+                        .ok_or_else(|| format!("No DPS skills found for player {}", uid))
+                }
+                "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
+                    .ok_or_else(|| format!("No heal skills found for player {}", uid)),
+                "tanked" => event_manager::generate_skills_window_tanked(&state.encounter, uid)
+                    .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
+                _ => Err(format!("Invalid skill type: {}", skill_type)),
+            }
+        })
+        .await
 }
 
 #[tauri::command]
@@ -58,10 +64,12 @@ pub async fn unsubscribe_player_skills(
     uid: i64,
     skill_type: String,
     state_manager: tauri::State<'_, AppStateManager>,
-)-> Result<(), String> {
-    state_manager.update_skill_subscriptions(|subs| {
-        subs.remove(&(uid, skill_type));
-    }).await;
+) -> Result<(), String> {
+    state_manager
+        .update_skill_subscriptions(|subs| {
+            subs.remove(&(uid, skill_type));
+        })
+        .await;
     Ok(())
 }
 
@@ -72,18 +80,22 @@ pub async fn get_player_skills(
     skill_type: String,
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
-    state_manager.with_state(|state| {
-        let boss_only = state.boss_only_dps;
-        match skill_type.as_str() {
-            "dps" => event_manager::generate_skills_window_dps(&state.encounter, uid, boss_only)
-                .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
-            "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
-                .ok_or_else(|| format!("No heal skills found for player {}", uid)),
-            "tanked" => event_manager::generate_skills_window_tanked(&state.encounter, uid)
-                .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
-            _ => Err(format!("Invalid skill type: {}", skill_type))
-        }
-    }).await
+    state_manager
+        .with_state(|state| {
+            let boss_only = state.boss_only_dps;
+            match skill_type.as_str() {
+                "dps" => {
+                    event_manager::generate_skills_window_dps(&state.encounter, uid, boss_only)
+                        .ok_or_else(|| format!("No DPS skills found for player {}", uid))
+                }
+                "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
+                    .ok_or_else(|| format!("No heal skills found for player {}", uid)),
+                "tanked" => event_manager::generate_skills_window_tanked(&state.encounter, uid)
+                    .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
+                _ => Err(format!("Invalid skill type: {}", skill_type)),
+            }
+        })
+        .await
 }
 
 #[tauri::command]
@@ -92,9 +104,11 @@ pub async fn set_boss_only_dps(
     enabled: bool,
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<(), String> {
-    state_manager.with_state_mut(|state| {
-        state.boss_only_dps = enabled;
-    }).await;
+    state_manager
+        .with_state_mut(|state| {
+            state.boss_only_dps = enabled;
+        })
+        .await;
     // Recompute and emit updates immediately
     state_manager.update_and_emit_events().await;
     Ok(())
@@ -167,7 +181,7 @@ pub async fn copy_sync_container_data(
 #[specta::specta]
 pub async fn reset_encounter(
     state_manager: tauri::State<'_, AppStateManager>,
-)-> Result<(), String> {
+) -> Result<(), String> {
     // Use the centralized state event handler so that the EndEncounter DB task
     // is enqueued and all side-effects (emit events, clear subscriptions) are
     // handled consistently.
@@ -180,10 +194,14 @@ pub async fn reset_encounter(
 #[specta::specta]
 pub async fn toggle_pause_encounter(
     state_manager: tauri::State<'_, AppStateManager>,
-)-> Result<(), String> {
+) -> Result<(), String> {
     // Read current paused state and delegate to centralized handler which
     // will update the state and emit events as appropriate
-    let is_paused = state_manager.with_state(|state| state.encounter.is_encounter_paused).await;
-    state_manager.handle_event(StateEvent::PauseEncounter(!is_paused)).await;
+    let is_paused = state_manager
+        .with_state(|state| state.encounter.is_encounter_paused)
+        .await;
+    state_manager
+        .handle_event(StateEvent::PauseEncounter(!is_paused))
+        .await;
     Ok(())
 }

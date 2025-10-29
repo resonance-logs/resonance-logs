@@ -39,9 +39,9 @@ impl Reassembler {
             return None;
         }
 
-    // Read u32 big-endian from buffer[cursor..cursor+4]
-    let len_bytes = &self.buffer[self.cursor..self.cursor + 4];
-    let frame_len = u32::from_be_bytes(len_bytes.try_into().unwrap()) as usize;
+        // Read u32 big-endian from buffer[cursor..cursor+4]
+        let len_bytes = &self.buffer[self.cursor..self.cursor + 4];
+        let frame_len = u32::from_be_bytes(len_bytes.try_into().unwrap()) as usize;
 
         // Sanity check: frame length must be >= 4 (header included) and not absurd
         if frame_len == 0 || frame_len > self.max_buffer_size {
@@ -120,8 +120,8 @@ mod tests {
     use super::Reassembler;
 
     fn make_frame(payload: &[u8]) -> Vec<u8> {
-    let total_len = (4 + payload.len()) as u32;
-    let mut v = total_len.to_be_bytes().to_vec();
+        let total_len = (4 + payload.len()) as u32;
+        let mut v = total_len.to_be_bytes().to_vec();
         v.extend_from_slice(payload);
         v
     }
@@ -133,7 +133,7 @@ mod tests {
         r.push(&frame);
         let got = r.try_next();
         assert!(got.is_some());
-    assert_eq!(&got.unwrap()[4..], b"hello");
+        assert_eq!(&got.unwrap()[4..], b"hello");
         assert!(r.try_next().is_none());
     }
 
@@ -147,9 +147,9 @@ mod tests {
         combined.extend_from_slice(&f2);
         r.push(&combined);
         let g1 = r.try_next().unwrap();
-    assert_eq!(&g1[4..], b"foo");
+        assert_eq!(&g1[4..], b"foo");
         let g2 = r.try_next().unwrap();
-    assert_eq!(&g2[4..], b"barbaz");
+        assert_eq!(&g2[4..], b"barbaz");
         assert!(r.try_next().is_none());
     }
 
@@ -163,7 +163,7 @@ mod tests {
         assert!(r.try_next().is_none());
         r.push(&frame[split..]);
         let got = r.try_next().unwrap();
-    assert_eq!(&got[4..], b"split-me");
+        assert_eq!(&got[4..], b"split-me");
     }
 
     #[test]
@@ -178,6 +178,6 @@ mod tests {
         let f = make_frame(b"ok");
         r.push(&f);
         let got = r.try_next().unwrap();
-    assert_eq!(&got[4..], b"ok");
+        assert_eq!(&got[4..], b"ok");
     }
 }

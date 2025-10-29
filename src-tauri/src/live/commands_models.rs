@@ -36,6 +36,17 @@ pub struct PlayerRow {
     pub lucky_dmg_rate: f64,
     pub hits: u128,
     pub hits_per_minute: f64,
+    // Extended player attributes from Stage 4
+    pub rank_level: Option<i64>,
+    pub current_hp: Option<i64>,
+    pub max_hp: Option<i64>,
+    pub crit_stat: Option<i64>,
+    pub lucky_stat: Option<i64>,
+    pub haste: Option<i64>,
+    pub mastery: Option<i64>,
+    pub element_flag: Option<i64>,
+    pub energy_flag: Option<i64>,
+    pub reduction_level: Option<i64>,
 }
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]

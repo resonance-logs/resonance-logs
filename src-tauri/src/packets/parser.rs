@@ -36,14 +36,15 @@ pub fn parse_notify_fragment(
 /// Convenience to decompress bytes if needed (kept for potential reuse).
 pub fn maybe_decompress(payload: Vec<u8>, compressed: bool) -> Option<Vec<u8>> {
     if compressed {
-        zstd::decode_all(payload.as_slice()).map_err(|e| {
-            debug!("zstd decompression failed: {e}");
-        }).ok()
+        zstd::decode_all(payload.as_slice())
+            .map_err(|e| {
+                debug!("zstd decompression failed: {e}");
+            })
+            .ok()
     } else {
         Some(payload)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -97,6 +98,9 @@ mod tests {
         let mut reader = BinaryReader::from(data);
         let result = parse_notify_fragment(&mut reader, true).expect("should parse and decompress");
         assert_eq!(result.0, Pkt::SyncNearEntities);
-        assert_eq!(result.1, b"the quick brown fox jumps over the lazy dog".to_vec());
+        assert_eq!(
+            result.1,
+            b"the quick brown fox jumps over the lazy dog".to_vec()
+        );
     }
 }

@@ -29,13 +29,13 @@ impl PlayerNames {
     /// Get multiple names by UIDs (batch query for performance)
     pub fn get_names_by_uids(uids: &[i64]) -> HashMap<i64, String> {
         let mut result = HashMap::new();
-        
+
         for &uid in uids {
             if let Some(name) = Self::get_name_by_uid(uid) {
                 result.insert(uid, name);
             }
         }
-        
+
         result
     }
 

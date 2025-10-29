@@ -1,17 +1,17 @@
+pub mod commands;
 pub mod models;
 pub mod schema;
-pub mod commands;
 
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::sqlite::SqliteConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness};
 use once_cell::sync::Lazy;
-use tokio::sync::mpsc::{self, UnboundedSender};
 use parking_lot::Mutex;
+use tokio::sync::mpsc::{self, UnboundedSender};
 
 use crate::database::models as m;
 use crate::database::schema as sch;
@@ -49,18 +49,24 @@ pub fn default_db_path() -> PathBuf {
         let _ = std::fs::create_dir_all(&dir);
         dir.join("resonance-logs.db")
     } else {
-        std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join("resonance-logs.db")
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join("resonance-logs.db")
     }
 }
 
 pub fn ensure_parent_dir(path: &Path) -> std::io::Result<()> {
-    if let Some(dir) = path.parent() { std::fs::create_dir_all(dir)?; }
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)?;
+    }
     Ok(())
 }
 
 pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
     let db_path = default_db_path();
-    if let Err(e) = ensure_parent_dir(&db_path) { return Err(DbInitError::Pool(format!("failed to create dir: {e}"))); }
+    if let Err(e) = ensure_parent_dir(&db_path) {
+        return Err(DbInitError::Pool(format!("failed to create dir: {e}")));
+    }
 
     let manager = ConnectionManager::<SqliteConnection>::new(db_path.to_string_lossy().to_string());
     // Increase connection pool size to reduce contention for DB connections
@@ -75,9 +81,15 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
         let mut conn = pool.get().map_err(|e| DbInitError::Pool(e.to_string()))?;
         run_migrations(&mut conn).map_err(|e| DbInitError::Migration(e))?;
         // Pragmas for better concurrency/perf
-        diesel::sql_query("PRAGMA journal_mode=WAL;").execute(&mut conn).ok();
-        diesel::sql_query("PRAGMA synchronous=NORMAL;").execute(&mut conn).ok();
-        diesel::sql_query("PRAGMA foreign_keys=ON;").execute(&mut conn).ok();
+        diesel::sql_query("PRAGMA journal_mode=WAL;")
+            .execute(&mut conn)
+            .ok();
+        diesel::sql_query("PRAGMA synchronous=NORMAL;")
+            .execute(&mut conn)
+            .ok();
+        diesel::sql_query("PRAGMA foreign_keys=ON;")
+            .execute(&mut conn)
+            .ok();
     }
 
     // Spawn writer worker using an unbounded channel (grow-on-demand) and batch
@@ -95,14 +107,18 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
         loop {
             // Block until we receive the first task
             let first = rx.blocking_recv();
-            let Some(first) = first else { break; };
+            let Some(first) = first else {
+                break;
+            };
 
             // Collect a batch: include the first task, then try to drain more
             // tasks for up to BATCH_MAX_WAIT_MS or until BATCH_MAX_EVENTS.
             let mut tasks = Vec::with_capacity(BATCH_MAX_EVENTS);
             tasks.push(first);
             let start = Instant::now();
-            while tasks.len() < BATCH_MAX_EVENTS && start.elapsed() < Duration::from_millis(BATCH_MAX_WAIT_MS) {
+            while tasks.len() < BATCH_MAX_EVENTS
+                && start.elapsed() < Duration::from_millis(BATCH_MAX_WAIT_MS)
+            {
                 match rx.try_recv() {
                     Ok(t) => tasks.push(t),
                     Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {
@@ -116,7 +132,13 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
             // Acquire a connection and attempt to execute the batch in a single
             // transaction for better throughput. If the batch transaction fails,
             // fall back to processing tasks individually so we don't lose work.
-            let mut conn = match pool.get() { Ok(c) => c, Err(e) => { log::error!("DB get conn: {e}"); continue; } };
+            let mut conn = match pool.get() {
+                Ok(c) => c,
+                Err(e) => {
+                    log::error!("DB get conn: {e}");
+                    continue;
+                }
+            };
 
             let batch_result = conn.transaction::<(), diesel::result::Error, _>(|tx_conn| {
                 for task in tasks.iter().cloned() {
@@ -129,7 +151,10 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
             });
 
             if let Err(e) = batch_result {
-                log::error!("Batch transaction failed: {:?}. Falling back to per-task execution.", e);
+                log::error!(
+                    "Batch transaction failed: {:?}. Falling back to per-task execution.",
+                    e
+                );
                 // Try to process tasks individually; this uses the same connection
                 // (and therefore the same transaction semantics as earlier).
                 for task in tasks {
@@ -152,8 +177,13 @@ fn run_migrations(conn: &mut SqliteConnection) -> Result<(), String> {
 
 #[derive(Debug, Clone)]
 pub enum DbTask {
-    BeginEncounter { started_at_ms: i64, local_player_id: Option<i64> },
-    EndEncounter { ended_at_ms: i64 },
+    BeginEncounter {
+        started_at_ms: i64,
+        local_player_id: Option<i64>,
+    },
+    EndEncounter {
+        ended_at_ms: i64,
+    },
 
     UpsertEntity {
         entity_id: i64,
@@ -163,9 +193,13 @@ pub enum DbTask {
         ability_score: Option<i32>,
         level: Option<i32>,
         seen_at_ms: i64,
+        attributes: Option<String>,
     },
 
-    UpsertSkill { skill_id: i32, name: Option<String> },
+    UpsertSkill {
+        skill_id: i32,
+        name: Option<String>,
+    },
 
     InsertDamageEvent {
         timestamp_ms: i64,
@@ -203,10 +237,19 @@ pub fn enqueue(task: DbTask) {
     }
 }
 
-fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: &mut Option<i32>) -> Result<(), String> {
+fn handle_task(
+    conn: &mut SqliteConnection,
+    task: DbTask,
+    current_encounter_id: &mut Option<i32>,
+) -> Result<(), String> {
     match task {
-        DbTask::BeginEncounter { started_at_ms, local_player_id } => {
-            if current_encounter_id.is_some() { return Ok(()); }
+        DbTask::BeginEncounter {
+            started_at_ms,
+            local_player_id,
+        } => {
+            if current_encounter_id.is_some() {
+                return Ok(());
+            }
             use sch::encounters::dsl as e;
             let new_enc = m::NewEncounter {
                 started_at_ms,
@@ -219,7 +262,11 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                 .values(&new_enc)
                 .execute(conn)
                 .map_err(|er| er.to_string())?;
-            let id: i32 = e::encounters.order(e::id.desc()).select(e::id).first::<i32>(conn).map_err(|e| e.to_string())?;
+            let id: i32 = e::encounters
+                .order(e::id.desc())
+                .select(e::id)
+                .first::<i32>(conn)
+                .map_err(|e| e.to_string())?;
             *current_encounter_id = Some(id);
         }
         DbTask::EndEncounter { ended_at_ms } => {
@@ -231,7 +278,16 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     .map_err(|er| er.to_string())?;
             }
         }
-        DbTask::UpsertEntity { entity_id, name, class_id, class_spec, ability_score, level, seen_at_ms } => {
+        DbTask::UpsertEntity {
+            entity_id,
+            name,
+            class_id,
+            class_spec,
+            ability_score,
+            level,
+            seen_at_ms,
+            attributes,
+        } => {
             use sch::entities::dsl as en;
             let exists: Option<i64> = en::entities
                 .select(en::entity_id)
@@ -247,6 +303,7 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     ability_score,
                     level,
                     last_seen_ms: Some(seen_at_ms),
+                    attributes: attributes.as_deref(),
                 };
                 diesel::update(en::entities.filter(en::entity_id.eq(entity_id)))
                     .set(&update)
@@ -262,6 +319,7 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     level,
                     first_seen_ms: Some(seen_at_ms),
                     last_seen_ms: Some(seen_at_ms),
+                    attributes: attributes.as_deref(),
                 };
                 diesel::insert_into(en::entities)
                     .values(&insert)
@@ -286,14 +344,29 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                         .map_err(|e| e.to_string())?;
                 }
             } else {
-                let insert = m::NewSkill { skill_id, name: name.as_deref() };
+                let insert = m::NewSkill {
+                    skill_id,
+                    name: name.as_deref(),
+                };
                 diesel::insert_into(sk::skills)
                     .values(&insert)
                     .execute(conn)
                     .map_err(|e| e.to_string())?;
             }
         }
-        DbTask::InsertDamageEvent { timestamp_ms, attacker_id, defender_id, monster_name, skill_id, value, is_crit, is_lucky, hp_loss, shield_loss, is_boss } => {
+        DbTask::InsertDamageEvent {
+            timestamp_ms,
+            attacker_id,
+            defender_id,
+            monster_name,
+            skill_id,
+            value,
+            is_crit,
+            is_lucky,
+            hp_loss,
+            shield_loss,
+            is_boss,
+        } => {
             if let Some(enc_id) = *current_encounter_id {
                 use sch::damage_events::dsl as d;
                 let ins = m::NewDamageEvent {
@@ -304,43 +377,67 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     monster_name,
                     skill_id,
                     value,
-                    is_crit: if is_crit {1} else {0},
-                    is_lucky: if is_lucky {1} else {0},
+                    is_crit: if is_crit { 1 } else { 0 },
+                    is_lucky: if is_lucky { 1 } else { 0 },
                     hp_loss,
                     shield_loss,
-                    is_boss: if is_boss {1} else {0},
+                    is_boss: if is_boss { 1 } else { 0 },
                 };
                 diesel::insert_into(d::damage_events)
                     .values(&ins)
                     .execute(conn)
                     .map_err(|e| e.to_string())?;
                 // increment encounter totals
-                diesel::sql_query("UPDATE encounters SET total_dmg = COALESCE(total_dmg,0) + ?1 WHERE id = ?2")
-                    .bind::<diesel::sql_types::BigInt, _>(value)
-                    .bind::<diesel::sql_types::Integer, _>(enc_id)
-                    .execute(conn)
-                    .ok();
+                diesel::sql_query(
+                    "UPDATE encounters SET total_dmg = COALESCE(total_dmg,0) + ?1 WHERE id = ?2",
+                )
+                .bind::<diesel::sql_types::BigInt, _>(value)
+                .bind::<diesel::sql_types::Integer, _>(enc_id)
+                .execute(conn)
+                .ok();
 
                 // Materialize per-actor stats: attacker damage_dealt; defender damage_taken
                 // Attacker
-                upsert_stats_add_damage_dealt(conn, enc_id, attacker_id, value, is_crit, is_lucky, is_boss)?;
+                upsert_stats_add_damage_dealt(
+                    conn,
+                    enc_id,
+                    attacker_id,
+                    value,
+                    is_crit,
+                    is_lucky,
+                    is_boss,
+                )?;
 
                 // Defender (damage taken). Follow live semantics: only count taken when attacker is not a player.
                 if let Some(def_id) = defender_id {
                     if let Some(attacker_type) = get_entity_type(conn, attacker_id)? {
                         // EEntityType::EntChar == 1 (verify enum mapping). In our code we store entity_type as i32 from blueprotobuf.
-                        if attacker_type != (blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32) {
+                        if attacker_type
+                            != (blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32)
+                        {
                             // Prefer hp_loss + shield_loss if provided; but 'value' has already been set to that when >0 in producer.
-                            upsert_stats_add_damage_taken(conn, enc_id, def_id, value, is_crit, is_lucky)?;
+                            upsert_stats_add_damage_taken(
+                                conn, enc_id, def_id, value, is_crit, is_lucky,
+                            )?;
                         }
                     } else {
                         // If attacker type unknown, conservatively include as taken
-                        upsert_stats_add_damage_taken(conn, enc_id, def_id, value, is_crit, is_lucky)?;
+                        upsert_stats_add_damage_taken(
+                            conn, enc_id, def_id, value, is_crit, is_lucky,
+                        )?;
                     }
                 }
             }
         }
-        DbTask::InsertHealEvent { timestamp_ms, healer_id, target_id, skill_id, value, is_crit, is_lucky } => {
+        DbTask::InsertHealEvent {
+            timestamp_ms,
+            healer_id,
+            target_id,
+            skill_id,
+            value,
+            is_crit,
+            is_lucky,
+        } => {
             if let Some(enc_id) = *current_encounter_id {
                 use sch::heal_events::dsl as h;
                 let ins = m::NewHealEvent {
@@ -350,19 +447,21 @@ fn handle_task(conn: &mut SqliteConnection, task: DbTask, current_encounter_id: 
                     target_id,
                     skill_id,
                     value,
-                    is_crit: if is_crit {1} else {0},
-                    is_lucky: if is_lucky {1} else {0},
+                    is_crit: if is_crit { 1 } else { 0 },
+                    is_lucky: if is_lucky { 1 } else { 0 },
                 };
                 diesel::insert_into(h::heal_events)
                     .values(&ins)
                     .execute(conn)
                     .map_err(|e| e.to_string())?;
                 // increment encounter totals
-                diesel::sql_query("UPDATE encounters SET total_heal = COALESCE(total_heal,0) + ?1 WHERE id = ?2")
-                    .bind::<diesel::sql_types::BigInt, _>(value)
-                    .bind::<diesel::sql_types::Integer, _>(enc_id)
-                    .execute(conn)
-                    .ok();
+                diesel::sql_query(
+                    "UPDATE encounters SET total_heal = COALESCE(total_heal,0) + ?1 WHERE id = ?2",
+                )
+                .bind::<diesel::sql_types::BigInt, _>(value)
+                .bind::<diesel::sql_types::Integer, _>(enc_id)
+                .execute(conn)
+                .ok();
 
                 // Materialize per-actor stats: healer heal_dealt
                 upsert_stats_add_heal_dealt(conn, enc_id, healer_id, value, is_crit, is_lucky)?;
@@ -385,11 +484,19 @@ fn get_entity_type(conn: &mut SqliteConnection, entity_id: i64) -> Result<Option
     Ok(exists.map(|_| blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32))
 }
 
-fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool, is_boss: bool) -> Result<(), String> {
+fn upsert_stats_add_damage_dealt(
+    conn: &mut SqliteConnection,
+    encounter_id: i32,
+    actor_id: i64,
+    value: i64,
+    is_crit: bool,
+    is_lucky: bool,
+    is_boss: bool,
+) -> Result<(), String> {
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
     let boss_hit = if is_boss { 1_i64 } else { 0_i64 };
-        diesel::sql_query(
+    diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
                         encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                         damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt,
@@ -438,10 +545,17 @@ fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32,
     .map_err(|e| e.to_string())
 }
 
-fn upsert_stats_add_heal_dealt(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool) -> Result<(), String> {
+fn upsert_stats_add_heal_dealt(
+    conn: &mut SqliteConnection,
+    encounter_id: i32,
+    actor_id: i64,
+    value: i64,
+    is_crit: bool,
+    is_lucky: bool,
+) -> Result<(), String> {
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
-        diesel::sql_query(
+    diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
                         encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                         heal_dealt, hits_heal, crit_hits_heal, lucky_hits_heal, crit_total_heal, lucky_total_heal
@@ -477,10 +591,17 @@ fn upsert_stats_add_heal_dealt(conn: &mut SqliteConnection, encounter_id: i32, a
     .map_err(|e| e.to_string())
 }
 
-fn upsert_stats_add_damage_taken(conn: &mut SqliteConnection, encounter_id: i32, actor_id: i64, value: i64, is_crit: bool, is_lucky: bool) -> Result<(), String> {
+fn upsert_stats_add_damage_taken(
+    conn: &mut SqliteConnection,
+    encounter_id: i32,
+    actor_id: i64,
+    value: i64,
+    is_crit: bool,
+    is_lucky: bool,
+) -> Result<(), String> {
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
-        diesel::sql_query(
+    diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
                         encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                         damage_taken, hits_taken, crit_hits_taken, lucky_hits_taken, crit_total_taken, lucky_total_taken
@@ -527,7 +648,9 @@ mod tests {
         // Apply migrations
         run_migrations(&mut conn).expect("migrations");
         // Pragmas similar to production
-        diesel::sql_query("PRAGMA foreign_keys=ON;").execute(&mut conn).ok();
+        diesel::sql_query("PRAGMA foreign_keys=ON;")
+            .execute(&mut conn)
+            .ok();
         conn
     }
 
@@ -537,36 +660,54 @@ mod tests {
 
         // Begin encounter
         let mut enc_opt = None;
-        handle_task(&mut conn, DbTask::BeginEncounter { started_at_ms: 1000, local_player_id: Some(1) }, &mut enc_opt).unwrap();
+        handle_task(
+            &mut conn,
+            DbTask::BeginEncounter {
+                started_at_ms: 1000,
+                local_player_id: Some(1),
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
         let enc_id = enc_opt.expect("encounter started");
 
         // Note: Monsters are no longer stored in the database, only players
 
         // Upsert defender (player)
-        handle_task(&mut conn, DbTask::UpsertEntity {
-            entity_id: 100,
-            name: Some("Hero".into()),
-            class_id: Some(1),
-            class_spec: Some(1),
-            ability_score: Some(1000),
-            level: Some(10),
-            seen_at_ms: 1000,
-        }, &mut enc_opt).unwrap();
+        handle_task(
+            &mut conn,
+            DbTask::UpsertEntity {
+                entity_id: 100,
+                name: Some("Hero".into()),
+                class_id: Some(1),
+                class_spec: Some(1),
+                ability_score: Some(1000),
+                level: Some(10),
+                seen_at_ms: 1000,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
 
         // Insert damage event: attacker 200 -> defender 100, value 150, hp_loss 100, shield_loss 50
-        handle_task(&mut conn, DbTask::InsertDamageEvent {
-            timestamp_ms: 1100,
-            attacker_id: 200,
-            defender_id: Some(100),
-            monster_name: None,
-            skill_id: Some(123),
-            value: 150,
-            is_crit: true,
-            is_lucky: false,
-            hp_loss: 100,
-            shield_loss: 50,
-            is_boss: false,
-        }, &mut enc_opt).unwrap();
+        handle_task(
+            &mut conn,
+            DbTask::InsertDamageEvent {
+                timestamp_ms: 1100,
+                attacker_id: 200,
+                defender_id: Some(100),
+                monster_name: None,
+                skill_id: Some(123),
+                value: 150,
+                is_crit: true,
+                is_lucky: false,
+                hp_loss: 100,
+                shield_loss: 50,
+                is_boss: false,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
 
         // Verify stats
         use sch::actor_encounter_stats::dsl as s;
@@ -586,19 +727,24 @@ mod tests {
         assert_eq!(crit_hits_taken, 1);
 
         // Insert a second damage event with a monster defender and a defender name (this is the games logic for when you attack something that is a monster)
-        handle_task(&mut conn, DbTask::InsertDamageEvent {
-            timestamp_ms: 1150,
-            attacker_id: 201,
-            defender_id: Some(9999),
-            monster_name: Some("Test Monster".into()),
-            skill_id: Some(321),
-            value: 50,
-            is_crit: false,
-            is_lucky: false,
-            hp_loss: 50,
-            shield_loss: 0,
-            is_boss: true,
-        }, &mut enc_opt).unwrap();
+        handle_task(
+            &mut conn,
+            DbTask::InsertDamageEvent {
+                timestamp_ms: 1150,
+                attacker_id: 201,
+                defender_id: Some(9999),
+                monster_name: Some("Test Monster".into()),
+                skill_id: Some(321),
+                value: 50,
+                is_crit: false,
+                is_lucky: false,
+                hp_loss: 50,
+                shield_loss: 0,
+                is_boss: true,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
 
         // Verify monster_name persisted
         #[derive(diesel::QueryableByName)]
@@ -606,11 +752,13 @@ mod tests {
             #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::Text>)]
             monster_name: Option<String>,
         }
-        let row: NameRow = diesel::sql_query("SELECT monster_name FROM damage_events WHERE attacker_id = ?1 AND defender_id = ?2")
-            .bind::<diesel::sql_types::BigInt, _>(201_i64)
-            .bind::<diesel::sql_types::BigInt, _>(9999_i64)
-            .get_result::<NameRow>(&mut conn)
-            .unwrap();
+        let row: NameRow = diesel::sql_query(
+            "SELECT monster_name FROM damage_events WHERE attacker_id = ?1 AND defender_id = ?2",
+        )
+        .bind::<diesel::sql_types::BigInt, _>(201_i64)
+        .bind::<diesel::sql_types::BigInt, _>(9999_i64)
+        .get_result::<NameRow>(&mut conn)
+        .unwrap();
         assert_eq!(row.monster_name.as_deref(), Some("Test Monster"));
     }
 }

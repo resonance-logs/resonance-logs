@@ -1,8 +1,6 @@
 // @generated automatically by Diesel CLI, but maintained manually here.
 // Keep in sync with migrations.
 
-
-
 diesel::table! {
     entities (entity_id) {
         entity_id -> BigInt,
@@ -13,6 +11,7 @@ diesel::table! {
         level -> Nullable<Integer>,
         first_seen_ms -> Nullable<BigInt>,
         last_seen_ms -> Nullable<BigInt>,
+        attributes -> Nullable<Text>,
     }
 }
 

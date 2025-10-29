@@ -47,7 +47,9 @@ pub async fn process_packet(
         match packets::opcodes::FragmentType::from(msg_type_id) {
             FragmentType::Notify => {
                 // Use parser helper to extract components and payload.
-                if let Some((method_id, payload)) = parser::parse_notify_fragment(&mut reader, is_zstd_compressed != 0) {
+                if let Some((method_id, payload)) =
+                    parser::parse_notify_fragment(&mut reader, is_zstd_compressed != 0)
+                {
                     if let Err(err) = packet_sender.send((method_id, payload)).await {
                         debug!("Failed to send packet: {err}");
                     }
@@ -175,8 +177,10 @@ mod tests {
         use std::fs;
         let (packet_sender, _) = tokio::sync::mpsc::channel::<(Pkt, Vec<u8>)>(1);
         let filename = "src/packets/test_add_packet.json";
-        let v: Vec<u8> = serde_json::from_str(&fs::read_to_string(filename).expect(&format!("Failed to open {filename}")))
-            .expect("Invalid JSON in test_packet.json");
+        let v: Vec<u8> = serde_json::from_str(
+            &fs::read_to_string(filename).expect(&format!("Failed to open {filename}")),
+        )
+        .expect("Invalid JSON in test_packet.json");
         process_packet(BinaryReader::from(v), packet_sender).await;
     }
 }

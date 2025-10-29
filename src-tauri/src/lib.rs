@@ -1,6 +1,6 @@
+mod build_app;
 mod live;
 mod packets;
-mod build_app;
 
 use crate::build_app::build_and_run;
 use log::{info, warn};
@@ -8,7 +8,7 @@ use specta_typescript::{BigIntExportBehavior, Typescript};
 use std::process::Command;
 
 use chrono_tz;
-use tauri::menu::{MenuBuilder};
+use tauri::menu::MenuBuilder;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, WindowEvent};
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
@@ -108,7 +108,18 @@ pub fn run() {
 }
 
 fn start_windivert() {
-    let status = Command::new("sc").args(["create", "windivert", "type=", "kernel", "binPath=", "WinDivert64.sys", "start=", "demand"]).status();
+    let status = Command::new("sc")
+        .args([
+            "create",
+            "windivert",
+            "type=",
+            "kernel",
+            "binPath=",
+            "WinDivert64.sys",
+            "start=",
+            "demand",
+        ])
+        .status();
     if status.is_ok_and(|status| status.success()) {
         info!("started driver");
     } else {
@@ -126,7 +137,9 @@ fn stop_windivert() {
 }
 
 fn remove_windivert() {
-    let status = Command::new("sc").args(["delete", "windivert", "start=", "demand"]).status();
+    let status = Command::new("sc")
+        .args(["delete", "windivert", "start=", "demand"])
+        .status();
     if status.is_ok_and(|status| status.success()) {
         info!("deleted driver");
     } else {
@@ -155,23 +168,24 @@ fn remove_windivert() {
 //     Ok(())
 // }
 
-fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()>  {
+fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()> {
     let app_version = &app.package_info().version;
     let pst_time = chrono::Utc::now()
         .with_timezone(&chrono_tz::America::Los_Angeles)
         .format("%m-%d-%Y %H_%M_%S")
         .to_string();
-    let log_file_name = format!("log v{app_version} {pst_time} PST", );
+    let log_file_name = format!("log v{app_version} {pst_time} PST",);
 
     let mut tauri_log = tauri_plugin_log::Builder::new() // https://v2.tauri.app/plugin/logging/
         .clear_targets()
         .with_colors(ColoredLevelConfig::default())
         .targets([
             #[cfg(debug_assertions)]
-            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout).filter(|metadata| metadata.level() <= log::LevelFilter::Trace),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout)
+                .filter(|metadata| metadata.level() <= log::LevelFilter::Trace),
             tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
                 file_name: Some(log_file_name),
-            })
+            }),
         ])
         .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
         .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(10)); // keep the last 10 logs

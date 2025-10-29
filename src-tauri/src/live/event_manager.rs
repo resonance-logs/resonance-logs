@@ -1,5 +1,5 @@
 use crate::live::commands_models::{HeaderInfo, PlayerRow, PlayersWindow, SkillRow, SkillsWindow};
-use crate::live::opcodes_models::{class, Encounter, Entity, Skill};
+use crate::live::opcodes_models::{Encounter, Entity, Skill, class};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
@@ -36,7 +36,7 @@ impl EventManager {
                 is_paused,
             };
             match app_handle.emit("encounter-update", payload) {
-                Ok(_) => {}, // trace!("Emitted encounter-update event"),
+                Ok(_) => {} // trace!("Emitted encounter-update event"),
                 Err(e) => error!("Failed to emit encounter-update event: {}", e),
             }
         }
@@ -54,7 +54,12 @@ impl EventManager {
         }
     }
 
-    pub fn emit_skills_update(&self, metric_type: MetricType, player_uid: i64, skills_window: SkillsWindow) {
+    pub fn emit_skills_update(
+        &self,
+        metric_type: MetricType,
+        player_uid: i64,
+        skills_window: SkillsWindow,
+    ) {
         if let Some(app_handle) = &self.app_handle {
             let payload = SkillsUpdatePayload {
                 metric_type,
@@ -62,7 +67,11 @@ impl EventManager {
                 skills_window,
             };
             match app_handle.emit("skills-update", payload) {
-                Ok(_) => trace!("Emitted skills-update event for player {} ({})", player_uid, format!("{:?}", metric_type)),
+                Ok(_) => trace!(
+                    "Emitted skills-update event for player {} ({})",
+                    player_uid,
+                    format!("{:?}", metric_type)
+                ),
                 Err(e) => error!("Failed to emit skills-update event: {}", e),
             }
         }
@@ -166,7 +175,14 @@ pub fn generate_players_window_dps(encounter: &Encounter, boss_only: bool) -> Pl
     }
 
     for (&entity_uid, entity) in &encounter.entity_uid_to_entity {
-        if let Some(player_row) = generate_player_row_filtered(entity_uid, entity, encounter, boss_only, total_scope_dmg, time_elapsed_secs) {
+        if let Some(player_row) = generate_player_row_filtered(
+            entity_uid,
+            entity,
+            encounter,
+            boss_only,
+            total_scope_dmg,
+            time_elapsed_secs,
+        ) {
             players_window.player_rows.push(player_row);
         }
     }
@@ -229,6 +245,19 @@ pub fn generate_players_window_heal(encounter: &Encounter) -> PlayersWindow {
                 ),
                 hits: entity.hits_heal,
                 hits_per_minute: nan_is_zero(entity.hits_heal as f64 / time_elapsed_secs * 60.0),
+                // Extended attributes from Stage 4
+                rank_level: entity.rank_level(),
+                current_hp: entity.hp(),
+                max_hp: entity.max_hp(),
+                crit_stat: entity.crit(),
+                lucky_stat: entity.lucky(),
+                haste: entity.haste(),
+                mastery: entity.mastery(),
+                element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+                    .and_then(|v| v.as_int()),
+                energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+                    .and_then(|v| v.as_int()),
+                reduction_level: entity.reduction_level(),
             };
             players_window.player_rows.push(heal_row);
         }
@@ -283,9 +312,7 @@ pub fn generate_players_window_tanked(encounter: &Encounter) -> PlayersWindow {
                 ability_score: entity.ability_score as u128,
                 total_dmg: entity.total_taken,
                 dps: nan_is_zero(entity.total_taken as f64 / time_elapsed_secs),
-                dmg_pct: nan_is_zero(
-                    entity.total_taken as f64 / total_taken_all as f64 * 100.0,
-                ),
+                dmg_pct: nan_is_zero(entity.total_taken as f64 / total_taken_all as f64 * 100.0),
                 crit_rate: nan_is_zero(
                     entity.crit_hits_taken as f64 / entity.hits_taken as f64 * 100.0,
                 ),
@@ -300,6 +327,19 @@ pub fn generate_players_window_tanked(encounter: &Encounter) -> PlayersWindow {
                 ),
                 hits: entity.hits_taken,
                 hits_per_minute: nan_is_zero(entity.hits_taken as f64 / time_elapsed_secs * 60.0),
+                // Extended attributes from Stage 4
+                rank_level: entity.rank_level(),
+                current_hp: entity.hp(),
+                max_hp: entity.max_hp(),
+                crit_stat: entity.crit(),
+                lucky_stat: entity.lucky(),
+                haste: entity.haste(),
+                mastery: entity.mastery(),
+                element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+                    .and_then(|v| v.as_int()),
+                energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+                    .and_then(|v| v.as_int()),
+                reduction_level: entity.reduction_level(),
             };
             players_window.player_rows.push(tanked_row);
         }
@@ -316,7 +356,11 @@ pub fn generate_players_window_tanked(encounter: &Encounter) -> PlayersWindow {
     players_window
 }
 
-pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64, boss_only: bool) -> Option<SkillsWindow> {
+pub fn generate_skills_window_dps(
+    encounter: &Encounter,
+    player_uid: i64,
+    boss_only: bool,
+) -> Option<SkillsWindow> {
     let entity = encounter.entity_uid_to_entity.get(&player_uid)?;
 
     let time_elapsed_ms = encounter
@@ -365,7 +409,11 @@ pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64, boss_o
             ability_score: entity.ability_score as u128,
             total_dmg: player_total,
             dps: nan_is_zero(player_total as f64 / time_elapsed_secs),
-            dmg_pct: if total_scope_dmg == 0 { 0.0 } else { nan_is_zero(player_total as f64 / total_scope_dmg as f64 * 100.0) },
+            dmg_pct: if total_scope_dmg == 0 {
+                0.0
+            } else {
+                nan_is_zero(player_total as f64 / total_scope_dmg as f64 * 100.0)
+            },
             crit_rate: nan_is_zero(entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
                 entity.crit_total_dmg as f64 / entity.total_dmg as f64 * 100.0,
@@ -376,6 +424,19 @@ pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64, boss_o
             ),
             hits: entity.hits_dmg,
             hits_per_minute: nan_is_zero(entity.hits_dmg as f64 / time_elapsed_secs * 60.0),
+            // Extended attributes from Stage 4
+            rank_level: entity.rank_level(),
+            current_hp: entity.hp(),
+            max_hp: entity.max_hp(),
+            crit_stat: entity.crit(),
+            lucky_stat: entity.lucky(),
+            haste: entity.haste(),
+            mastery: entity.mastery(),
+            element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+                .and_then(|v| v.as_int()),
+            energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+                .and_then(|v| v.as_int()),
+            reduction_level: entity.reduction_level(),
         }],
         skill_rows: Vec::new(),
     };
@@ -401,7 +462,11 @@ pub fn generate_skills_window_dps(encounter: &Encounter, player_uid: i64, boss_o
             name: Skill::get_skill_name(skill_uid),
             total_dmg: skill_total,
             dps: nan_is_zero(skill_total as f64 / time_elapsed_secs),
-            dmg_pct: if player_total == 0 { 0.0 } else { nan_is_zero(skill_total as f64 / player_total as f64 * 100.0) },
+            dmg_pct: if player_total == 0 {
+                0.0
+            } else {
+                nan_is_zero(skill_total as f64 / player_total as f64 * 100.0)
+            },
             crit_rate: nan_is_zero(skill.crit_hits as f64 / skill.hits as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
                 skill.crit_total_value as f64 / skill.total_value as f64 * 100.0,
@@ -460,6 +525,19 @@ pub fn generate_skills_window_heal(encounter: &Encounter, player_uid: i64) -> Op
             ),
             hits: entity.hits_heal,
             hits_per_minute: nan_is_zero(entity.hits_heal as f64 / time_elapsed_secs * 60.0),
+            // Extended attributes from Stage 4
+            rank_level: entity.rank_level(),
+            current_hp: entity.hp(),
+            max_hp: entity.max_hp(),
+            crit_stat: entity.crit(),
+            lucky_stat: entity.lucky(),
+            haste: entity.haste(),
+            mastery: entity.mastery(),
+            element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+                .and_then(|v| v.as_int()),
+            energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+                .and_then(|v| v.as_int()),
+            reduction_level: entity.reduction_level(),
         }],
         skill_rows: Vec::new(),
     };
@@ -497,7 +575,10 @@ pub fn generate_skills_window_heal(encounter: &Encounter, player_uid: i64) -> Op
     Some(skills_window)
 }
 
-pub fn generate_skills_window_tanked(encounter: &Encounter, player_uid: i64) -> Option<SkillsWindow> {
+pub fn generate_skills_window_tanked(
+    encounter: &Encounter,
+    player_uid: i64,
+) -> Option<SkillsWindow> {
     let entity = encounter.entity_uid_to_entity.get(&player_uid)?;
 
     let time_elapsed_ms = encounter
@@ -518,7 +599,9 @@ pub fn generate_skills_window_tanked(encounter: &Encounter, player_uid: i64) -> 
             total_dmg: entity.total_taken,
             dps: nan_is_zero(entity.total_taken as f64 / time_elapsed_secs),
             dmg_pct: 100.0, // Always 100% for the current player view
-            crit_rate: nan_is_zero(entity.crit_hits_taken as f64 / entity.hits_taken as f64 * 100.0),
+            crit_rate: nan_is_zero(
+                entity.crit_hits_taken as f64 / entity.hits_taken as f64 * 100.0,
+            ),
             crit_dmg_rate: nan_is_zero(
                 entity.crit_total_taken as f64 / entity.total_taken as f64 * 100.0,
             ),
@@ -530,6 +613,19 @@ pub fn generate_skills_window_tanked(encounter: &Encounter, player_uid: i64) -> 
             ),
             hits: entity.hits_taken,
             hits_per_minute: nan_is_zero(entity.hits_taken as f64 / time_elapsed_secs * 60.0),
+            // Extended attributes from Stage 4
+            rank_level: entity.rank_level(),
+            current_hp: entity.hp(),
+            max_hp: entity.max_hp(),
+            crit_stat: entity.crit(),
+            lucky_stat: entity.lucky(),
+            haste: entity.haste(),
+            mastery: entity.mastery(),
+            element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+                .and_then(|v| v.as_int()),
+            energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+                .and_then(|v| v.as_int()),
+            reduction_level: entity.reduction_level(),
         }],
         skill_rows: Vec::new(),
     };
@@ -632,6 +728,19 @@ pub fn generate_player_row_filtered(
         ),
         hits: entity.hits_dmg,
         hits_per_minute: nan_is_zero(entity.hits_dmg as f64 / time_elapsed_secs * 60.0),
+        // Extended attributes from Stage 4
+        rank_level: entity.rank_level(),
+        current_hp: entity.hp(),
+        max_hp: entity.max_hp(),
+        crit_stat: entity.crit(),
+        lucky_stat: entity.lucky(),
+        haste: entity.haste(),
+        mastery: entity.mastery(),
+        element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+            .and_then(|v| v.as_int()),
+        energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+            .and_then(|v| v.as_int()),
+        reduction_level: entity.reduction_level(),
     })
 }
 
@@ -671,7 +780,6 @@ pub fn generate_skill_rows(entity: &Entity, time_elapsed_secs: f64) -> Vec<Skill
 }
 
 pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<HeaderInfo> {
-
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
         .saturating_sub(encounter.time_fight_start_ms);
