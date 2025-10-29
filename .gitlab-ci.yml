@@ -1,3 +1,19 @@
+workflow:
+  rules:
+    # Run automatically for created tags (recommended for releases)
+    - if: $CI_COMMIT_TAG
+      when: always
+    # Allow manual runs from the GitLab UI
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
+    # Allow API and trigger-based runs (useful for CI triggers)
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "api"
+      when: always
+    # Default: don't run for other pipeline sources (push to branches, merge requests, etc.)
+    - when: never
+
 stages:
   - build
   - release
