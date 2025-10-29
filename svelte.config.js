@@ -14,6 +14,9 @@ const config = {
 		adapter: adapter({
 			fallback: "index.html",
 		}),
+		prerender: {
+			handleUnseenRoutes: 'ignore',
+		},
 	},
 };
 
