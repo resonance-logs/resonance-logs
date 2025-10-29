@@ -7,27 +7,23 @@ variables:
   RUSTUP_HOME: "$CI_PROJECT_DIR/.rustup"
 
 build-windows:
-  image: ivangabriele/tauri:fedora-40-20
   stage: build
-  before_script:
-    - curl -fsSL https://bun.sh/install | bash
-    - source ~/.bashrc || true
-    - dnf install -y mingw64-nsis unzip wget lld llvm clang
-    - wget -q https://github.com/tauri-apps/binary-releases/releases/download/nsis-3/nsis-3.zip
-    - unzip -q nsis-3.zip
-    - cp -v nsis-3.08/Stubs/* /usr/share/nsis/Stubs/ || true
-    - cp -vr nsis-3.08/Plugins/* /usr/share/nsis/Plugins/ || true
-    # Ensure a default rust toolchain is configured so `rustup target add` works
-    - rustup toolchain install stable || true
-    - rustup default stable || true
-    - rustup target add $RUST_TARGET
-    - cargo install --locked cargo-xwin
+  # Run on the GitLab shared Windows runner
+  tags:
+    - shared-windows
 
+  # Use a PowerShell-style script suitable for Windows shared runners.
+  # We avoid installing Linux packages here since the shared Windows runner
+  # already provides a Windows toolchain. Adjust or expand these steps
+  # if your runner needs additional tools (e.g. NSIS, Rust, Node).
   script:
-    - '/bin/bash -lc "cd $CI_PROJECT_DIR && (command -v bun >/dev/null 2>&1 && bun install --no-save || npm ci) && npm run build && npm run tauri build -- --runner cargo-xwin --target $RUST_TARGET"'
+    - pwsh -Command "Write-Host 'Running CI on shared-windows runner'"
+    - pwsh -Command "Set-Location -Path $env:CI_PROJECT_DIR; if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) { Write-Host 'rustup not found — installing rustup'; Invoke-WebRequest -Uri 'https://win.rustup.rs' -OutFile \"$env:TEMP\\rustup-init.exe\"; & \"$env:TEMP\\rustup-init.exe\" -y } else { Write-Host 'rustup found' }; $rustupPath = Join-Path $env:USERPROFILE '.cargo\\bin\\rustup.exe'; if (Test-Path $rustupPath) { & $rustupPath default stable; & $rustupPath target add $env:RUST_TARGET } ; if (Get-Command bun -ErrorAction SilentlyContinue) { bun install --no-save } else { npm ci }"
+    - pwsh -Command "npm run build"
+    - pwsh -Command "npm run tauri build -- --target $env:RUST_TARGET"
 
   artifacts:
     paths:
-      - src-tauri/target/$RUST_TARGET/release/*.exe
-      - src-tauri/target/$RUST_TARGET/release/bundle/nsis/*.exe
+      - src-tauri/target/release/*.exe
+      - src-tauri/target/release/bundle/nsis/*.exe
     expire_in: 1 week
