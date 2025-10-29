@@ -6,13 +6,24 @@
 
   import { SIDEBAR_ROUTES } from "./routes.svelte";
 
-  let currentPage = $derived(SIDEBAR_ROUTES[page.url.pathname]);
+  let currentPage = $derived(() => {
+    const pathname = page.url.pathname;
+    // Check for exact match first
+    if (SIDEBAR_ROUTES[pathname]) {
+      return SIDEBAR_ROUTES[pathname];
+    }
+    // Check if it's a dynamic route under /main/history
+    if (pathname.startsWith("/main/history/")) {
+      return SIDEBAR_ROUTES["/main/history"];
+    }
+    return null;
+  });
 </script>
 
-<header class="h-(--header-height) group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) flex shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
-  <div class="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+<header class="flex h-14 shrink-0 items-center gap-2 border-b transition-[width,height] duration-200 ease-linear">
+  <div class="flex w-full items-center gap-1 px-4 lg:px-6">
     <Sidebar.Trigger class="-ml-1" />
-    <Separator orientation="vertical" class="mx-2 data-[orientation=vertical]:h-4" />
-    <h1>{currentPage?.label ?? "UNKNOWN PAGE LABEL"}</h1>
+    <Separator orientation="vertical" class="mx-1 h-4" />
+    <h1 class="text-lg font-medium">{currentPage()?.label ?? "History"}</h1>
   </div>
 </header>

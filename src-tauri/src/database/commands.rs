@@ -14,6 +14,8 @@ pub struct EncounterSummaryDto {
     pub ended_at_ms: Option<i64>,
     pub total_dmg: i64,
     pub total_heal: i64,
+    pub bosses: Vec<String>,
+    pub players: Vec<PlayerInfoDto>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -25,10 +27,30 @@ pub struct RecentEncountersResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
+pub struct EncounterWithDetailsDto {
+    pub id: i32,
+    pub started_at_ms: i64,
+    pub ended_at_ms: Option<i64>,
+    pub total_dmg: i64,
+    pub total_heal: i64,
+    pub bosses: Vec<String>,
+    pub players: Vec<PlayerInfoDto>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerInfoDto {
+    pub name: String,
+    pub class_id: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
 pub struct ActorEncounterStatDto {
     pub encounter_id: i32,
     pub actor_id: i64,
     pub name: Option<String>,
+    pub class_id: Option<i32>,
     pub damage_dealt: i64,
     pub heal_dealt: i64,
     pub damage_taken: i64,
@@ -62,6 +84,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
     let mut conn = get_conn()?;
     use sch::encounters::dsl as e;
     let rows: Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>)> = e::encounters
+        .filter(e::ended_at_ms.is_not_null())
         .order(e::started_at_ms.desc())
         .select((e::id, e::started_at_ms, e::ended_at_ms, e::total_dmg, e::total_heal))
         .limit(limit as i64)
@@ -70,20 +93,55 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
         .map_err(|er| er.to_string())?;
 
     let total_count: i64 = e::encounters
+        .filter(e::ended_at_ms.is_not_null())
         .count()
         .get_result(&mut conn)
         .map_err(|er| er.to_string())?;
 
-    let mapped: Vec<EncounterSummaryDto> = rows
-        .into_iter()
-        .map(|(id, started, ended, td, th)| EncounterSummaryDto {
+    // Collect boss and player data for each encounter
+    let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
+    
+    for (id, started, ended, td, th) in rows {
+        use sch::damage_events::dsl as de;
+        use sch::actor_encounter_stats::dsl as s;
+        use std::collections::HashSet;
+        
+        // Get unique boss names from damage_events where is_boss=1
+        let boss_names: Vec<String> = de::damage_events
+            .filter(de::encounter_id.eq(id))
+            .filter(de::is_boss.eq(1))
+            .select(de::monster_name)
+            .load::<Option<String>>(&mut conn)
+            .map_err(|er| er.to_string())?
+            .into_iter()
+            .filter_map(|n| n)
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        // Get unique player names and class_ids from actor_encounter_stats where is_player=1
+        let player_data: Vec<PlayerInfoDto> = s::actor_encounter_stats
+            .filter(s::encounter_id.eq(id))
+            .filter(s::is_player.eq(1))
+            .select((s::name, s::class_id))
+            .load::<(Option<String>, Option<i32>)>(&mut conn)
+            .map_err(|er| er.to_string())?
+            .into_iter()
+            .filter_map(|(name, class_id)| name.map(|n| PlayerInfoDto { name: n, class_id }))
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        mapped.push(EncounterSummaryDto {
             id,
             started_at_ms: started,
             ended_at_ms: ended,
             total_dmg: td.unwrap_or(0),
             total_heal: th.unwrap_or(0),
-        })
-        .collect();
+            bosses: boss_names,
+            players: player_data,
+        });
+    }
 
     Ok(RecentEncountersResult { rows: mapped, total_count })
 }
@@ -93,16 +151,15 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
 pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounterStatDto>, String> {
     let mut conn = get_conn()?;
     use sch::actor_encounter_stats::dsl as s;
-    use sch::entities::dsl as en;
 
     let rows = s::actor_encounter_stats
-        .inner_join(en::entities.on(en::entity_id.eq(s::actor_id)))
         .filter(s::encounter_id.eq(encounter_id))
+        .filter(s::is_player.eq(1))
         .select((
             s::encounter_id,
             s::actor_id,
-            s::name.nullable(),
-            en::name.nullable(),
+            s::name,
+            s::class_id,
             s::damage_dealt,
             s::heal_dealt,
             s::damage_taken,
@@ -123,14 +180,14 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
             s::boss_lucky_total_dealt,
         ))
         .order((s::damage_dealt.desc(), s::heal_dealt.desc(), s::damage_taken.desc()))
-        .load::<(i32, i64, Option<String>, Option<String>, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
+        .load::<(i32, i64, Option<String>, Option<i32>, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
         .map_err(|e| e.to_string())?;
 
     Ok(rows.into_iter().map(|(
         encounter_id,
         actor_id,
-        snap_name_opt,
-        ent_name_opt,
+        name,
+        class_id,
         damage_dealt,
         heal_dealt,
         damage_taken,
@@ -152,7 +209,8 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
     )| ActorEncounterStatDto {
         encounter_id,
         actor_id,
-        name: snap_name_opt.or(ent_name_opt),
+        name,
+        class_id,
         damage_dealt,
         heal_dealt,
         damage_taken,
@@ -238,6 +296,8 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         ended_at_ms: row.2,
         total_dmg: row.3.unwrap_or(0),
         total_heal: row.4.unwrap_or(0),
+        bosses: Vec::new(),
+        players: Vec::new(),
     })
 }
 
@@ -263,6 +323,68 @@ pub fn delete_encounter(encounter_id: i32) -> Result<(), String> {
     Ok(())
 }
 
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_recent_encounters_with_details(limit: i32, offset: i32) -> Result<Vec<EncounterWithDetailsDto>, String> {
+    let mut conn = get_conn()?;
+    use sch::encounters::dsl as e;
+    use sch::damage_events::dsl as de;
+    use sch::actor_encounter_stats::dsl as s;
+    use std::collections::HashSet;
+
+    // Get encounter summaries
+    let encounter_rows: Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>)> = e::encounters
+        .filter(e::ended_at_ms.is_not_null())
+        .order(e::started_at_ms.desc())
+        .select((e::id, e::started_at_ms, e::ended_at_ms, e::total_dmg, e::total_heal))
+        .limit(limit as i64)
+        .offset(offset as i64)
+        .load(&mut conn)
+        .map_err(|er| er.to_string())?;
+
+    let mut results = Vec::new();
+
+    for (id, started_at_ms, ended_at_ms, total_dmg, total_heal) in encounter_rows {
+        // Get unique boss names from damage_events where is_boss=1
+        let boss_names: Vec<String> = de::damage_events
+            .filter(de::encounter_id.eq(id))
+            .filter(de::is_boss.eq(1))
+            .select(de::monster_name)
+            .load::<Option<String>>(&mut conn)
+            .map_err(|er| er.to_string())?
+            .into_iter()
+            .filter_map(|n| n)
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        // Get unique player names and class_ids from actor_encounter_stats where is_player=1
+        let player_data: Vec<PlayerInfoDto> = s::actor_encounter_stats
+            .filter(s::encounter_id.eq(id))
+            .filter(s::is_player.eq(1))
+            .select((s::name, s::class_id))
+            .load::<(Option<String>, Option<i32>)>(&mut conn)
+            .map_err(|er| er.to_string())?
+            .into_iter()
+            .filter_map(|(name, class_id)| name.map(|n| PlayerInfoDto { name: n, class_id }))
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        results.push(EncounterWithDetailsDto {
+            id,
+            started_at_ms,
+            ended_at_ms,
+            total_dmg: total_dmg.unwrap_or(0),
+            total_heal: total_heal.unwrap_or(0),
+            bosses: boss_names,
+            players: player_data,
+        });
+    }
+
+    Ok(results)
+}
 
 #[tauri::command]
 #[specta::specta]

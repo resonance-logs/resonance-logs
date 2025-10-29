@@ -391,7 +391,7 @@ fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32,
     let boss_hit = if is_boss { 1_i64 } else { 0_i64 };
         diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
-                        encounter_id, actor_id, name, class_id, ability_score, level,
+                        encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                         damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt,
                         boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt, boss_crit_total_dealt, boss_lucky_total_dealt
                  ) VALUES (
@@ -400,6 +400,7 @@ fn upsert_stats_add_damage_dealt(conn: &mut SqliteConnection, encounter_id: i32,
                         (SELECT class_id FROM entities WHERE entity_id = ?2),
                         (SELECT ability_score FROM entities WHERE entity_id = ?2),
                         (SELECT level FROM entities WHERE entity_id = ?2),
+                        CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
                         ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13
                  ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
                      name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
@@ -442,7 +443,7 @@ fn upsert_stats_add_heal_dealt(conn: &mut SqliteConnection, encounter_id: i32, a
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
         diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
-                        encounter_id, actor_id, name, class_id, ability_score, level,
+                        encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                         heal_dealt, hits_heal, crit_hits_heal, lucky_hits_heal, crit_total_heal, lucky_total_heal
                  ) VALUES (
                         ?1, ?2,
@@ -450,6 +451,7 @@ fn upsert_stats_add_heal_dealt(conn: &mut SqliteConnection, encounter_id: i32, a
                         (SELECT class_id FROM entities WHERE entity_id = ?2),
                         (SELECT ability_score FROM entities WHERE entity_id = ?2),
                         (SELECT level FROM entities WHERE entity_id = ?2),
+                        CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
                         ?3, 1, ?4, ?5, ?6, ?7
                  ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
                      name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
@@ -480,7 +482,7 @@ fn upsert_stats_add_damage_taken(conn: &mut SqliteConnection, encounter_id: i32,
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
         diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
-                        encounter_id, actor_id, name, class_id, ability_score, level,
+                        encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                         damage_taken, hits_taken, crit_hits_taken, lucky_hits_taken, crit_total_taken, lucky_total_taken
                  ) VALUES (
                         ?1, ?2,
@@ -488,6 +490,7 @@ fn upsert_stats_add_damage_taken(conn: &mut SqliteConnection, encounter_id: i32,
                         (SELECT class_id FROM entities WHERE entity_id = ?2),
                         (SELECT ability_score FROM entities WHERE entity_id = ?2),
                         (SELECT level FROM entities WHERE entity_id = ?2),
+                        CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
                         ?3, 1, ?4, ?5, ?6, ?7
                  ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
                      name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
