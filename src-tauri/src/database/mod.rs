@@ -155,6 +155,12 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                     "Batch transaction failed: {:?}. Falling back to per-task execution.",
                     e
                 );
+
+                // CRITICAL: Reset current_encounter_id because the batch transaction was rolled back.
+                // Any encounter that was created in the failed transaction no longer exists.
+                // This ensures BeginEncounter tasks will create new encounters instead of being skipped.
+                current_encounter_id = None;
+
                 // Try to process tasks individually; this uses the same connection
                 // (and therefore the same transaction semantics as earlier).
                 // Important: Process BeginEncounter tasks first to ensure encounters exist
