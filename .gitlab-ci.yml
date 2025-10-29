@@ -10,7 +10,7 @@ build-windows:
   stage: build
   # Run on the GitLab shared Windows runner
   tags:
-    - shared-windows
+    - saas-windows-medium-amd64
 
   # Use a PowerShell-style script suitable for Windows shared runners.
   # We avoid installing Linux packages here since the shared Windows runner
