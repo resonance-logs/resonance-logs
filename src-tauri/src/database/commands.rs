@@ -188,17 +188,11 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
             s::boss_lucky_total_dealt,
         ))
         .order((s::damage_dealt.desc(), s::heal_dealt.desc(), s::damage_taken.desc()))
-        .load::<(i32, i64, Option<String>, Option<i32>, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64)>(&mut conn)
-        .order((
-            s::damage_dealt.desc(),
-            s::heal_dealt.desc(),
-            s::damage_taken.desc(),
-        ))
         .load::<(
             i32,
             i64,
             Option<String>,
-            Option<String>,
+            Option<i32>,
             i64,
             i64,
             i64,

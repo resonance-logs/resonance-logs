@@ -157,7 +157,27 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                 );
                 // Try to process tasks individually; this uses the same connection
                 // (and therefore the same transaction semantics as earlier).
+                // Important: Process BeginEncounter tasks first to ensure encounters exist
+                // before damage/heal events that reference them.
+                let mut begin_encounter_tasks = Vec::new();
+                let mut other_tasks = Vec::new();
                 for task in tasks {
+                    if matches!(task, DbTask::BeginEncounter { .. }) {
+                        begin_encounter_tasks.push(task);
+                    } else {
+                        other_tasks.push(task);
+                    }
+                }
+
+                // Process BeginEncounter tasks first
+                for task in begin_encounter_tasks {
+                    if let Err(e) = handle_task(&mut conn, task, &mut current_encounter_id) {
+                        log::error!("DB task error (fallback - BeginEncounter): {}", e);
+                    }
+                }
+
+                // Then process all other tasks
+                for task in other_tasks {
                     if let Err(e) = handle_task(&mut conn, task, &mut current_encounter_id) {
                         log::error!("DB task error (fallback): {}", e);
                     }
@@ -684,6 +704,7 @@ mod tests {
                 ability_score: Some(1000),
                 level: Some(10),
                 seen_at_ms: 1000,
+                attributes: None,
             },
             &mut enc_opt,
         )
