@@ -18,11 +18,15 @@ build-tauri:
   tags:
     - saas-windows-medium-amd64
   before_script:
-    # Install Node.js LTS and Rust
-    - choco install nodejs-lts rust -y
-
-    # Manually update PATH for this session
+    # Install Node.js LTS
+    - choco install nodejs-lts -y
     - $env:PATH = "C:\Program Files\nodejs;$env:PATH"
+
+    # Install Rust using rustup
+    - |
+      Invoke-WebRequest -Uri https://win.rustup.rs/x86_64 -OutFile rustup-init.exe
+      .\rustup-init.exe -y --default-toolchain stable --profile minimal
+      Remove-Item rustup-init.exe
     - $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 
     # Verify installations
