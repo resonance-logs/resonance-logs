@@ -13,11 +13,37 @@ use std::default::Default;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Serialize entity attributes HashMap to JSON string for database storage.
+/// Converts AttrType keys to string representation for JSON compatibility.
 fn serialize_attributes(entity: &Entity) -> Option<String> {
     if entity.attributes.is_empty() {
         return None;
     }
-    serde_json::to_string(&entity.attributes).ok()
+
+    // Convert HashMap<AttrType, AttrValue> to HashMap<String, serde_json::Value> for JSON serialization
+    // This is necessary because JSON object keys must be strings, and AttrType::Unknown(i32)
+    // cannot be directly serialized as a JSON object key
+    use crate::live::opcodes_models::{AttrType, AttrValue};
+    use serde_json::json;
+
+    let string_map: serde_json::Map<String, serde_json::Value> = entity
+        .attributes
+        .iter()
+        .map(|(k, v)| {
+            let key_str = match k {
+                AttrType::Unknown(id) => format!("Unknown_0x{:x}", id),
+                _ => format!("{:?}", k), // Uses Debug trait for named variants
+            };
+            let value_json = match v {
+                AttrValue::Int(i) => json!(i),
+                AttrValue::Float(f) => json!(f),
+                AttrValue::String(s) => json!(s),
+                AttrValue::Bool(b) => json!(b),
+            };
+            (key_str, value_json)
+        })
+        .collect();
+
+    serde_json::to_string(&string_map).ok()
 }
 
 pub fn on_server_change(encounter: &mut Encounter) {
