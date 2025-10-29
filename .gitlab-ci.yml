@@ -17,6 +17,9 @@ build-windows:
     - unzip -q nsis-3.zip
     - cp -v nsis-3.08/Stubs/* /usr/share/nsis/Stubs/ || true
     - cp -vr nsis-3.08/Plugins/* /usr/share/nsis/Plugins/ || true
+    # Ensure a default rust toolchain is configured so `rustup target add` works
+    - rustup toolchain install stable || true
+    - rustup default stable || true
     - rustup target add $RUST_TARGET
     - cargo install --locked cargo-xwin
 
