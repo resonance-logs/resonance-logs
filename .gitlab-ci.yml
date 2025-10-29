@@ -1,7 +1,3 @@
-# GitLab CI configuration to build Windows artifacts (MSVC) for the Tauri + Svelte app
-# This job uses a prebuilt Tauri/Fedora image and cross-building helper cargo-xwin
-# Adapted for this repository where the Tauri crate lives in `src-tauri`.
-
 stages:
   - build
 
@@ -14,38 +10,21 @@ build-windows:
   image: ivangabriele/tauri:fedora-40-20
   stage: build
   before_script:
-    # Install bun (fast JS runtime/installer) and make it available in the session
     - curl -fsSL https://bun.sh/install | bash
     - source ~/.bashrc || true
-
-    # Install NSIS tools for creating Windows installers
-    - dnf install -y mingw64-nsis unzip wget
+    - dnf install -y mingw64-nsis unzip wget lld llvm clang
     - wget -q https://github.com/tauri-apps/binary-releases/releases/download/nsis-3/nsis-3.zip
     - unzip -q nsis-3.zip
     - cp -v nsis-3.08/Stubs/* /usr/share/nsis/Stubs/ || true
     - cp -vr nsis-3.08/Plugins/* /usr/share/nsis/Plugins/ || true
-
-    # Install LLVM/LLD/Clang and add the MSVC target via rustup
-    - dnf install -y lld llvm clang
     - rustup target add $RUST_TARGET
-
-    # cargo-xwin helps running cargo on Windows targets from Linux CI
     - cargo install --locked cargo-xwin
 
-  # Script steps: keep the `script` value as a simple array of strings (no inline comments)
   script:
-    - echo "Building Windows artifacts (target: $RUST_TARGET)"
-    - cd "$CI_PROJECT_DIR"
-    - if command -v bun >/dev/null 2>&1; then bun install --no-save; else npm ci; fi
-    - npm run build
-    - npm run tauri build -- --runner cargo-xwin --target $RUST_TARGET
+    - '/bin/bash -lc "cd $CI_PROJECT_DIR && (command -v bun >/dev/null 2>&1 && bun install --no-save || npm ci) && npm run build && npm run tauri build -- --runner cargo-xwin --target $RUST_TARGET"'
 
   artifacts:
-    when: always
-    expire_in: 1 week
     paths:
       - src-tauri/target/$RUST_TARGET/release/*.exe
       - src-tauri/target/$RUST_TARGET/release/bundle/nsis/*.exe
-      - build/  # include the built web bundle in case you need it
-
-  # Allow the job to run on shared GitLab runners using Docker (no tags needed)
+    expire_in: 1 week
