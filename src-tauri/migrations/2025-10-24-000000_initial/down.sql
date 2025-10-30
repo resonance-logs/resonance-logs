@@ -2,6 +2,5 @@ PRAGMA foreign_keys = OFF;
 DROP TABLE IF EXISTS heal_events;
 DROP TABLE IF EXISTS damage_events;
 DROP TABLE IF EXISTS encounters;
-DROP TABLE IF EXISTS skills;
 DROP TABLE IF EXISTS entities;
 DROP TABLE IF EXISTS sessions;
