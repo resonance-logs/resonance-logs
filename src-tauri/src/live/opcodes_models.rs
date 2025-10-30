@@ -1,4 +1,5 @@
 use crate::live::opcodes_models::class::ClassSpec;
+use crate::live::skill_names;
 use blueprotobuf_lib::blueprotobuf::{EEntityType, SyncContainerData};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -344,11 +345,6 @@ pub struct Skill {
     pub hits: u128,
 }
 
-static SKILL_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
-    let data = include_str!("../../meter-data/SkillName.json");
-    serde_json::from_str(data).expect("invalid skills.json")
-});
-
 // Monster names mapping (id -> name)
 static MONSTER_NAMES: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     let data = include_str!("../../meter-data/MonsterName.json");
@@ -363,10 +359,13 @@ static MONSTER_NAMES_BOSS: LazyLock<HashMap<String, String>> = LazyLock::new(|| 
 
 impl Skill {
     pub fn get_skill_name(skill_uid: i32) -> String {
-        SKILL_NAMES.get(&skill_uid.to_string()).map_or_else(
-            || format!("UNKNOWN UNKNOWN ({skill_uid})"),
-            |s| format!("{s} ({skill_uid})"),
-        )
+        if skill_uid <= 0 {
+            return String::from("Unknown Skill");
+        }
+
+        skill_names::lookup(skill_uid)
+            .map(|name| format!("{name} ({skill_uid})"))
+            .unwrap_or_else(|| format!("Unknown Skill ({skill_uid})"))
     }
 }
 
