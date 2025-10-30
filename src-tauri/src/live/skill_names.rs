@@ -184,8 +184,8 @@ fn resolve_skill_json_path() -> PathBuf {
         if path.is_absolute() {
             return path;
         }
-        if let Ok(current_dir) = env::current_dir() {
-            return current_dir.join(path);
+        if let Some(found) = resolve_relative_path(path.as_path()) {
+            return found;
         }
         return path;
     }
@@ -196,22 +196,45 @@ fn resolve_skill_json_path() -> PathBuf {
         return default_rel.to_path_buf();
     }
 
+    if let Some(found) = resolve_relative_path(default_rel) {
+        return found;
+    }
+
+    PathBuf::from(default_rel)
+}
+
+fn resolve_relative_path(relative: &Path) -> Option<PathBuf> {
     if let Ok(current_dir) = env::current_dir() {
-        let candidate = current_dir.join(default_rel);
-        if candidate.exists() {
-            return candidate;
+        if let Some(found) = search_upwards(&current_dir, relative) {
+            return Some(found);
         }
     }
 
     if let Ok(mut exe_dir) = env::current_exe() {
         exe_dir.pop();
-        let candidate = exe_dir.join(default_rel);
-        if candidate.exists() {
-            return candidate;
+        if let Some(found) = search_upwards(&exe_dir, relative) {
+            return Some(found);
         }
     }
 
-    PathBuf::from(default_rel)
+    None
+}
+
+fn search_upwards(start: &Path, relative: &Path) -> Option<PathBuf> {
+    let mut current = start.to_path_buf();
+
+    loop {
+        let candidate = current.join(relative);
+        if candidate.exists() {
+            return Some(candidate);
+        }
+
+        if !current.pop() {
+            break;
+        }
+    }
+
+    None
 }
 
 /// Returns true if the current timestamp represents a newer value than the previous one.
