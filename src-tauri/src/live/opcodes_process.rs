@@ -342,10 +342,6 @@ pub fn process_aoi_sync_delta(
                     attributes: serialize_attributes(attacker_entity),
                 });
             }
-            enqueue(DbTask::UpsertSkill {
-                skill_id: skill_uid,
-                name: Some(Skill::get_skill_name(skill_uid)),
-            });
             // Insert heal event
             enqueue(DbTask::InsertHealEvent {
                 timestamp_ms: timestamp_ms as i64,
@@ -459,10 +455,6 @@ pub fn process_aoi_sync_delta(
                     attributes: serialize_attributes(attacker_entity),
                 });
             }
-            enqueue(DbTask::UpsertSkill {
-                skill_id: skill_uid,
-                name: Some(Skill::get_skill_name(skill_uid)),
-            });
             // info!(
             //     "dmg packet: {attacker_uid} to {target_uid}: {actual_value} dmg {} total dmg",
             //     skill.total_value

@@ -16,13 +16,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    skills (skill_id) {
-        skill_id -> Integer,
-        name -> Nullable<Text>,
-    }
-}
-
-diesel::table! {
     encounters (id) {
         id -> Integer,
         started_at_ms -> BigInt,
@@ -157,7 +150,6 @@ diesel::joinable!(encounter_bosses -> encounters (encounter_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     entities,
-    skills,
     encounters,
     damage_events,
     heal_events,
