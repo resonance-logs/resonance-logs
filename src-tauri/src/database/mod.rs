@@ -302,6 +302,21 @@ fn handle_task(
                     .set(e::ended_at_ms.eq(ended_at_ms))
                     .execute(conn)
                     .map_err(|er| er.to_string())?;
+
+                // Update snapshot fields from entities table for any NULL values
+                // This ensures we capture the final state at encounter end
+                diesel::sql_query(
+                    "UPDATE actor_encounter_stats
+                     SET name = COALESCE(name, (SELECT name FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
+                         class_id = COALESCE(class_id, (SELECT class_id FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
+                         ability_score = COALESCE(ability_score, (SELECT ability_score FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
+                         level = COALESCE(level, (SELECT level FROM entities WHERE entity_id = actor_encounter_stats.actor_id))
+                     WHERE encounter_id = ?1
+                       AND (name IS NULL OR class_id IS NULL OR ability_score IS NULL OR level IS NULL)"
+                )
+                .bind::<diesel::sql_types::Integer, _>(id)
+                .execute(conn)
+                .map_err(|er| er.to_string())?;
             }
         }
         DbTask::UpsertEntity {
