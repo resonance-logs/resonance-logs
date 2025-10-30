@@ -232,6 +232,7 @@ pub struct DamageSkillStatRow {
     pub hp_loss_total: i64,
     pub shield_loss_total: i64,
     pub hit_details: String,
+    pub monster_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -250,6 +251,7 @@ pub struct NewDamageSkillStat {
     pub hp_loss_total: i64,
     pub shield_loss_total: i64,
     pub hit_details: String,
+    pub monster_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
@@ -267,6 +269,7 @@ pub struct HealSkillStatRow {
     pub crit_total: i64,
     pub lucky_total: i64,
     pub heal_details: String,
+    pub monster_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -283,6 +286,7 @@ pub struct NewHealSkillStat {
     pub crit_total: i64,
     pub lucky_total: i64,
     pub heal_details: String,
+    pub monster_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]

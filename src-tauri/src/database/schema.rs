@@ -117,6 +117,7 @@ diesel::table! {
         hp_loss_total -> BigInt,
         shield_loss_total -> BigInt,
         hit_details -> Text,
+        monster_name -> Nullable<Text>,
     }
 }
 
@@ -133,6 +134,7 @@ diesel::table! {
         crit_total -> BigInt,
         lucky_total -> BigInt,
         heal_details -> Text,
+        monster_name -> Nullable<Text>,
     }
 }
 

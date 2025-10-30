@@ -779,6 +779,9 @@ fn materialize_damage_skill_stats(
 
         let hit_details_json = serde_json::to_string(&hit_details).map_err(|e| e.to_string())?;
 
+        // Get monster_name from first event (all events in group have same defender)
+        let monster_name = events.first().and_then(|e| e.monster_name.clone());
+
         let new_stat = m::NewDamageSkillStat {
             encounter_id,
             attacker_id,
@@ -793,6 +796,7 @@ fn materialize_damage_skill_stats(
             hp_loss_total,
             shield_loss_total,
             hit_details: hit_details_json,
+            monster_name,
         };
 
         diesel::insert_into(dss::damage_skill_stats)
@@ -914,6 +918,20 @@ fn materialize_heal_skill_stats(
 
         let heal_details_json = serde_json::to_string(&heal_details).map_err(|e| e.to_string())?;
 
+        // Look up target name from entities table if target_id exists
+        let monster_name = if let Some(tid) = target_id {
+            use sch::entities::dsl as en;
+            en::entities
+                .select(en::name)
+                .filter(en::entity_id.eq(tid))
+                .first::<Option<String>>(conn)
+                .optional()
+                .map_err(|e| e.to_string())?
+                .flatten()
+        } else {
+            None
+        };
+
         let new_stat = m::NewHealSkillStat {
             encounter_id,
             healer_id,
@@ -926,6 +944,7 @@ fn materialize_heal_skill_stats(
             crit_total,
             lucky_total,
             heal_details: heal_details_json,
+            monster_name,
         };
 
         diesel::insert_into(hss::heal_skill_stats)
