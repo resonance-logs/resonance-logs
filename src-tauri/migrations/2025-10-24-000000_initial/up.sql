@@ -25,13 +25,6 @@ CREATE TABLE IF NOT EXISTS entities (
 );
 CREATE INDEX IF NOT EXISTS idx_entities_last_seen ON entities(last_seen_ms);
 
--- Skills dictionary, lazily inserted/updated on first use
-CREATE TABLE IF NOT EXISTS skills (
-  skill_id INTEGER PRIMARY KEY,
-  name TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_skills_name ON skills(name);
-
 -- Encounter per fight
 CREATE TABLE IF NOT EXISTS encounters (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

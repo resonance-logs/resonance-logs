@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::database::models as m;
 use crate::database::schema as sch;
 use crate::database::{default_db_path, ensure_parent_dir};
+use crate::live::skill_names;
 use crate::live::commands_models as lc;
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -453,7 +454,6 @@ pub fn get_encounter_player_skills(
     use sch::damage_skill_stats::dsl as dss;
     use sch::encounters::dsl as e;
     use sch::heal_skill_stats::dsl as hss;
-    use sch::skills::dsl as sk;
     use std::collections::HashMap;
 
     // Get encounter timings
@@ -574,27 +574,12 @@ pub fn get_encounter_player_skills(
             entry.5 += stat.lucky_total;
         }
 
-        let skill_ids: Vec<i32> = agg.keys().copied().filter(|k| *k > 0).collect();
-        let mut name_map: HashMap<i32, Option<String>> = HashMap::new();
-        if !skill_ids.is_empty() {
-            let names = sk::skills
-                .filter(sk::skill_id.eq_any(&skill_ids))
-                .select((sk::skill_id, sk::name))
-                .load::<(i32, Option<String>)>(&mut conn)
-                .map_err(|e| e.to_string())?;
-            for (id, name_opt) in names {
-                name_map.insert(id, name_opt);
-            }
-        }
-
         let mut items: Vec<(i32, (i64, i64, i64, i64, i64, i64))> = agg.into_iter().collect();
         items.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
 
         for (skill_id, (total_dmg, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items {
             let name = if skill_id > 0 {
-                name_map
-                    .get(&skill_id)
-                    .and_then(|o| o.clone())
+                skill_names::lookup(skill_id)
                     .unwrap_or_else(|| String::from("Unknown Skill"))
             } else {
                 String::from("Unknown Skill")
@@ -664,27 +649,12 @@ pub fn get_encounter_player_skills(
             entry.5 += stat.lucky_total;
         }
 
-        let skill_ids: Vec<i32> = agg.keys().copied().filter(|k| *k > 0).collect();
-        let mut name_map: HashMap<i32, Option<String>> = HashMap::new();
-        if !skill_ids.is_empty() {
-            let names = sk::skills
-                .filter(sk::skill_id.eq_any(&skill_ids))
-                .select((sk::skill_id, sk::name))
-                .load::<(i32, Option<String>)>(&mut conn)
-                .map_err(|e| e.to_string())?;
-            for (id, name_opt) in names {
-                name_map.insert(id, name_opt);
-            }
-        }
-
         let mut items: Vec<(i32, (i64, i64, i64, i64, i64, i64))> = agg.into_iter().collect();
         items.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
 
         for (skill_id, (total_heal, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items {
             let name = if skill_id > 0 {
-                name_map
-                    .get(&skill_id)
-                    .and_then(|o| o.clone())
+                skill_names::lookup(skill_id)
                     .unwrap_or_else(|| String::from("Unknown Skill"))
             } else {
                 String::from("Unknown Skill")

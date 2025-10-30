@@ -66,13 +66,8 @@ impl EventManager {
                 player_uid,
                 skills_window,
             };
-            match app_handle.emit("skills-update", payload) {
-                Ok(_) => trace!(
-                    "Emitted skills-update event for player {} ({})",
-                    player_uid,
-                    format!("{:?}", metric_type)
-                ),
-                Err(e) => error!("Failed to emit skills-update event: {}", e),
+            if let Err(e) = app_handle.emit("skills-update", payload) {
+                error!("Failed to emit skills-update event: {}", e);
             }
         }
     }

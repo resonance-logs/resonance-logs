@@ -225,11 +225,6 @@ pub enum DbTask {
         attributes: Option<String>,
     },
 
-    UpsertSkill {
-        skill_id: i32,
-        name: Option<String>,
-    },
-
     InsertDamageEvent {
         timestamp_ms: i64,
         attacker_id: i64,
@@ -395,33 +390,6 @@ fn handle_task(
                     attributes: attributes.as_deref(),
                 };
                 diesel::insert_into(en::entities)
-                    .values(&insert)
-                    .execute(conn)
-                    .map_err(|e| e.to_string())?;
-            }
-        }
-        DbTask::UpsertSkill { skill_id, name } => {
-            use sch::skills::dsl as sk;
-            let exists: Option<i32> = sk::skills
-                .select(sk::skill_id)
-                .filter(sk::skill_id.eq(skill_id))
-                .first::<i32>(conn)
-                .optional()
-                .map_err(|e| e.to_string())?;
-            if exists.is_some() {
-                // Update name only if provided
-                if let Some(n) = name.as_deref() {
-                    diesel::update(sk::skills.filter(sk::skill_id.eq(skill_id)))
-                        .set(sk::name.eq(n))
-                        .execute(conn)
-                        .map_err(|e| e.to_string())?;
-                }
-            } else {
-                let insert = m::NewSkill {
-                    skill_id,
-                    name: name.as_deref(),
-                };
-                diesel::insert_into(sk::skills)
                     .values(&insert)
                     .execute(conn)
                     .map_err(|e| e.to_string())?;

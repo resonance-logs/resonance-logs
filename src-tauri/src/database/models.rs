@@ -44,20 +44,6 @@ pub struct UpdateEntity<'a> {
 }
 
 #[derive(Debug, Clone, Queryable, Identifiable, Serialize, Deserialize)]
-#[diesel(table_name = sch::skills, primary_key(skill_id))]
-pub struct SkillRow {
-    pub skill_id: i32,
-    pub name: Option<String>,
-}
-
-#[derive(Debug, Clone, Insertable)]
-#[diesel(table_name = sch::skills)]
-pub struct NewSkill<'a> {
-    pub skill_id: i32,
-    pub name: Option<&'a str>,
-}
-
-#[derive(Debug, Clone, Queryable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = sch::encounters)]
 pub struct EncounterRow {
     pub id: i32,
