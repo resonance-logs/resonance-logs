@@ -102,10 +102,58 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    damage_skill_stats (encounter_id, attacker_id, defender_id, skill_id) {
+        encounter_id -> Integer,
+        attacker_id -> BigInt,
+        defender_id -> Nullable<BigInt>,
+        skill_id -> Integer,
+        hits -> Integer,
+        total_value -> BigInt,
+        crit_hits -> Integer,
+        lucky_hits -> Integer,
+        crit_total -> BigInt,
+        lucky_total -> BigInt,
+        hp_loss_total -> BigInt,
+        shield_loss_total -> BigInt,
+        hit_details -> Text,
+        monster_name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    heal_skill_stats (encounter_id, healer_id, target_id, skill_id) {
+        encounter_id -> Integer,
+        healer_id -> BigInt,
+        target_id -> Nullable<BigInt>,
+        skill_id -> Integer,
+        hits -> Integer,
+        total_value -> BigInt,
+        crit_hits -> Integer,
+        lucky_hits -> Integer,
+        crit_total -> BigInt,
+        lucky_total -> BigInt,
+        heal_details -> Text,
+        monster_name -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    encounter_bosses (encounter_id, monster_name) {
+        encounter_id -> Integer,
+        monster_name -> Text,
+        hits -> Integer,
+        total_damage -> BigInt,
+    }
+}
+
 // Joins
 
 diesel::joinable!(damage_events -> encounters (encounter_id));
 diesel::joinable!(heal_events -> encounters (encounter_id));
+diesel::joinable!(damage_skill_stats -> encounters (encounter_id));
+diesel::joinable!(heal_skill_stats -> encounters (encounter_id));
+diesel::joinable!(encounter_bosses -> encounters (encounter_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     entities,
@@ -114,4 +162,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     damage_events,
     heal_events,
     actor_encounter_stats,
+    damage_skill_stats,
+    heal_skill_stats,
+    encounter_bosses,
 );
