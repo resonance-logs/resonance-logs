@@ -99,7 +99,7 @@ onMount(() => {
 				<tr class="bg-neutral-800">
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-16">ID</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-32">Encounter</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400">Players</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-[400px]">Players</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-24">Duration</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-32">Date</th>
 					<th class="px-3 py-2.5 text-right w-12">
@@ -141,10 +141,17 @@ onMount(() => {
 									<span class="text-neutral-500 text-xs">No bosses</span>
 								{/if}
 							</td>
-							<td class="px-3 py-2 text-sm text-neutral-300">
+							<td class="px-3 py-2 text-sm text-neutral-300 max-w-[400px]">
 								{#if enc.players.length > 0}
-									<div class="flex gap-1 overflow-hidden">
-										{#each enc.players as player}
+									{@const sortedPlayers = [...enc.players].sort((a, b) => {
+										const aHasClass = a.classId !== null && a.classId !== undefined && a.classId !== 0;
+										const bHasClass = b.classId !== null && b.classId !== undefined && b.classId !== 0;
+										if (aHasClass && !bHasClass) return -1;
+										if (!aHasClass && bHasClass) return 1;
+										return 0;
+									})}
+									<div class="flex gap-1 items-center">
+										{#each sortedPlayers.slice(0, 8) as player}
 											<img
 												class="size-7 object-contain flex-shrink-0"
 												src={getClassIcon(getClassName(player.classId))}
@@ -152,6 +159,9 @@ onMount(() => {
 												{@attach tooltip(() => player.name)}
 											/>
 										{/each}
+										{#if enc.players.length > 8}
+											<span class="text-xs text-neutral-400 ml-1">+{enc.players.length - 8} more</span>
+										{/if}
 									</div>
 								{:else}
 									<span class="text-neutral-500 text-xs">No players</span>
