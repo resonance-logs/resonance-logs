@@ -449,11 +449,10 @@ pub fn get_encounter_player_skills(
     skill_type: String,
 ) -> Result<lc::SkillsWindow, String> {
     let mut conn = get_conn()?;
-    use diesel::dsl::{count_star, sum};
     use sch::actor_encounter_stats::dsl as s;
-    use sch::damage_events::dsl as de;
+    use sch::damage_skill_stats::dsl as dss;
     use sch::encounters::dsl as e;
-    use sch::heal_events::dsl as he;
+    use sch::heal_skill_stats::dsl as hss;
     use sch::skills::dsl as sk;
     use std::collections::HashMap;
 
@@ -555,36 +554,27 @@ pub fn get_encounter_player_skills(
     // Aggregate skills depending on skill_type
     let mut skill_rows: Vec<lc::SkillRow> = Vec::new();
 
-    if skill_type == "dps" || skill_type == "tanked" {
-        // Load raw damage events for this actor/encounter and aggregate in Rust to avoid Diesel grouping complexity
-        let raw = de::damage_events
-            .filter(de::encounter_id.eq(encounter_id))
-            .filter(de::attacker_id.eq(actor_id))
-            .select((de::skill_id, de::value, de::is_crit, de::is_lucky))
-            .load::<(Option<i32>, i64, i32, i32)>(&mut conn)
+    if (skill_type == "dps" || skill_type == "tanked") {
+        let stats = dss::damage_skill_stats
+            .filter(dss::encounter_id.eq(encounter_id))
+            .filter(dss::attacker_id.eq(actor_id))
+            .load::<m::DamageSkillStatRow>(&mut conn)
             .map_err(|e| e.to_string())?;
 
-        // aggregate by skill_id
-        use std::collections::hash_map::Entry;
-        let mut agg: HashMap<Option<i32>, (i64, i64, i64)> = HashMap::new(); // skill_id -> (total_dmg, crit_hits, lucky_hits)
-        let mut hits_map: HashMap<Option<i32>, i64> = HashMap::new();
-        for (sid_opt, value, is_crit, is_lucky) in raw {
-            match agg.entry(sid_opt) {
-                Entry::Vacant(e) => {
-                    e.insert((value, is_crit as i64, is_lucky as i64));
-                }
-                Entry::Occupied(mut e) => {
-                    let v = e.get_mut();
-                    v.0 += value;
-                    v.1 += is_crit as i64;
-                    v.2 += is_lucky as i64;
-                }
-            }
-            *hits_map.entry(sid_opt).or_insert(0) += 1;
+        let mut agg: HashMap<i32, (i64, i64, i64, i64, i64, i64)> = HashMap::new();
+        for stat in stats {
+            let entry = agg
+                .entry(stat.skill_id)
+                .or_insert((0, 0, 0, 0, 0, 0));
+            entry.0 += stat.total_value;
+            entry.1 += stat.hits as i64;
+            entry.2 += stat.crit_hits as i64;
+            entry.3 += stat.lucky_hits as i64;
+            entry.4 += stat.crit_total;
+            entry.5 += stat.lucky_total;
         }
 
-        // fetch skill names for non-null skill ids
-        let skill_ids: Vec<i32> = agg.keys().filter_map(|k| *k).collect();
+        let skill_ids: Vec<i32> = agg.keys().copied().filter(|k| *k > 0).collect();
         let mut name_map: HashMap<i32, Option<String>> = HashMap::new();
         if !skill_ids.is_empty() {
             let names = sk::skills
@@ -597,53 +587,57 @@ pub fn get_encounter_player_skills(
             }
         }
 
-        // convert aggregates to SkillRow, sorted by total_dmg desc
-        let mut items: Vec<(Option<i32>, i64, i64, i64, i64)> = agg
-            .into_iter()
-            .map(|(sid_opt, (total_dmg, crit_hits, lucky_hits))| {
-                let hits = *hits_map.get(&sid_opt).unwrap_or(&0);
-                (sid_opt, total_dmg, crit_hits, lucky_hits, hits)
-            })
-            .collect();
-        items.sort_by_key(|t| -t.1);
+        let mut items: Vec<(i32, (i64, i64, i64, i64, i64, i64))> = agg.into_iter().collect();
+        items.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
 
-        for (skill_id_opt, total_dmg, crit_hits, lucky_hits, hits) in items {
-            let name = match skill_id_opt {
-                Some(sid) => name_map
-                    .get(&sid)
+        for (skill_id, (total_dmg, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items {
+            let name = if skill_id > 0 {
+                name_map
+                    .get(&skill_id)
                     .and_then(|o| o.clone())
-                    .unwrap_or_else(|| String::from("Unknown Skill")),
-                None => String::from("Unknown Skill"),
+                    .unwrap_or_else(|| String::from("Unknown Skill"))
+            } else {
+                String::from("Unknown Skill")
             };
 
+            let hits_f = hits as f64;
+            let total_dmg_f = total_dmg as f64;
             let sr = lc::SkillRow {
                 name,
-                total_dmg: total_dmg as u128,
+                total_dmg: total_dmg.max(0) as u128,
                 dps: if duration_secs > 0.0 {
-                    (total_dmg as f64) / duration_secs
+                    total_dmg_f / duration_secs
                 } else {
                     0.0
                 },
                 dmg_pct: if actor_total_dmg > 0 {
-                    (total_dmg as f64) * 100.0 / (actor_total_dmg as f64)
+                    total_dmg_f * 100.0 / (actor_total_dmg as f64)
                 } else {
                     0.0
                 },
                 crit_rate: if hits > 0 {
-                    (crit_hits as f64) / (hits as f64)
+                    (crit_hits as f64) / hits_f
                 } else {
                     0.0
                 },
-                crit_dmg_rate: 0.0,
+                crit_dmg_rate: if total_dmg > 0 {
+                    (crit_total as f64) / total_dmg_f
+                } else {
+                    0.0
+                },
                 lucky_rate: if hits > 0 {
-                    (lucky_hits as f64) / (hits as f64)
+                    (lucky_hits as f64) / hits_f
                 } else {
                     0.0
                 },
-                lucky_dmg_rate: 0.0,
-                hits: hits as u128,
+                lucky_dmg_rate: if total_dmg > 0 {
+                    (lucky_total as f64) / total_dmg_f
+                } else {
+                    0.0
+                },
+                hits: hits.max(0) as u128,
                 hits_per_minute: if duration_secs > 0.0 {
-                    (hits as f64) / (duration_secs / 60.0)
+                    hits_f / (duration_secs / 60.0)
                 } else {
                     0.0
                 },
@@ -651,33 +645,26 @@ pub fn get_encounter_player_skills(
             skill_rows.push(sr);
         }
     } else if skill_type == "heal" {
-        // Load raw heal events and aggregate in Rust
-        let raw = he::heal_events
-            .filter(he::encounter_id.eq(encounter_id))
-            .filter(he::healer_id.eq(actor_id))
-            .select((he::skill_id, he::value, he::is_crit, he::is_lucky))
-            .load::<(Option<i32>, i64, i32, i32)>(&mut conn)
+        let stats = hss::heal_skill_stats
+            .filter(hss::encounter_id.eq(encounter_id))
+            .filter(hss::healer_id.eq(actor_id))
+            .load::<m::HealSkillStatRow>(&mut conn)
             .map_err(|e| e.to_string())?;
 
-        use std::collections::hash_map::Entry;
-        let mut agg: HashMap<Option<i32>, (i64, i64, i64)> = HashMap::new();
-        let mut hits_map: HashMap<Option<i32>, i64> = HashMap::new();
-        for (sid_opt, value, is_crit, is_lucky) in raw {
-            match agg.entry(sid_opt) {
-                Entry::Vacant(e) => {
-                    e.insert((value, is_crit as i64, is_lucky as i64));
-                }
-                Entry::Occupied(mut e) => {
-                    let v = e.get_mut();
-                    v.0 += value;
-                    v.1 += is_crit as i64;
-                    v.2 += is_lucky as i64;
-                }
-            }
-            *hits_map.entry(sid_opt).or_insert(0) += 1;
+        let mut agg: HashMap<i32, (i64, i64, i64, i64, i64, i64)> = HashMap::new();
+        for stat in stats {
+            let entry = agg
+                .entry(stat.skill_id)
+                .or_insert((0, 0, 0, 0, 0, 0));
+            entry.0 += stat.total_value;
+            entry.1 += stat.hits as i64;
+            entry.2 += stat.crit_hits as i64;
+            entry.3 += stat.lucky_hits as i64;
+            entry.4 += stat.crit_total;
+            entry.5 += stat.lucky_total;
         }
 
-        let skill_ids: Vec<i32> = agg.keys().filter_map(|k| *k).collect();
+        let skill_ids: Vec<i32> = agg.keys().copied().filter(|k| *k > 0).collect();
         let mut name_map: HashMap<i32, Option<String>> = HashMap::new();
         if !skill_ids.is_empty() {
             let names = sk::skills
@@ -690,52 +677,57 @@ pub fn get_encounter_player_skills(
             }
         }
 
-        let mut items: Vec<(Option<i32>, i64, i64, i64, i64)> = agg
-            .into_iter()
-            .map(|(sid_opt, (total_heal, crit_hits, lucky_hits))| {
-                let hits = *hits_map.get(&sid_opt).unwrap_or(&0);
-                (sid_opt, total_heal, crit_hits, lucky_hits, hits)
-            })
-            .collect();
-        items.sort_by_key(|t| -t.1);
+        let mut items: Vec<(i32, (i64, i64, i64, i64, i64, i64))> = agg.into_iter().collect();
+        items.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
 
-        for (skill_id_opt, total_heal, crit_hits, lucky_hits, hits) in items {
-            let name = match skill_id_opt {
-                Some(sid) => name_map
-                    .get(&sid)
+        for (skill_id, (total_heal, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items {
+            let name = if skill_id > 0 {
+                name_map
+                    .get(&skill_id)
                     .and_then(|o| o.clone())
-                    .unwrap_or_else(|| String::from("Unknown Skill")),
-                None => String::from("Unknown Skill"),
+                    .unwrap_or_else(|| String::from("Unknown Skill"))
+            } else {
+                String::from("Unknown Skill")
             };
 
+            let hits_f = hits as f64;
+            let total_heal_f = total_heal as f64;
             let sr = lc::SkillRow {
                 name,
-                total_dmg: total_heal as u128,
+                total_dmg: total_heal.max(0) as u128,
                 dps: if duration_secs > 0.0 {
-                    (total_heal as f64) / duration_secs
+                    total_heal_f / duration_secs
                 } else {
                     0.0
                 },
                 dmg_pct: if actor_total_heal > 0 {
-                    (total_heal as f64) * 100.0 / (actor_total_heal as f64)
+                    total_heal_f * 100.0 / (actor_total_heal as f64)
                 } else {
                     0.0
                 },
                 crit_rate: if hits > 0 {
-                    (crit_hits as f64) / (hits as f64)
+                    (crit_hits as f64) / hits_f
                 } else {
                     0.0
                 },
-                crit_dmg_rate: 0.0,
+                crit_dmg_rate: if total_heal > 0 {
+                    (crit_total as f64) / total_heal_f
+                } else {
+                    0.0
+                },
                 lucky_rate: if hits > 0 {
-                    (lucky_hits as f64) / (hits as f64)
+                    (lucky_hits as f64) / hits_f
                 } else {
                     0.0
                 },
-                lucky_dmg_rate: 0.0,
-                hits: hits as u128,
+                lucky_dmg_rate: if total_heal > 0 {
+                    (lucky_total as f64) / total_heal_f
+                } else {
+                    0.0
+                },
+                hits: hits.max(0) as u128,
                 hits_per_minute: if duration_secs > 0.0 {
-                    (hits as f64) / (duration_secs / 60.0)
+                    hits_f / (duration_secs / 60.0)
                 } else {
                     0.0
                 },
