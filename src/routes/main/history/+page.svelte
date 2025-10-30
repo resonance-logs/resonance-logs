@@ -4,6 +4,8 @@
 	import { commands } from '$lib/bindings';
 	import type { EncounterSummaryDto } from '$lib/bindings';
 	import { getClassIcon, tooltip } from '$lib/utils.svelte';
+	import BossAutocomplete from '$lib/components/boss-autocomplete.svelte';
+	import FilterChips from '$lib/components/filter-chips.svelte';
 
 	let encounters = $state<EncounterSummaryDto[]>([]);
 	let errorMsg = $state<string | null>(null);
@@ -13,6 +15,12 @@
 	let page = $state(0); // 0-indexed, page 0 = newest
 	let totalCount = $state(0);
 	let isRefreshing = $state(false);
+
+	// Boss filtering
+	let availableBossNames = $state<string[]>([]);
+	let selectedBosses = $state<string[]>([]);
+	let autocompleteValue = $state('');
+	let isLoadingBossNames = $state(false);
 
 	// Class mapping function
 	function getClassName(classId: number | null): string {
@@ -30,11 +38,29 @@
 		return classMap[classId] ?? "";
 	}
 
+async function loadBossNames() {
+	isLoadingBossNames = true;
+	try {
+		const res = await commands.getUniqueBossNames();
+		if (res.status === 'ok') {
+			availableBossNames = res.data.names ?? [];
+		} else {
+			throw new Error(String(res.error));
+		}
+	} catch (e) {
+		console.error('loadBossNames error', e);
+		availableBossNames = [];
+	} finally {
+		isLoadingBossNames = false;
+	}
+}
+
 async function loadEncounters(p: number = page) {
 	isRefreshing = true;
 	try {
 		const offset = p * pageSize;
-		const res = await commands.getRecentEncounters(pageSize, offset);
+		const bossFilter = selectedBosses.length > 0 ? { names: selectedBosses } : null;
+		const res = await commands.getRecentEncountersFiltered(pageSize, offset, bossFilter);
 		console.log(res)
 
 		if (res.status === 'ok') {
@@ -55,8 +81,26 @@ async function loadEncounters(p: number = page) {
 	}
 }
 
+function addBossFilter(bossName: string) {
+	if (!selectedBosses.includes(bossName)) {
+		selectedBosses = [...selectedBosses, bossName];
+		loadEncounters(0); // Reset to first page when filter changes
+	}
+}
+
+function removeBossFilter(bossName: string) {
+	selectedBosses = selectedBosses.filter(name => name !== bossName);
+	loadEncounters(0); // Reset to first page when filter changes
+}
+
+function clearAllBossFilters() {
+	selectedBosses = [];
+	loadEncounters(0); // Reset to first page when filter changes
+}
+
 onMount(() => {
     console.log('History page mounted, loading encounters...');
+    loadBossNames();
     loadEncounters(0);
 });
 
@@ -92,6 +136,29 @@ onMount(() => {
 	{#if errorMsg}
 		<div class="text-red-400 mb-3 text-sm">{errorMsg}</div>
 	{/if}
+
+	<!-- Boss Filter Section -->
+	<div class="mb-6">
+		<div class="flex flex-col gap-3">
+			<div class="flex items-center gap-3">
+				<label for="boss-filter" class="text-sm font-medium text-neutral-300">Filter by Boss:</label>
+				<div class="flex-1 max-w-md">
+					<BossAutocomplete
+						id="boss-filter"
+						bind:value={autocompleteValue}
+						availableBossNames={availableBossNames}
+						onSelect={addBossFilter}
+						disabled={isLoadingBossNames}
+					/>
+				</div>
+			</div>
+			<FilterChips
+				filters={selectedBosses}
+				onRemove={removeBossFilter}
+				onClearAll={clearAllBossFilters}
+			/>
+		</div>
+	</div>
 
 	<div class="overflow-x-auto rounded border border-neutral-700">
 		<table class="w-full border-collapse">
@@ -240,4 +307,3 @@ onMount(() => {
 		</div>
 	</div>
 </div>
-
