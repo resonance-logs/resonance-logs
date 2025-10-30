@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::time::{Duration, SystemTime};
 
+/// Stores cached skill names and their metadata to minimize JSON reloads.
 #[derive(Default)]
 struct SkillNameCache {
     names: HashMap<i32, String>,
@@ -28,6 +29,7 @@ static SKILL_NAME_CACHE: LazyLock<RwLock<SkillNameCache>> = LazyLock::new(|| {
 const DEFAULT_SKILL_JSON_RELATIVE: &str = "raw-game-files/4_Final/CombinedTranslatedWithManualOverrides.json";
 const SKILL_JSON_ENV: &str = "RESONANCE_LOGS_SKILL_JSON";
 
+/// Returns the best available name for the given skill id, reloading the cache if needed.
 pub fn lookup(skill_id: i32) -> Option<String> {
     let path = resolve_skill_json_path();
     ensure_cache(&path);
@@ -36,6 +38,7 @@ pub fn lookup(skill_id: i32) -> Option<String> {
     cache.names.get(&skill_id).cloned()
 }
 
+/// Ensures the in-memory cache is populated and refreshed when the JSON source changes.
 fn ensure_cache(path: &Path) {
     let metadata = fs::metadata(path);
     let modified = metadata.as_ref().ok().and_then(|m| m.modified().ok());
@@ -84,6 +87,7 @@ fn ensure_cache(path: &Path) {
     }
 }
 
+/// Loads the skill names JSON file and builds a lookup map from id to display name.
 fn load_skill_names(path: &Path) -> Result<HashMap<i32, String>, String> {
     let data = fs::read_to_string(path).map_err(|err| {
         format!(
@@ -122,6 +126,7 @@ fn load_skill_names(path: &Path) -> Result<HashMap<i32, String>, String> {
     Ok(names)
 }
 
+/// Picks the preferred name from a skill entry using the configured priority sequence.
 fn extract_name(entry: &Map<String, Value>) -> Option<String> {
     enum Selector {
         TopLevel(&'static str),
@@ -163,6 +168,7 @@ fn extract_name(entry: &Map<String, Value>) -> Option<String> {
     None
 }
 
+/// Converts a JSON value to a trimmed string if it contains non-empty text.
 fn string_from_value(value: Option<&Value>) -> Option<String> {
     value
         .and_then(Value::as_str)
@@ -171,6 +177,7 @@ fn string_from_value(value: Option<&Value>) -> Option<String> {
         .map(|s| s.to_owned())
 }
 
+/// Resolves the path to the skill names JSON, honoring environment overrides and sensible defaults.
 fn resolve_skill_json_path() -> PathBuf {
     if let Ok(configured) = env::var(SKILL_JSON_ENV) {
         let path = PathBuf::from(configured);
@@ -207,6 +214,7 @@ fn resolve_skill_json_path() -> PathBuf {
     PathBuf::from(default_rel)
 }
 
+/// Returns true if the current timestamp represents a newer value than the previous one.
 fn is_newer_than(current: SystemTime, previous: SystemTime) -> bool {
     match current.duration_since(previous) {
         Ok(duration) => duration > Duration::from_secs(0),
@@ -214,6 +222,7 @@ fn is_newer_than(current: SystemTime, previous: SystemTime) -> bool {
     }
 }
 
+/// Logs an error message only once to avoid spamming repeated failures.
 fn log_once(cache: &mut SkillNameCache, message: String) {
     if cache.last_error.as_ref() != Some(&message) {
         warn!("{}", message);
