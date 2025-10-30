@@ -214,3 +214,92 @@ pub struct NewActorEncounterStat {
     pub boss_crit_total_dealt: i64,
     pub boss_lucky_total_dealt: i64,
 }
+
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::damage_skill_stats, primary_key(encounter_id, attacker_id, defender_id, skill_id))]
+#[diesel(belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct DamageSkillStatRow {
+    pub encounter_id: i32,
+    pub attacker_id: i64,
+    pub defender_id: Option<i64>,
+    pub skill_id: i32,
+    pub hits: i32,
+    pub total_value: i64,
+    pub crit_hits: i32,
+    pub lucky_hits: i32,
+    pub crit_total: i64,
+    pub lucky_total: i64,
+    pub hp_loss_total: i64,
+    pub shield_loss_total: i64,
+    pub hit_details: String,
+}
+
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::damage_skill_stats)]
+pub struct NewDamageSkillStat {
+    pub encounter_id: i32,
+    pub attacker_id: i64,
+    pub defender_id: Option<i64>,
+    pub skill_id: i32,
+    pub hits: i32,
+    pub total_value: i64,
+    pub crit_hits: i32,
+    pub lucky_hits: i32,
+    pub crit_total: i64,
+    pub lucky_total: i64,
+    pub hp_loss_total: i64,
+    pub shield_loss_total: i64,
+    pub hit_details: String,
+}
+
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::heal_skill_stats, primary_key(encounter_id, healer_id, target_id, skill_id))]
+#[diesel(belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct HealSkillStatRow {
+    pub encounter_id: i32,
+    pub healer_id: i64,
+    pub target_id: Option<i64>,
+    pub skill_id: i32,
+    pub hits: i32,
+    pub total_value: i64,
+    pub crit_hits: i32,
+    pub lucky_hits: i32,
+    pub crit_total: i64,
+    pub lucky_total: i64,
+    pub heal_details: String,
+}
+
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::heal_skill_stats)]
+pub struct NewHealSkillStat {
+    pub encounter_id: i32,
+    pub healer_id: i64,
+    pub target_id: Option<i64>,
+    pub skill_id: i32,
+    pub hits: i32,
+    pub total_value: i64,
+    pub crit_hits: i32,
+    pub lucky_hits: i32,
+    pub crit_total: i64,
+    pub lucky_total: i64,
+    pub heal_details: String,
+}
+
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::encounter_bosses, primary_key(encounter_id, monster_name))]
+#[diesel(belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct EncounterBossRow {
+    pub encounter_id: i32,
+    pub monster_name: String,
+    pub hits: i32,
+    pub total_damage: i64,
+}
+
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::encounter_bosses)]
+pub struct NewEncounterBoss {
+    pub encounter_id: i32,
+    pub monster_name: String,
+    pub hits: i32,
+    pub total_damage: i64,
+}
