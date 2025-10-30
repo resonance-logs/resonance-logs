@@ -71,6 +71,7 @@ diesel::table! {
         actor_id -> BigInt,
         name -> Nullable<Text>,
         class_id -> Nullable<Integer>,
+        class_spec -> Nullable<Integer>,
         ability_score -> Nullable<Integer>,
         level -> Nullable<Integer>,
         damage_dealt -> BigInt,

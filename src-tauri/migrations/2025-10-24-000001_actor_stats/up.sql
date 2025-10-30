@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS actor_encounter_stats (
   encounter_id INTEGER NOT NULL,
   actor_id INTEGER NOT NULL,
+  class_spec INTEGER NULL,
   damage_dealt INTEGER NOT NULL DEFAULT 0,
   heal_dealt INTEGER NOT NULL DEFAULT 0,
   damage_taken INTEGER NOT NULL DEFAULT 0,

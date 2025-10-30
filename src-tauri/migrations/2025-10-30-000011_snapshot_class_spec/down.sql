@@ -1,0 +1,1 @@
+-- keep this migration for compatibility

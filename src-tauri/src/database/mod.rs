@@ -308,11 +308,12 @@ fn handle_task(
                 diesel::sql_query(
                     "UPDATE actor_encounter_stats
                      SET name = COALESCE(name, (SELECT name FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
-                         class_id = COALESCE(class_id, (SELECT class_id FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
+                        class_id = COALESCE(class_id, (SELECT class_id FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
+                        class_spec = COALESCE(class_spec, (SELECT class_spec FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
                          ability_score = COALESCE(ability_score, (SELECT ability_score FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
                          level = COALESCE(level, (SELECT level FROM entities WHERE entity_id = actor_encounter_stats.actor_id))
                      WHERE encounter_id = ?1
-                       AND (name IS NULL OR class_id IS NULL OR ability_score IS NULL OR level IS NULL)"
+                      AND (name IS NULL OR class_id IS NULL OR class_spec IS NULL OR ability_score IS NULL OR level IS NULL)"
                 )
                 .bind::<diesel::sql_types::Integer, _>(id)
                 .execute(conn)
@@ -540,6 +541,7 @@ fn upsert_stats_add_damage_dealt(
     diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
                         encounter_id, actor_id, name, class_id, ability_score, level, is_player,
+                        class_spec,
                         damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt,
                         boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt, boss_crit_total_dealt, boss_lucky_total_dealt
                  ) VALUES (
@@ -549,10 +551,12 @@ fn upsert_stats_add_damage_dealt(
                         (SELECT ability_score FROM entities WHERE entity_id = ?2),
                         (SELECT level FROM entities WHERE entity_id = ?2),
                         CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+                        (SELECT class_spec FROM entities WHERE entity_id = ?2),
                         ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13
                  ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
                      name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
-                     class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
+                    class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
+                    class_spec = COALESCE(actor_encounter_stats.class_spec, (SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id)),
                      ability_score = COALESCE(actor_encounter_stats.ability_score, (SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id)),
                      level = COALESCE(actor_encounter_stats.level, (SELECT level FROM entities WHERE entity_id = excluded.actor_id)),
                      damage_dealt = damage_dealt + excluded.damage_dealt,
@@ -599,6 +603,7 @@ fn upsert_stats_add_heal_dealt(
     diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
                         encounter_id, actor_id, name, class_id, ability_score, level, is_player,
+                        class_spec,
                         heal_dealt, hits_heal, crit_hits_heal, lucky_hits_heal, crit_total_heal, lucky_total_heal
                  ) VALUES (
                         ?1, ?2,
@@ -607,10 +612,12 @@ fn upsert_stats_add_heal_dealt(
                         (SELECT ability_score FROM entities WHERE entity_id = ?2),
                         (SELECT level FROM entities WHERE entity_id = ?2),
                         CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+                        (SELECT class_spec FROM entities WHERE entity_id = ?2),
                         ?3, 1, ?4, ?5, ?6, ?7
                  ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
                      name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
-                     class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
+                    class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
+                    class_spec = COALESCE(actor_encounter_stats.class_spec, (SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id)),
                      ability_score = COALESCE(actor_encounter_stats.ability_score, (SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id)),
                      level = COALESCE(actor_encounter_stats.level, (SELECT level FROM entities WHERE entity_id = excluded.actor_id)),
                      heal_dealt = heal_dealt + excluded.heal_dealt,
@@ -645,6 +652,7 @@ fn upsert_stats_add_damage_taken(
     diesel::sql_query(
                 "INSERT INTO actor_encounter_stats (
                         encounter_id, actor_id, name, class_id, ability_score, level, is_player,
+                        class_spec,
                         damage_taken, hits_taken, crit_hits_taken, lucky_hits_taken, crit_total_taken, lucky_total_taken
                  ) VALUES (
                         ?1, ?2,
@@ -653,10 +661,12 @@ fn upsert_stats_add_damage_taken(
                         (SELECT ability_score FROM entities WHERE entity_id = ?2),
                         (SELECT level FROM entities WHERE entity_id = ?2),
                         CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+                        (SELECT class_spec FROM entities WHERE entity_id = ?2),
                         ?3, 1, ?4, ?5, ?6, ?7
                  ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
                      name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
-                     class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
+                    class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
+                    class_spec = COALESCE(actor_encounter_stats.class_spec, (SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id)),
                      ability_score = COALESCE(actor_encounter_stats.ability_score, (SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id)),
                      level = COALESCE(actor_encounter_stats.level, (SELECT level FROM entities WHERE entity_id = excluded.actor_id)),
                      damage_taken = damage_taken + excluded.damage_taken,
