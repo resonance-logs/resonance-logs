@@ -253,9 +253,11 @@ pub fn generate_players_window_heal(encounter: &Encounter) -> PlayersWindow {
                 lucky_stat: entity.lucky(),
                 haste: entity.haste(),
                 mastery: entity.mastery(),
-                element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+                element_flag: entity
+                    .get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
                     .and_then(|v| v.as_int()),
-                energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+                energy_flag: entity
+                    .get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
                     .and_then(|v| v.as_int()),
                 reduction_level: entity.reduction_level(),
             };
@@ -335,9 +337,11 @@ pub fn generate_players_window_tanked(encounter: &Encounter) -> PlayersWindow {
                 lucky_stat: entity.lucky(),
                 haste: entity.haste(),
                 mastery: entity.mastery(),
-                element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+                element_flag: entity
+                    .get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
                     .and_then(|v| v.as_int()),
-                energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+                energy_flag: entity
+                    .get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
                     .and_then(|v| v.as_int()),
                 reduction_level: entity.reduction_level(),
             };
@@ -432,9 +436,11 @@ pub fn generate_skills_window_dps(
             lucky_stat: entity.lucky(),
             haste: entity.haste(),
             mastery: entity.mastery(),
-            element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+            element_flag: entity
+                .get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
                 .and_then(|v| v.as_int()),
-            energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+            energy_flag: entity
+                .get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
                 .and_then(|v| v.as_int()),
             reduction_level: entity.reduction_level(),
         }],
@@ -533,9 +539,11 @@ pub fn generate_skills_window_heal(encounter: &Encounter, player_uid: i64) -> Op
             lucky_stat: entity.lucky(),
             haste: entity.haste(),
             mastery: entity.mastery(),
-            element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+            element_flag: entity
+                .get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
                 .and_then(|v| v.as_int()),
-            energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+            energy_flag: entity
+                .get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
                 .and_then(|v| v.as_int()),
             reduction_level: entity.reduction_level(),
         }],
@@ -621,9 +629,11 @@ pub fn generate_skills_window_tanked(
             lucky_stat: entity.lucky(),
             haste: entity.haste(),
             mastery: entity.mastery(),
-            element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+            element_flag: entity
+                .get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
                 .and_then(|v| v.as_int()),
-            energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+            energy_flag: entity
+                .get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
                 .and_then(|v| v.as_int()),
             reduction_level: entity.reduction_level(),
         }],
@@ -736,9 +746,11 @@ pub fn generate_player_row_filtered(
         lucky_stat: entity.lucky(),
         haste: entity.haste(),
         mastery: entity.mastery(),
-        element_flag: entity.get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
+        element_flag: entity
+            .get_attr(crate::live::opcodes_models::AttrType::ElementFlag)
             .and_then(|v| v.as_int()),
-        energy_flag: entity.get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
+        energy_flag: entity
+            .get_attr(crate::live::opcodes_models::AttrType::EnergyFlag)
             .and_then(|v| v.as_int()),
         reduction_level: entity.reduction_level(),
     })

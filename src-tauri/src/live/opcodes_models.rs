@@ -423,7 +423,8 @@ impl Encounter {
     }
 }
 
-pub mod attr_type { // TOOD: rename some of these to actual attribute names for now, idk.
+pub mod attr_type {
+    // TOOD: rename some of these to actual attribute names for now, idk.
     pub const ATTR_NAME: i32 = 0x01;
     pub const ATTR_ID: i32 = 0x0a;
     pub const ATTR_TEAM_ID: i32 = 0x0b; // Party/raid group number
@@ -724,8 +725,7 @@ impl Entity {
 
     /// Get weapon type as i64.
     pub fn weapon_type(&self) -> Option<i64> {
-        self.get_attr(AttrType::WeaponType)
-            .and_then(|v| v.as_int())
+        self.get_attr(AttrType::WeaponType).and_then(|v| v.as_int())
     }
 
     /// Get resurrection count as i64.
@@ -736,8 +736,7 @@ impl Entity {
 
     /// Get party role as i64.
     pub fn party_role(&self) -> Option<i64> {
-        self.get_attr(AttrType::PartyRole)
-            .and_then(|v| v.as_int())
+        self.get_attr(AttrType::PartyRole).and_then(|v| v.as_int())
     }
 
     /// Get combat state as i64.
@@ -784,8 +783,7 @@ impl Entity {
 
     /// Get buff slot data as i64.
     pub fn buff_slot(&self) -> Option<i64> {
-        self.get_attr(AttrType::BuffSlot)
-            .and_then(|v| v.as_int())
+        self.get_attr(AttrType::BuffSlot).and_then(|v| v.as_int())
     }
 
     /// Assign monster type id and update display name from mapping if available.

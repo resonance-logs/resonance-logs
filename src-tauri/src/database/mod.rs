@@ -307,13 +307,22 @@ fn handle_task(
                 // This ensures we capture the final state at encounter end
                 diesel::sql_query(
                     "UPDATE actor_encounter_stats
-                     SET name = COALESCE(name, (SELECT name FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
-                        class_id = COALESCE(class_id, (SELECT class_id FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
-                        class_spec = COALESCE(class_spec, (SELECT class_spec FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
-                         ability_score = COALESCE(ability_score, (SELECT ability_score FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
-                         level = COALESCE(level, (SELECT level FROM entities WHERE entity_id = actor_encounter_stats.actor_id))
+                     SET name = COALESCE(NULLIF(name, ''), (SELECT name FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
+                        class_id = COALESCE(NULLIF(class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
+                        class_spec = COALESCE(NULLIF(class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
+                         ability_score = COALESCE(NULLIF(ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
+                         level = COALESCE(NULLIF(level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0))
                      WHERE encounter_id = ?1
-                      AND (name IS NULL OR class_id IS NULL OR class_spec IS NULL OR ability_score IS NULL OR level IS NULL)"
+                      AND (name IS NULL
+                           OR name = ''
+                           OR class_id IS NULL
+                           OR class_id = 0
+                           OR class_spec IS NULL
+                           OR class_spec = 0
+                           OR ability_score IS NULL
+                           OR ability_score = 0
+                           OR level IS NULL
+                           OR level = 0)"
                 )
                 .bind::<diesel::sql_types::Integer, _>(id)
                 .execute(conn)
@@ -330,6 +339,11 @@ fn handle_task(
             seen_at_ms,
             attributes,
         } => {
+            let normalized_class_id = class_id.filter(|&cid| cid > 0);
+            let normalized_class_spec = class_spec.filter(|&cs| cs > 0);
+            let normalized_ability_score = ability_score.filter(|&score| score > 0);
+            let normalized_level = level.filter(|&lvl| lvl > 0);
+
             use sch::entities::dsl as en;
             let exists: Option<i64> = en::entities
                 .select(en::entity_id)
@@ -339,11 +353,13 @@ fn handle_task(
                 .map_err(|e| e.to_string())?;
             if exists.is_some() {
                 let update = m::UpdateEntity {
-                    name: name.as_deref(),
-                    class_id,
-                    class_spec,
-                    ability_score,
-                    level,
+                    name: name
+                        .as_deref()
+                        .and_then(|s| (!s.trim().is_empty()).then_some(s)),
+                    class_id: normalized_class_id,
+                    class_spec: normalized_class_spec,
+                    ability_score: normalized_ability_score,
+                    level: normalized_level,
                     last_seen_ms: Some(seen_at_ms),
                     attributes: attributes.as_deref(),
                 };
@@ -354,11 +370,13 @@ fn handle_task(
             } else {
                 let insert = m::NewEntity {
                     entity_id,
-                    name: name.as_deref(),
-                    class_id,
-                    class_spec,
-                    ability_score,
-                    level,
+                    name: name
+                        .as_deref()
+                        .and_then(|s| (!s.trim().is_empty()).then_some(s)),
+                    class_id: normalized_class_id,
+                    class_spec: normalized_class_spec,
+                    ability_score: normalized_ability_score,
+                    level: normalized_level,
                     first_seen_ms: Some(seen_at_ms),
                     last_seen_ms: Some(seen_at_ms),
                     attributes: attributes.as_deref(),
@@ -539,26 +557,26 @@ fn upsert_stats_add_damage_dealt(
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
     let boss_hit = if is_boss { 1_i64 } else { 0_i64 };
     diesel::sql_query(
-                "INSERT INTO actor_encounter_stats (
-                        encounter_id, actor_id, name, class_id, ability_score, level, is_player,
-                        class_spec,
-                        damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt,
-                        boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt, boss_crit_total_dealt, boss_lucky_total_dealt
-                 ) VALUES (
-                        ?1, ?2,
-                        (SELECT name FROM entities WHERE entity_id = ?2),
-                        (SELECT class_id FROM entities WHERE entity_id = ?2),
-                        (SELECT ability_score FROM entities WHERE entity_id = ?2),
-                        (SELECT level FROM entities WHERE entity_id = ?2),
-                        CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
-                        (SELECT class_spec FROM entities WHERE entity_id = ?2),
-                        ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13
-                 ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
-                     name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
-                    class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
-                    class_spec = COALESCE(actor_encounter_stats.class_spec, (SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id)),
-                     ability_score = COALESCE(actor_encounter_stats.ability_score, (SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id)),
-                     level = COALESCE(actor_encounter_stats.level, (SELECT level FROM entities WHERE entity_id = excluded.actor_id)),
+                  "INSERT INTO actor_encounter_stats (
+                       encounter_id, actor_id, name, class_id, ability_score, level, is_player,
+                       class_spec,
+                       damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt,
+                       boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt, boss_crit_total_dealt, boss_lucky_total_dealt
+                   ) VALUES (
+                       ?1, ?2,
+                       (SELECT name FROM entities WHERE entity_id = ?2),
+                       NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
+                       NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
+                       NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
+                       CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+                       NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
+                       ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13
+                   ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
+                    name = COALESCE(NULLIF(actor_encounter_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
+                      class_id = COALESCE(NULLIF(actor_encounter_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                      class_spec = COALESCE(NULLIF(actor_encounter_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                    ability_score = COALESCE(NULLIF(actor_encounter_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                    level = COALESCE(NULLIF(actor_encounter_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
                      damage_dealt = damage_dealt + excluded.damage_dealt,
                      hits_dealt = hits_dealt + excluded.hits_dealt,
                      crit_hits_dealt = crit_hits_dealt + excluded.crit_hits_dealt,
@@ -601,25 +619,25 @@ fn upsert_stats_add_heal_dealt(
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
     diesel::sql_query(
-                "INSERT INTO actor_encounter_stats (
-                        encounter_id, actor_id, name, class_id, ability_score, level, is_player,
-                        class_spec,
-                        heal_dealt, hits_heal, crit_hits_heal, lucky_hits_heal, crit_total_heal, lucky_total_heal
-                 ) VALUES (
-                        ?1, ?2,
-                        (SELECT name FROM entities WHERE entity_id = ?2),
-                        (SELECT class_id FROM entities WHERE entity_id = ?2),
-                        (SELECT ability_score FROM entities WHERE entity_id = ?2),
-                        (SELECT level FROM entities WHERE entity_id = ?2),
-                        CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
-                        (SELECT class_spec FROM entities WHERE entity_id = ?2),
-                        ?3, 1, ?4, ?5, ?6, ?7
-                 ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
-                     name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
-                    class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
-                    class_spec = COALESCE(actor_encounter_stats.class_spec, (SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id)),
-                     ability_score = COALESCE(actor_encounter_stats.ability_score, (SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id)),
-                     level = COALESCE(actor_encounter_stats.level, (SELECT level FROM entities WHERE entity_id = excluded.actor_id)),
+                  "INSERT INTO actor_encounter_stats (
+                       encounter_id, actor_id, name, class_id, ability_score, level, is_player,
+                       class_spec,
+                       heal_dealt, hits_heal, crit_hits_heal, lucky_hits_heal, crit_total_heal, lucky_total_heal
+                   ) VALUES (
+                       ?1, ?2,
+                       (SELECT name FROM entities WHERE entity_id = ?2),
+                       NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
+                       NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
+                       NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
+                       CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+                       NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
+                       ?3, 1, ?4, ?5, ?6, ?7
+                   ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
+                    name = COALESCE(NULLIF(actor_encounter_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
+                      class_id = COALESCE(NULLIF(actor_encounter_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                      class_spec = COALESCE(NULLIF(actor_encounter_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                    ability_score = COALESCE(NULLIF(actor_encounter_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                    level = COALESCE(NULLIF(actor_encounter_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
                      heal_dealt = heal_dealt + excluded.heal_dealt,
                      hits_heal = hits_heal + excluded.hits_heal,
                      crit_hits_heal = crit_hits_heal + excluded.crit_hits_heal,
@@ -650,25 +668,25 @@ fn upsert_stats_add_damage_taken(
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
     diesel::sql_query(
-                "INSERT INTO actor_encounter_stats (
-                        encounter_id, actor_id, name, class_id, ability_score, level, is_player,
-                        class_spec,
-                        damage_taken, hits_taken, crit_hits_taken, lucky_hits_taken, crit_total_taken, lucky_total_taken
-                 ) VALUES (
-                        ?1, ?2,
-                        (SELECT name FROM entities WHERE entity_id = ?2),
-                        (SELECT class_id FROM entities WHERE entity_id = ?2),
-                        (SELECT ability_score FROM entities WHERE entity_id = ?2),
-                        (SELECT level FROM entities WHERE entity_id = ?2),
-                        CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
-                        (SELECT class_spec FROM entities WHERE entity_id = ?2),
-                        ?3, 1, ?4, ?5, ?6, ?7
-                 ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
-                     name = COALESCE(actor_encounter_stats.name, (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
-                    class_id = COALESCE(actor_encounter_stats.class_id, (SELECT class_id FROM entities WHERE entity_id = excluded.actor_id)),
-                    class_spec = COALESCE(actor_encounter_stats.class_spec, (SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id)),
-                     ability_score = COALESCE(actor_encounter_stats.ability_score, (SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id)),
-                     level = COALESCE(actor_encounter_stats.level, (SELECT level FROM entities WHERE entity_id = excluded.actor_id)),
+                  "INSERT INTO actor_encounter_stats (
+                       encounter_id, actor_id, name, class_id, ability_score, level, is_player,
+                       class_spec,
+                       damage_taken, hits_taken, crit_hits_taken, lucky_hits_taken, crit_total_taken, lucky_total_taken
+                   ) VALUES (
+                       ?1, ?2,
+                       (SELECT name FROM entities WHERE entity_id = ?2),
+                       NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
+                       NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
+                       NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
+                       CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+                       NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
+                       ?3, 1, ?4, ?5, ?6, ?7
+                   ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
+                    name = COALESCE(NULLIF(actor_encounter_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
+                      class_id = COALESCE(NULLIF(actor_encounter_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                      class_spec = COALESCE(NULLIF(actor_encounter_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                    ability_score = COALESCE(NULLIF(actor_encounter_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                    level = COALESCE(NULLIF(actor_encounter_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
                      damage_taken = damage_taken + excluded.damage_taken,
                      hits_taken = hits_taken + excluded.hits_taken,
                      crit_hits_taken = crit_hits_taken + excluded.crit_hits_taken,
@@ -812,5 +830,127 @@ mod tests {
         .get_result::<NameRow>(&mut conn)
         .unwrap();
         assert_eq!(row.monster_name.as_deref(), Some("Test Monster"));
+    }
+
+    #[test]
+    fn test_actor_snapshot_updates_identity_fields() {
+        let mut conn = setup_conn();
+
+        let mut enc_opt = None;
+        handle_task(
+            &mut conn,
+            DbTask::BeginEncounter {
+                started_at_ms: 4_200,
+                local_player_id: Some(10),
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
+        let encounter_id = enc_opt.expect("encounter started");
+
+        // Insert entity with unknown identity information (zeros) which should be normalized to NULL.
+        handle_task(
+            &mut conn,
+            DbTask::UpsertEntity {
+                entity_id: 10,
+                name: Some("Mystery Player".into()),
+                class_id: Some(0),
+                class_spec: Some(0),
+                ability_score: Some(0),
+                level: Some(0),
+                seen_at_ms: 4_250,
+                attributes: None,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
+
+        // Trigger stats materialization.
+        handle_task(
+            &mut conn,
+            DbTask::InsertDamageEvent {
+                timestamp_ms: 4_300,
+                attacker_id: 10,
+                defender_id: None,
+                monster_name: None,
+                skill_id: Some(1001),
+                value: 250,
+                is_crit: false,
+                is_lucky: false,
+                hp_loss: 250,
+                shield_loss: 0,
+                is_boss: false,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
+
+        use sch::actor_encounter_stats::dsl as s;
+        let initial_identity: (Option<i32>, Option<i32>, Option<i32>, Option<i32>) =
+            s::actor_encounter_stats
+                .select((s::class_id, s::class_spec, s::ability_score, s::level))
+                .filter(s::encounter_id.eq(encounter_id).and(s::actor_id.eq(10_i64)))
+                .first(&mut conn)
+                .unwrap();
+        assert_eq!(initial_identity, (None, None, None, None));
+
+        // Update entity with real identity values (which should now backfill the snapshot row).
+        handle_task(
+            &mut conn,
+            DbTask::UpsertEntity {
+                entity_id: 10,
+                name: Some("Mystery Player".into()),
+                class_id: Some(2),
+                class_spec: Some(7),
+                ability_score: Some(1_234),
+                level: Some(35),
+                seen_at_ms: 4_400,
+                attributes: None,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
+
+        // A subsequent event should refresh the snapshot immediately.
+        handle_task(
+            &mut conn,
+            DbTask::InsertDamageEvent {
+                timestamp_ms: 4_450,
+                attacker_id: 10,
+                defender_id: None,
+                monster_name: None,
+                skill_id: Some(1002),
+                value: 150,
+                is_crit: true,
+                is_lucky: false,
+                hp_loss: 150,
+                shield_loss: 0,
+                is_boss: false,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
+
+        let refreshed_identity: (Option<i32>, Option<i32>, Option<i32>, Option<i32>) =
+            s::actor_encounter_stats
+                .select((s::class_id, s::class_spec, s::ability_score, s::level))
+                .filter(s::encounter_id.eq(encounter_id).and(s::actor_id.eq(10_i64)))
+                .first(&mut conn)
+                .unwrap();
+        assert_eq!(
+            refreshed_identity,
+            (Some(2), Some(7), Some(1_234), Some(35))
+        );
+
+        // Ending the encounter should also work with fully populated data and leave identity intact.
+        handle_task(
+            &mut conn,
+            DbTask::EndEncounter { ended_at_ms: 4_600 },
+            &mut enc_opt,
+        )
+        .unwrap();
+
+        // Ensure the encounter id has been cleared after ending.
+        assert!(enc_opt.is_none());
     }
 }

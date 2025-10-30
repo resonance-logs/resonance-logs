@@ -11,7 +11,7 @@ pub enum Pkt {
     EnterScene = 0x00000003,
     NotifyLoadSceneEnd = 0x00000004,
     Teleport = 0x00000005,
-    SyncNearEntities = 0x00000006,  // NPCNearbyNotify SyncNearEntities
+    SyncNearEntities = 0x00000006, // NPCNearbyNotify SyncNearEntities
     SyncSceneAttrs = 0x00000007,
     SyncSceneEvents = 0x00000008,
     SyncEntityBehaviorTree = 0x00000009,
@@ -35,10 +35,10 @@ pub enum Pkt {
     // 0x24-0x26 skipped
     NotifyReviveUser = 0x00000027,
     // 0x28-0x2a skipped
-    SyncServerTime = 0x0000002b,         // ServerTimeNotify SyncServerTime
+    SyncServerTime = 0x0000002b, // ServerTimeNotify SyncServerTime
     // 0x2c skipped
-    SyncNearDeltaInfo = 0x0000002d,      // PlayerNearbyNotify SyncNearDeltaInfo
-    SyncToMeDeltaInfo = 0x0000002e,      // PlayerSelfNotify SyncToMeDeltaInfo
+    SyncNearDeltaInfo = 0x0000002d, // PlayerNearbyNotify SyncNearDeltaInfo
+    SyncToMeDeltaInfo = 0x0000002e, // PlayerSelfNotify SyncToMeDeltaInfo
     // 0x2f-0x30 skipped
     NotifyClientKickOff = 0x00000031,
     // 0x32-0x3b skipped

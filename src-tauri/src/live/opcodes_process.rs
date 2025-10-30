@@ -114,16 +114,25 @@ pub fn process_sync_container_data(
         .or_default();
     let char_base = v_data.char_base?;
     target_entity.name = char_base.name?;
-    target_entity.set_attr(AttrType::Name, AttrValue::String(target_entity.name.clone()));
+    target_entity.set_attr(
+        AttrType::Name,
+        AttrValue::String(target_entity.name.clone()),
+    );
 
     // Player names are automatically stored in the database via UpsertEntity tasks
     // No need to maintain a separate cache anymore
     target_entity.entity_type = EEntityType::EntChar;
     target_entity.class_id = v_data.profession_list?.cur_profession_id?;
-    target_entity.set_attr(AttrType::ProfessionId, AttrValue::Int(target_entity.class_id as i64));
+    target_entity.set_attr(
+        AttrType::ProfessionId,
+        AttrValue::Int(target_entity.class_id as i64),
+    );
 
     target_entity.ability_score = char_base.fight_point?;
-    target_entity.set_attr(AttrType::FightPoint, AttrValue::Int(target_entity.ability_score as i64));
+    target_entity.set_attr(
+        AttrType::FightPoint,
+        AttrValue::Int(target_entity.ability_score as i64),
+    );
 
     target_entity.level = v_data.role_level?.level?;
     target_entity.set_attr(AttrType::Level, AttrValue::Int(target_entity.level as i64));
@@ -591,7 +600,10 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                             match String::from_utf8(bytes.to_vec()) {
                                 Ok(player_name) => {
                                     player_entity.name = player_name.clone();
-                                    player_entity.set_attr(AttrType::Name, AttrValue::String(player_name.clone()));
+                                    player_entity.set_attr(
+                                        AttrType::Name,
+                                        AttrValue::String(player_name.clone()),
+                                    );
                                     info! {"Found player {} with UID {}", player_entity.name, target_uid}
 
                                     // Store player in database
@@ -608,492 +620,396 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                                         });
                                     }
                                 }
-                                Err(e) => log::warn!("Failed to decode ATTR_NAME UTF-8 for UID {}: {:?}", target_uid, e),
+                                Err(e) => log::warn!(
+                                    "Failed to decode ATTR_NAME UTF-8 for UID {}: {:?}",
+                                    target_uid,
+                                    e
+                                ),
                             }
                         } else {
                             log::warn!("ATTR_NAME buffer too short for UID {}", target_uid);
                         }
                     }
-                    Err(e) => log::warn!("Failed to decode ATTR_NAME varint for UID {}: {:?}", target_uid, e),
+                    Err(e) => log::warn!(
+                        "Failed to decode ATTR_NAME varint for UID {}: {:?}",
+                        target_uid,
+                        e
+                    ),
                 }
             }
             #[allow(clippy::cast_possible_truncation)]
-            attr_type::ATTR_PROFESSION_ID => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        let value = value as i32;
-                        player_entity.class_id = value;
-                        player_entity.set_attr(AttrType::ProfessionId, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_PROFESSION_ID: {:?}", e),
+            attr_type::ATTR_PROFESSION_ID => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    let value = value as i32;
+                    player_entity.class_id = value;
+                    player_entity.set_attr(AttrType::ProfessionId, AttrValue::Int(value as i64));
                 }
-            }
+                Err(e) => log::warn!("Failed to decode ATTR_PROFESSION_ID: {:?}", e),
+            },
             #[allow(clippy::cast_possible_truncation)]
-            attr_type::ATTR_FIGHT_POINT => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        let value = value as i32;
-                        player_entity.ability_score = value;
-                        player_entity.set_attr(AttrType::FightPoint, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_FIGHT_POINT: {:?}", e),
+            attr_type::ATTR_FIGHT_POINT => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    let value = value as i32;
+                    player_entity.ability_score = value;
+                    player_entity.set_attr(AttrType::FightPoint, AttrValue::Int(value as i64));
                 }
-            }
+                Err(e) => log::warn!("Failed to decode ATTR_FIGHT_POINT: {:?}", e),
+            },
             #[allow(clippy::cast_possible_truncation)]
-            attr_type::ATTR_LEVEL => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        let value = value as i32;
-                        player_entity.level = value;
-                        player_entity.set_attr(AttrType::Level, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_LEVEL: {:?}", e),
+            attr_type::ATTR_LEVEL => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    let value = value as i32;
+                    player_entity.level = value;
+                    player_entity.set_attr(AttrType::Level, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_RANK_LEVEL => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::RankLevel, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_RANK_LEVEL: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_LEVEL: {:?}", e),
+            },
+            attr_type::ATTR_RANK_LEVEL => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::RankLevel, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_CRIT => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::Crit, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_CRIT: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_RANK_LEVEL: {:?}", e),
+            },
+            attr_type::ATTR_CRIT => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::Crit, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_LUCKY => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::Lucky, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_LUCKY: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_CRIT: {:?}", e),
+            },
+            attr_type::ATTR_LUCKY => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::Lucky, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_CURRENT_HP => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::CurrentHp, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_CURRENT_HP: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_LUCKY: {:?}", e),
+            },
+            attr_type::ATTR_CURRENT_HP => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::CurrentHp, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MAX_HP => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MaxHp, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MAX_HP: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_CURRENT_HP: {:?}", e),
+            },
+            attr_type::ATTR_MAX_HP => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MaxHp, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_HASTE => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::Haste, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_HASTE: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MAX_HP: {:?}", e),
+            },
+            attr_type::ATTR_HASTE => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::Haste, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MASTERY => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::Mastery, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MASTERY: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_HASTE: {:?}", e),
+            },
+            attr_type::ATTR_MASTERY => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::Mastery, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ELEMENT_FLAG => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::ElementFlag, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ELEMENT_FLAG: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MASTERY: {:?}", e),
+            },
+            attr_type::ATTR_ELEMENT_FLAG => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::ElementFlag, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ENERGY_FLAG => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::EnergyFlag, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ENERGY_FLAG: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_ELEMENT_FLAG: {:?}", e),
+            },
+            attr_type::ATTR_ENERGY_FLAG => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::EnergyFlag, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_REDUCTION_LEVEL => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::ReductionLevel, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_REDUCTION_LEVEL: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_ENERGY_FLAG: {:?}", e),
+            },
+            attr_type::ATTR_REDUCTION_LEVEL => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::ReductionLevel, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_TEAM_ID => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::TeamId, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_TEAM_ID: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_REDUCTION_LEVEL: {:?}", e),
+            },
+            attr_type::ATTR_TEAM_ID => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::TeamId, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ATTACK_POWER => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::AttackPower, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ATTACK_POWER: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_TEAM_ID: {:?}", e),
+            },
+            attr_type::ATTR_ATTACK_POWER => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::AttackPower, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_DEFENSE_POWER => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::DefensePower, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_DEFENSE_POWER: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_ATTACK_POWER: {:?}", e),
+            },
+            attr_type::ATTR_DEFENSE_POWER => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::DefensePower, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_STAR_LEVEL => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::StarLevel, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_STAR_LEVEL: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_DEFENSE_POWER: {:?}", e),
+            },
+            attr_type::ATTR_STAR_LEVEL => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::StarLevel, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_GEAR_TIER => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::GearTier, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_GEAR_TIER: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_STAR_LEVEL: {:?}", e),
+            },
+            attr_type::ATTR_GEAR_TIER => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::GearTier, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_PVP_RANK => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::PvpRank, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_PVP_RANK: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_GEAR_TIER: {:?}", e),
+            },
+            attr_type::ATTR_PVP_RANK => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::PvpRank, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_TOTAL_POWER => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::TotalPower, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_TOTAL_POWER: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_PVP_RANK: {:?}", e),
+            },
+            attr_type::ATTR_TOTAL_POWER => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::TotalPower, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_PHYSICAL_ATTACK => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::PhysicalAttack, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_PHYSICAL_ATTACK: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_TOTAL_POWER: {:?}", e),
+            },
+            attr_type::ATTR_PHYSICAL_ATTACK => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::PhysicalAttack, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MAGIC_ATTACK => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MagicAttack, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MAGIC_ATTACK: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_PHYSICAL_ATTACK: {:?}", e),
+            },
+            attr_type::ATTR_MAGIC_ATTACK => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MagicAttack, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_WEAPON_TYPE => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::WeaponType, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_WEAPON_TYPE: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MAGIC_ATTACK: {:?}", e),
+            },
+            attr_type::ATTR_WEAPON_TYPE => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::WeaponType, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_RESURRECTION_COUNT => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::ResurrectionCount, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_RESURRECTION_COUNT: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_WEAPON_TYPE: {:?}", e),
+            },
+            attr_type::ATTR_RESURRECTION_COUNT => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity
+                        .set_attr(AttrType::ResurrectionCount, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_PARTY_ROLE => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::PartyRole, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_PARTY_ROLE: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_RESURRECTION_COUNT: {:?}", e),
+            },
+            attr_type::ATTR_PARTY_ROLE => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::PartyRole, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_COMBAT_STATE => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::CombatState, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_COMBAT_STATE: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_PARTY_ROLE: {:?}", e),
+            },
+            attr_type::ATTR_COMBAT_STATE => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::CombatState, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_EQUIPMENT_SLOT_1 => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::EquipmentSlot1, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_EQUIPMENT_SLOT_1: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_COMBAT_STATE: {:?}", e),
+            },
+            attr_type::ATTR_EQUIPMENT_SLOT_1 => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::EquipmentSlot1, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_EQUIPMENT_SLOT_2 => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::EquipmentSlot2, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_EQUIPMENT_SLOT_2: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_EQUIPMENT_SLOT_1: {:?}", e),
+            },
+            attr_type::ATTR_EQUIPMENT_SLOT_2 => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::EquipmentSlot2, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_CURRENT_SHIELD => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::CurrentShield, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_CURRENT_SHIELD: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_EQUIPMENT_SLOT_2: {:?}", e),
+            },
+            attr_type::ATTR_CURRENT_SHIELD => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::CurrentShield, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ELEMENTAL_RES_1 => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::ElementalRes1, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ELEMENTAL_RES_1: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_CURRENT_SHIELD: {:?}", e),
+            },
+            attr_type::ATTR_ELEMENTAL_RES_1 => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::ElementalRes1, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ELEMENTAL_RES_2 => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::ElementalRes2, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ELEMENTAL_RES_2: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_ELEMENTAL_RES_1: {:?}", e),
+            },
+            attr_type::ATTR_ELEMENTAL_RES_2 => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::ElementalRes2, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ELEMENTAL_RES_3 => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::ElementalRes3, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ELEMENTAL_RES_3: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_ELEMENTAL_RES_2: {:?}", e),
+            },
+            attr_type::ATTR_ELEMENTAL_RES_3 => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::ElementalRes3, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_BUFF_SLOT => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::BuffSlot, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_BUFF_SLOT: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_ELEMENTAL_RES_3: {:?}", e),
+            },
+            attr_type::ATTR_BUFF_SLOT => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::BuffSlot, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_GUILD_ID => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::GuildId, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_GUILD_ID: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_BUFF_SLOT: {:?}", e),
+            },
+            attr_type::ATTR_GUILD_ID => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::GuildId, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_GENDER => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::Gender, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_GENDER: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_GUILD_ID: {:?}", e),
+            },
+            attr_type::ATTR_GENDER => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::Gender, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_TOTAL_DEFENSE => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::TotalDefense, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_TOTAL_DEFENSE: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_GENDER: {:?}", e),
+            },
+            attr_type::ATTR_TOTAL_DEFENSE => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::TotalDefense, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ENDURANCE => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::Endurance, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ENDURANCE: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_TOTAL_DEFENSE: {:?}", e),
+            },
+            attr_type::ATTR_ENDURANCE => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::Endurance, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_CHARACTER_TIMESTAMP => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::CharacterTimestamp, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_CHARACTER_TIMESTAMP: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_ENDURANCE: {:?}", e),
+            },
+            attr_type::ATTR_CHARACTER_TIMESTAMP => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity
+                        .set_attr(AttrType::CharacterTimestamp, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_SESSION_TIMESTAMP => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::SessionTimestamp, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_SESSION_TIMESTAMP: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_CHARACTER_TIMESTAMP: {:?}", e),
+            },
+            attr_type::ATTR_SESSION_TIMESTAMP => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity
+                        .set_attr(AttrType::SessionTimestamp, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MOVEMENT_SPEED => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MovementSpeed, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MOVEMENT_SPEED: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_SESSION_TIMESTAMP: {:?}", e),
+            },
+            attr_type::ATTR_MOVEMENT_SPEED => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MovementSpeed, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_TALENT_SPEC => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::TalentSpec, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_TALENT_SPEC: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MOVEMENT_SPEED: {:?}", e),
+            },
+            attr_type::ATTR_TALENT_SPEC => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::TalentSpec, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ELITE_STATUS => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::EliteStatus, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ELITE_STATUS: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_TALENT_SPEC: {:?}", e),
+            },
+            attr_type::ATTR_ELITE_STATUS => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::EliteStatus, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MAX_MP => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MaxMp, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MAX_MP: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_ELITE_STATUS: {:?}", e),
+            },
+            attr_type::ATTR_MAX_MP => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MaxMp, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_STAMINA => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::Stamina, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_STAMINA: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MAX_MP: {:?}", e),
+            },
+            attr_type::ATTR_STAMINA => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::Stamina, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_BUFF_SLOT_2 => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::BuffSlot2, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_BUFF_SLOT_2: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_STAMINA: {:?}", e),
+            },
+            attr_type::ATTR_BUFF_SLOT_2 => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::BuffSlot2, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_BASE_STRENGTH => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::BaseStrength, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_BASE_STRENGTH: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_BUFF_SLOT_2: {:?}", e),
+            },
+            attr_type::ATTR_BASE_STRENGTH => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::BaseStrength, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_COMBAT_MODE => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::CombatMode, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_COMBAT_MODE: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_BASE_STRENGTH: {:?}", e),
+            },
+            attr_type::ATTR_COMBAT_MODE => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::CombatMode, AttrValue::Int(value as i64));
                 }
-            }
+                Err(e) => log::warn!("Failed to decode ATTR_COMBAT_MODE: {:?}", e),
+            },
             attr_type::ATTR_LAST_ACTION_TIMESTAMP => {
                 match prost::encoding::decode_varint(&mut buf) {
                     Ok(value) => {
-                        player_entity.set_attr(AttrType::LastActionTimestamp, AttrValue::Int(value as i64));
+                        player_entity
+                            .set_attr(AttrType::LastActionTimestamp, AttrValue::Int(value as i64));
                     }
                     Err(e) => log::warn!("Failed to decode ATTR_LAST_ACTION_TIMESTAMP: {:?}", e),
                 }
             }
-            attr_type::ATTR_BUFF_SLOT_3 => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::BuffSlot3, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_BUFF_SLOT_3: {:?}", e),
+            attr_type::ATTR_BUFF_SLOT_3 => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::BuffSlot3, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MOUNT_STATUS => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MountStatus, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MOUNT_STATUS: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_BUFF_SLOT_3: {:?}", e),
+            },
+            attr_type::ATTR_MOUNT_STATUS => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MountStatus, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MOUNT_TIMESTAMP => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MountTimestamp, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MOUNT_TIMESTAMP: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MOUNT_STATUS: {:?}", e),
+            },
+            attr_type::ATTR_MOUNT_TIMESTAMP => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MountTimestamp, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MOUNT_SPEED => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MountSpeed, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MOUNT_SPEED: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MOUNT_TIMESTAMP: {:?}", e),
+            },
+            attr_type::ATTR_MOUNT_SPEED => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MountSpeed, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MOUNT_DURATION => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MountDuration, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MOUNT_DURATION: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MOUNT_SPEED: {:?}", e),
+            },
+            attr_type::ATTR_MOUNT_DURATION => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MountDuration, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MIN_ENERGY => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MinEnergy, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MIN_ENERGY: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MOUNT_DURATION: {:?}", e),
+            },
+            attr_type::ATTR_MIN_ENERGY => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MinEnergy, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_MAX_ENERGY => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MaxEnergy, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MAX_ENERGY: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MIN_ENERGY: {:?}", e),
+            },
+            attr_type::ATTR_MAX_ENERGY => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::MaxEnergy, AttrValue::Int(value as i64));
                 }
-            }
-            attr_type::ATTR_ENERGY_REGEN => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::EnergyRegen, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_ENERGY_REGEN: {:?}", e),
+                Err(e) => log::warn!("Failed to decode ATTR_MAX_ENERGY: {:?}", e),
+            },
+            attr_type::ATTR_ENERGY_REGEN => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity.set_attr(AttrType::EnergyRegen, AttrValue::Int(value as i64));
                 }
-            }
+                Err(e) => log::warn!("Failed to decode ATTR_ENERGY_REGEN: {:?}", e),
+            },
             attr_type::ATTR_PHYSICAL_PENETRATION => {
                 match prost::encoding::decode_varint(&mut buf) {
                     Ok(value) => {
-                        player_entity.set_attr(AttrType::PhysicalPenetration, AttrValue::Int(value as i64));
+                        player_entity
+                            .set_attr(AttrType::PhysicalPenetration, AttrValue::Int(value as i64));
                     }
                     Err(e) => log::warn!("Failed to decode ATTR_PHYSICAL_PENETRATION: {:?}", e),
                 }
             }
-            attr_type::ATTR_MAGIC_PENETRATION => {
-                match prost::encoding::decode_varint(&mut buf) {
-                    Ok(value) => {
-                        player_entity.set_attr(AttrType::MagicPenetration, AttrValue::Int(value as i64));
-                    }
-                    Err(e) => log::warn!("Failed to decode ATTR_MAGIC_PENETRATION: {:?}", e),
+            attr_type::ATTR_MAGIC_PENETRATION => match prost::encoding::decode_varint(&mut buf) {
+                Ok(value) => {
+                    player_entity
+                        .set_attr(AttrType::MagicPenetration, AttrValue::Int(value as i64));
                 }
-            }
+                Err(e) => log::warn!("Failed to decode ATTR_MAGIC_PENETRATION: {:?}", e),
+            },
             _ => {
                 // Store unknown attribute IDs with their decoded values
                 // This captures all attributes, even ones we don't explicitly handle yet
-                if attr_id > 0 && !matches!(attr_id, attr_type::ATTR_ID | attr_type::ATTR_REDUCTION_ID) {
+                if attr_id > 0
+                    && !matches!(attr_id, attr_type::ATTR_ID | attr_type::ATTR_REDUCTION_ID)
+                {
                     use crate::live::opcodes_models::AttrValue;
 
                     // Try to decode as varint first (most common)
@@ -1101,7 +1017,8 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                     match prost::encoding::decode_varint(&mut debug_buf) {
                         Ok(val) => {
                             // Store as unknown varint attribute
-                            player_entity.set_attr(AttrType::Unknown(attr_id), AttrValue::Int(val as i64));
+                            player_entity
+                                .set_attr(AttrType::Unknown(attr_id), AttrValue::Int(val as i64));
                             log::trace!("Unknown player attribute ID: 0x{:x} = {}", attr_id, val);
                         }
                         Err(_) => {
@@ -1114,35 +1031,66 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                                         match String::from_utf8(bytes.to_vec()) {
                                             Ok(s) => {
                                                 // Store as unknown string attribute
-                                                player_entity.set_attr(AttrType::Unknown(attr_id), AttrValue::String(s.clone()));
-                                                log::trace!("Unknown player attribute ID: 0x{:x} = \"{}\"", attr_id, s);
+                                                player_entity.set_attr(
+                                                    AttrType::Unknown(attr_id),
+                                                    AttrValue::String(s.clone()),
+                                                );
+                                                log::trace!(
+                                                    "Unknown player attribute ID: 0x{:x} = \"{}\"",
+                                                    attr_id,
+                                                    s
+                                                );
                                             }
                                             Err(_) => {
                                                 // Store as hex string for binary data
-                                                let hex_str: String = raw_bytes.iter()
+                                                let hex_str: String = raw_bytes
+                                                    .iter()
                                                     .map(|b| format!("{:02x}", b))
                                                     .collect::<Vec<_>>()
                                                     .join("");
-                                                player_entity.set_attr(AttrType::Unknown(attr_id), AttrValue::String(format!("0x{}", hex_str)));
-                                                log::trace!("Unknown player attribute ID: 0x{:x} = hex {}", attr_id, hex_str);
+                                                player_entity.set_attr(
+                                                    AttrType::Unknown(attr_id),
+                                                    AttrValue::String(format!("0x{}", hex_str)),
+                                                );
+                                                log::trace!(
+                                                    "Unknown player attribute ID: 0x{:x} = hex {}",
+                                                    attr_id,
+                                                    hex_str
+                                                );
                                             }
                                         }
                                     } else {
-                                        let hex_str: String = raw_bytes.iter()
+                                        let hex_str: String = raw_bytes
+                                            .iter()
                                             .map(|b| format!("{:02x}", b))
                                             .collect::<Vec<_>>()
                                             .join("");
-                                        player_entity.set_attr(AttrType::Unknown(attr_id), AttrValue::String(format!("0x{}", hex_str)));
-                                        log::trace!("Unknown player attribute ID: 0x{:x} = hex {}", attr_id, hex_str);
+                                        player_entity.set_attr(
+                                            AttrType::Unknown(attr_id),
+                                            AttrValue::String(format!("0x{}", hex_str)),
+                                        );
+                                        log::trace!(
+                                            "Unknown player attribute ID: 0x{:x} = hex {}",
+                                            attr_id,
+                                            hex_str
+                                        );
                                     }
                                 }
                                 Err(_) => {
-                                    let hex_str: String = raw_bytes.iter()
+                                    let hex_str: String = raw_bytes
+                                        .iter()
                                         .map(|b| format!("{:02x}", b))
                                         .collect::<Vec<_>>()
                                         .join("");
-                                    player_entity.set_attr(AttrType::Unknown(attr_id), AttrValue::String(format!("0x{}", hex_str)));
-                                    log::trace!("Unknown player attribute ID: 0x{:x} = hex {}", attr_id, hex_str);
+                                    player_entity.set_attr(
+                                        AttrType::Unknown(attr_id),
+                                        AttrValue::String(format!("0x{}", hex_str)),
+                                    );
+                                    log::trace!(
+                                        "Unknown player attribute ID: 0x{:x} = hex {}",
+                                        attr_id,
+                                        hex_str
+                                    );
                                 }
                             }
                         }
