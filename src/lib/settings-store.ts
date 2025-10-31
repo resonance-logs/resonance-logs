@@ -15,6 +15,8 @@ export const DEFAULT_STATS = {
   hitsPerMinute: false,
 };
 
+export type ShortcutSettingId = keyof typeof DEFAULT_SETTINGS.shortcuts;
+
 const DEFAULT_SETTINGS = {
   general: {
     showYourName: "Show Your Name",
@@ -42,6 +44,7 @@ const DEFAULT_SETTINGS = {
     toggleClickthrough: "",
     resetEncounter: "",
     hardReset: "",
+    toggleBossHp: "",
   },
   live: {
     dpsPlayers: { ...DEFAULT_STATS },
