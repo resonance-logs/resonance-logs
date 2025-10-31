@@ -32,6 +32,7 @@ pub struct RecentEncountersResult {
 pub struct EncounterFiltersDto {
     pub boss_names: Option<Vec<String>>,
     pub player_name: Option<String>,
+    pub player_names: Option<Vec<String>>,
     pub class_ids: Option<Vec<i32>>,
     pub date_from_ms: Option<i64>,
     pub date_to_ms: Option<i64>,
@@ -40,6 +41,12 @@ pub struct EncounterFiltersDto {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BossNamesResult {
+    pub names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerNamesResult {
     pub names: Vec<String>,
 }
 
@@ -117,6 +124,35 @@ pub fn get_unique_boss_names() -> Result<BossNamesResult, String> {
 
 #[tauri::command]
 #[specta::specta]
+pub fn get_player_names_filtered(prefix: String) -> Result<PlayerNamesResult, String> {
+    // Only query if prefix is at least 3 characters
+    if prefix.trim().len() < 3 {
+        return Ok(PlayerNamesResult { names: vec![] });
+    }
+
+    let mut conn = get_conn()?;
+    use sch::actor_encounter_stats::dsl as s;
+    use std::collections::HashSet;
+
+    let pattern = format!("%{}%", prefix.trim());
+    let player_names: Vec<String> = s::actor_encounter_stats
+        .select(s::name)
+        .filter(s::is_player.eq(1))
+        .filter(s::name.is_not_null())
+        .filter(s::name.like(pattern))
+        .load::<Option<String>>(&mut conn)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .flatten()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    Ok(PlayerNamesResult { names: player_names })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn get_recent_encounters_filtered(
     limit: i32,
     offset: i32,
@@ -153,6 +189,25 @@ pub fn get_recent_encounters_filtered(
                     existing.retain(|id| boss_ids.contains(id));
                 } else {
                     encounter_id_filters = Some(boss_ids);
+                }
+            }
+        }
+
+        if let Some(ref player_names) = filter.player_names {
+            if !player_names.is_empty() {
+                let player_encounter_ids: HashSet<i32> = s::actor_encounter_stats
+                    .filter(s::is_player.eq(1))
+                    .filter(s::name.eq_any(player_names))
+                    .select(s::encounter_id)
+                    .load::<i32>(&mut conn)
+                    .map_err(|e| e.to_string())?
+                    .into_iter()
+                    .collect();
+
+                if let Some(existing) = &mut encounter_id_filters {
+                    existing.retain(|id| player_encounter_ids.contains(id));
+                } else {
+                    encounter_id_filters = Some(player_encounter_ids);
                 }
             }
         }

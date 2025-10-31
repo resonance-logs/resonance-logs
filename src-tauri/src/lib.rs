@@ -39,6 +39,7 @@ pub fn run() {
             live::commands::set_boss_only_dps,
             database::commands::get_recent_encounters,
             database::commands::get_unique_boss_names,
+            database::commands::get_player_names_filtered,
             database::commands::get_recent_encounters_filtered,
             database::commands::get_encounter_actor_stats,
             database::commands::get_encounter_by_id,

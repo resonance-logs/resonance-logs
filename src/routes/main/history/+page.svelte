@@ -4,7 +4,7 @@
 	import { commands } from '$lib/bindings';
 	import type { EncounterSummaryDto, EncounterFiltersDto } from '$lib/bindings';
 	import { getClassIcon, tooltip } from '$lib/utils.svelte';
-	import BossAutocomplete from '$lib/components/boss-autocomplete.svelte';
+	import UnifiedSearch from '$lib/components/unified-search.svelte';
 	import FilterChips from '$lib/components/filter-chips.svelte';
 
 	const CLASS_MAP: Record<number, string> = {
@@ -38,14 +38,15 @@
 	let totalCount = $state(0);
 	let isRefreshing = $state(false);
 
-	// Boss filtering
+	// Unified search (boss and player names)
 	let availableBossNames = $state<string[]>([]);
 	let selectedBosses = $state<string[]>([]);
-	let autocompleteValue = $state('');
+	let selectedPlayerNames = $state<string[]>([]);
+	let searchValue = $state('');
+	let searchType = $state<'boss' | 'player'>('boss');
 	let isLoadingBossNames = $state(false);
 
-	// Player & advanced filters
-	let playerNameQuery = $state('');
+	// Advanced filters
 	let showAdvancedFilters = $state(false);
 	let selectedClassIds = $state<number[]>([]);
 	let classFilterDraft = $state<number[]>([]);
@@ -85,7 +86,6 @@
 		isRefreshing = true;
 		try {
 			const offset = p * pageSize;
-			const trimmedPlayerName = playerNameQuery.trim();
 
 			let fromTimestamp: number | null = null;
 			if (dateFrom) {
@@ -103,7 +103,8 @@
 
 			const filterPayload: EncounterFiltersDto = {
 				bossNames: selectedBosses.length > 0 ? selectedBosses : null,
-				playerName: trimmedPlayerName !== '' ? trimmedPlayerName : null,
+				playerName: null,
+				playerNames: selectedPlayerNames.length > 0 ? selectedPlayerNames : null,
 				classIds: selectedClassIds.length > 0 ? selectedClassIds : null,
 				dateFromMs: fromTimestamp,
 				dateToMs: toTimestamp
@@ -111,7 +112,7 @@
 
 			const hasFilters =
 				filterPayload.bossNames !== null ||
-				filterPayload.playerName !== null ||
+				filterPayload.playerNames !== null ||
 				filterPayload.classIds !== null ||
 				filterPayload.dateFromMs !== null ||
 				filterPayload.dateToMs !== null;
@@ -140,10 +141,17 @@
 		}
 	}
 
-	function addBossFilter(bossName: string) {
-		if (!selectedBosses.includes(bossName)) {
-			selectedBosses = [...selectedBosses, bossName];
-			loadEncounters(0);
+	function handleSearchSelect(name: string, type: 'boss' | 'player') {
+		if (type === 'boss') {
+			if (!selectedBosses.includes(name)) {
+				selectedBosses = [...selectedBosses, name];
+				loadEncounters(0);
+			}
+		} else {
+			if (!selectedPlayerNames.includes(name)) {
+				selectedPlayerNames = [...selectedPlayerNames, name];
+				loadEncounters(0);
+			}
 		}
 	}
 
@@ -157,19 +165,13 @@
 		loadEncounters(0);
 	}
 
-	function handlePlayerSearch() {
+	function removePlayerNameFilter(playerName: string) {
+		selectedPlayerNames = selectedPlayerNames.filter((name) => name !== playerName);
 		loadEncounters(0);
 	}
 
-	function handlePlayerKeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter') {
-			event.preventDefault();
-			handlePlayerSearch();
-		}
-	}
-
-	function clearPlayerNameFilter() {
-		playerNameQuery = '';
+	function clearAllPlayerNameFilters() {
+		selectedPlayerNames = [];
 		loadEncounters(0);
 	}
 
@@ -336,59 +338,50 @@
 		<div class="text-red-400 mb-3 text-sm">{errorMsg}</div>
 	{/if}
 
-	<!-- Boss Filter Section -->
+	<!-- Unified Search Section (Boss or Player) -->
 	<div class="mb-6">
 		<div class="flex flex-col gap-3">
 			<div class="flex items-center gap-3">
-				<label for="boss-filter" class="text-sm font-medium text-neutral-300">Filter by Boss:</label>
+				<label for="unified-search" class="text-sm font-medium text-neutral-300">
+					Search:
+				</label>
 				<div class="flex-1 max-w-md">
-					<BossAutocomplete
-						id="boss-filter"
-						bind:value={autocompleteValue}
+					<UnifiedSearch
+						id="unified-search"
+						bind:value={searchValue}
+						bind:searchType={searchType}
 						availableBossNames={availableBossNames}
-						onSelect={addBossFilter}
+						onSelect={handleSearchSelect}
 						disabled={isLoadingBossNames}
 					/>
 				</div>
 			</div>
-			<FilterChips
-				filters={selectedBosses}
-				onRemove={removeBossFilter}
-				onClearAll={clearAllBossFilters}
-			/>
+			{#if selectedBosses.length > 0}
+				<div>
+					<div class="text-xs font-medium text-neutral-400 mb-1">Bosses:</div>
+					<FilterChips
+						filters={selectedBosses}
+						onRemove={removeBossFilter}
+						onClearAll={clearAllBossFilters}
+					/>
+				</div>
+			{/if}
+			{#if selectedPlayerNames.length > 0}
+				<div>
+					<div class="text-xs font-medium text-neutral-400 mb-1">Players:</div>
+					<FilterChips
+						filters={selectedPlayerNames}
+						onRemove={removePlayerNameFilter}
+						onClearAll={clearAllPlayerNameFilters}
+					/>
+				</div>
+			{/if}
 		</div>
 	</div>
 
-	<!-- Player search & advanced filters -->
+	<!-- Advanced filters -->
 	<div class="mb-6">
 		<div class="flex flex-wrap items-end gap-3">
-			<div class="flex flex-col gap-1">
-				<label for="player-filter" class="text-sm font-medium text-neutral-300">Filter by Player:</label>
-				<div class="flex items-center gap-2">
-					<input
-						id="player-filter"
-						type="text"
-						bind:value={playerNameQuery}
-						onkeydown={handlePlayerKeydown}
-						placeholder="Enter player name..."
-						class="w-64 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded text-neutral-300 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-					/>
-					<button
-						onclick={handlePlayerSearch}
-						class="px-3 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-					>
-						Search
-					</button>
-					{#if playerNameQuery.trim() !== ''}
-						<button
-							onclick={clearPlayerNameFilter}
-							class="px-2 py-2 text-sm font-medium rounded text-neutral-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
-						>
-							Clear
-						</button>
-					{/if}
-				</div>
-			</div>
 			<div class="relative">
 				<button
 					bind:this={filterButtonRef}
@@ -401,7 +394,7 @@
 				{#if showAdvancedFilters}
 					<div
 						bind:this={filterMenuRef}
-						class="absolute right-0 z-20 mt-2 w-80 rounded border border-neutral-700 bg-neutral-900 p-4 shadow-xl"
+						class="absolute left-0 z-20 mt-2 w-80 rounded border border-neutral-700 bg-neutral-900 p-4 shadow-xl"
 					>
 						<div class="space-y-4">
 							<div>
