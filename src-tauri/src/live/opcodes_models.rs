@@ -401,6 +401,10 @@ impl Encounter {
             entity.dmg_to_target.clear();
             entity.skill_dmg_to_target.clear();
 
+            // Clear stale HP attributes for monsters so new encounters don't reuse old boss health
+            entity.attributes.remove(&AttrType::CurrentHp);
+            entity.attributes.remove(&AttrType::MaxHp);
+
             // Healing
             entity.total_heal = 0;
             entity.crit_total_heal = 0;
