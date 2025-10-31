@@ -82,7 +82,6 @@ build-tauri:
       - src-tauri/target/release/bundle/
       - src-tauri/target/debug/bundle/
       - release_body.txt
-    expire_in: 1 week
 
 release-job:
   stage: release
