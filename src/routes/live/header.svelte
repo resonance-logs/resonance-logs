@@ -9,6 +9,7 @@
   import PointerIcon from "virtual:icons/lucide/pointer";
   import SettingsIcon from "virtual:icons/lucide/settings";
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
+  import CrownIcon from "virtual:icons/lucide/crown";
 
   import { onMount, tick } from "svelte";
   import { onEncounterUpdate, onResetEncounter, resetEncounter, togglePauseEncounter, setBossOnlyDps, type HeaderInfo } from "$lib/api";
@@ -102,6 +103,7 @@
     fightStartTimestampMs: 0,
   });
   let isEncounterPaused = $state(false);
+  let bossOnlyDpsEnabled = $derived(SETTINGS.general.state.bossOnlyDps);
   // const {
   //   screenshotDiv,
   // }: {
@@ -117,6 +119,12 @@
       await mainWindow?.setFocus();
       await emitTo("main", "navigate", "/main/settings");
     }
+  }
+
+  function toggleBossOnlyDamage() {
+    const nextValue = !SETTINGS.general.state.bossOnlyDps;
+    SETTINGS.general.state.bossOnlyDps = nextValue;
+    void setBossOnlyDps(nextValue);
   }
 </script>
 
@@ -150,8 +158,31 @@
         <PauseIcon {@attach tooltip(() => "Pause Encounter")} />
       {/if}
     </button>
+    <button
+      class="boss-only-toggle"
+      class:boss-only-active={bossOnlyDpsEnabled}
+      aria-pressed={bossOnlyDpsEnabled}
+      onclick={toggleBossOnlyDamage}
+      {@attach tooltip(() => (bossOnlyDpsEnabled ? "Boss Only Damage Enabled" : "Enable Boss Only Damage"))}
+    >
+      <CrownIcon />
+    </button>
     <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon /></button>
     <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon /></button>
     <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon /></button>
   </span>
 </header>
+
+<style>
+  .boss-only-toggle {
+    transition: color 150ms ease;
+  }
+
+  .boss-only-toggle:hover {
+    color: #facc15;
+  }
+
+  .boss-only-toggle.boss-only-active {
+    color: #facc15;
+  }
+</style>
