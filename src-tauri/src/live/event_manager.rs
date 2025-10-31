@@ -1,4 +1,4 @@
-use crate::live::commands_models::{HeaderInfo, PlayerRow, PlayersWindow, SkillRow, SkillsWindow};
+use crate::live::commands_models::{BossHealth, HeaderInfo, PlayerRow, PlayersWindow, SkillRow, SkillsWindow};
 use crate::live::opcodes_models::{Encounter, Entity, Skill, class};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::{error, info, trace};
@@ -811,11 +811,39 @@ pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<He
         encounter.total_dmg
     };
 
+    let mut bosses: Vec<BossHealth> = encounter
+        .entity_uid_to_entity
+        .iter()
+        .filter_map(|(&uid, entity)| {
+            if entity.is_boss() {
+                let name = if !entity.name.is_empty() {
+                    entity.name.clone()
+                } else if let Some(packet_name) = &entity.monster_name_packet {
+                    packet_name.clone()
+                } else {
+                    format!("Boss {uid}")
+                };
+
+                Some(BossHealth {
+                    uid,
+                    name,
+                    current_hp: entity.hp(),
+                    max_hp: entity.max_hp(),
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    bosses.sort_by_key(|boss| boss.uid);
+
     #[allow(clippy::cast_precision_loss)]
     Some(HeaderInfo {
         total_dps: nan_is_zero(total_scope_dmg as f64 / time_elapsed_secs),
         total_dmg: total_scope_dmg,
         elapsed_ms: time_elapsed_ms,
         fight_start_timestamp_ms: encounter.time_fight_start_ms,
+        bosses,
     })
 }

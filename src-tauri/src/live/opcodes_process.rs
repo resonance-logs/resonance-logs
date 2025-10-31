@@ -3,7 +3,7 @@ use crate::database::{DbTask, enqueue, now_ms};
 use crate::live::opcodes_models::class::{
     ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
 };
-use crate::live::opcodes_models::{Encounter, Entity, Skill, attr_type};
+use crate::live::opcodes_models::{AttrType, AttrValue, Encounter, Entity, Skill, attr_type};
 use crate::packets::utils::BinaryReader;
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
@@ -1118,6 +1118,16 @@ fn process_monster_attrs(monster_entity: &mut Entity, attrs: Vec<Attr>) {
                     if monster_entity.monster_type_id.is_none() {
                         monster_entity.name = name;
                     }
+                }
+            }
+            attr_type::ATTR_CURRENT_HP => {
+                if let Ok(value) = prost::encoding::decode_varint(&mut raw_bytes.as_slice()) {
+                    monster_entity.set_attr(AttrType::CurrentHp, AttrValue::Int(value as i64));
+                }
+            }
+            attr_type::ATTR_MAX_HP => {
+                if let Ok(value) = prost::encoding::decode_varint(&mut raw_bytes.as_slice()) {
+                    monster_entity.set_attr(AttrType::MaxHp, AttrValue::Int(value as i64));
                 }
             }
             _ => {}

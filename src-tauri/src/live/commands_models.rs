@@ -4,11 +4,21 @@ use window_vibrancy::apply_blur;
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct BossHealth {
+    pub uid: i64,
+    pub name: String,
+    pub current_hp: Option<i64>,
+    pub max_hp: Option<i64>,
+}
+
+#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct HeaderInfo {
     pub total_dps: f64,
     pub total_dmg: u128,
     pub elapsed_ms: u128,
     pub fight_start_timestamp_ms: u128, // Unix timestamp when fight started
+    pub bosses: Vec<BossHealth>,
 }
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]

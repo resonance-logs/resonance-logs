@@ -3,11 +3,19 @@ import { invoke } from "@tauri-apps/api/core";
 import { commands } from "./bindings";
 
 // Type definitions for event payloads
+export type BossHealth = {
+  uid: number;
+  name: string;
+  currentHp: number | null;
+  maxHp: number | null;
+};
+
 export type HeaderInfo = {
   totalDps: number;
   totalDmg: number;
   elapsedMs: number;
   fightStartTimestampMs: number; // Unix timestamp when fight started
+  bosses: BossHealth[];
 };
 
 export type PlayerRow = {
