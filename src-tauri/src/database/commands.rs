@@ -7,6 +7,7 @@ use crate::database::{default_db_path, ensure_parent_dir};
 use crate::live::skill_names;
 use crate::live::commands_models as lc;
 
+
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EncounterSummaryDto {
@@ -24,6 +25,22 @@ pub struct EncounterSummaryDto {
 pub struct RecentEncountersResult {
     pub rows: Vec<EncounterSummaryDto>,
     pub total_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EncounterFiltersDto {
+    pub boss_names: Option<Vec<String>>,
+    pub player_name: Option<String>,
+    pub class_ids: Option<Vec<i32>>,
+    pub date_from_ms: Option<i64>,
+    pub date_to_ms: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct BossNamesResult {
+    pub names: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -80,6 +97,201 @@ fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
 
 #[tauri::command]
 #[specta::specta]
+pub fn get_unique_boss_names() -> Result<BossNamesResult, String> {
+    let mut conn = get_conn()?;
+    use sch::encounter_bosses::dsl as eb;
+    use std::collections::HashSet;
+
+    // Use the materialized encounter_bosses table (damage_events is deprecated)
+    let boss_names: Vec<String> = eb::encounter_bosses
+        .select(eb::monster_name)
+        .load::<String>(&mut conn)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    Ok(BossNamesResult { names: boss_names })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_recent_encounters_filtered(
+    limit: i32,
+    offset: i32,
+    filters: Option<EncounterFiltersDto>,
+) -> Result<RecentEncountersResult, String> {
+    let mut conn = get_conn()?;
+    use sch::encounters::dsl as e;
+    use sch::encounter_bosses::dsl as eb;
+    use sch::actor_encounter_stats::dsl as s;
+    use std::collections::HashSet;
+
+    // Start with base query for encounters
+    let mut encounter_query = e::encounters
+        .filter(e::ended_at_ms.is_not_null())
+        .into_boxed();
+    let mut count_query = e::encounters
+        .filter(e::ended_at_ms.is_not_null())
+        .into_boxed();
+
+    let mut encounter_id_filters: Option<HashSet<i32>> = None;
+
+    if let Some(ref filter) = filters {
+        if let Some(ref boss_names) = filter.boss_names {
+            if !boss_names.is_empty() {
+                let boss_ids: HashSet<i32> = eb::encounter_bosses
+                    .filter(eb::monster_name.eq_any(boss_names))
+                    .select(eb::encounter_id)
+                    .load::<i32>(&mut conn)
+                    .map_err(|e| e.to_string())?
+                    .into_iter()
+                    .collect();
+
+                if let Some(existing) = &mut encounter_id_filters {
+                    existing.retain(|id| boss_ids.contains(id));
+                } else {
+                    encounter_id_filters = Some(boss_ids);
+                }
+            }
+        }
+
+        if let Some(ref player_name) = filter.player_name {
+            let trimmed = player_name.trim();
+            if !trimmed.is_empty() {
+                let pattern = format!("%{}%", trimmed);
+                let player_ids: HashSet<i32> = s::actor_encounter_stats
+                    .filter(s::is_player.eq(1))
+                    .filter(s::name.is_not_null())
+                    .filter(s::name.like(pattern))
+                    .select(s::encounter_id)
+                    .load::<i32>(&mut conn)
+                    .map_err(|e| e.to_string())?
+                    .into_iter()
+                    .collect();
+
+                if let Some(existing) = &mut encounter_id_filters {
+                    existing.retain(|id| player_ids.contains(id));
+                } else {
+                    encounter_id_filters = Some(player_ids);
+                }
+            }
+        }
+
+        if let Some(ref class_ids) = filter.class_ids {
+            if !class_ids.is_empty() {
+                let class_filters: Vec<Option<i32>> = class_ids.iter().map(|id| Some(*id)).collect();
+                let class_encounter_ids: HashSet<i32> = s::actor_encounter_stats
+                    .filter(s::is_player.eq(1))
+                    .filter(s::class_id.is_not_null())
+                    .filter(s::class_id.eq_any(class_filters))
+                    .select(s::encounter_id)
+                    .load::<i32>(&mut conn)
+                    .map_err(|e| e.to_string())?
+                    .into_iter()
+                    .collect();
+
+                if let Some(existing) = &mut encounter_id_filters {
+                    existing.retain(|id| class_encounter_ids.contains(id));
+                } else {
+                    encounter_id_filters = Some(class_encounter_ids);
+                }
+            }
+        }
+
+        if let Some(date_from_ms) = filter.date_from_ms {
+            encounter_query = encounter_query.filter(e::started_at_ms.ge(date_from_ms));
+            count_query = count_query.filter(e::started_at_ms.ge(date_from_ms));
+        }
+
+        if let Some(date_to_ms) = filter.date_to_ms {
+            encounter_query = encounter_query.filter(e::started_at_ms.le(date_to_ms));
+            count_query = count_query.filter(e::started_at_ms.le(date_to_ms));
+        }
+    }
+
+    let encounter_id_vec = encounter_id_filters.map(|set| set.into_iter().collect::<Vec<_>>());
+
+    if let Some(ref ids) = encounter_id_vec {
+        if ids.is_empty() {
+            return Ok(RecentEncountersResult {
+                rows: Vec::new(),
+                total_count: 0,
+            });
+        }
+        encounter_query = encounter_query.filter(e::id.eq_any(ids.clone()));
+        count_query = count_query.filter(e::id.eq_any(ids.clone()));
+    }
+
+    // Get encounter rows
+    let rows: Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>)> = encounter_query
+        .order(e::started_at_ms.desc())
+        .select((
+            e::id,
+            e::started_at_ms,
+            e::ended_at_ms,
+            e::total_dmg,
+            e::total_heal,
+        ))
+        .limit(limit as i64)
+        .offset(offset as i64)
+        .load(&mut conn)
+        .map_err(|er| er.to_string())?;
+
+    // Get total count for pagination
+    let total_count: i64 = count_query
+        .count()
+        .get_result(&mut conn)
+        .map_err(|er| er.to_string())?;
+
+    // Collect boss and player data for each encounter
+    let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
+
+    for (id, started, ended, td, th) in rows {
+        // Get unique boss names from the materialized encounter_bosses
+        let boss_names: Vec<String> = eb::encounter_bosses
+            .filter(eb::encounter_id.eq(id))
+            .select(eb::monster_name)
+            .load::<String>(&mut conn)
+            .map_err(|er| er.to_string())?
+            .into_iter()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        // Get unique player names and class_ids from actor_encounter_stats where is_player=1
+        let player_data: Vec<PlayerInfoDto> = s::actor_encounter_stats
+            .filter(s::encounter_id.eq(id))
+            .filter(s::is_player.eq(1))
+            .select((s::name, s::class_id))
+            .load::<(Option<String>, Option<i32>)>(&mut conn)
+            .map_err(|er| er.to_string())?
+            .into_iter()
+            .filter_map(|(name, class_id)| name.map(|n| PlayerInfoDto { name: n, class_id }))
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        mapped.push(EncounterSummaryDto {
+            id,
+            started_at_ms: started,
+            ended_at_ms: ended,
+            total_dmg: td.unwrap_or(0),
+            total_heal: th.unwrap_or(0),
+            bosses: boss_names,
+            players: player_data,
+        });
+    }
+
+    Ok(RecentEncountersResult {
+        rows: mapped,
+        total_count,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncountersResult, String> {
     let mut conn = get_conn()?;
     use sch::encounters::dsl as e;
@@ -109,18 +321,16 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
 
     for (id, started, ended, td, th) in rows {
         use sch::actor_encounter_stats::dsl as s;
-        use sch::damage_events::dsl as de;
+        use sch::encounter_bosses::dsl as eb;
         use std::collections::HashSet;
 
         // Get unique boss names from damage_events where is_boss=1
-        let boss_names: Vec<String> = de::damage_events
-            .filter(de::encounter_id.eq(id))
-            .filter(de::is_boss.eq(1))
-            .select(de::monster_name)
-            .load::<Option<String>>(&mut conn)
+        let boss_names: Vec<String> = eb::encounter_bosses
+            .filter(eb::encounter_id.eq(id))
+            .select(eb::monster_name)
+            .load::<String>(&mut conn)
             .map_err(|er| er.to_string())?
             .into_iter()
-            .filter_map(|n| n)
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
@@ -379,7 +589,7 @@ pub fn get_recent_encounters_with_details(
 ) -> Result<Vec<EncounterWithDetailsDto>, String> {
     let mut conn = get_conn()?;
     use sch::actor_encounter_stats::dsl as s;
-    use sch::damage_events::dsl as de;
+    use sch::encounter_bosses::dsl as eb;
     use sch::encounters::dsl as e;
     use std::collections::HashSet;
 
@@ -402,15 +612,13 @@ pub fn get_recent_encounters_with_details(
     let mut results = Vec::new();
 
     for (id, started_at_ms, ended_at_ms, total_dmg, total_heal) in encounter_rows {
-        // Get unique boss names from damage_events where is_boss=1
-        let boss_names: Vec<String> = de::damage_events
-            .filter(de::encounter_id.eq(id))
-            .filter(de::is_boss.eq(1))
-            .select(de::monster_name)
-            .load::<Option<String>>(&mut conn)
+        // Get unique boss names from the materialized encounter_bosses
+        let boss_names: Vec<String> = eb::encounter_bosses
+            .filter(eb::encounter_id.eq(id))
+            .select(eb::monster_name)
+            .load::<String>(&mut conn)
             .map_err(|er| er.to_string())?
             .into_iter()
-            .filter_map(|n| n)
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();

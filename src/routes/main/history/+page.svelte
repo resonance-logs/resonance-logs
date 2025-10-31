@@ -2,8 +2,32 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { commands } from '$lib/bindings';
-	import type { EncounterSummaryDto } from '$lib/bindings';
+	import type { EncounterSummaryDto, EncounterFiltersDto } from '$lib/bindings';
 	import { getClassIcon, tooltip } from '$lib/utils.svelte';
+	import BossAutocomplete from '$lib/components/boss-autocomplete.svelte';
+	import FilterChips from '$lib/components/filter-chips.svelte';
+
+	const CLASS_MAP: Record<number, string> = {
+		1: 'Stormblade',
+		2: 'Frost Mage',
+		4: 'Wind Knight',
+		5: 'Verdant Oracle',
+		9: 'Heavy Guardian',
+		11: 'Marksman',
+		12: 'Shield Knight',
+		13: 'Beat Performer'
+	};
+
+	const classOptions = Object.entries(CLASS_MAP).map(([id, name]) => ({
+		id: Number(id),
+		name
+	}));
+
+	function getTodayIso(): string {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		return today.toISOString().slice(0, 10);
+	}
 
 	let encounters = $state<EncounterSummaryDto[]>([]);
 	let errorMsg = $state<string | null>(null);
@@ -14,51 +38,267 @@
 	let totalCount = $state(0);
 	let isRefreshing = $state(false);
 
-	// Class mapping function
+	// Boss filtering
+	let availableBossNames = $state<string[]>([]);
+	let selectedBosses = $state<string[]>([]);
+	let autocompleteValue = $state('');
+	let isLoadingBossNames = $state(false);
+
+	// Player & advanced filters
+	let playerNameQuery = $state('');
+	let showAdvancedFilters = $state(false);
+	let selectedClassIds = $state<number[]>([]);
+	let classFilterDraft = $state<number[]>([]);
+	let dateFrom = $state('');
+	let dateTo = $state('');
+	let dateFromDraft = $state('');
+	let dateToDraft = $state('');
+	let dateFromDraftTouched = $state(false);
+	let dateToDraftTouched = $state(false);
+
+	let filterMenuRef: HTMLDivElement | null = null;
+	let filterButtonRef: HTMLButtonElement | null = null;
+
 	function getClassName(classId: number | null): string {
-		if (!classId) return "";
-		const classMap: Record<number, string> = {
-			1: "Stormblade",
-			2: "Frost Mage",
-			4: "Wind Knight",
-			5: "Verdant Oracle",
-			9: "Heavy Guardian",
-			11: "Marksman",
-			12: "Shield Knight",
-			13: "Beat Performer",
-		};
-		return classMap[classId] ?? "";
+		if (!classId) return '';
+		return CLASS_MAP[classId] ?? '';
 	}
 
-async function loadEncounters(p: number = page) {
-	isRefreshing = true;
-	try {
-		const offset = p * pageSize;
-		const res = await commands.getRecentEncounters(pageSize, offset);
-		console.log(res)
-
-		if (res.status === 'ok') {
-			encounters = res.data.rows ?? [];
-			totalCount = res.data.totalCount ?? 0;
-			errorMsg = null;
-			page = p;
-		} else {
-			throw new Error(String(res.error));
+	async function loadBossNames() {
+		isLoadingBossNames = true;
+		try {
+			const res = await commands.getUniqueBossNames();
+			if (res.status === 'ok') {
+				availableBossNames = res.data.names ?? [];
+			} else {
+				throw new Error(String(res.error));
+			}
+		} catch (e) {
+			console.error('loadBossNames error', e);
+			availableBossNames = [];
+		} finally {
+			isLoadingBossNames = false;
 		}
-	} catch (e) {
-		console.error('loadEncounters error', e);
-		errorMsg = String(e);
-		encounters = [];
-		totalCount = 0;
-	} finally {
-		isRefreshing = false;
 	}
-}
 
-onMount(() => {
-    console.log('History page mounted, loading encounters...');
-    loadEncounters(0);
-});
+	async function loadEncounters(p: number = page) {
+		isRefreshing = true;
+		try {
+			const offset = p * pageSize;
+			const trimmedPlayerName = playerNameQuery.trim();
+
+			let fromTimestamp: number | null = null;
+			if (dateFrom) {
+				const fromDate = new Date(dateFrom);
+				fromDate.setHours(0, 0, 0, 0);
+				fromTimestamp = fromDate.getTime();
+			}
+
+			let toTimestamp: number | null = null;
+			if (dateTo) {
+				const toDate = new Date(dateTo);
+				toDate.setHours(23, 59, 59, 999);
+				toTimestamp = toDate.getTime();
+			}
+
+			const filterPayload: EncounterFiltersDto = {
+				bossNames: selectedBosses.length > 0 ? selectedBosses : null,
+				playerName: trimmedPlayerName !== '' ? trimmedPlayerName : null,
+				classIds: selectedClassIds.length > 0 ? selectedClassIds : null,
+				dateFromMs: fromTimestamp,
+				dateToMs: toTimestamp
+			};
+
+			const hasFilters =
+				filterPayload.bossNames !== null ||
+				filterPayload.playerName !== null ||
+				filterPayload.classIds !== null ||
+				filterPayload.dateFromMs !== null ||
+				filterPayload.dateToMs !== null;
+
+			const res = await commands.getRecentEncountersFiltered(
+				pageSize,
+				offset,
+				hasFilters ? filterPayload : null
+			);
+
+			if (res.status === 'ok') {
+				encounters = res.data.rows ?? [];
+				totalCount = res.data.totalCount ?? 0;
+				errorMsg = null;
+				page = p;
+			} else {
+				throw new Error(String(res.error));
+			}
+		} catch (e) {
+			console.error('loadEncounters error', e);
+			errorMsg = String(e);
+			encounters = [];
+			totalCount = 0;
+		} finally {
+			isRefreshing = false;
+		}
+	}
+
+	function addBossFilter(bossName: string) {
+		if (!selectedBosses.includes(bossName)) {
+			selectedBosses = [...selectedBosses, bossName];
+			loadEncounters(0);
+		}
+	}
+
+	function removeBossFilter(bossName: string) {
+		selectedBosses = selectedBosses.filter((name) => name !== bossName);
+		loadEncounters(0);
+	}
+
+	function clearAllBossFilters() {
+		selectedBosses = [];
+		loadEncounters(0);
+	}
+
+	function handlePlayerSearch() {
+		loadEncounters(0);
+	}
+
+	function handlePlayerKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			handlePlayerSearch();
+		}
+	}
+
+	function clearPlayerNameFilter() {
+		playerNameQuery = '';
+		loadEncounters(0);
+	}
+
+	function toggleAdvancedFilters() {
+		if (!showAdvancedFilters) {
+			classFilterDraft = [...selectedClassIds];
+			const today = getTodayIso();
+			dateFromDraft = dateFrom || today;
+			dateToDraft = dateTo || today;
+			dateFromDraftTouched = dateFrom !== '';
+			dateToDraftTouched = dateTo !== '';
+		}
+		showAdvancedFilters = !showAdvancedFilters;
+	}
+
+	function cancelAdvancedFilters() {
+		classFilterDraft = [...selectedClassIds];
+		const today = getTodayIso();
+		dateFromDraft = dateFrom || today;
+		dateToDraft = dateTo || today;
+		dateFromDraftTouched = dateFrom !== '';
+		dateToDraftTouched = dateTo !== '';
+		showAdvancedFilters = false;
+	}
+
+	function resetDraftFilters() {
+		classFilterDraft = [];
+		const today = getTodayIso();
+		dateFromDraft = today;
+		dateToDraft = today;
+		dateFromDraftTouched = false;
+		dateToDraftTouched = false;
+	}
+
+	function toggleDraftClass(classId: number, checked: boolean) {
+		if (checked) {
+			if (!classFilterDraft.includes(classId)) {
+				classFilterDraft = [...classFilterDraft, classId];
+			}
+		} else {
+			classFilterDraft = classFilterDraft.filter((id) => id !== classId);
+		}
+	}
+
+	function onDraftClassChange(classId: number, event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		toggleDraftClass(classId, input.checked);
+	}
+
+	function applyAdvancedFilters() {
+		let normalizedFrom = dateFromDraftTouched ? dateFromDraft : '';
+		let normalizedTo = dateToDraftTouched ? dateToDraft : '';
+
+		if (normalizedFrom && normalizedTo && normalizedTo < normalizedFrom) {
+			[normalizedFrom, normalizedTo] = [normalizedTo, normalizedFrom];
+		}
+
+		selectedClassIds = [...classFilterDraft];
+		dateFrom = normalizedFrom;
+		dateTo = normalizedTo;
+		const today = getTodayIso();
+		dateFromDraft = normalizedFrom || today;
+		dateToDraft = normalizedTo || today;
+		dateFromDraftTouched = normalizedFrom !== '';
+		dateToDraftTouched = normalizedTo !== '';
+		showAdvancedFilters = false;
+		loadEncounters(0);
+	}
+
+	function clearClassAndDateFilters() {
+		selectedClassIds = [];
+		classFilterDraft = [];
+		dateFrom = '';
+		dateTo = '';
+		const today = getTodayIso();
+		dateFromDraft = today;
+		dateToDraft = today;
+		dateFromDraftTouched = false;
+		dateToDraftTouched = false;
+		showAdvancedFilters = false;
+		loadEncounters(0);
+	}
+
+	function removeClassFilter(classId: number) {
+		selectedClassIds = selectedClassIds.filter((id) => id !== classId);
+		classFilterDraft = classFilterDraft.filter((id) => id !== classId);
+		loadEncounters(0);
+	}
+
+	function clearDateFilters() {
+		dateFrom = '';
+		dateTo = '';
+		const today = getTodayIso();
+		dateFromDraft = today;
+		dateToDraft = today;
+		dateFromDraftTouched = false;
+		dateToDraftTouched = false;
+		loadEncounters(0);
+	}
+
+	onMount(() => {
+		loadBossNames();
+		loadEncounters(0);
+
+		function handleDocumentClick(event: MouseEvent) {
+			const target = event.target as HTMLElement;
+			if (
+				showAdvancedFilters &&
+				filterMenuRef &&
+				!filterMenuRef.contains(target) &&
+				filterButtonRef &&
+				!filterButtonRef.contains(target)
+			) {
+				classFilterDraft = [...selectedClassIds];
+				const today = getTodayIso();
+				dateFromDraft = dateFrom || today;
+				dateToDraft = dateTo || today;
+				dateFromDraftTouched = dateFrom !== '';
+				dateToDraftTouched = dateTo !== '';
+				showAdvancedFilters = false;
+			}
+		}
+
+		document.addEventListener('click', handleDocumentClick);
+
+		return () => {
+			document.removeEventListener('click', handleDocumentClick);
+		};
+	});
 
 	function fmtDuration(startMs: number, endMs?: number | null) {
 		const end = endMs ?? Date.now();
@@ -71,27 +311,194 @@ onMount(() => {
 	function fmtDate(ms: number) {
 		try {
 			const date = new Date(ms);
-			return date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-		} catch { return String(ms); }
+			return date.toLocaleDateString('en-CA');
+		} catch {
+			return String(ms);
+		}
 	}
 
 	function fmtTime(ms: number) {
 		try {
 			const date = new Date(ms);
 			return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-		} catch { return String(ms); }
+		} catch {
+			return String(ms);
+		}
 	}
 
 	async function onView(enc: EncounterSummaryDto) {
-			goto(`/main/history/${enc.id}`);
-		}
-
+		goto(`/main/history/${enc.id}`);
+	}
 </script>
 
 <div class="p-6">
 	{#if errorMsg}
 		<div class="text-red-400 mb-3 text-sm">{errorMsg}</div>
 	{/if}
+
+	<!-- Boss Filter Section -->
+	<div class="mb-6">
+		<div class="flex flex-col gap-3">
+			<div class="flex items-center gap-3">
+				<label for="boss-filter" class="text-sm font-medium text-neutral-300">Filter by Boss:</label>
+				<div class="flex-1 max-w-md">
+					<BossAutocomplete
+						id="boss-filter"
+						bind:value={autocompleteValue}
+						availableBossNames={availableBossNames}
+						onSelect={addBossFilter}
+						disabled={isLoadingBossNames}
+					/>
+				</div>
+			</div>
+			<FilterChips
+				filters={selectedBosses}
+				onRemove={removeBossFilter}
+				onClearAll={clearAllBossFilters}
+			/>
+		</div>
+	</div>
+
+	<!-- Player search & advanced filters -->
+	<div class="mb-6">
+		<div class="flex flex-wrap items-end gap-3">
+			<div class="flex flex-col gap-1">
+				<label for="player-filter" class="text-sm font-medium text-neutral-300">Filter by Player:</label>
+				<div class="flex items-center gap-2">
+					<input
+						id="player-filter"
+						type="text"
+						bind:value={playerNameQuery}
+						onkeydown={handlePlayerKeydown}
+						placeholder="Enter player name..."
+						class="w-64 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded text-neutral-300 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					/>
+					<button
+						onclick={handlePlayerSearch}
+						class="px-3 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+					>
+						Search
+					</button>
+					{#if playerNameQuery.trim() !== ''}
+						<button
+							onclick={clearPlayerNameFilter}
+							class="px-2 py-2 text-sm font-medium rounded text-neutral-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
+						>
+							Clear
+						</button>
+					{/if}
+				</div>
+			</div>
+			<div class="relative">
+				<button
+					bind:this={filterButtonRef}
+					onclick={toggleAdvancedFilters}
+					class="px-3 py-2 text-sm font-medium rounded bg-neutral-800 border border-neutral-700 text-neutral-200 hover:text-white hover:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+					aria-expanded={showAdvancedFilters}
+				>
+					Advanced Filters
+				</button>
+				{#if showAdvancedFilters}
+					<div
+						bind:this={filterMenuRef}
+						class="absolute right-0 z-20 mt-2 w-80 rounded border border-neutral-700 bg-neutral-900 p-4 shadow-xl"
+					>
+						<div class="space-y-4">
+							<div>
+								<h4 class="mb-2 text-sm font-semibold text-neutral-100">Classes</h4>
+								<div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+									{#each classOptions as option}
+										<label class="flex items-center gap-2 text-sm text-neutral-200">
+											<input
+												type="checkbox"
+												checked={classFilterDraft.includes(option.id)}
+												onchange={(event) => onDraftClassChange(option.id, event)}
+												class="size-4 rounded border-neutral-600 bg-neutral-800"
+											/>
+											<span>{option.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+							<div class="grid gap-2">
+								<h4 class="text-sm font-semibold text-neutral-100">Date Range</h4>
+								<label class="text-xs uppercase tracking-wide text-neutral-500">From</label>
+								<input
+									type="date"
+									bind:value={dateFromDraft}
+									class="px-3 py-2 rounded border border-neutral-700 bg-neutral-800 text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+								/>
+								<label class="text-xs uppercase tracking-wide text-neutral-500">To</label>
+								<input
+									type="date"
+									bind:value={dateToDraft}
+									class="px-3 py-2 rounded border border-neutral-700 bg-neutral-800 text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+								/>
+							</div>
+							<div class="flex items-center justify-between gap-2 pt-2">
+								<button
+									onclick={resetDraftFilters}
+									class="text-sm text-neutral-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
+								>
+									Reset
+								</button>
+								<div class="flex gap-2">
+									<button
+										onclick={cancelAdvancedFilters}
+										class="px-3 py-1.5 text-sm rounded border border-neutral-700 text-neutral-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
+									>
+										Cancel
+									</button>
+									<button
+										onclick={applyAdvancedFilters}
+										class="px-3 py-1.5 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+									>
+										Apply
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+		{#if selectedClassIds.length > 0 || dateFrom || dateTo}
+			<div class="mt-3 flex flex-wrap items-center gap-2 text-sm text-neutral-200">
+				{#each selectedClassIds as classId}
+					<span class="inline-flex items-center gap-1 rounded bg-neutral-800 px-2 py-1">
+						{CLASS_MAP[classId]}
+						<button
+							onclick={() => removeClassFilter(classId)}
+							class="text-neutral-400 hover:text-red-300 focus:outline-none"
+							aria-label={`Remove ${CLASS_MAP[classId]} class filter`}
+						>
+							✕
+						</button>
+					</span>
+				{/each}
+				{#if dateFrom || dateTo}
+					<span class="inline-flex items-center gap-1 rounded bg-neutral-800 px-2 py-1">
+						Date: {dateFrom || 'Any'} – {dateTo || 'Any'}
+						<button
+							onclick={clearDateFilters}
+							class="text-neutral-400 hover:text-red-300 focus:outline-none"
+							aria-label="Clear date filters"
+						>
+							✕
+						</button>
+					</span>
+				{/if}
+				{#if selectedClassIds.length > 0 || dateFrom || dateTo}
+					<button
+						onclick={clearClassAndDateFilters}
+						class="ml-auto text-sm text-neutral-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
+					>
+						Clear advanced filters
+					</button>
+				{/if}
+			</div>
+		{/if}
+	</div>
 
 	<div class="overflow-x-auto rounded border border-neutral-700">
 		<table class="w-full border-collapse">
@@ -240,4 +647,3 @@ onMount(() => {
 		</div>
 	</div>
 </div>
-
