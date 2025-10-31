@@ -75,9 +75,9 @@ async getUniqueBossNames() : Promise<Result<BossNamesResult, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getRecentEncountersFiltered(limit: number, offset: number, bossFilter: BossFilterDto | null) : Promise<Result<RecentEncountersResult, string>> {
+async getRecentEncountersFiltered(limit: number, offset: number, filters: EncounterFiltersDto | null) : Promise<Result<RecentEncountersResult, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_recent_encounters_filtered", { limit, offset, bossFilter }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_recent_encounters_filtered", { limit, offset, filters }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -144,8 +144,8 @@ async getPlayerNameCommand(uid: number) : Promise<Result<string | null, string>>
 /** user-defined types **/
 
 export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; classId: number | null; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number; bossDamageDealt: number; bossHitsDealt: number; bossCritHitsDealt: number; bossLuckyHitsDealt: number; bossCritTotalDealt: number; bossLuckyTotalDealt: number }
-export type BossFilterDto = { names: string[] }
 export type BossNamesResult = { names: string[] }
+export type EncounterFiltersDto = { bossNames: string[] | null; playerName: string | null; classIds: number[] | null; dateFromMs: number | null; dateToMs: number | null }
 export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number; bosses: string[]; players: PlayerInfoDto[] }
 export type PlayerInfoDto = { name: string; classId: number | null }
 export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number; rankLevel: number | null; currentHp: number | null; maxHp: number | null; critStat: number | null; luckyStat: number | null; haste: number | null; mastery: number | null; elementFlag: number | null; energyFlag: number | null; reductionLevel: number | null }

@@ -7,6 +7,7 @@ use crate::database::{default_db_path, ensure_parent_dir};
 use crate::live::skill_names;
 use crate::live::commands_models as lc;
 
+
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EncounterSummaryDto {
@@ -28,8 +29,12 @@ pub struct RecentEncountersResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub struct BossFilterDto {
-    pub names: Vec<String>,
+pub struct EncounterFiltersDto {
+    pub boss_names: Option<Vec<String>>,
+    pub player_name: Option<String>,
+    pub class_ids: Option<Vec<i32>>,
+    pub date_from_ms: Option<i64>,
+    pub date_to_ms: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -115,7 +120,7 @@ pub fn get_unique_boss_names() -> Result<BossNamesResult, String> {
 pub fn get_recent_encounters_filtered(
     limit: i32,
     offset: i32,
-    boss_filter: Option<BossFilterDto>,
+    filters: Option<EncounterFiltersDto>,
 ) -> Result<RecentEncountersResult, String> {
     let mut conn = get_conn()?;
     use sch::encounters::dsl as e;
@@ -127,23 +132,96 @@ pub fn get_recent_encounters_filtered(
     let mut encounter_query = e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .into_boxed();
+    let mut count_query = e::encounters
+        .filter(e::ended_at_ms.is_not_null())
+        .into_boxed();
 
-    // If boss filter is provided, we need to filter encounters that contain any of the specified bosses
-    if let Some(ref filter) = boss_filter {
-        if !filter.names.is_empty() {
-            // Get encounter IDs that have any of the specified bosses
-            let filtered_encounter_ids: Vec<i32> = eb::encounter_bosses
-                .filter(eb::monster_name.eq_any(&filter.names))
-                .select(eb::encounter_id)
-                .load::<i32>(&mut conn)
-                .map_err(|e| e.to_string())?
-                .into_iter()
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect();
+    let mut encounter_id_filters: Option<HashSet<i32>> = None;
 
-            encounter_query = encounter_query.filter(e::id.eq_any(filtered_encounter_ids));
+    if let Some(ref filter) = filters {
+        if let Some(ref boss_names) = filter.boss_names {
+            if !boss_names.is_empty() {
+                let boss_ids: HashSet<i32> = eb::encounter_bosses
+                    .filter(eb::monster_name.eq_any(boss_names))
+                    .select(eb::encounter_id)
+                    .load::<i32>(&mut conn)
+                    .map_err(|e| e.to_string())?
+                    .into_iter()
+                    .collect();
+
+                if let Some(existing) = &mut encounter_id_filters {
+                    existing.retain(|id| boss_ids.contains(id));
+                } else {
+                    encounter_id_filters = Some(boss_ids);
+                }
+            }
         }
+
+        if let Some(ref player_name) = filter.player_name {
+            let trimmed = player_name.trim();
+            if !trimmed.is_empty() {
+                let pattern = format!("%{}%", trimmed);
+                let player_ids: HashSet<i32> = s::actor_encounter_stats
+                    .filter(s::is_player.eq(1))
+                    .filter(s::name.is_not_null())
+                    .filter(s::name.like(pattern))
+                    .select(s::encounter_id)
+                    .load::<i32>(&mut conn)
+                    .map_err(|e| e.to_string())?
+                    .into_iter()
+                    .collect();
+
+                if let Some(existing) = &mut encounter_id_filters {
+                    existing.retain(|id| player_ids.contains(id));
+                } else {
+                    encounter_id_filters = Some(player_ids);
+                }
+            }
+        }
+
+        if let Some(ref class_ids) = filter.class_ids {
+            if !class_ids.is_empty() {
+                let class_filters: Vec<Option<i32>> = class_ids.iter().map(|id| Some(*id)).collect();
+                let class_encounter_ids: HashSet<i32> = s::actor_encounter_stats
+                    .filter(s::is_player.eq(1))
+                    .filter(s::class_id.is_not_null())
+                    .filter(s::class_id.eq_any(class_filters))
+                    .select(s::encounter_id)
+                    .load::<i32>(&mut conn)
+                    .map_err(|e| e.to_string())?
+                    .into_iter()
+                    .collect();
+
+                if let Some(existing) = &mut encounter_id_filters {
+                    existing.retain(|id| class_encounter_ids.contains(id));
+                } else {
+                    encounter_id_filters = Some(class_encounter_ids);
+                }
+            }
+        }
+
+        if let Some(date_from_ms) = filter.date_from_ms {
+            encounter_query = encounter_query.filter(e::started_at_ms.ge(date_from_ms));
+            count_query = count_query.filter(e::started_at_ms.ge(date_from_ms));
+        }
+
+        if let Some(date_to_ms) = filter.date_to_ms {
+            encounter_query = encounter_query.filter(e::started_at_ms.le(date_to_ms));
+            count_query = count_query.filter(e::started_at_ms.le(date_to_ms));
+        }
+    }
+
+    let encounter_id_vec = encounter_id_filters.map(|set| set.into_iter().collect::<Vec<_>>());
+
+    if let Some(ref ids) = encounter_id_vec {
+        if ids.is_empty() {
+            return Ok(RecentEncountersResult {
+                rows: Vec::new(),
+                total_count: 0,
+            });
+        }
+        encounter_query = encounter_query.filter(e::id.eq_any(ids.clone()));
+        count_query = count_query.filter(e::id.eq_any(ids.clone()));
     }
 
     // Get encounter rows
@@ -162,38 +240,10 @@ pub fn get_recent_encounters_filtered(
         .map_err(|er| er.to_string())?;
 
     // Get total count for pagination
-    let total_count: i64 = if let Some(ref filter) = boss_filter {
-        if !filter.names.is_empty() {
-            let filtered_encounter_ids: Vec<i32> = eb::encounter_bosses
-                .filter(eb::monster_name.eq_any(&filter.names))
-                .select(eb::encounter_id)
-                .load::<i32>(&mut conn)
-                .map_err(|e| e.to_string())?
-                .into_iter()
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect();
-
-            e::encounters
-                .filter(e::ended_at_ms.is_not_null())
-                .filter(e::id.eq_any(filtered_encounter_ids))
-                .count()
-                .get_result(&mut conn)
-                .map_err(|er| er.to_string())?
-        } else {
-            e::encounters
-                .filter(e::ended_at_ms.is_not_null())
-                .count()
-                .get_result(&mut conn)
-                .map_err(|er| er.to_string())?
-        }
-    } else {
-        e::encounters
-            .filter(e::ended_at_ms.is_not_null())
-            .count()
-            .get_result(&mut conn)
-            .map_err(|er| er.to_string())?
-    };
+    let total_count: i64 = count_query
+        .count()
+        .get_result(&mut conn)
+        .map_err(|er| er.to_string())?;
 
     // Collect boss and player data for each encounter
     let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
