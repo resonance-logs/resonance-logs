@@ -18,6 +18,7 @@ pub struct EncounterSummaryDto {
     pub total_heal: i64,
     pub bosses: Vec<String>,
     pub players: Vec<PlayerInfoDto>,
+    pub actors: Vec<ActorEncounterStatDto>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -94,6 +95,124 @@ pub struct ActorEncounterStatDto {
     pub boss_lucky_hits_dealt: i64,
     pub boss_crit_total_dealt: i64,
     pub boss_lucky_total_dealt: i64,
+}
+
+fn load_actor_stats(
+    conn: &mut diesel::sqlite::SqliteConnection,
+    encounter_id: i32,
+) -> Result<Vec<ActorEncounterStatDto>, String> {
+    use sch::actor_encounter_stats::dsl as s;
+
+    let rows = s::actor_encounter_stats
+        .filter(s::encounter_id.eq(encounter_id))
+        .filter(s::is_player.eq(1))
+        .select((
+            s::encounter_id,
+            s::actor_id,
+            s::name,
+            s::class_id,
+            s::damage_dealt,
+            s::heal_dealt,
+            s::damage_taken,
+            s::hits_dealt,
+            s::hits_heal,
+            s::hits_taken,
+            s::crit_hits_dealt,
+            s::crit_hits_heal,
+            s::crit_hits_taken,
+            s::lucky_hits_dealt,
+            s::lucky_hits_heal,
+            s::lucky_hits_taken,
+            s::boss_damage_dealt,
+            s::boss_hits_dealt,
+            s::boss_crit_hits_dealt,
+            s::boss_lucky_hits_dealt,
+            s::boss_crit_total_dealt,
+            s::boss_lucky_total_dealt,
+        ))
+        .order((
+            s::damage_dealt.desc(),
+            s::heal_dealt.desc(),
+            s::damage_taken.desc(),
+        ))
+        .load::<(
+            i32,
+            i64,
+            Option<String>,
+            Option<i32>,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+        )>(conn)
+        .map_err(|e| e.to_string())?;
+
+    Ok(rows
+        .into_iter()
+        .map(
+            |(
+                encounter_id,
+                actor_id,
+                name,
+                class_id,
+                damage_dealt,
+                heal_dealt,
+                damage_taken,
+                hits_dealt,
+                hits_heal,
+                hits_taken,
+                crit_hits_dealt,
+                crit_hits_heal,
+                crit_hits_taken,
+                lucky_hits_dealt,
+                lucky_hits_heal,
+                lucky_hits_taken,
+                boss_damage_dealt,
+                boss_hits_dealt,
+                boss_crit_hits_dealt,
+                boss_lucky_hits_dealt,
+                boss_crit_total_dealt,
+                boss_lucky_total_dealt,
+            )| ActorEncounterStatDto {
+                encounter_id,
+                actor_id,
+                name,
+                class_id,
+                damage_dealt,
+                heal_dealt,
+                damage_taken,
+                hits_dealt,
+                hits_heal,
+                hits_taken,
+                crit_hits_dealt,
+                crit_hits_heal,
+                crit_hits_taken,
+                lucky_hits_dealt,
+                lucky_hits_heal,
+                lucky_hits_taken,
+                boss_damage_dealt,
+                boss_hits_dealt,
+                boss_crit_hits_dealt,
+                boss_lucky_hits_dealt,
+                boss_crit_total_dealt,
+                boss_lucky_total_dealt,
+            },
+        )
+        .collect())
 }
 
 fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
@@ -336,6 +455,7 @@ pub fn get_recent_encounters_filtered(
             total_heal: th.unwrap_or(0),
             bosses: boss_names,
             players: player_data,
+            actors: Vec::new(),
         });
     }
 
@@ -406,141 +526,15 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
         mapped.push(EncounterSummaryDto {
             id,
             started_at_ms: started,
-            ended_at_ms: ended,
-            total_dmg: td.unwrap_or(0),
-            total_heal: th.unwrap_or(0),
-            bosses: boss_names,
-            players: player_data,
-        });
-    }
-
-    Ok(RecentEncountersResult {
-        rows: mapped,
-        total_count,
-    })
-}
-
-#[tauri::command]
-#[specta::specta]
 pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounterStatDto>, String> {
     let mut conn = get_conn()?;
-    use sch::actor_encounter_stats::dsl as s;
-
-    let rows = s::actor_encounter_stats
-        .filter(s::encounter_id.eq(encounter_id))
-        .filter(s::is_player.eq(1))
-        .select((
-            s::encounter_id,
-            s::actor_id,
-            s::name,
-            s::class_id,
-            s::damage_dealt,
-            s::heal_dealt,
-            s::damage_taken,
-            s::hits_dealt,
-            s::hits_heal,
-            s::hits_taken,
-            s::crit_hits_dealt,
-            s::crit_hits_heal,
-            s::crit_hits_taken,
-            s::lucky_hits_dealt,
-            s::lucky_hits_heal,
-            s::lucky_hits_taken,
-            s::boss_damage_dealt,
-            s::boss_hits_dealt,
-            s::boss_crit_hits_dealt,
-            s::boss_lucky_hits_dealt,
-            s::boss_crit_total_dealt,
-            s::boss_lucky_total_dealt,
-        ))
-        .order((
-            s::damage_dealt.desc(),
-            s::heal_dealt.desc(),
-            s::damage_taken.desc(),
-        ))
-        .load::<(
-            i32,
-            i64,
-            Option<String>,
-            Option<i32>,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-            i64,
-        )>(&mut conn)
-        .map_err(|e| e.to_string())?;
-
-    Ok(rows
-        .into_iter()
-        .map(
-            |(
-                encounter_id,
-                actor_id,
-                name,
-                class_id,
-                damage_dealt,
-                heal_dealt,
-                damage_taken,
-                hits_dealt,
-                hits_heal,
-                hits_taken,
-                crit_hits_dealt,
-                crit_hits_heal,
-                crit_hits_taken,
-                lucky_hits_dealt,
-                lucky_hits_heal,
-                lucky_hits_taken,
-                boss_damage_dealt,
-                boss_hits_dealt,
-                boss_crit_hits_dealt,
-                boss_lucky_hits_dealt,
-                boss_crit_total_dealt,
-                boss_lucky_total_dealt,
-            )| ActorEncounterStatDto {
-                encounter_id,
-                actor_id,
-                name,
-                class_id,
-                damage_dealt,
-                heal_dealt,
-                damage_taken,
-                hits_dealt,
-                hits_heal,
-                hits_taken,
-                crit_hits_dealt,
-                crit_hits_heal,
-                crit_hits_taken,
-                lucky_hits_dealt,
-                lucky_hits_heal,
-                lucky_hits_taken,
-                boss_damage_dealt,
-                boss_hits_dealt,
-                boss_crit_hits_dealt,
-                boss_lucky_hits_dealt,
-                boss_crit_total_dealt,
-                boss_lucky_total_dealt,
-            },
-        )
-        .collect())
+    load_actor_stats(&mut conn, encounter_id)
 }
 
 /// Get player name by UID from database
 pub fn get_name_by_uid(uid: i64) -> Result<Option<String>, String> {
     let mut conn = get_conn()?;
+{{ ... }
     use sch::entities::dsl as en;
 
     let name: Option<Option<String>> = en::entities
@@ -588,7 +582,9 @@ pub fn get_player_name_command(uid: i64) -> Result<Option<String>, String> {
 #[specta::specta]
 pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, String> {
     let mut conn = get_conn()?;
+    use sch::encounter_bosses::dsl as eb;
     use sch::encounters::dsl as e;
+    use std::collections::HashSet;
 
     let row: (i32, i64, Option<i64>, Option<i64>, Option<i64>) = e::encounters
         .filter(e::id.eq(encounter_id))
@@ -602,14 +598,39 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         .first(&mut conn)
         .map_err(|er| er.to_string())?;
 
+    let actors = load_actor_stats(&mut conn, encounter_id)?;
+
+    let boss_names: Vec<String> = eb::encounter_bosses
+        .filter(eb::encounter_id.eq(encounter_id))
+        .select(eb::monster_name)
+        .load::<String>(&mut conn)
+        .map_err(|er| er.to_string())?
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    let players: Vec<PlayerInfoDto> = actors
+        .iter()
+        .filter_map(|actor| {
+            actor.name.as_ref().map(|name| PlayerInfoDto {
+                name: name.clone(),
+                class_id: actor.class_id,
+            })
+        })
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+
     Ok(EncounterSummaryDto {
         id: row.0,
         started_at_ms: row.1,
         ended_at_ms: row.2,
         total_dmg: row.3.unwrap_or(0),
         total_heal: row.4.unwrap_or(0),
-        bosses: Vec::new(),
-        players: Vec::new(),
+        bosses: boss_names,
+        players,
+        actors,
     })
 }
 

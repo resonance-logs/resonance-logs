@@ -72,18 +72,9 @@
     console.log("encounter res", encounterRes)
     if (encounterRes.status === 'ok') {
       encounter = encounterRes.data;
+      actors = encounterRes.data.actors ?? []; // enconters also
     } else {
       error = String(encounterRes.error);
-      return;
-    }
-
-    // Load actor stats
-    const actorRes = await commands.getEncounterActorStats(encounterId);
-    console.log("encounter res", actorRes)
-    if (actorRes.status === 'ok') {
-      actors = actorRes.data;
-    } else {
-      error = String(actorRes.error);
       return;
     }
 
