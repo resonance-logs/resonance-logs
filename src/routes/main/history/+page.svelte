@@ -3,31 +3,14 @@
 	import { goto } from '$app/navigation';
 	import { commands } from '$lib/bindings';
 	import type { EncounterSummaryDto, EncounterFiltersDto } from '$lib/bindings';
-	import { getClassIcon, tooltip } from '$lib/utils.svelte';
+	import { getClassIcon, tooltip, CLASS_MAP } from '$lib/utils.svelte';
 	import UnifiedSearch from '$lib/components/unified-search.svelte';
 	import FilterChips from '$lib/components/filter-chips.svelte';
-
-	const CLASS_MAP: Record<number, string> = {
-		1: 'Stormblade',
-		2: 'Frost Mage',
-		4: 'Wind Knight',
-		5: 'Verdant Oracle',
-		9: 'Heavy Guardian',
-		11: 'Marksman',
-		12: 'Shield Knight',
-		13: 'Beat Performer'
-	};
 
 	const classOptions = Object.entries(CLASS_MAP).map(([id, name]) => ({
 		id: Number(id),
 		name
 	}));
-
-	function getTodayIso(): string {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		return today.toISOString().slice(0, 10);
-	}
 
 	let encounters = $state<EncounterSummaryDto[]>([]);
 	let errorMsg = $state<string | null>(null);
@@ -46,19 +29,11 @@
 	let searchType = $state<'boss' | 'player'>('boss');
 	let isLoadingBossNames = $state(false);
 
-	// Advanced filters
-	let showAdvancedFilters = $state(false);
+	// Class filters
 	let selectedClassIds = $state<number[]>([]);
-	let classFilterDraft = $state<number[]>([]);
-	let dateFrom = $state('');
-	let dateTo = $state('');
-	let dateFromDraft = $state('');
-	let dateToDraft = $state('');
-	let dateFromDraftTouched = $state(false);
-	let dateToDraftTouched = $state(false);
-
-	let filterMenuRef: HTMLDivElement | null = null;
-	let filterButtonRef: HTMLButtonElement | null = null;
+	let showClassDropdown = $state(false);
+	let classDropdownRef: HTMLDivElement | null = null;
+	let classButtonRef: HTMLButtonElement | null = null;
 
 	function getClassName(classId: number | null): string {
 		if (!classId) return '';
@@ -87,35 +62,19 @@
 		try {
 			const offset = p * pageSize;
 
-			let fromTimestamp: number | null = null;
-			if (dateFrom) {
-				const fromDate = new Date(dateFrom);
-				fromDate.setHours(0, 0, 0, 0);
-				fromTimestamp = fromDate.getTime();
-			}
-
-			let toTimestamp: number | null = null;
-			if (dateTo) {
-				const toDate = new Date(dateTo);
-				toDate.setHours(23, 59, 59, 999);
-				toTimestamp = toDate.getTime();
-			}
-
 			const filterPayload: EncounterFiltersDto = {
 				bossNames: selectedBosses.length > 0 ? selectedBosses : null,
 				playerName: null,
 				playerNames: selectedPlayerNames.length > 0 ? selectedPlayerNames : null,
 				classIds: selectedClassIds.length > 0 ? selectedClassIds : null,
-				dateFromMs: fromTimestamp,
-				dateToMs: toTimestamp
+				dateFromMs: null,
+				dateToMs: null
 			};
 
 			const hasFilters =
 				filterPayload.bossNames !== null ||
 				filterPayload.playerNames !== null ||
-				filterPayload.classIds !== null ||
-				filterPayload.dateFromMs !== null ||
-				filterPayload.dateToMs !== null;
+				filterPayload.classIds !== null;
 
 			const res = await commands.getRecentEncountersFiltered(
 				pageSize,
@@ -175,102 +134,37 @@
 		loadEncounters(0);
 	}
 
-	function toggleAdvancedFilters() {
-		if (!showAdvancedFilters) {
-			classFilterDraft = [...selectedClassIds];
-			const today = getTodayIso();
-			dateFromDraft = dateFrom || today;
-			dateToDraft = dateTo || today;
-			dateFromDraftTouched = dateFrom !== '';
-			dateToDraftTouched = dateTo !== '';
-		}
-		showAdvancedFilters = !showAdvancedFilters;
-	}
-
-	function cancelAdvancedFilters() {
-		classFilterDraft = [...selectedClassIds];
-		const today = getTodayIso();
-		dateFromDraft = dateFrom || today;
-		dateToDraft = dateTo || today;
-		dateFromDraftTouched = dateFrom !== '';
-		dateToDraftTouched = dateTo !== '';
-		showAdvancedFilters = false;
-	}
-
-	function resetDraftFilters() {
-		classFilterDraft = [];
-		const today = getTodayIso();
-		dateFromDraft = today;
-		dateToDraft = today;
-		dateFromDraftTouched = false;
-		dateToDraftTouched = false;
-	}
-
-	function toggleDraftClass(classId: number, checked: boolean) {
+	function toggleClassFilter(classId: number, checked: boolean) {
 		if (checked) {
-			if (!classFilterDraft.includes(classId)) {
-				classFilterDraft = [...classFilterDraft, classId];
+			if (!selectedClassIds.includes(classId)) {
+				selectedClassIds = [...selectedClassIds, classId];
 			}
 		} else {
-			classFilterDraft = classFilterDraft.filter((id) => id !== classId);
+			selectedClassIds = selectedClassIds.filter((id) => id !== classId);
 		}
-	}
-
-	function onDraftClassChange(classId: number, event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		toggleDraftClass(classId, input.checked);
-	}
-
-	function applyAdvancedFilters() {
-		let normalizedFrom = dateFromDraftTouched ? dateFromDraft : '';
-		let normalizedTo = dateToDraftTouched ? dateToDraft : '';
-
-		if (normalizedFrom && normalizedTo && normalizedTo < normalizedFrom) {
-			[normalizedFrom, normalizedTo] = [normalizedTo, normalizedFrom];
-		}
-
-		selectedClassIds = [...classFilterDraft];
-		dateFrom = normalizedFrom;
-		dateTo = normalizedTo;
-		const today = getTodayIso();
-		dateFromDraft = normalizedFrom || today;
-		dateToDraft = normalizedTo || today;
-		dateFromDraftTouched = normalizedFrom !== '';
-		dateToDraftTouched = normalizedTo !== '';
-		showAdvancedFilters = false;
-		loadEncounters(0);
-	}
-
-	function clearClassAndDateFilters() {
-		selectedClassIds = [];
-		classFilterDraft = [];
-		dateFrom = '';
-		dateTo = '';
-		const today = getTodayIso();
-		dateFromDraft = today;
-		dateToDraft = today;
-		dateFromDraftTouched = false;
-		dateToDraftTouched = false;
-		showAdvancedFilters = false;
 		loadEncounters(0);
 	}
 
 	function removeClassFilter(classId: number) {
 		selectedClassIds = selectedClassIds.filter((id) => id !== classId);
-		classFilterDraft = classFilterDraft.filter((id) => id !== classId);
 		loadEncounters(0);
 	}
 
-	function clearDateFilters() {
-		dateFrom = '';
-		dateTo = '';
-		const today = getTodayIso();
-		dateFromDraft = today;
-		dateToDraft = today;
-		dateFromDraftTouched = false;
-		dateToDraftTouched = false;
+	function clearAllClassFilters() {
+		selectedClassIds = [];
 		loadEncounters(0);
 	}
+
+	function clearAllFilters() {
+		selectedBosses = [];
+		selectedPlayerNames = [];
+		selectedClassIds = [];
+		loadEncounters(0);
+	}
+
+	const hasActiveFilters = $derived(
+		selectedBosses.length > 0 || selectedPlayerNames.length > 0 || selectedClassIds.length > 0
+	);
 
 	onMount(() => {
 		loadBossNames();
@@ -279,19 +173,13 @@
 		function handleDocumentClick(event: MouseEvent) {
 			const target = event.target as HTMLElement;
 			if (
-				showAdvancedFilters &&
-				filterMenuRef &&
-				!filterMenuRef.contains(target) &&
-				filterButtonRef &&
-				!filterButtonRef.contains(target)
+				showClassDropdown &&
+				classDropdownRef &&
+				!classDropdownRef.contains(target) &&
+				classButtonRef &&
+				!classButtonRef.contains(target)
 			) {
-				classFilterDraft = [...selectedClassIds];
-				const today = getTodayIso();
-				dateFromDraft = dateFrom || today;
-				dateToDraft = dateTo || today;
-				dateFromDraftTouched = dateFrom !== '';
-				dateToDraftTouched = dateTo !== '';
-				showAdvancedFilters = false;
+				showClassDropdown = false;
 			}
 		}
 
@@ -338,170 +226,133 @@
 		<div class="text-red-400 mb-3 text-sm">{errorMsg}</div>
 	{/if}
 
-	<!-- Unified Search Section (Boss or Player) -->
-	<div class="mb-6">
-		<div class="flex flex-col gap-3">
-			<div class="flex items-center gap-3">
-				<label for="unified-search" class="text-sm font-medium text-neutral-300">
-					Search:
-				</label>
-				<div class="flex-1 max-w-md">
-					<UnifiedSearch
-						id="unified-search"
-						bind:value={searchValue}
-						bind:searchType={searchType}
-						availableBossNames={availableBossNames}
-						onSelect={handleSearchSelect}
-						disabled={isLoadingBossNames}
-					/>
-				</div>
+	<!-- Filters Section -->
+	<div class="mb-2 space-y-2">
+		<!-- Search and Filter Row -->
+		<div class="flex items-center gap-2">
+			<div class="flex-1 max-w-md">
+				<UnifiedSearch
+					id="unified-search"
+					bind:value={searchValue}
+					bind:searchType={searchType}
+					availableBossNames={availableBossNames}
+					onSelect={handleSearchSelect}
+					disabled={isLoadingBossNames}
+				/>
 			</div>
-			{#if selectedBosses.length > 0}
-				<div>
-					<div class="text-xs font-medium text-neutral-400 mb-1">Bosses:</div>
-					<FilterChips
-						filters={selectedBosses}
-						onRemove={removeBossFilter}
-						onClearAll={clearAllBossFilters}
-					/>
-				</div>
-			{/if}
-			{#if selectedPlayerNames.length > 0}
-				<div>
-					<div class="text-xs font-medium text-neutral-400 mb-1">Players:</div>
-					<FilterChips
-						filters={selectedPlayerNames}
-						onRemove={removePlayerNameFilter}
-						onClearAll={clearAllPlayerNameFilters}
-					/>
-				</div>
-			{/if}
-		</div>
-	</div>
 
-	<!-- Advanced filters -->
-	<div class="mb-6">
-		<div class="flex flex-wrap items-end gap-3">
+			<!-- Class Filter Dropdown -->
 			<div class="relative">
 				<button
-					bind:this={filterButtonRef}
-					onclick={toggleAdvancedFilters}
-					class="px-3 py-2 text-sm font-medium rounded bg-neutral-800 border border-neutral-700 text-neutral-200 hover:text-white hover:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-					aria-expanded={showAdvancedFilters}
+					bind:this={classButtonRef}
+					onclick={() => showClassDropdown = !showClassDropdown}
+					class="flex items-center gap-2 px-3 py-1.5 rounded-md border border-neutral-700 bg-neutral-800 hover:bg-neutral-750 transition-colors text-sm text-neutral-300 hover:text-neutral-100"
 				>
-					Advanced Filters
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+					</svg>
+					<span>Classes</span>
 				</button>
-				{#if showAdvancedFilters}
+
+				{#if showClassDropdown}
 					<div
-						bind:this={filterMenuRef}
-						class="absolute left-0 z-20 mt-2 w-80 rounded border border-neutral-700 bg-neutral-900 p-4 shadow-xl"
+						bind:this={classDropdownRef}
+						class="absolute right-0 z-20 mt-2 w-64 rounded-md border border-neutral-700 bg-neutral-900 shadow-xl"
 					>
-						<div class="space-y-4">
-							<div>
-								<h4 class="mb-2 text-sm font-semibold text-neutral-100">Classes</h4>
-								<div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
-									{#each classOptions as option}
-										<label class="flex items-center gap-2 text-sm text-neutral-200">
-											<input
-												type="checkbox"
-												checked={classFilterDraft.includes(option.id)}
-												onchange={(event) => onDraftClassChange(option.id, event)}
-												class="size-4 rounded border-neutral-600 bg-neutral-800"
-											/>
-											<span>{option.name}</span>
-										</label>
-									{/each}
-								</div>
-							</div>
-							<div class="grid gap-2">
-								<h4 class="text-sm font-semibold text-neutral-100">Date Range</h4>
-								<label class="text-xs uppercase tracking-wide text-neutral-500">From</label>
-								<input
-									type="date"
-									bind:value={dateFromDraft}
-									class="px-3 py-2 rounded border border-neutral-700 bg-neutral-800 text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-								/>
-								<label class="text-xs uppercase tracking-wide text-neutral-500">To</label>
-								<input
-									type="date"
-									bind:value={dateToDraft}
-									class="px-3 py-2 rounded border border-neutral-700 bg-neutral-800 text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-								/>
-							</div>
-							<div class="flex items-center justify-between gap-2 pt-2">
+						<div class="p-3 space-y-1">
+							{#each classOptions as option}
 								<button
-									onclick={resetDraftFilters}
-									class="text-sm text-neutral-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
+									onclick={() => toggleClassFilter(option.id, !selectedClassIds.includes(option.id))}
+									class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors {selectedClassIds.includes(option.id) ? 'bg-blue-600/20 text-blue-400' : 'text-neutral-300 hover:bg-neutral-800'}"
 								>
-									Reset
+									<span>{option.name}</span>
+									{#if selectedClassIds.includes(option.id)}
+										<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+											<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+										</svg>
+									{/if}
 								</button>
-								<div class="flex gap-2">
-									<button
-										onclick={cancelAdvancedFilters}
-										class="px-3 py-1.5 text-sm rounded border border-neutral-700 text-neutral-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
-									>
-										Cancel
-									</button>
-									<button
-										onclick={applyAdvancedFilters}
-										class="px-3 py-1.5 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
-									>
-										Apply
-									</button>
-								</div>
-							</div>
+							{/each}
+							{#if selectedClassIds.length > 0}
+								<button
+									onclick={clearAllClassFilters}
+									class="w-full px-3 py-2 text-sm text-neutral-400 hover:text-red-400 transition-colors text-left"
+								>
+									Clear class filters
+								</button>
+							{/if}
 						</div>
 					</div>
 				{/if}
 			</div>
+
+			<!-- Clear All Filters Button -->
+			{#if hasActiveFilters}
+				<button
+					onclick={clearAllFilters}
+					class="px-3 py-1.5 rounded-md text-sm text-neutral-400 hover:text-red-400 transition-colors"
+					title="Clear all active filters"
+				>
+					Clear All
+				</button>
+			{/if}
 		</div>
-		{#if selectedClassIds.length > 0 || dateFrom || dateTo}
-			<div class="mt-3 flex flex-wrap items-center gap-2 text-sm text-neutral-200">
-				{#each selectedClassIds as classId}
-					<span class="inline-flex items-center gap-1 rounded bg-neutral-800 px-2 py-1">
-						{CLASS_MAP[classId]}
+
+		<!-- Active Filters Chips -->
+		{#if hasActiveFilters}
+			<div class="flex flex-wrap items-center gap-1.5">
+				{#each selectedBosses as boss}
+					<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 text-neutral-400 leading-tight">
+						<span class="text-neutral-500">B:</span>
+						{boss}
 						<button
-							onclick={() => removeClassFilter(classId)}
-							class="text-neutral-400 hover:text-red-300 focus:outline-none"
-							aria-label={`Remove ${CLASS_MAP[classId]} class filter`}
+							onclick={() => removeBossFilter(boss)}
+							class="text-neutral-500 hover:text-red-400 transition-colors"
+							aria-label={`Remove ${boss} filter`}
 						>
 							✕
 						</button>
 					</span>
 				{/each}
-				{#if dateFrom || dateTo}
-					<span class="inline-flex items-center gap-1 rounded bg-neutral-800 px-2 py-1">
-						Date: {dateFrom || 'Any'} – {dateTo || 'Any'}
+				{#each selectedPlayerNames as player}
+					<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 text-neutral-400 leading-tight">
+						<span class="text-neutral-500">P:</span>
+						{player}
 						<button
-							onclick={clearDateFilters}
-							class="text-neutral-400 hover:text-red-300 focus:outline-none"
-							aria-label="Clear date filters"
+							onclick={() => removePlayerNameFilter(player)}
+							class="text-neutral-500 hover:text-red-400 transition-colors"
+							aria-label={`Remove ${player} filter`}
 						>
 							✕
 						</button>
 					</span>
-				{/if}
-				{#if selectedClassIds.length > 0 || dateFrom || dateTo}
-					<button
-						onclick={clearClassAndDateFilters}
-						class="ml-auto text-sm text-neutral-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
-					>
-						Clear advanced filters
-					</button>
-				{/if}
+				{/each}
+				{#each selectedClassIds as classId}
+					<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 text-neutral-400 leading-tight">
+						<span class="text-neutral-500">C:</span>
+						{CLASS_MAP[classId]}
+						<button
+							onclick={() => removeClassFilter(classId)}
+							class="text-neutral-500 hover:text-red-400 transition-colors"
+							aria-label={`Remove ${CLASS_MAP[classId]} filter`}
+						>
+							✕
+						</button>
+					</span>
+				{/each}
 			</div>
 		{/if}
 	</div>
 
 	<div class="overflow-x-auto rounded border border-neutral-700">
-		<table class="w-full border-collapse">
+		<table class="w-full border-collapse" style="min-width: 740px;">
 			<thead>
 				<tr class="bg-neutral-800">
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-16">ID</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-32">Encounter</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-10">ID</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-48">Encounter</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-[400px]">Players</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-24">Duration</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-32">Date</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-12">Duration</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-48">Date</th>
 					<th class="px-3 py-2.5 text-right w-12">
 						<button
 							onclick={() => loadEncounters(page)}

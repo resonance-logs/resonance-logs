@@ -7,6 +7,17 @@ import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 // import { image } from '@tauri-apps/api';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 
+export const CLASS_MAP: Record<number, string> = {
+  1: 'Stormblade',
+  2: 'Frost Mage',
+  4: 'Wind Knight',
+  5: 'Verdant Oracle',
+  9: 'Heavy Guardian',
+  11: 'Marksman',
+  12: 'Shield Knight',
+  13: 'Beat Performer'
+};
+
 export const classColors: Record<string, string> = {
   "Stormblade": "#674598",
   "Frost Mage": "#4de3d1",
