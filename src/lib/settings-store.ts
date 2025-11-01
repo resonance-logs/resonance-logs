@@ -15,6 +15,30 @@ export const DEFAULT_STATS = {
   hitsPerMinute: false,
 };
 
+export const DEFAULT_HISTORY_STATS = {
+  totalDmg: true,
+  dps: true,
+  dmgPct: true,
+  critRate: false,
+  critDmgRate: false,
+  luckyRate: false,
+  luckyDmgRate: false,
+  hits: false,
+  hitsPerMinute: false,
+};
+
+export const DEFAULT_HISTORY_HEAL_STATS = {
+  healDealt: true,
+  hps: true,
+  healPct: true,
+  critHealRate: false,
+  critDmgRate: false,
+  luckyRate: false,
+  luckyDmgRate: false,
+  hitsHeal: false,
+  hitsPerMinute: false,
+};
+
 export type ShortcutSettingId = keyof typeof DEFAULT_SETTINGS.shortcuts;
 
 const DEFAULT_SETTINGS = {
@@ -53,6 +77,12 @@ const DEFAULT_SETTINGS = {
     healSkillBreakdown: { ...DEFAULT_STATS },
     tankedPlayers: { ...DEFAULT_STATS },
     tankedSkillBreakdown: { ...DEFAULT_STATS },
+  },
+  history: {
+    dpsPlayers: { ...DEFAULT_HISTORY_STATS },
+    dpsSkillBreakdown: { ...DEFAULT_HISTORY_STATS },
+    healPlayers: { ...DEFAULT_HISTORY_HEAL_STATS },
+    healSkillBreakdown: { ...DEFAULT_HISTORY_STATS },
   },
   misc: {
     testingMode: false,
@@ -115,6 +145,32 @@ export const SETTINGS = {
       ),
     },
   },
+  history: {
+    dps: {
+      players: new RuneStore(
+        'historyDpsPlayers',
+        DEFAULT_SETTINGS.history.dpsPlayers,
+        RUNE_STORE_OPTIONS
+      ),
+      skillBreakdown: new RuneStore(
+        'historyDpsSkillBreakdown',
+        DEFAULT_SETTINGS.history.dpsSkillBreakdown,
+        RUNE_STORE_OPTIONS
+      ),
+    },
+    heal: {
+      players: new RuneStore(
+        'historyHealPlayers',
+        DEFAULT_SETTINGS.history.healPlayers,
+        RUNE_STORE_OPTIONS
+      ),
+      skillBreakdown: new RuneStore(
+        'historyHealSkillBreakdown',
+        DEFAULT_SETTINGS.history.healSkillBreakdown,
+        RUNE_STORE_OPTIONS
+      ),
+    },
+  },
   misc: new RuneStore(
     'misc',
     DEFAULT_SETTINGS.misc,
@@ -140,6 +196,16 @@ export const settings = {
       tanked: {
         players: SETTINGS.live.tanked.players.state,
         skills: SETTINGS.live.tanked.skills.state,
+      },
+    },
+    history: {
+      dps: {
+        players: SETTINGS.history.dps.players.state,
+        skillBreakdown: SETTINGS.history.dps.skillBreakdown.state,
+      },
+      heal: {
+        players: SETTINGS.history.heal.players.state,
+        skillBreakdown: SETTINGS.history.heal.skillBreakdown.state,
       },
     },
     misc: SETTINGS.misc.state,

@@ -6,6 +6,8 @@
   import { getClassIcon, getClassColor, tooltip, CLASS_MAP } from '$lib/utils.svelte';
   import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from '$lib/components/table-row-glow.svelte';
+  import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns } from '$lib/history-columns';
+  import { settings } from '$lib/settings-store';
 
   // Get encounter ID from URL params
   let encounterId = $derived($page.params.id ? parseInt($page.params.id) : null);
@@ -47,6 +49,21 @@
     return players;
   });
 
+  // Get visible columns based on settings and active tab
+  let visiblePlayerColumns = $derived.by(() => {
+    if (activeTab === 'healing') {
+      return historyHealPlayerColumns.filter(col => settings.state.history.heal.players[col.key]);
+    }
+    return historyDpsPlayerColumns.filter(col => settings.state.history.dps.players[col.key]);
+  });
+
+  let visibleSkillColumns = $derived.by(() => {
+    if (skillType === 'heal') {
+      return historyHealSkillColumns.filter(col => settings.state.history.heal.skillBreakdown[col.key]);
+    }
+    return historyDpsSkillColumns.filter(col => settings.state.history.dps.skillBreakdown[col.key]);
+  });
+
   async function loadEncounter() {
     if (!encounterId) return;
 
@@ -84,6 +101,10 @@
 
       const dmgValue = bossOnlyMode ? (a.bossDamageDealt || 0) : (a.damageDealt || 0);
       const totalDmgValue = bossOnlyMode ? totalBossDmg : totalDmg;
+      const bossCritTotal = a.bossCritTotalDealt || 0;
+      const critTotal = a.critHitsDealt ? (bossOnlyMode ? bossCritTotal : a.damageDealt) : 0;
+      const bossLuckyTotal = a.bossLuckyTotalDealt || 0;
+      const luckyTotal = a.luckyHitsDealt ? (bossOnlyMode ? bossLuckyTotal : a.damageDealt) : 0;
 
       return {
         uid: a.actorId,
@@ -94,6 +115,9 @@
         dps: dmgValue / durationSecs,
         dmgPct: totalDmgValue > 0 ? (dmgValue * 100) / totalDmgValue : 0,
         critRate: hits > 0 ? (a.critHitsDealt || 0) / hits : 0,
+        critDmgRate: dmgValue > 0 ? critTotal / dmgValue : 0,
+        luckyRate: hits > 0 ? (a.luckyHitsDealt || 0) / hits : 0,
+        luckyDmgRate: dmgValue > 0 ? luckyTotal / dmgValue : 0,
         hits: hits,
         hitsPerMinute: hits / (durationSecs / 60.0),
         // Tanked stats
@@ -236,19 +260,9 @@
         <thead>
           <tr class="bg-neutral-800">
             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-400">Player</th>
-            {#if activeTab === 'damage'}
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">DMG</th>
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">DPS</th>
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">D%</th>
-            {:else if activeTab === 'tanked'}
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">Tanked</th>
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">TPS</th>
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">T%</th>
-            {:else if activeTab === 'healing'}
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">Healing</th>
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">HPS</th>
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">H%</th>
-            {/if}
+            {#each visiblePlayerColumns as col (col.key)}
+              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">{col.header}</th>
+            {/each}
           </tr>
         </thead>
         <tbody class="bg-neutral-900">
@@ -273,22 +287,12 @@
                   </span>
                 </div>
               </td>
-              {#if activeTab === 'damage'}
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.totalDmg.toLocaleString()}</td>
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.dps.toFixed(1)}</td>
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.dmgPct.toFixed(1)}%</td>
-                <TableRowGlow className={p.className} percentage={p.dmgPct} />
-              {:else if activeTab === 'tanked'}
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.damageTaken.toLocaleString()}</td>
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.tankedPS.toFixed(1)}</td>
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.tankedPct.toFixed(1)}%</td>
-                <TableRowGlow className={p.className} percentage={p.tankedPct} />
-              {:else if activeTab === 'healing'}
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.healDealt.toLocaleString()}</td>
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.hps.toFixed(1)}</td>
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{p.healPct.toFixed(1)}%</td>
-                <TableRowGlow className={p.className} percentage={p.healPct} />
-              {/if}
+              {#each visiblePlayerColumns as col (col.key)}
+                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">
+                  {col.format(p[col.key] ?? 0)}
+                </td>
+              {/each}
+              <TableRowGlow className={p.className} percentage={activeTab === 'healing' ? p.healPct : (activeTab === 'tanked' ? p.tankedPct : p.dmgPct)} />
             </tr>
           {/each}
         </tbody>
@@ -321,18 +325,20 @@
         <thead>
           <tr class="bg-neutral-800">
             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-400">Skill</th>
-            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">Total</th>
-            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">DPS</th>
-            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">D%</th>
+            {#each visibleSkillColumns as col (col.key)}
+              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">{col.header}</th>
+            {/each}
           </tr>
         </thead>
         <tbody class="bg-neutral-900">
           {#each skillsWindow.skillRows as s (s.name)}
             <tr class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors">
               <td class="px-3 py-3 text-sm text-neutral-300 relative z-10">{s.name}</td>
-              <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{String(s.totalDmg)}</td>
-              <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{s.dps.toFixed(1)}</td>
-              <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">{s.dmgPct.toFixed(1)}%</td>
+              {#each visibleSkillColumns as col (col.key)}
+                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">
+                  {col.format(s[col.key] ?? 0)}
+                </td>
+              {/each}
               <TableRowGlow className={selectedPlayer.className} percentage={s.dmgPct} />
             </tr>
           {/each}
