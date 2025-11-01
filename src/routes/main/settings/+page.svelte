@@ -3,6 +3,7 @@
   import Accessibility from "./accessibility.svelte";
   import General from "./general.svelte";
   import Live from "./live.svelte";
+  import History from "./history.svelte";
   import Misc from "./misc.svelte";
   import Shortcuts from "./shortcuts.svelte";
 
@@ -11,6 +12,7 @@
     { id: "accessibility", label: "Accessibility" },
     { id: "shortcuts", label: "Shortcuts" },
     { id: "live", label: "Live" },
+    { id: "history", label: "Past Encounters" },
     { id: "misc", label: "Misc" },
   ];
 </script>
@@ -25,5 +27,6 @@
   <Accessibility />
   <Shortcuts />
   <Live />
+  <History />
   <Misc />
 </Tabs.Root>
