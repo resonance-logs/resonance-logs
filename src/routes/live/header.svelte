@@ -145,23 +145,6 @@
       <span class="text-sm"><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
       <span class="text-sm"><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
     </div>
-
-    {#if headerInfo.bosses.length > 0}
-      <div class="mt-1 flex flex-col gap-0.5" data-tauri-drag-region>
-        {#each headerInfo.bosses as boss (boss.uid)}
-          <div class="flex items-center gap-2 text-xs text-neutral-300" data-tauri-drag-region>
-            <span class="w-28 truncate" {@attach tooltip(() => boss.name)}>{boss.name}</span>
-            <div class="relative h-2 w-40 rounded bg-neutral-800 pointer-events-none">
-              <div
-                class="absolute inset-y-0 left-0 rounded bg-amber-500 pointer-events-none"
-                style={`width: ${boss.maxHp && boss.currentHp !== null ? Math.min(100, Math.max(0, (boss.currentHp / boss.maxHp) * 100)) : 0}%`}
-              />
-            </div>
-            <span>{boss.currentHp !== null ? boss.currentHp.toLocaleString() : "?"}{boss.maxHp ? ` / ${boss.maxHp.toLocaleString()}` : ""}</span>
-          </div>
-        {/each}
-      </div>
-    {/if}
   </div>
   <!-- Right side -->
   <span class="flex gap-2">

@@ -39,8 +39,8 @@
   });
 </script>
 
-<div class="relative flex flex-col gap-1 rounded-lg overflow-hidden">
-  <table class="w-full border-collapse rounded-lg overflow-hidden">
+<div class="relative flex flex-col gap-1 overflow-hidden">
+  <table class="w-full border-collapse overflow-hidden">
     <thead>
       <tr class="bg-neutral-900/60">
         <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">Player</th>
@@ -53,7 +53,7 @@
       {#each dpsData as player (player.uid)}
         {@const className = player.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
         <tr
-          class="relative bg-neutral-900/60 hover:bg-neutral-800/60 transition-all cursor-pointer h-14 text-base group border-b border-neutral-800/30"
+          class="relative bg-neutral-900/60 hover:bg-neutral-800/60 transition-all cursor-pointer h-14 text-base group"
           onclick={() => goto(`/live/dps/skills?playerUid=${player.uid}`)}
         >
           <td class="px-3 py-3 text-base text-neutral-200 relative z-10">

@@ -38,10 +38,10 @@
 </script>
 
 <!-- Toast container positioned at bottom center -->
-<div class="pointer-events-none fixed bottom-10 left-0 right-0 z-50 flex flex-col items-center gap-2 px-4">
+<div class="pointer-events-none fixed bottom-12 left-0 right-0 z-50 flex flex-col items-center gap-2 px-4">
   {#each toasts as toast (toast.id)}
     <div
-      in:fly={{ y: 20, duration: 300 }}
+      in:fly={{ y: 40, duration: 300 }}
       out:fade={{ duration: 200 }}
       class={`pointer-events-auto flex items-center gap-2 rounded border px-3 py-2 text-xs text-white shadow-xl backdrop-blur-md ${getToastClass(toast.type)}`}
     >

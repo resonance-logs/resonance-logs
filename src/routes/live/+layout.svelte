@@ -10,6 +10,7 @@ export const isPaused = writable(false);
   import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores } from "$lib/stores/live-meter-store.svelte";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
+  import BossHealth from "./boss-health.svelte";
   import NotificationToast from "./notification-toast.svelte";
 
   let { children } = $props();
@@ -129,7 +130,8 @@ export const isPaused = writable(false);
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
 <div class="flex h-screen flex-col text-xs text-white">
   <Header />
-  <main class={cn("flex-1 overflow-y-auto", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/40")}>
+  <main class={cn("flex-1 overflow-y-auto px-2 py-2 gap-4", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/40")}>
+    <BossHealth />
     {@render children()}
   </main>
   <Footer />
