@@ -37,15 +37,18 @@
   let visiblePlayerColumns = $derived.by(() => {
     return historyDpsPlayerColumns.filter(col => settings.state.live.tanked.players[col.key]);
   });
+
+  // Track compact mode
+  let isCompactMode = $derived(settings.state.accessibility.compactMode);
 </script>
 
 <div class="relative flex flex-col gap-1 overflow-hidden">
   <table class="w-full border-collapse overflow-hidden">
     <thead>
       <tr class="bg-neutral-900/60">
-        <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">Player</th>
+        <th class="{isCompactMode ? 'px-2 py-1 text-[10px]' : 'px-3 py-2 text-xs'} text-left font-medium uppercase tracking-wider text-neutral-500">Player</th>
         {#each visiblePlayerColumns as col (col.key)}
-          <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">{col.header}</th>
+          <th class="{isCompactMode ? 'px-2 py-1 text-[10px]' : 'px-3 py-2 text-xs'} text-right font-medium uppercase tracking-wider text-neutral-500">{col.header}</th>
         {/each}
       </tr>
     </thead>
@@ -53,13 +56,13 @@
       {#each tankedData as player (player.uid)}
         {@const className = player.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
         <tr
-          class="relative bg-neutral-900/60 hover:bg-neutral-800/60 transition-all cursor-pointer h-14 text-base group"
+          class="relative bg-neutral-900/60 hover:bg-neutral-800/60 transition-all cursor-pointer {isCompactMode ? 'h-7' : 'h-14'} {isCompactMode ? 'text-xs' : 'text-base'} group"
           onclick={() => goto(`/live/tanked/skills?playerUid=${player.uid}`)}
         >
-          <td class="px-3 py-3 text-base text-neutral-200 relative z-10">
-            <div class="flex items-center gap-3 h-full">
+          <td class="{isCompactMode ? 'px-2 py-1' : 'px-3 py-3'} {isCompactMode ? 'text-xs' : 'text-base'} text-neutral-200 relative z-10">
+            <div class="flex items-center {isCompactMode ? 'gap-1.5' : 'gap-3'} h-full">
               <img
-                class="size-6 object-contain"
+                class="{isCompactMode ? 'size-4' : 'size-6'} object-contain"
                 src={getClassIcon(className)}
                 alt="Class icon"
               />
@@ -67,7 +70,7 @@
             </div>
           </td>
           {#each visiblePlayerColumns as col (col.key)}
-            <td class="px-3 py-3 text-right text-base text-neutral-200 relative z-10">
+            <td class="{isCompactMode ? 'px-2 py-1' : 'px-3 py-3'} text-right {isCompactMode ? 'text-xs' : 'text-base'} text-neutral-200 relative z-10">
               {#if col.key === 'totalDmg'}
                 <AbbreviatedNumber num={player.totalDmg} />
               {:else if col.key === 'dmgPct'}

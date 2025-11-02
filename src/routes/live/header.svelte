@@ -10,6 +10,7 @@
   import SettingsIcon from "virtual:icons/lucide/settings";
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
   import CrownIcon from "virtual:icons/lucide/crown";
+  import MinimizeIcon from "virtual:icons/lucide/minimize-2";
 
   import { onMount, tick } from "svelte";
   import { onEncounterUpdate, onResetEncounter, resetEncounter, togglePauseEncounter, setBossOnlyDps, type HeaderInfo } from "$lib/api";
@@ -106,6 +107,7 @@
   });
   let isEncounterPaused = $state(false);
   let bossOnlyDpsEnabled = $derived(SETTINGS.general.state.bossOnlyDps);
+  let compactModeEnabled = $derived(SETTINGS.accessibility.state.compactMode);
   // const {
   //   screenshotDiv,
   // }: {
@@ -128,6 +130,10 @@
     SETTINGS.general.state.bossOnlyDps = nextValue;
     void setBossOnlyDps(nextValue);
   }
+
+  function toggleCompactMode() {
+    SETTINGS.accessibility.state.compactMode = !SETTINGS.accessibility.state.compactMode;
+  }
     // When reset encounter button is pressed -> reset boss hp bar info
   function handleResetEncounter() {
     resetTimer();
@@ -137,17 +143,17 @@
 </script>
 
 <!-- justify-between to create left/right sides -->
-<header data-tauri-drag-region class="flex w-full items-center justify-between gap-1 bg-neutral-900 px-4 py-3 text-sm rounded-t-lg">
+<header data-tauri-drag-region class="flex w-full items-center justify-between gap-1 bg-neutral-900 {compactModeEnabled ? 'px-2 py-1.5' : 'px-4 py-3'} {compactModeEnabled ? 'text-[11px]' : 'text-sm'} rounded-t-lg">
   <!-- Left side -->
   <div class="flex flex-col" data-tauri-drag-region>
-    <div class="flex flex-wrap items-center gap-2" data-tauri-drag-region>
-      <span class="text-sm font-medium" {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
-      <span class="text-sm"><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
-      <span class="text-sm"><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
+    <div class="flex flex-wrap items-center {compactModeEnabled ? 'gap-1.5' : 'gap-2'}" data-tauri-drag-region>
+      <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'} font-medium" {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
+      <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'}"><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
+      <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'}"><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
     </div>
   </div>
   <!-- Right side -->
-  <span class="flex gap-2">
+  <span class="flex {compactModeEnabled ? 'gap-1' : 'gap-2'}">
     <!-- TODO: add responsive clicks, toaster -->
     <!-- <button
       onclick={async () => takeScreenshot(screenshotDiv)}
@@ -155,7 +161,7 @@
     >
       <CameraIcon />
     </button> -->
-    <button onclick={handleResetEncounter} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon class="size-5" /></button>
+    <button onclick={handleResetEncounter} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" /></button>
     <button
       onclick={() => {
         togglePauseEncounter();
@@ -163,9 +169,9 @@
       }}
     >
       {#if isEncounterPaused}
-        <PlayIcon {@attach tooltip(() => "Resume Encounter")} class="size-5" />
+        <PlayIcon {@attach tooltip(() => "Resume Encounter")} class="{compactModeEnabled ? 'size-4' : 'size-5'}" />
       {:else}
-        <PauseIcon {@attach tooltip(() => "Pause Encounter")} class="size-5" />
+        <PauseIcon {@attach tooltip(() => "Pause Encounter")} class="{compactModeEnabled ? 'size-4' : 'size-5'}" />
       {/if}
     </button>
     <button
@@ -175,11 +181,20 @@
       onclick={toggleBossOnlyDamage}
       {@attach tooltip(() => (bossOnlyDpsEnabled ? "Boss Only Damage Enabled" : "Enable Boss Only Damage"))}
     >
-      <CrownIcon class="size-5" />
+      <CrownIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" />
     </button>
-    <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon class="size-5" /></button>
-    <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon class="size-5" /></button>
-    <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon class="size-5" /></button>
+    <button
+      class="compact-mode-toggle"
+      class:compact-mode-active={compactModeEnabled}
+      aria-pressed={compactModeEnabled}
+      onclick={toggleCompactMode}
+      {@attach tooltip(() => (compactModeEnabled ? "Compact Mode Enabled" : "Enable Compact Mode"))}
+    >
+      <MinimizeIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" />
+    </button>
+    <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" /></button>
+    <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" /></button>
+    <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" /></button>
   </span>
 </header>
 
@@ -194,5 +209,17 @@
 
   .boss-only-toggle.boss-only-active {
     color: #facc15;
+  }
+
+  .compact-mode-toggle {
+    transition: color 150ms ease;
+  }
+
+  .compact-mode-toggle:hover {
+    color: #60a5fa;
+  }
+
+  .compact-mode-toggle.compact-mode-active {
+    color: #60a5fa;
   }
 </style>
