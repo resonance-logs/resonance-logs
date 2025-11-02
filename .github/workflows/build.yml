@@ -67,11 +67,11 @@ jobs:
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bpsr-logs-production-v${{ steps.tauri.outputs.appVersion }}
+          name: resonance-logs-production-v${{ steps.tauri.outputs.appVersion }}
           path: src-tauri/target/release/bundle/
 
       - name: Upload Debug Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bpsr-logs-debug-v${{ steps.tauri.outputs.appVersion }}
+          name: resonance-logs-debug-v${{ steps.tauri.outputs.appVersion }}
           path: src-tauri/target/debug/bundle/

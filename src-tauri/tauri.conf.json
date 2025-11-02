@@ -1,8 +1,8 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "bpsr-logs",
-    "version": "0.17.0",
-    "identifier": "com.bpsr-logs",
+    "productName": "resonance-logs",
+    "version": "0.1.0",
+    "identifier": "com.resonance-logs",
     "build": {
         "beforeDevCommand": "npm run dev",
         "beforeBuildCommand": "npm run build",
@@ -12,7 +12,7 @@
     "app": {
         "windows": [
             {
-                "title": "BPSR Logs - Live",
+                "title": "Resonance Logs - Live",
                 "label": "live",
                 "url": "live",
                 "shadow": false,
@@ -24,7 +24,7 @@
                 "skipTaskbar": true
             },
             {
-                "title": "BPSR Logs - Main",
+                "title": "Resonance Logs - Main",
                 "label": "main",
                 "url": "main",
                 "minWidth": 650,

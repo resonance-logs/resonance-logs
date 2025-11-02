@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    bpsr_logs_lib::run()
+    resonance_logs_lib::run()
 }

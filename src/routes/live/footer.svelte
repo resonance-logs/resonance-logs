@@ -30,5 +30,5 @@
       }}>TANKED</button
     >
   </span>
-  <span class="text-neutral-400 tracking-tighter"><span>BPSR Logs v{#await getVersion()}X.Y.Z{:then version}{version}{/await}</span></span>
+  <span class="text-neutral-400 tracking-tighter"><span>Resonance Logs v{#await getVersion()}X.Y.Z{:then version}{version}{/await}</span></span>
 </footer>

@@ -613,7 +613,7 @@ pub struct UploadResponse {
 
 **1. Project Structure**
 ```
-bpsr-logs-api/
+resonance-logs-api/
 ├── cmd/
 │   └── api/
 │       └── main.go
@@ -643,9 +643,9 @@ import (
     "net/http"
     "time"
     "github.com/gin-gonic/gin"
-    "github.com/yourusername/bpsr-logs-api/internal/db"
-    "github.com/yourusername/bpsr-logs-api/internal/models"
-    "github.com/yourusername/bpsr-logs-api/internal/utils"
+    "github.com/yourusername/resonance-logs-api/internal/db"
+    "github.com/yourusername/resonance-logs-api/internal/models"
+    "github.com/yourusername/resonance-logs-api/internal/utils"
 )
 
 func UploadEncounter(c *gin.Context) {

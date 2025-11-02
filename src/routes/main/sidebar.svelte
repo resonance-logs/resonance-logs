@@ -6,7 +6,7 @@
 </script>
 
 <Sidebar.Root>
-  <Sidebar.Header>BPSR Logs</Sidebar.Header>
+  <Sidebar.Header>Resonance Logs</Sidebar.Header>
   <Sidebar.Separator />
   <Sidebar.Content>
     <Sidebar.Group>
