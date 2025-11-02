@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { getClassIcon } from "$lib/utils.svelte";
   import { page } from "$app/state";
-  import { settings } from "$lib/settings-store";
+  import { settings, SETTINGS } from "$lib/settings-store";
   import { commands } from "$lib/bindings";
   import { onHealSkillsUpdate } from "$lib/api";
   import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
@@ -121,7 +121,7 @@
                 {/if}
               </td>
             {/each}
-            <TableRowGlow className={className} percentage={settings.state.general.relativeToTopHealSkill ? maxSkillValue > 0 ? (skill.totalDmg / maxSkillValue) * 100 : 0 : skill.dmgPct} />
+            <TableRowGlow className={className} percentage={SETTINGS.live.general.state.relativeToTopHealSkill ? maxSkillValue > 0 ? (skill.totalDmg / maxSkillValue) * 100 : 0 : skill.dmgPct} />
           </tr>
         {/if}
       {/each}

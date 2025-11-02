@@ -3,11 +3,12 @@
   import { goto } from '$app/navigation';
   import { commands } from '$lib/bindings';
   import type { ActorEncounterStatDto, EncounterSummaryDto, SkillsWindow } from '$lib/bindings';
-  import { getClassIcon, getClassColor, tooltip, CLASS_MAP } from '$lib/utils.svelte';
+  import { getClassIcon, tooltip, CLASS_MAP } from '$lib/utils.svelte';
   import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from '$lib/components/table-row-glow.svelte';
+  import AbbreviatedNumber from '$lib/components/abbreviated-number.svelte';
   import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns } from '$lib/history-columns';
-  import { settings } from '$lib/settings-store';
+  import { settings, SETTINGS } from '$lib/settings-store';
 
   // Get encounter ID from URL params
   let encounterId = $derived($page.params.id ? parseInt($page.params.id) : null);
@@ -47,6 +48,25 @@
         .sort((a, b) => b.healDealt - a.healDealt);
     }
     return players;
+  });
+
+  // Calculate max values for relative to top settings
+  let maxDpsPlayer = $derived.by(() => {
+    return displayedPlayers.reduce((max, p) => Math.max(max, p.totalDmg || 0), 0);
+  });
+
+  let maxHealPlayer = $derived.by(() => {
+    return displayedPlayers.reduce((max, p) => Math.max(max, p.healDealt || 0), 0);
+  });
+
+  let maxDpsSkill = $derived.by(() => {
+    if (!skillsWindow) return 0;
+    return skillsWindow.skillRows.reduce((max, s) => Math.max(max, s.totalDmg || 0), 0);
+  });
+
+  let maxHealSkill = $derived.by(() => {
+    if (!skillsWindow) return 0;
+    return skillsWindow.skillRows.reduce((max, s) => Math.max(max, s.totalDmg || 0), 0);
   });
 
   // Get visible columns based on settings and active tab
@@ -276,7 +296,11 @@
                     {@attach tooltip(() => `UID: #${p.uid}`)}
                   >
                     {#if p.abilityScore > 0}
-                      <span class="text-neutral-400">{p.abilityScore}</span>
+                      {#if SETTINGS.history.general.state.shortenAbilityScore}
+                        <span class="text-neutral-400"><AbbreviatedNumber num={p.abilityScore} /></span>
+                      {:else}
+                        <span class="text-neutral-400">{p.abilityScore}</span>
+                      {/if}
                     {/if}
                     {p.name || `#${p.uid}`}
                   </span>
@@ -287,7 +311,16 @@
                   {col.format(p[col.key] ?? 0)}
                 </td>
               {/each}
-              <TableRowGlow className={p.className} percentage={activeTab === 'healing' ? p.healPct : (activeTab === 'tanked' ? p.tankedPct : p.dmgPct)} />
+              <TableRowGlow 
+                className={p.className} 
+                percentage={
+                  activeTab === 'healing' 
+                    ? (SETTINGS.history.general.state.relativeToTopHealPlayer && maxHealPlayer > 0 ? (p.healDealt / maxHealPlayer) * 100 : p.healPct)
+                    : (activeTab === 'tanked' 
+                      ? p.tankedPct 
+                      : (SETTINGS.history.general.state.relativeToTopDPSPlayer && maxDpsPlayer > 0 ? (p.totalDmg / maxDpsPlayer) * 100 : p.dmgPct))
+                } 
+              />
             </tr>
           {/each}
         </tbody>
@@ -334,7 +367,14 @@
                   {col.format(s[col.key] ?? 0)}
                 </td>
               {/each}
-              <TableRowGlow className={selectedPlayer.className} percentage={s.dmgPct} />
+              <TableRowGlow 
+                className={selectedPlayer.className} 
+                percentage={
+                  skillType === 'heal'
+                    ? (SETTINGS.history.general.state.relativeToTopHealSkill && maxHealSkill > 0 ? (s.totalDmg / maxHealSkill) * 100 : s.dmgPct)
+                    : (SETTINGS.history.general.state.relativeToTopDPSSkill && maxDpsSkill > 0 ? (s.totalDmg / maxDpsSkill) * 100 : s.dmgPct)
+                } 
+              />
             </tr>
           {/each}
         </tbody>

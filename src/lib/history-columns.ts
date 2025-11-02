@@ -37,6 +37,32 @@ export const historyHealPlayerColumns = [
   { key: 'hitsPerMinute', header: 'HPM', label: 'HPM', description: "Show player's number of hits per minute", format: (v: number) => v.toFixed(1) },
 ] as const;
 
+// Live meter heal player columns with correct headers
+export const liveHealPlayerColumns = [
+  { key: 'totalDmg', header: 'Heal', label: 'Heal', description: "Show player's total heal given", format: (v: number) => v.toLocaleString() },
+  { key: 'dps', header: 'HPS', label: 'HPS', description: "Show player's heal per second", format: (v: number) => v.toFixed(1) },
+  { key: 'dmgPct', header: 'H%', label: 'H%', description: "Show player's heal % contribution", format: (v: number) => v.toFixed(1) + '%' },
+  { key: 'critRate', header: 'CR', label: 'CR', description: "Show player's critical rate", format: (v: number) => (v * 100).toFixed(1) + '%' },
+  { key: 'critDmgRate', header: 'CDMG', label: 'CDMG', description: "Show player's % heal that crit", format: (v: number) => (v * 100).toFixed(1) + '%' },
+  { key: 'luckyRate', header: 'LR%', label: 'LR%', description: "Show player's lucky rate", format: (v: number) => (v * 100).toFixed(1) + '%' },
+  { key: 'luckyDmgRate', header: 'LDMG%', label: 'LDMG%', description: "Show player's % heal that was lucky", format: (v: number) => (v * 100).toFixed(1) + '%' },
+  { key: 'hits', header: 'Hits', label: 'Hits', description: "Show player's total number of hits", format: (v: number) => v.toLocaleString() },
+  { key: 'hitsPerMinute', header: 'HPM', label: 'HPM', description: "Show player's number of hits per minute", format: (v: number) => v.toFixed(1) },
+] as const;
+
+// Live meter tanked player columns with correct headers
+export const liveTankedPlayerColumns = [
+  { key: 'totalDmg', header: 'Tanked', label: 'Tanked', description: "Show player's total damage taken", format: (v: number) => v.toLocaleString() },
+  { key: 'dps', header: 'TPS', label: 'TPS', description: "Show player's damage taken per second", format: (v: number) => v.toFixed(1) },
+  { key: 'dmgPct', header: 'T%', label: 'T%', description: "Show player's tanked % contribution", format: (v: number) => v.toFixed(1) + '%' },
+  { key: 'critRate', header: 'CR', label: 'CR', description: "Show player's critical rate taken", format: (v: number) => (v * 100).toFixed(1) + '%' },
+  { key: 'critDmgRate', header: 'CDMG', label: 'CDMG', description: "Show player's % damage taken that crit", format: (v: number) => (v * 100).toFixed(1) + '%' },
+  { key: 'luckyRate', header: 'LR%', label: 'LR%', description: "Show player's lucky rate taken", format: (v: number) => (v * 100).toFixed(1) + '%' },
+  { key: 'luckyDmgRate', header: 'LDMG%', label: 'LDMG%', description: "Show player's % damage taken that was lucky", format: (v: number) => (v * 100).toFixed(1) + '%' },
+  { key: 'hits', header: 'Hits', label: 'Hits', description: "Show player's total number of hits taken", format: (v: number) => v.toLocaleString() },
+  { key: 'hitsPerMinute', header: 'HPM', label: 'HPM', description: "Show player's number of hits taken per minute", format: (v: number) => v.toFixed(1) },
+] as const;
+
 export const historyHealSkillColumns = [
   { key: 'totalDmg', header: 'Heal', label: 'Heal', description: "Show skill's total heal given", format: (v: number) => v.toLocaleString() },
   { key: 'dps', header: 'HPS', label: 'HPS', description: "Show skill's heal per second", format: (v: number) => v.toFixed(1) },

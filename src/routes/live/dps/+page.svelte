@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { getClassIcon } from "$lib/utils.svelte";
+  import { getClassIcon, tooltip } from "$lib/utils.svelte";
   import { goto } from "$app/navigation";
-  import { settings } from "$lib/settings-store";
+  import { settings, SETTINGS } from "$lib/settings-store";
  import { getDpsPlayers } from "$lib/stores/live-meter-store.svelte";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
   import { historyDpsPlayerColumns } from "$lib/history-columns";
@@ -65,8 +65,18 @@
                 class="{isCompactMode ? 'size-4' : 'size-6'} object-contain"
                 src={getClassIcon(className)}
                 alt="Class icon"
+                {@attach tooltip(() => `${player.className}${player.classSpecName ? '-' + player.classSpecName : ''}`)}
               />
-              <span class="truncate font-medium">{player.name || `#${player.uid}`}</span>
+              <span class="truncate font-medium">
+                {#if player.abilityScore > 0}
+                  {#if SETTINGS.live.general.state.shortenAbilityScore}
+                    <span class="text-neutral-400"><AbbreviatedNumber num={player.abilityScore} /></span>
+                  {:else}
+                    <span class="text-neutral-400">{player.abilityScore}</span>
+                  {/if}
+                {/if}
+                {player.name || `#${player.uid}`}
+              </span>
             </div>
           </td>
           {#each visiblePlayerColumns as col (col.key)}
@@ -82,7 +92,7 @@
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={settings.state.general.relativeToTopDPSPlayer ? (maxDamage > 0 ? (player.totalDmg / maxDamage) * 100 : 0) : player.dmgPct} />
+          <TableRowGlow className={className} percentage={SETTINGS.live.general.state.relativeToTopDPSPlayer ? (maxDamage > 0 ? (player.totalDmg / maxDamage) * 100 : 0) : player.dmgPct} />
         </tr>
       {/each}
     </tbody>

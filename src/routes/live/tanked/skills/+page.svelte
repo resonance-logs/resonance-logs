@@ -1,7 +1,7 @@
 <script lang="ts">
   import { commands } from "$lib/bindings";
   import { getClassIcon } from "$lib/utils.svelte";
-  import { settings } from "$lib/settings-store";
+  import { settings, SETTINGS } from "$lib/settings-store";
   import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
   import { onTankedSkillsUpdate } from "$lib/api";
   import { getTankedPlayers } from "$lib/stores/live-meter-store.svelte";
@@ -130,7 +130,7 @@
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={settings.state.general.relativeToTopDPSPlayer ? maxTakenSkill > 0 ? (skill.totalDmg / maxTakenSkill) * 100 : 0 : skill.dmgPct} />
+          <TableRowGlow className={className} percentage={SETTINGS.live.general.state.relativeToTopDPSPlayer ? maxTakenSkill > 0 ? (skill.totalDmg / maxTakenSkill) * 100 : 0 : skill.dmgPct} />
         </tr>
       {/each}
     </tbody>
