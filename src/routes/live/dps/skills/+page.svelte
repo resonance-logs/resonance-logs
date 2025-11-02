@@ -111,11 +111,6 @@
           >
             <td class="px-2 py-1 text-xs text-neutral-300 relative z-10">
               <div class="flex items-center gap-1 h-full">
-                <img
-                  class="size-4 object-contain"
-                  src={getClassIcon(className)}
-                  alt="Class icon"
-                />
                 <span class="truncate">{skill.name}</span>
               </div>
             </td>
