@@ -5,26 +5,26 @@
   import { getVersion } from "@tauri-apps/api/app";
 </script>
 
-<footer class="sticky bottom-0 flex h-7 items-center justify-between bg-neutral-800/70 px-1.5">
-  <span class="flex h-full items-center">
+<footer class="flex h-10 items-center justify-between bg-neutral-900 px-4 text-sm rounded-b-lg">
+  <span class="flex h-full items-center gap-1">
     <button
-      class={`rounded-xs px-1.5 ${page.url.pathname.includes("dps") ? "bg-primary" : ""}`}
+      class={`rounded-md px-3 py-1 transition-all font-medium ${page.url.pathname.includes("dps") ? "bg-neutral-700/60 text-white" : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50"}`}
       onclick={() => {
         goto(resolve("/live/dps"));
       }}>DPS</button
     >
     <button
-      class={`rounded-xs px-1.5 ${page.url.pathname.includes("heal") ? "bg-primary" : ""}`}
+      class={`rounded-md px-3 py-1 transition-all font-medium ${page.url.pathname.includes("heal") ? "bg-neutral-700/60 text-white" : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50"}`}
       onclick={() => {
         goto(resolve("/live/heal"));
       }}>HEAL</button
     >
     <button
-      class={`rounded-xs px-1.5 ${page.url.pathname.includes("tanked") ? "bg-primary" : ""}`}
+      class={`rounded-md px-3 py-1 transition-all font-medium ${page.url.pathname.includes("tanked") ? "bg-neutral-700/60 text-white" : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50"}`}
       onclick={() => {
         goto(resolve("/live/tanked"));
       }}>TANKED</button
     >
   </span>
-  <span class="px-1.5 tracking-tighter"><span>BPSR Logs v{#await getVersion()}X.Y.Z{:then version}{version}{/await}</span></span>
+  <span class="text-neutral-400 tracking-tighter"><span>BPSR Logs v{#await getVersion()}X.Y.Z{:then version}{version}{/await}</span></span>
 </footer>

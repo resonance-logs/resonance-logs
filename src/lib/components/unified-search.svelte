@@ -187,6 +187,7 @@
 			placeholder={computedPlaceholder}
 			{disabled}
 			{id}
+			autocomplete="off"
 			class="w-full px-3 py-1.5 text-sm bg-neutral-800 border border-neutral-700 rounded-r text-neutral-300 placeholder-neutral-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
 		/>
 

@@ -95,8 +95,8 @@ export function generateMockPlayers(): PlayersWindow {
 }
 
 // Load mock data on store initialization
-setTimeout(() => {
-    setDpsPlayers(generateMockPlayers());
-    setHealPlayers(generateMockPlayers());
-    setTankedPlayers(generateMockPlayers());
-}, 100);
+// setTimeout(() => {
+//     setDpsPlayers(generateMockPlayers());
+//     setHealPlayers(generateMockPlayers());
+//     setTankedPlayers(generateMockPlayers());
+// }, 1);
