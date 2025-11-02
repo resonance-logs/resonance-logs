@@ -137,6 +137,8 @@ impl AppStateManager {
         // Emit encounter reset event
         if state.event_manager.should_emit_events() {
             state.event_manager.emit_encounter_reset();
+            // Clear dead bosses tracking on server change
+            state.event_manager.clear_dead_bosses();
         }
 
         // Clear skill subscriptions
@@ -210,6 +212,8 @@ impl AppStateManager {
 
         if state.event_manager.should_emit_events() {
             state.event_manager.emit_encounter_reset();
+            // Clear dead bosses tracking on reset
+            state.event_manager.clear_dead_bosses();
         }
     }
 
@@ -292,7 +296,7 @@ impl AppStateManager {
         }
 
         // Generate all the data we need without holding the lock
-        let header_info = crate::live::event_manager::generate_header_info(&encounter, boss_only);
+        let header_info_with_deaths = crate::live::event_manager::generate_header_info(&encounter, boss_only);
         let dps_players =
             crate::live::event_manager::generate_players_window_dps(&encounter, boss_only);
         let heal_players = crate::live::event_manager::generate_players_window_heal(&encounter);
@@ -343,12 +347,17 @@ impl AppStateManager {
         // Now, acquire the write lock and update everything
         let mut state = self.state.write().await;
 
-        // Emit encounter update
-        if let Some(header_info) = header_info {
+        // Emit encounter update and handle boss deaths
+        if let Some((header_info, dead_bosses)) = header_info_with_deaths {
             state.event_manager.emit_encounter_update(
                 header_info,
                 encounter.is_encounter_paused, // Use the original encounter state
             );
+
+            // Emit boss death events for newly dead bosses
+            for (boss_uid, boss_name) in dead_bosses {
+                state.event_manager.emit_boss_death(boss_name, boss_uid);
+            }
         }
 
         // Emit DPS players update

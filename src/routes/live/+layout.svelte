@@ -3,7 +3,7 @@
   import { commands } from "$lib/bindings";
   import { SETTINGS } from "$lib/settings-store";
   import { cn } from "$lib/utils";
-  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate } from "$lib/api";
+  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath } from "$lib/api";
   import { writable } from "svelte/store";
   import { beforeNavigate, afterNavigate } from "$app/navigation";
   import { page } from "$app/stores";
@@ -83,11 +83,17 @@
         lastPauseState = newPaused;
       });
 
+      // Set up boss death listener
+      const bossDeathUnlisten = await onBossDeath((event) => {
+        notificationToast?.showToast('notice', `${event.payload.bossName} defeated!`);
+      });
+
       // Combine all unlisten functions
       unlisten = () => {
         playersUnlisten();
         resetUnlisten();
         encounterUnlisten();
+        bossDeathUnlisten();
       };
 
       console.log("Event listeners set up for live meter data");

@@ -3,6 +3,7 @@ use crate::live::opcodes_models::{Encounter, Entity, Skill, class};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::RwLock;
 
@@ -17,11 +18,15 @@ pub enum MetricType {
 #[derive(Debug)]
 pub struct EventManager {
     app_handle: Option<AppHandle>,
+    dead_bosses: HashSet<i64>,
 }
 
 impl EventManager {
     pub fn new() -> Self {
-        Self { app_handle: None }
+        Self {
+            app_handle: None,
+            dead_bosses: HashSet::new(),
+        }
     }
 
     pub fn initialize(&mut self, app_handle: AppHandle) {
@@ -90,6 +95,23 @@ impl EventManager {
         }
     }
 
+    pub fn emit_boss_death(&mut self, boss_name: String, boss_uid: i64) {
+        // Only emit if we haven't already emitted for this boss
+        if self.dead_bosses.insert(boss_uid) {
+            if let Some(app_handle) = &self.app_handle {
+                let payload = BossDeathPayload { boss_name };
+                match app_handle.emit("boss-death", payload) {
+                    Ok(_) => info!("Emitted boss-death event for {}", boss_uid),
+                    Err(e) => error!("Failed to emit boss-death event: {}", e),
+                }
+            }
+        }
+    }
+
+    pub fn clear_dead_bosses(&mut self) {
+        self.dead_bosses.clear();
+    }
+
     pub fn should_emit_events(&self) -> bool {
         self.app_handle.is_some()
     }
@@ -115,6 +137,12 @@ pub struct SkillsUpdatePayload {
     pub metric_type: MetricType,
     pub player_uid: i64,
     pub skills_window: SkillsWindow,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BossDeathPayload {
+    pub boss_name: String,
 }
 
 impl Default for EventManager {
@@ -786,7 +814,7 @@ pub fn generate_skill_rows(entity: &Entity, time_elapsed_secs: f64) -> Vec<Skill
     skill_rows
 }
 
-pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<HeaderInfo> {
+pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<(HeaderInfo, Vec<(i64, String)>)> {
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
         .saturating_sub(encounter.time_fight_start_ms);
@@ -811,6 +839,11 @@ pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<He
         encounter.total_dmg
     };
 
+    // Calculate team DPS for boss death detection
+    #[allow(clippy::cast_precision_loss)]
+    let team_dps = nan_is_zero(total_scope_dmg as f64 / time_elapsed_secs);
+
+    let mut dead_bosses: Vec<(i64, String)> = Vec::new();
     let mut bosses: Vec<BossHealth> = encounter
         .entity_uid_to_entity
         .iter()
@@ -824,11 +857,32 @@ pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<He
                     format!("Boss {uid}")
                 };
 
+                let current_hp = entity.hp();
+                let max_hp = entity.max_hp();
+
+                // Boss death detection: if boss has <5% HP and team DPS is high enough, assume boss is dead
+                let is_dead = if let (Some(curr_hp), Some(max_hp_val)) = (current_hp, max_hp) {
+                    if max_hp_val > 0 {
+                        let hp_percent = (curr_hp as f64 / max_hp_val as f64) * 100.0;
+                        // If boss is below 5% HP and team DPS is at least 10k, assume dead
+                        hp_percent < 5.0 && team_dps >= 5000.0
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+
+                if is_dead {
+                    dead_bosses.push((uid, name.clone()));
+                }
+
                 Some(BossHealth {
                     uid,
                     name,
-                    current_hp: entity.hp(),
-                    max_hp: entity.max_hp(),
+                    // Set HP to 0 if boss is detected as dead
+                    current_hp: if is_dead { Some(0) } else { current_hp },
+                    max_hp,
                 })
             } else {
                 None
@@ -839,11 +893,14 @@ pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<He
     bosses.sort_by_key(|boss| boss.uid);
 
     #[allow(clippy::cast_precision_loss)]
-    Some(HeaderInfo {
-        total_dps: nan_is_zero(total_scope_dmg as f64 / time_elapsed_secs),
-        total_dmg: total_scope_dmg,
-        elapsed_ms: time_elapsed_ms,
-        fight_start_timestamp_ms: encounter.time_fight_start_ms,
-        bosses,
-    })
+    Some((
+        HeaderInfo {
+            total_dps: team_dps,
+            total_dmg: total_scope_dmg,
+            elapsed_ms: time_elapsed_ms,
+            fight_start_timestamp_ms: encounter.time_fight_start_ms,
+            bosses,
+        },
+        dead_bosses,
+    ))
 }

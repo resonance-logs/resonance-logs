@@ -75,6 +75,10 @@ export type SkillsUpdatePayload = {
   skillsWindow: SkillsWindow;
 };
 
+export type BossDeathPayload = {
+  bossName: string;
+};
+
 // Event listener functions
 export const onEncounterUpdate = (handler: (event: { payload: EncounterUpdatePayload }) => void): Promise<UnlistenFn> =>
   listen("encounter-update", handler);
@@ -84,6 +88,9 @@ export const onPlayersUpdate = (handler: (event: { payload: PlayersUpdatePayload
 
 export const onSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
   listen("skills-update", handler);
+
+export const onBossDeath = (handler: (event: { payload: BossDeathPayload }) => void): Promise<UnlistenFn> =>
+  listen("boss-death", handler);
 
 // Convenience: factory to create metric-filtered listeners
 export const makeSkillsUpdateFilter =
