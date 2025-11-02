@@ -93,9 +93,9 @@
       const dmgValue = bossOnlyMode ? (a.bossDamageDealt || 0) : (a.damageDealt || 0);
       const totalDmgValue = bossOnlyMode ? totalBossDmg : totalDmg;
       const bossCritTotal = a.bossCritTotalDealt || 0;
-      const critTotal = a.critHitsDealt ? (bossOnlyMode ? bossCritTotal : a.damageDealt) : 0;
+      const critTotal = a.critHitsDealt ? (bossOnlyMode ? bossCritTotal : (a.critTotalDealt || 0)) : 0;
       const bossLuckyTotal = a.bossLuckyTotalDealt || 0;
-      const luckyTotal = a.luckyHitsDealt ? (bossOnlyMode ? bossLuckyTotal : a.damageDealt) : 0;
+      const luckyTotal = a.luckyHitsDealt ? (bossOnlyMode ? bossLuckyTotal : (a.luckyTotalDealt || 0)) : 0;
 
       return {
         uid: a.actorId,
