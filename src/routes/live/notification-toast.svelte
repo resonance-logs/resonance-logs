@@ -43,7 +43,7 @@
     <div
       in:fly={{ y: 20, duration: 300 }}
       out:fade={{ duration: 200 }}
-      class={`pointer-events-auto flex items-center gap-3 rounded border px-4 py-2.5 text-sm text-white shadow-xl backdrop-blur-md ${getToastClass(toast.type)}`}
+      class={`pointer-events-auto flex items-center gap-2 rounded border px-3 py-2 text-xs text-white shadow-xl backdrop-blur-md ${getToastClass(toast.type)}`}
     >
       <span>{toast.message}</span>
       <button

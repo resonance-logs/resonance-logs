@@ -99,4 +99,4 @@ setTimeout(() => {
     setDpsPlayers(generateMockPlayers());
     setHealPlayers(generateMockPlayers());
     setTankedPlayers(generateMockPlayers());
-}, 100);
+}, 1);

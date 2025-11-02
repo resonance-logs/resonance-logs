@@ -127,9 +127,9 @@ export const isPaused = writable(false);
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-<div class="flex h-screen flex-col text-sm text-white">
+<div class="flex h-screen flex-col text-xs text-white">
   <Header />
-  <main class={cn("flex-1 overflow-y-auto", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/25")}>
+  <main class={cn("flex-1 overflow-y-auto", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/40")}>
     {@render children()}
   </main>
   <Footer />

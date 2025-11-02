@@ -137,13 +137,13 @@
 </script>
 
 <!-- justify-between to create left/right sides -->
-<header data-tauri-drag-region class="sticky top-0 flex w-full items-center justify-between gap-2 bg-neutral-900/80 px-1 py-1">
+<header data-tauri-drag-region class="flex w-full items-center justify-between gap-1 bg-neutral-900 px-4 py-3 text-sm rounded-t-lg">
   <!-- Left side -->
   <div class="flex flex-col" data-tauri-drag-region>
     <div class="flex flex-wrap items-center gap-2" data-tauri-drag-region>
-      <span {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
-      <span><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
-      <span><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
+      <span class="text-sm font-medium" {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
+      <span class="text-sm"><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
+      <span class="text-sm"><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
     </div>
 
     {#if headerInfo.bosses.length > 0}
@@ -164,7 +164,7 @@
     {/if}
   </div>
   <!-- Right side -->
-  <span class="flex gap-1">
+  <span class="flex gap-2">
     <!-- TODO: add responsive clicks, toaster -->
     <!-- <button
       onclick={async () => takeScreenshot(screenshotDiv)}
@@ -172,7 +172,7 @@
     >
       <CameraIcon />
     </button> -->
-    <button onclick={handleResetEncounter} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon /></button>
+    <button onclick={handleResetEncounter} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon class="size-5" /></button>
     <button
       onclick={() => {
         togglePauseEncounter();
@@ -180,9 +180,9 @@
       }}
     >
       {#if isEncounterPaused}
-        <PlayIcon {@attach tooltip(() => "Resume Encounter")} />
+        <PlayIcon {@attach tooltip(() => "Resume Encounter")} class="size-5" />
       {:else}
-        <PauseIcon {@attach tooltip(() => "Pause Encounter")} />
+        <PauseIcon {@attach tooltip(() => "Pause Encounter")} class="size-5" />
       {/if}
     </button>
     <button
@@ -192,11 +192,11 @@
       onclick={toggleBossOnlyDamage}
       {@attach tooltip(() => (bossOnlyDpsEnabled ? "Boss Only Damage Enabled" : "Enable Boss Only Damage"))}
     >
-      <CrownIcon />
+      <CrownIcon class="size-5" />
     </button>
-    <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon /></button>
-    <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon /></button>
-    <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon /></button>
+    <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon class="size-5" /></button>
+    <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon class="size-5" /></button>
+    <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon class="size-5" /></button>
   </span>
 </header>
 

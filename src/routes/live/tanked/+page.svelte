@@ -1,36 +1,20 @@
 <script lang="ts">
-  import { getClassColor } from "$lib/utils.svelte";
+  import { getClassIcon } from "$lib/utils.svelte";
   import { goto } from "$app/navigation";
-  import { getCoreRowModel } from "@tanstack/table-core";
-  import { createSvelteTable } from "$lib/svelte-table";
-  import { tankedPlayersColumnDefs } from "$lib/table-info";
-  import FlexRender from "$lib/svelte-table/flex-render.svelte";
   import { settings } from "$lib/settings-store";
   import { getTankedPlayers } from "$lib/stores/live-meter-store.svelte";
+  import TableRowGlow from "$lib/components/table-row-glow.svelte";
+  import { historyDpsPlayerColumns } from "$lib/history-columns";
+  import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
+  import PercentFormat from "$lib/components/percent-format.svelte";
 
   // Create reactive data reference to avoid recreating table on every render
   let tankedData = $state(getTankedPlayers().playerRows);
-  let columnVisibility = $state(settings.state.live.tanked?.players || {});
 
   // Update data when store changes
   $effect(() => {
     tankedData = getTankedPlayers().playerRows;
   });
-
-  // Update column visibility when settings change
-  $effect(() => {
-    columnVisibility = settings.state.live.tanked?.players || {};
-  });
-
-  // Create table reactively when data or visibility changes
-  const tankedTable = $derived(createSvelteTable({
-    data: tankedData,
-    columns: tankedPlayersColumnDefs,
-    getCoreRowModel: getCoreRowModel(),
-    state: {
-      columnVisibility,
-    },
-  }));
 
   // Optimize derived calculations to avoid recalculation on every render
   let maxTaken = $state(0);
@@ -44,35 +28,60 @@
   });
 
   // Update settings references when settings change
-  $effect(() => {
+ $effect(() => {
     SETTINGS_YOUR_NAME = settings.state["general"]["showYourName"];
     SETTINGS_OTHERS_NAME = settings.state["general"]["showOthersName"];
   });
 
+  // Get visible columns based on settings - use the same structure as DPS but for tanked data
+  let visiblePlayerColumns = $derived.by(() => {
+    return historyDpsPlayerColumns.filter(col => settings.state.live.tanked.players[col.key]);
+  });
 </script>
 
-<div class="relative flex flex-col">
-  <table class="w-screen table-fixed">
-    <thead class="z-1 sticky top-0 h-6">
-      <tr class="bg-neutral-900">
-        {#each tankedTable.getHeaderGroups() as headerGroup (headerGroup.id)}
-          {#each headerGroup.headers as header (header.id)}
-            <th class={header.column.columnDef.meta?.class}><FlexRender content={header.column.columnDef.header ?? "UNKNOWN HEADER"} context={header.getContext()} /></th>
-          {/each}
+<div class="relative flex flex-col gap-1 rounded-lg overflow-hidden">
+  <table class="w-full border-collapse rounded-lg overflow-hidden">
+    <thead>
+      <tr class="bg-neutral-900/60">
+        <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-neutral-500">Player</th>
+        {#each visiblePlayerColumns as col (col.key)}
+          <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-neutral-500">{col.header}</th>
         {/each}
       </tr>
     </thead>
     <tbody>
-      {#each tankedTable.getRowModel().rows as row (row.id)}
-        {@const className = row.original.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? row.original.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? row.original.className : ""}
-        <tr class="h-7 px-2 py-1 text-center" onclick={() => goto(`/live/tanked/skills?playerUid=${row.original.uid}`)}>
-          {#each row.getVisibleCells() as cell (cell.id)}
-            <td class="text-right"><FlexRender content={cell.column.columnDef.cell ?? "UNKNOWN CELL"} context={cell.getContext()} /></td>
+      {#each tankedData as player (player.uid)}
+        {@const className = player.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
+        <tr
+          class="relative bg-neutral-900/60 hover:bg-neutral-800/60 transition-all cursor-pointer h-14 text-base group border-b border-neutral-800/30"
+          onclick={() => goto(`/live/tanked/skills?playerUid=${player.uid}`)}
+        >
+          <td class="px-3 py-3 text-base text-neutral-200 relative z-10">
+            <div class="flex items-center gap-3 h-full">
+              <img
+                class="size-6 object-contain"
+                src={getClassIcon(className)}
+                alt="Class icon"
+              />
+              <span class="truncate font-medium">{player.name}</span>
+            </div>
+          </td>
+          {#each visiblePlayerColumns as col (col.key)}
+            <td class="px-3 py-3 text-right text-base text-neutral-200 relative z-10">
+              {#if col.key === 'totalDmg'}
+                <AbbreviatedNumber num={player.totalDmg} />
+              {:else if col.key === 'dmgPct'}
+                <PercentFormat val={player.dmgPct} fractionDigits={0} />
+              {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
+                <PercentFormat val={player[col.key]} />
+              {:else}
+                {col.format(player[col.key] ?? 0)}
+              {/if}
+            </td>
           {/each}
-          <td class="-z-1 absolute left-0 h-7" style="background-color: {getClassColor(className)}; width: {settings.state.general.relativeToTopDPSPlayer ? (maxTaken > 0 ? (row.original.totalDmg / maxTaken) * 100 : 0) : row.original.dmgPct}%;"></td>
+          <TableRowGlow className={className} percentage={settings.state.general.relativeToTopDPSPlayer ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
         </tr>
       {/each}
     </tbody>
   </table>
 </div>
-
