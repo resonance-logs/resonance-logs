@@ -4,7 +4,7 @@ use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
 use blueprotobuf_lib::blueprotobuf;
 use log::{info, warn};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
@@ -29,6 +29,7 @@ pub struct AppState {
     pub skill_subscriptions: HashSet<(i64, String)>,
     pub app_handle: AppHandle,
     pub boss_only_dps: bool,
+    pub low_hp_bosses: HashMap<i64, u128>,
 }
 
 impl AppState {
@@ -39,6 +40,7 @@ impl AppState {
             skill_subscriptions: HashSet::new(),
             app_handle,
             boss_only_dps: false,
+            low_hp_bosses: HashMap::new(),
         }
     }
 
@@ -143,6 +145,7 @@ impl AppStateManager {
 
         // Clear skill subscriptions
         state.skill_subscriptions.clear();
+        state.low_hp_bosses.clear();
     }
 
     async fn process_sync_near_entities(
@@ -215,6 +218,9 @@ impl AppStateManager {
             // Clear dead bosses tracking on reset
             state.event_manager.clear_dead_bosses();
         }
+
+        state.low_hp_bosses.clear();
+        state.skill_subscriptions.clear();
     }
 
     pub async fn get_encounter(&self) -> Encounter {
@@ -348,7 +354,40 @@ impl AppStateManager {
         let mut state = self.state.write().await;
 
         // Emit encounter update and handle boss deaths
-        if let Some((header_info, dead_bosses)) = header_info_with_deaths {
+        if let Some((mut header_info, mut dead_bosses)) = header_info_with_deaths {
+            use std::collections::HashSet;
+
+            let mut dead_ids: HashSet<i64> = dead_bosses.iter().map(|(uid, _)| *uid).collect();
+            let current_time_ms = now_ms() as u128;
+
+            for boss in &mut header_info.bosses {
+                let hp_percent = if let (Some(curr_hp), Some(max_hp)) = (boss.current_hp, boss.max_hp) {
+                    if max_hp > 0 {
+                        curr_hp as f64 / max_hp as f64 * 100.0
+                    } else {
+                        0.0
+                    }
+                } else {
+                    100.0
+                };
+
+                if hp_percent < 5.0 {
+                    let entry = state.low_hp_bosses.entry(boss.uid).or_insert(current_time_ms);
+                    if current_time_ms.saturating_sub(*entry) >= 5_000 {
+                        if dead_ids.insert(boss.uid) {
+                            dead_bosses.push((boss.uid, boss.name.clone()));
+                        }
+                    }
+                } else {
+                    state.low_hp_bosses.remove(&boss.uid);
+                }
+
+                if dead_ids.contains(&boss.uid) {
+                    boss.current_hp = Some(0);
+                    state.low_hp_bosses.remove(&boss.uid);
+                }
+            }
+
             state.event_manager.emit_encounter_update(
                 header_info,
                 encounter.is_encounter_paused, // Use the original encounter state
