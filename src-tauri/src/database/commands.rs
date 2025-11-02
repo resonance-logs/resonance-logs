@@ -526,6 +526,23 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
         mapped.push(EncounterSummaryDto {
             id,
             started_at_ms: started,
+            ended_at_ms: ended,
+            total_dmg: td.unwrap_or(0),
+            total_heal: th.unwrap_or(0),
+            bosses: boss_names,
+            players: player_data,
+            actors: Vec::new(),
+        });
+    }
+
+    Ok(RecentEncountersResult {
+        rows: mapped,
+        total_count,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounterStatDto>, String> {
     let mut conn = get_conn()?;
     load_actor_stats(&mut conn, encounter_id)
@@ -534,7 +551,6 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
 /// Get player name by UID from database
 pub fn get_name_by_uid(uid: i64) -> Result<Option<String>, String> {
     let mut conn = get_conn()?;
-{{ ... }
     use sch::entities::dsl as en;
 
     let name: Option<Option<String>> = en::entities
