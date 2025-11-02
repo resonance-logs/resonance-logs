@@ -65,7 +65,7 @@
                 class="{isCompactMode ? 'size-4' : 'size-6'} object-contain"
                 src={getClassIcon(className)}
                 alt="Class icon"
-                {@attach tooltip(() => `${player.className}${player.classSpecName ? '-' + player.classSpecName : ''}`)}
+                {@attach tooltip(() => `${player.className}${player.classSpecName ? ' - ' + player.classSpecName : ''}`)}
               />
               <span class="truncate font-medium">
                 {#if player.abilityScore > 0}

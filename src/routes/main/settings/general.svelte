@@ -3,7 +3,6 @@
   import { SETTINGS } from "$lib/settings-store";
   import { setBossOnlyDps } from "$lib/api";
   import SettingsSelect from "./settings-select.svelte";
-  import SettingsSlider from "./settings-slider.svelte";
   import SettingsSwitch from "./settings-switch.svelte";
 
   const SETTINGS_CATEGORY = "general";
@@ -25,5 +24,4 @@
   <SettingsSwitch bind:checked={SETTINGS.general.state.relativeToTopHealSkill} label="Relative to Top - Skill" description="Color bars are relative to top healing skill instead of all skills. Useful for 20 man or World Bosses." />
   <SettingsSwitch bind:checked={SETTINGS.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
   <SettingsSwitch bind:checked={SETTINGS.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
-  <SettingsSlider bind:value={SETTINGS.general.state.resetElapsed} label="Reset after Elapsed Time" description="Amount of time to wait before the meter automatically resets the encounter. 0s = Never Resets"></SettingsSlider>
 </Tabs.Content>

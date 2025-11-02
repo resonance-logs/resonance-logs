@@ -51,7 +51,6 @@ const DEFAULT_GENERAL_SETTINGS = {
   relativeToTopHealPlayer: false,
   relativeToTopHealSkill: false,
   shortenAbilityScore: true,
-  resetElapsed: 60,
   bossOnlyDps: false,
 };
 
@@ -60,6 +59,7 @@ const DEFAULT_SETTINGS = {
   accessibility: {
     blur: !IS_WIN_11,
     transparency: false,
+    compactMode: false,
   },
   shortcuts: {
     showLiveMeter: "",
