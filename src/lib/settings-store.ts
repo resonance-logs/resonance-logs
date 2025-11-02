@@ -41,20 +41,22 @@ export const DEFAULT_HISTORY_HEAL_STATS = {
 
 export type ShortcutSettingId = keyof typeof DEFAULT_SETTINGS.shortcuts;
 
+const DEFAULT_GENERAL_SETTINGS = {
+  showYourName: "Show Your Name",
+  showOthersName: "Show Others' Name",
+  showYourAbilityScore: true,
+  showOthersAbilityScore: true,
+  relativeToTopDPSPlayer: false,
+  relativeToTopDPSSkill: false,
+  relativeToTopHealPlayer: false,
+  relativeToTopHealSkill: false,
+  shortenAbilityScore: true,
+  resetElapsed: 60,
+  bossOnlyDps: false,
+};
+
 const DEFAULT_SETTINGS = {
-  general: {
-    showYourName: "Show Your Name",
-    showOthersName: "Show Others' Name",
-    showYourAbilityScore: true,
-    showOthersAbilityScore: true,
-    relativeToTopDPSPlayer: false,
-    relativeToTopDPSSkill: false,
-    relativeToTopHealPlayer: false,
-    relativeToTopHealSkill: false,
-    shortenAbilityScore: true,
-    resetElapsed: 60,
-    bossOnlyDps: false,
-  },
+  general: { ...DEFAULT_GENERAL_SETTINGS },
   accessibility: {
     blur: !IS_WIN_11,
     transparency: false,
@@ -71,6 +73,7 @@ const DEFAULT_SETTINGS = {
     toggleBossHp: "",
   },
   live: {
+    general: { ...DEFAULT_GENERAL_SETTINGS },
     dpsPlayers: { ...DEFAULT_STATS },
     dpsSkillBreakdown: { ...DEFAULT_STATS },
     healPlayers: { ...DEFAULT_STATS },
@@ -79,6 +82,7 @@ const DEFAULT_SETTINGS = {
     tankedSkillBreakdown: { ...DEFAULT_STATS },
   },
   history: {
+    general: { ...DEFAULT_GENERAL_SETTINGS },
     dpsPlayers: { ...DEFAULT_HISTORY_STATS },
     dpsSkillBreakdown: { ...DEFAULT_HISTORY_STATS },
     healPlayers: { ...DEFAULT_HISTORY_HEAL_STATS },
@@ -108,6 +112,11 @@ export const SETTINGS = {
     RUNE_STORE_OPTIONS
   ),
   live: {
+    general: new RuneStore(
+      'liveGeneral',
+      DEFAULT_SETTINGS.live.general,
+      RUNE_STORE_OPTIONS
+    ),
     dps: {
       players: new RuneStore(
         'liveDpsPlayers',
@@ -146,6 +155,11 @@ export const SETTINGS = {
     },
   },
   history: {
+    general: new RuneStore(
+      'historyGeneral',
+      DEFAULT_SETTINGS.history.general,
+      RUNE_STORE_OPTIONS
+    ),
     dps: {
       players: new RuneStore(
         'historyDpsPlayers',

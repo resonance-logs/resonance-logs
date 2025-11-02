@@ -66,7 +66,7 @@
                 src={getClassIcon(className)}
                 alt="Class icon"
               />
-              <span class="truncate font-medium">{player.name}</span>
+              <span class="truncate font-medium">{player.name || `#${player.uid}`}</span>
             </div>
           </td>
           {#each visiblePlayerColumns as col (col.key)}

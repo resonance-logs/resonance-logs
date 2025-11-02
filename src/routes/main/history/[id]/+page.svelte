@@ -102,6 +102,7 @@
         name: a.name ?? String(a.actorId),
         className,
         classDisplay: className || "Unknown Class",
+        abilityScore: a.abilityScore || 0,
         totalDmg: dmgValue,
         dps: dmgValue / durationSecs,
         dmgPct: totalDmgValue > 0 ? (dmgValue * 100) / totalDmgValue : 0,
@@ -263,7 +264,7 @@
               onclick={() => viewPlayerSkills(p.uid, activeTab === 'healing' ? 'heal' : 'dps')}
             >
               <td class="px-3 py-3 text-sm text-neutral-300 relative z-10">
-                <div class="flex items-end gap-2 h-full">
+                <div class="flex items-center gap-2 h-full">
                   <img
                     class="size-5 object-contain"
                     src={getClassIcon(p.className)}
@@ -274,7 +275,10 @@
                     class="truncate"
                     {@attach tooltip(() => `UID: #${p.uid}`)}
                   >
-                    {p.name}
+                    {#if p.abilityScore > 0}
+                      <span class="text-neutral-400">{p.abilityScore}</span>
+                    {/if}
+                    {p.name || `#${p.uid}`}
                   </span>
                 </div>
               </td>
