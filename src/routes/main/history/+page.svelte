@@ -407,7 +407,7 @@
 												class="size-7 object-contain flex-shrink-0"
 												src={getClassIcon(getClassName(player.classId))}
 												alt="Class icon"
-												{@attach tooltip(() => player.name)}
+												{@attach tooltip(() => player.isLocalPlayer ? `${player.name} (You)` : player.name)}
 											/>
 										{/each}
 										{#if enc.players.length > 8}

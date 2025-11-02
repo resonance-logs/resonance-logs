@@ -92,6 +92,7 @@ diesel::table! {
         boss_crit_total_dealt -> BigInt,
         boss_lucky_total_dealt -> BigInt,
         is_player -> Integer,
+        is_local_player -> Integer,
     }
 }
 

@@ -68,6 +68,7 @@ pub struct EncounterWithDetailsDto {
 pub struct PlayerInfoDto {
     pub name: String,
     pub class_id: Option<i32>,
+    pub is_local_player: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -90,12 +91,19 @@ pub struct ActorEncounterStatDto {
     pub lucky_hits_dealt: i64,
     pub lucky_hits_heal: i64,
     pub lucky_hits_taken: i64,
+    pub crit_total_dealt: i64,
+    pub crit_total_heal: i64,
+    pub crit_total_taken: i64,
+    pub lucky_total_dealt: i64,
+    pub lucky_total_heal: i64,
+    pub lucky_total_taken: i64,
     pub boss_damage_dealt: i64,
     pub boss_hits_dealt: i64,
     pub boss_crit_hits_dealt: i64,
     pub boss_lucky_hits_dealt: i64,
     pub boss_crit_total_dealt: i64,
     pub boss_lucky_total_dealt: i64,
+    pub is_local_player: bool,
 }
 
 fn load_actor_stats(
@@ -125,12 +133,19 @@ fn load_actor_stats(
             s::lucky_hits_dealt,
             s::lucky_hits_heal,
             s::lucky_hits_taken,
+            s::crit_total_dealt,
+            s::crit_total_heal,
+            s::crit_total_taken,
+            s::lucky_total_dealt,
+            s::lucky_total_heal,
+            s::lucky_total_taken,
             s::boss_damage_dealt,
             s::boss_hits_dealt,
             s::boss_crit_hits_dealt,
             s::boss_lucky_hits_dealt,
             s::boss_crit_total_dealt,
             s::boss_lucky_total_dealt,
+            s::is_local_player,
         ))
         .order((
             s::damage_dealt.desc(),
@@ -161,6 +176,13 @@ fn load_actor_stats(
             i64,
             i64,
             i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i32,
         )>(conn)
         .map_err(|e| e.to_string())?;
 
@@ -185,12 +207,19 @@ fn load_actor_stats(
                 lucky_hits_dealt,
                 lucky_hits_heal,
                 lucky_hits_taken,
+                crit_total_dealt,
+                crit_total_heal,
+                crit_total_taken,
+                lucky_total_dealt,
+                lucky_total_heal,
+                lucky_total_taken,
                 boss_damage_dealt,
                 boss_hits_dealt,
                 boss_crit_hits_dealt,
                 boss_lucky_hits_dealt,
                 boss_crit_total_dealt,
                 boss_lucky_total_dealt,
+                is_local_player,
             )| ActorEncounterStatDto {
                 encounter_id,
                 actor_id,
@@ -209,12 +238,19 @@ fn load_actor_stats(
                 lucky_hits_dealt,
                 lucky_hits_heal,
                 lucky_hits_taken,
+                crit_total_dealt,
+                crit_total_heal,
+                crit_total_taken,
+                lucky_total_dealt,
+                lucky_total_heal,
+                lucky_total_taken,
                 boss_damage_dealt,
                 boss_hits_dealt,
                 boss_crit_hits_dealt,
                 boss_lucky_hits_dealt,
                 boss_crit_total_dealt,
                 boss_lucky_total_dealt,
+                is_local_player: is_local_player == 1,
             },
         )
         .collect())
@@ -443,11 +479,15 @@ pub fn get_recent_encounters_filtered(
         let player_data: Vec<PlayerInfoDto> = s::actor_encounter_stats
             .filter(s::encounter_id.eq(id))
             .filter(s::is_player.eq(1))
-            .select((s::name, s::class_id))
-            .load::<(Option<String>, Option<i32>)>(&mut conn)
+            .select((s::name, s::class_id, s::is_local_player))
+            .load::<(Option<String>, Option<i32>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?
             .into_iter()
-            .filter_map(|(name, class_id)| name.map(|n| PlayerInfoDto { name: n, class_id }))
+            .filter_map(|(name, class_id, is_local)| name.map(|n| PlayerInfoDto { 
+                name: n, 
+                class_id,
+                is_local_player: is_local != 0,
+            }))
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
@@ -519,11 +559,15 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
         let player_data: Vec<PlayerInfoDto> = s::actor_encounter_stats
             .filter(s::encounter_id.eq(id))
             .filter(s::is_player.eq(1))
-            .select((s::name, s::class_id))
-            .load::<(Option<String>, Option<i32>)>(&mut conn)
+            .select((s::name, s::class_id, s::is_local_player))
+            .load::<(Option<String>, Option<i32>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?
             .into_iter()
-            .filter_map(|(name, class_id)| name.map(|n| PlayerInfoDto { name: n, class_id }))
+            .filter_map(|(name, class_id, is_local)| name.map(|n| PlayerInfoDto { 
+                name: n, 
+                class_id,
+                is_local_player: is_local != 0,
+            }))
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
@@ -637,6 +681,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
             actor.name.as_ref().map(|name| PlayerInfoDto {
                 name: name.clone(),
                 class_id: actor.class_id,
+                is_local_player: actor.is_local_player,
             })
         })
         .collect::<HashSet<_>>()
@@ -724,11 +769,15 @@ pub fn get_recent_encounters_with_details(
         let player_data: Vec<PlayerInfoDto> = s::actor_encounter_stats
             .filter(s::encounter_id.eq(id))
             .filter(s::is_player.eq(1))
-            .select((s::name, s::class_id))
-            .load::<(Option<String>, Option<i32>)>(&mut conn)
+            .select((s::name, s::class_id, s::is_local_player))
+            .load::<(Option<String>, Option<i32>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?
             .into_iter()
-            .filter_map(|(name, class_id)| name.map(|n| PlayerInfoDto { name: n, class_id }))
+            .filter_map(|(name, class_id, is_local)| name.map(|n| PlayerInfoDto { 
+                name: n, 
+                class_id,
+                is_local_player: is_local != 0,
+            }))
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();

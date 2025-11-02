@@ -120,6 +120,7 @@
       return {
         uid: a.actorId,
         name: a.name ?? String(a.actorId),
+        isLocalPlayer: a.isLocalPlayer ?? false,
         className,
         classDisplay: className || "Unknown Class",
         abilityScore: a.abilityScore || 0,
@@ -303,6 +304,9 @@
                       {/if}
                     {/if}
                     {p.name || `#${p.uid}`}
+                    {#if p.isLocalPlayer}
+                      <span class="text-blue-400 ml-1">(You)</span>
+                    {/if}
                   </span>
                 </div>
               </td>

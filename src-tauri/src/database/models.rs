@@ -162,6 +162,7 @@ pub struct ActorEncounterStatRow {
     pub boss_crit_total_dealt: i64,
     pub boss_lucky_total_dealt: i64,
     pub is_player: i32,
+    pub is_local_player: i32,
     pub attributes: Option<String>,
 }
 

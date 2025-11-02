@@ -8,12 +8,22 @@ use window_vibrancy::{apply_blur, clear_blur};
 use crate::live::event_manager; // for generate_skills_window_*
 
 fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -> String {
-    if player_uid == local_player_uid && player_name.is_empty() {
-        String::from("You")
-    } else if player_uid == local_player_uid && !player_name.is_empty() {
-        format!("{player_name} (You)")
+    // If entity name is empty, try to get it from the database
+    let effective_name = if player_name.is_empty() {
+        crate::live::player_names::PlayerNames::get_name_by_uid(player_uid)
+            .unwrap_or_else(|| String::new())
     } else {
         player_name.clone()
+    };
+
+    if player_uid == local_player_uid && effective_name.is_empty() {
+        String::from("You")
+    } else if player_uid == local_player_uid && !effective_name.is_empty() {
+        format!("{effective_name} (You)")
+    } else if effective_name.is_empty() {
+        format!("#{player_uid}")
+    } else {
+        effective_name
     }
 }
 
