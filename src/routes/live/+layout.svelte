@@ -4,9 +4,16 @@
   import { SETTINGS } from "$lib/settings-store";
   import { cn } from "$lib/utils";
   import { onPlayersUpdate, onResetEncounter, onEncounterUpdate } from "$lib/api";
-import { writable } from "svelte/store";
-// Store for pause state
-export const isPaused = writable(false);
+  import { writable } from "svelte/store";
+  import { beforeNavigate, afterNavigate } from "$app/navigation";
+  import { page } from "$app/stores";
+
+  // Store for pause state
+  export const isPaused = writable(false);
+
+  // Store for scroll positions
+  const scrollPositions = writable<Record<string, number>>({});
+
   import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores } from "$lib/stores/live-meter-store.svelte";
   import Footer from "./footer.svelte";
   import Header from "./header.svelte";
@@ -17,6 +24,7 @@ export const isPaused = writable(false);
   // let screenshotDiv: HTMLDivElement | undefined = $state();
 
   let notificationToast: NotificationToast;
+  let mainElement: HTMLElement | null = null;
   let unlisten: (() => void) | null = null;
   let lastEventTime = Date.now();
   let reconnectInterval: ReturnType<typeof setInterval> | null = null;
@@ -106,6 +114,31 @@ export const isPaused = writable(false);
     }, 1000);
   }
 
+  // Save scroll position before navigating away
+  beforeNavigate(({ from }) => {
+    if (mainElement && from?.url.pathname) {
+      scrollPositions.update(positions => ({
+        ...positions,
+        [from.url.pathname]: mainElement.scrollTop
+      }));
+    }
+  });
+
+  // Restore scroll position after navigation
+  afterNavigate(({ to }) => {
+    if (mainElement && to?.url.pathname) {
+      const savedPosition = $scrollPositions[to.url.pathname];
+      if (savedPosition !== undefined) {
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+          if (mainElement) {
+            mainElement.scrollTop = savedPosition;
+          }
+        });
+      }
+    }
+  });
+
   onMount(() => {
     setupEventListeners();
     startReconnectCheck();
@@ -130,7 +163,7 @@ export const isPaused = writable(false);
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
 <div class="flex h-screen flex-col text-xs text-white">
   <Header />
-  <main class={cn("flex-1 overflow-y-auto px-2 py-2 gap-4", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/40")}>
+  <main bind:this={mainElement} class={cn("flex-1 overflow-y-auto px-2 py-2 gap-4", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/40")}>
     <BossHealth />
     {@render children()}
   </main>
