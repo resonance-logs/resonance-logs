@@ -1011,7 +1011,7 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                             // Store as unknown varint attribute
                             player_entity
                                 .set_attr(AttrType::Unknown(attr_id), AttrValue::Int(val as i64));
-                            log::trace!("Unknown player attribute ID: 0x{:x} = {}", attr_id, val);
+                            // log::trace!("Unknown player attribute ID: 0x{:x} = {}", attr_id, val);
                         }
                         Err(_) => {
                             // Try as string
@@ -1027,11 +1027,11 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                                                     AttrType::Unknown(attr_id),
                                                     AttrValue::String(s.clone()),
                                                 );
-                                                log::trace!(
-                                                    "Unknown player attribute ID: 0x{:x} = \"{}\"",
-                                                    attr_id,
-                                                    s
-                                                );
+                                                // log::trace!(
+                                                //     "Unknown player attribute ID: 0x{:x} = \"{}\"",
+                                                //     attr_id,
+                                                //     s
+                                                // );
                                             }
                                             Err(_) => {
                                                 // Store as hex string for binary data
@@ -1044,11 +1044,11 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                                                     AttrType::Unknown(attr_id),
                                                     AttrValue::String(format!("0x{}", hex_str)),
                                                 );
-                                                log::trace!(
-                                                    "Unknown player attribute ID: 0x{:x} = hex {}",
-                                                    attr_id,
-                                                    hex_str
-                                                );
+                                                // log::trace!(
+                                                //     "Unknown player attribute ID: 0x{:x} = hex {}",
+                                                //     attr_id,
+                                                //     hex_str
+                                                // );
                                             }
                                         }
                                     } else {
@@ -1061,11 +1061,11 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                                             AttrType::Unknown(attr_id),
                                             AttrValue::String(format!("0x{}", hex_str)),
                                         );
-                                        log::trace!(
-                                            "Unknown player attribute ID: 0x{:x} = hex {}",
-                                            attr_id,
-                                            hex_str
-                                        );
+                                        // log::trace!(
+                                        //     "Unknown player attribute ID: 0x{:x} = hex {}",
+                                        //     attr_id,
+                                        //     hex_str
+                                        // );
                                     }
                                 }
                                 Err(_) => {
@@ -1078,11 +1078,11 @@ fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<
                                         AttrType::Unknown(attr_id),
                                         AttrValue::String(format!("0x{}", hex_str)),
                                     );
-                                    log::trace!(
-                                        "Unknown player attribute ID: 0x{:x} = hex {}",
-                                        attr_id,
-                                        hex_str
-                                    );
+                                    // log::trace!(
+                                    //     "Unknown player attribute ID: 0x{:x} = hex {}",
+                                    //     attr_id,
+                                    //     hex_str
+                                    // );
                                 }
                             }
                         }

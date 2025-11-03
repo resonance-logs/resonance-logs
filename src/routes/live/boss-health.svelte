@@ -10,6 +10,8 @@
     elapsedMs: 0,
     fightStartTimestampMs: 0,
     bosses: [],
+    sceneId: null,
+    sceneName: null,
   });
 
   // Track compact mode

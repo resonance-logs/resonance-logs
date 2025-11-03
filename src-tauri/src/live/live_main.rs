@@ -30,6 +30,16 @@ pub async fn start(app_handle: AppHandle) {
     while let Some((op, data)) = rx.recv().await {
         let event = match op {
             packets::opcodes::Pkt::ServerChangeInfo => StateEvent::ServerChange,
+            packets::opcodes::Pkt::EnterScene => {
+                info!("Received EnterScene packet");
+                match blueprotobuf::EnterScene::decode(Bytes::from(data)) {
+                    Ok(v) => StateEvent::EnterScene(v),
+                    Err(e) => {
+                        warn!("Error decoding EnterScene.. ignoring: {e}");
+                        continue;
+                    }
+                }
+            }
             packets::opcodes::Pkt::SyncNearEntities => {
                 match blueprotobuf::SyncNearEntities::decode(Bytes::from(data)) {
                     Ok(v) => StateEvent::SyncNearEntities(v),

@@ -16,6 +16,8 @@ export type HeaderInfo = {
   elapsedMs: number;
   fightStartTimestampMs: number; // Unix timestamp when fight started
   bosses: BossHealth[];
+  sceneId: number | null;
+  sceneName: string | null;
 };
 
 export type PlayerRow = {
@@ -79,6 +81,10 @@ export type BossDeathPayload = {
   bossName: string;
 };
 
+export type SceneChangePayload = {
+  sceneName: string;
+};
+
 // Event listener functions
 export const onEncounterUpdate = (handler: (event: { payload: EncounterUpdatePayload }) => void): Promise<UnlistenFn> =>
   listen("encounter-update", handler);
@@ -91,6 +97,9 @@ export const onSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }
 
 export const onBossDeath = (handler: (event: { payload: BossDeathPayload }) => void): Promise<UnlistenFn> =>
   listen("boss-death", handler);
+
+export const onSceneChange = (handler: (event: { payload: SceneChangePayload }) => void): Promise<UnlistenFn> =>
+  listen("scene-change", handler);
 
 // Convenience: factory to create metric-filtered listeners
 export const makeSkillsUpdateFilter =

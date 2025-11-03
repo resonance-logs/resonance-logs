@@ -19,6 +19,8 @@ pub struct HeaderInfo {
     pub elapsed_ms: u128,
     pub fight_start_timestamp_ms: u128, // Unix timestamp when fight started
     pub bosses: Vec<BossHealth>,
+    pub scene_id: Option<i32>,
+    pub scene_name: Option<String>,
 }
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
