@@ -17,6 +17,8 @@ pub struct Encounter {
     pub local_player_uid: i64,
     pub entity_uid_to_entity: HashMap<i64, Entity>, // key: entity uid
     pub local_player: SyncContainerData,
+    pub current_scene_id: Option<i32>,
+    pub current_scene_name: Option<String>,
 }
 
 // Use an async-aware RwLock so readers don't block the tokio runtime threads.

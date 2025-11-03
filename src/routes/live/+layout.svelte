@@ -3,7 +3,7 @@
   import { commands } from "$lib/bindings";
   import { SETTINGS } from "$lib/settings-store";
   import { cn } from "$lib/utils";
-  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath } from "$lib/api";
+  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange } from "$lib/api";
   import { writable } from "svelte/store";
   import { beforeNavigate, afterNavigate } from "$app/navigation";
   import { page } from "$app/stores";
@@ -88,12 +88,21 @@
         notificationToast?.showToast('notice', `${event.payload.bossName} defeated!`);
       });
 
+      // Set up scene change listener
+      const sceneChangeUnlisten = await onSceneChange((event) => {
+        console.log("Scene change event received:", event.payload);
+        notificationToast?.showToast('notice', `Scene changed to ${event.payload.sceneName}`);
+      });
+
+      console.log("Scene change listener set up");
+
       // Combine all unlisten functions
       unlisten = () => {
         playersUnlisten();
         resetUnlisten();
         encounterUnlisten();
         bossDeathUnlisten();
+        sceneChangeUnlisten();
       };
 
       console.log("Event listeners set up for live meter data");

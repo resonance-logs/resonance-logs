@@ -41,6 +41,8 @@
       elapsedMs: 0,
       fightStartTimestampMs: 0,
       bosses: [],
+      sceneId: null,
+      sceneName: null,
     };
   }
 
@@ -104,6 +106,8 @@
     elapsedMs: 0,
     fightStartTimestampMs: 0,
     bosses: [],
+    sceneId: null,
+    sceneName: null,
   });
   let isEncounterPaused = $state(false);
   let bossOnlyDpsEnabled = $derived(SETTINGS.general.state.bossOnlyDps);

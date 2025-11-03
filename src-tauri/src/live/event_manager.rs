@@ -95,6 +95,16 @@ impl EventManager {
         }
     }
 
+    pub fn emit_scene_change(&self, scene_name: String) {
+        if let Some(app_handle) = &self.app_handle {
+            let payload = SceneChangePayload { scene_name };
+            match app_handle.emit("scene-change", payload) {
+                Ok(_) => info!("Emitted scene-change event"),
+                Err(e) => error!("Failed to emit scene-change event: {}", e),
+            }
+        }
+    }
+
     pub fn emit_boss_death(&mut self, boss_name: String, boss_uid: i64) {
         // Only emit if we haven't already emitted for this boss
         if self.dead_bosses.insert(boss_uid) {
@@ -143,6 +153,12 @@ pub struct SkillsUpdatePayload {
 #[serde(rename_all = "camelCase")]
 pub struct BossDeathPayload {
     pub boss_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SceneChangePayload {
+    pub scene_name: String,
 }
 
 impl Default for EventManager {
@@ -910,6 +926,8 @@ pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<(H
             elapsed_ms: time_elapsed_ms,
             fight_start_timestamp_ms: encounter.time_fight_start_ms,
             bosses,
+            scene_id: encounter.current_scene_id,
+            scene_name: encounter.current_scene_name.clone(),
         },
         dead_bosses,
     ))

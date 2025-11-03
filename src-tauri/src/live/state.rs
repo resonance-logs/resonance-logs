@@ -12,6 +12,7 @@ use tokio::sync::RwLock;
 #[derive(Debug, Clone)]
 pub enum StateEvent {
     ServerChange,
+    EnterScene(blueprotobuf::EnterScene),
     SyncNearEntities(blueprotobuf::SyncNearEntities),
     SyncContainerData(blueprotobuf::SyncContainerData),
     SyncContainerDirtyData(blueprotobuf::SyncContainerDirtyData),
@@ -89,6 +90,9 @@ impl AppStateManager {
             StateEvent::ServerChange => {
                 self.on_server_change(&mut state).await;
             }
+            StateEvent::EnterScene(data) => {
+                self.process_enter_scene(&mut state, data).await;
+            }
             StateEvent::SyncNearEntities(data) => {
                 self.process_sync_near_entities(&mut state, data).await;
                 // Note: Player names are automatically stored in the database via UpsertEntity tasks
@@ -146,6 +150,272 @@ impl AppStateManager {
         // Clear skill subscriptions
         state.skill_subscriptions.clear();
         state.low_hp_bosses.clear();
+    }
+        // all scene id extraction logic is here (its pretty rough)
+    async fn process_enter_scene(
+        &self,
+        state: &mut AppState,
+        enter_scene: blueprotobuf::EnterScene,
+    ) {
+        use crate::live::scene_names;
+
+        info!("EnterScene packet received");
+
+        // Quick check: if a scene_guid string is present, try to parse digits from it
+        if let Some(info) = enter_scene.enter_scene_info.as_ref() {
+            if let Some(guid) = &info.scene_guid {
+                info!("EnterScene.scene_guid present: {}", guid);
+                // Try to extract numeric part of the guid
+                let digits: String = guid.chars().filter(|c| c.is_ascii_digit()).collect();
+                if !digits.is_empty() {
+                    if let Ok(v) = digits.parse::<i32>() {
+                        if scene_names::contains(v) {
+                            info!("Parsed scene id {} from scene_guid", v);
+                            // Directly use this id
+                            let name = scene_names::lookup(v);
+                            state.encounter.current_scene_id = Some(v);
+                            state.encounter.current_scene_name = Some(name.clone());
+                            if state.event_manager.should_emit_events() {
+                                state.event_manager.emit_scene_change(name);
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+            if let Some(connect) = &info.connect_guid {
+                info!("EnterScene.connect_guid present: {}", connect);
+            }
+        }
+
+        // Helper: try to find a known scene id by scanning varints at every offset
+        let find_scene_id_in_bytes = |data: &[u8]| -> Option<i32> {
+            // 1) Try protobuf varint decoding at every offset
+            for offset in 0..data.len() {
+                let mut slice = &data[offset..];
+                if let Ok(v) = prost::encoding::decode_varint(&mut slice) {
+                    if v <= i32::MAX as u64 {
+                        let cand = v as i32;
+                        if scene_names::contains(cand) {
+                            return Some(cand);
+                        }
+                    }
+                }
+            }
+
+            // 2) Try 4-byte little-endian and big-endian ints
+            if data.len() >= 4 {
+                for i in 0..=data.len() - 4 {
+                    let le = i32::from_le_bytes([data[i], data[i + 1], data[i + 2], data[i + 3]]);
+                    if le > 0 && scene_names::contains(le) {
+                        return Some(le);
+                    }
+                    let be = i32::from_be_bytes([data[i], data[i + 1], data[i + 2], data[i + 3]]);
+                    if be > 0 && scene_names::contains(be) {
+                        return Some(be);
+                    }
+                }
+            }
+
+            // 3) Try ASCII decimal substrings of length 2..6
+            let mut i = 0;
+            while i < data.len() {
+                if data[i].is_ascii_digit() {
+                    let start = i;
+                    i += 1;
+                    while i < data.len() && data[i].is_ascii_digit() {
+                        i += 1;
+                    }
+                    let len_digits = i - start;
+                    if len_digits >= 2 && len_digits <= 6 {
+                        if let Ok(s) = std::str::from_utf8(&data[start..i]) {
+                            if let Ok(v) = s.parse::<i32>() {
+                                if scene_names::contains(v) {
+                                    return Some(v);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    i += 1;
+                }
+            }
+
+            None
+        };
+
+        // Try several likely locations in the EnterSceneInfo where a scene id might be present
+        let mut found_scene: Option<i32> = None;
+        if let Some(info) = enter_scene.enter_scene_info.as_ref() {
+            // 1) Inspect explicit attr collections (subscene_attrs then scene_attrs)
+            for maybe_attrs in [info.subscene_attrs.as_ref(), info.scene_attrs.as_ref()] {
+                if let Some(attrs) = maybe_attrs {
+                    // Check simple attrs (varint or length-prefixed)
+                    for attr in &attrs.attrs {
+                        if found_scene.is_some() {
+                            break;
+                        }
+                        if let Some(raw) = &attr.raw_data {
+                            // If attr id suggests a scene id, prefer that first
+                            if let Some(attr_id) = attr.id {
+                                if attr_id == 0x01 || attr_id == 0x0a {
+                                    let mut buf = &raw[..];
+                                    if let Ok(v) = prost::encoding::decode_varint(&mut buf) {
+                                        let cand = v as i32;
+                                        if scene_names::contains(cand) {
+                                            info!("Found scene_id {} in attr {}", cand, attr_id);
+                                            found_scene = Some(cand);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Fallback: scan all varints in the raw bytes for a known scene id
+                            if found_scene.is_none() {
+                                if let Some(cand) = find_scene_id_in_bytes(raw) {
+                                    info!("Found scene_id {} by scanning attr raw bytes", cand);
+                                    found_scene = Some(cand);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if found_scene.is_some() {
+                        break;
+                    }
+
+                    // Check map_attrs entries (keys/values may contain the id)
+                    for map_attr in &attrs.map_attrs {
+                        if found_scene.is_some() {
+                            break;
+                        }
+                        for kv in &map_attr.attrs {
+                            if found_scene.is_some() {
+                                break;
+                            }
+                            if let Some(val) = &kv.value {
+                                if let Some(cand) = find_scene_id_in_bytes(val) {
+                                    info!("Found scene_id {} in map_attr value (map id {:?})", cand, map_attr.id);
+                                    found_scene = Some(cand);
+                                    break;
+                                }
+                            }
+                            if let Some(key) = &kv.key {
+                                if let Some(cand) = find_scene_id_in_bytes(key) {
+                                    info!("Found scene_id {} in map_attr key (map id {:?})", cand, map_attr.id);
+                                    found_scene = Some(cand);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if found_scene.is_some() {
+                        break;
+                    }
+                }
+            }
+
+            // 2) As a fallback, inspect player_ent.attrs if present
+            if found_scene.is_none() {
+                if let Some(player_ent) = &info.player_ent {
+                    if let Some(player_attrs) = &player_ent.attrs {
+                        for attr in &player_attrs.attrs {
+                            if let Some(raw) = &attr.raw_data {
+                                if let Some(cand) = find_scene_id_in_bytes(raw) {
+                                    info!("Found scene_id {} in player_ent attrs", cand);
+                                    found_scene = Some(cand);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Some(scene_id) = found_scene {
+            let scene_name = scene_names::lookup(scene_id);
+
+            // Update encounter with scene info
+            state.encounter.current_scene_id = Some(scene_id);
+            state.encounter.current_scene_name = Some(scene_name.clone());
+
+            info!("Scene changed to: {} (ID: {})", scene_name, scene_id);
+
+            // Emit scene change event
+            if state.event_manager.should_emit_events() {
+                info!("Emitting scene change event for: {}", scene_name);
+                state.event_manager.emit_scene_change(scene_name.clone());
+            } else {
+                warn!("Event manager not ready, skipping scene change emit");
+            }
+        } else {
+            warn!("Could not extract scene_id from EnterScene packet - dumping attrs for debugging");
+
+            // Helper to produce a short hex snippet for binary data
+            let to_hex_snip = |data: &[u8]| -> String {
+                data.iter()
+                    .take(16)
+                    .map(|b| format!("{:02x}", b))
+                    .collect::<Vec<_>>()
+                    .join("")
+            };
+
+            if let Some(info) = enter_scene.enter_scene_info.as_ref() {
+                for (label, maybe_attrs) in [("subscene_attrs", info.subscene_attrs.as_ref()), ("scene_attrs", info.scene_attrs.as_ref())] {
+                    if let Some(attrs) = maybe_attrs {
+                        info!("Inspecting {}: uuid={:?}, #attrs={}, #map_attrs={}", label, attrs.uuid, attrs.attrs.len(), attrs.map_attrs.len());
+
+                        for attr in &attrs.attrs {
+                            let id = attr.id.unwrap_or(-1);
+                            let len = attr.raw_data.as_ref().map(|b| b.len()).unwrap_or(0);
+                            let snip = attr.raw_data.as_ref().map(|b| to_hex_snip(b)).unwrap_or_default();
+                            info!("  attr id={} len={} snippet={}", id, len, snip);
+                        }
+
+                        for map_attr in &attrs.map_attrs {
+                            info!("  map_attr id={:?} #entries={}", map_attr.id, map_attr.attrs.len());
+                            for kv in &map_attr.attrs {
+                                let key_len = kv.key.as_ref().map(|k| k.len()).unwrap_or(0);
+                                let val_len = kv.value.as_ref().map(|v| v.len()).unwrap_or(0);
+                                let key_snip = kv.key.as_ref().map(|k| to_hex_snip(k)).unwrap_or_default();
+                                let val_snip = kv.value.as_ref().map(|v| to_hex_snip(v)).unwrap_or_default();
+                                info!("    entry key_len={} val_len={} key_snip={} val_snip={}", key_len, val_len, key_snip, val_snip);
+                            }
+                        }
+                    }
+                }
+
+                if let Some(player_ent) = &info.player_ent {
+                    if let Some(player_attrs) = &player_ent.attrs {
+                        info!("Inspecting player_ent.attrs: #attrs={}", player_attrs.attrs.len());
+                        for attr in &player_attrs.attrs {
+                            let id = attr.id.unwrap_or(-1);
+                            let len = attr.raw_data.as_ref().map(|b| b.len()).unwrap_or(0);
+                            let snip = attr.raw_data.as_ref().map(|b| to_hex_snip(b)).unwrap_or_default();
+                            info!("  player attr id={} len={} snippet={}", id, len, snip);
+                        }
+                    }
+                }
+            }
+
+            // Emit a fallback scene change event so frontend still notifies the user
+            let fallback_name = enter_scene
+                .enter_scene_info
+                .as_ref()
+                .and_then(|i| i.scene_guid.clone())
+                .map(|g| format!("Scene GUID: {}", g))
+                .unwrap_or_else(|| "Unknown Scene".to_string());
+
+            state.encounter.current_scene_name = Some(fallback_name.clone());
+            if state.event_manager.should_emit_events() {
+                info!("Emitting fallback scene change event: {}", fallback_name);
+                state.event_manager.emit_scene_change(fallback_name);
+            }
+        }
     }
 
     async fn process_sync_near_entities(
