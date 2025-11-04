@@ -1,6 +1,6 @@
 # Resonance Logs
 
-Resonance Logs is a real-time combat log analyzer for the game Throne and Liberty. It provides live feedback on your performance, including DPS, healing, and damage taken.
+Resonance Logs is a real-time combat log analyzer for the game Blue Protocol: Star Resonance. It provides live feedback on your performance, including DPS, healing, and damage taken.
 
 ## Features
 
