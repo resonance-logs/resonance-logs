@@ -83,6 +83,7 @@ pub struct DamageEventRow {
     pub is_lucky: i32,
     pub hp_loss: i64,
     pub shield_loss: i64,
+    pub defender_max_hp: Option<i64>,
     pub is_boss: i32,
 }
 
@@ -100,6 +101,7 @@ pub struct NewDamageEvent {
     pub is_lucky: i32,
     pub hp_loss: i64,
     pub shield_loss: i64,
+    pub defender_max_hp: Option<i64>,
     pub is_boss: i32,
 }
 
@@ -288,6 +290,7 @@ pub struct EncounterBossRow {
     pub monster_name: String,
     pub hits: i32,
     pub total_damage: i64,
+    pub max_hp: Option<i64>,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -297,4 +300,5 @@ pub struct NewEncounterBoss {
     pub monster_name: String,
     pub hits: i32,
     pub total_damage: i64,
+    pub max_hp: Option<i64>,
 }

@@ -224,7 +224,7 @@
               Encounter #{encounter.id}
               {#if encounter.bosses.length > 0}
                 <span class="text-neutral-400">—</span>
-                <span class="text-blue-400">{encounter.bosses.join(', ')}</span>
+                <span class="text-blue-400">{encounter.bosses.map(b => b.monsterName).join(', ')}</span>
               {/if}
             </h2>
             <div class="text-sm text-neutral-400">

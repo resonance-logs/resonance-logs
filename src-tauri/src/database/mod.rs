@@ -238,6 +238,7 @@ pub enum DbTask {
         is_lucky: bool,
         hp_loss: i64,
         shield_loss: i64,
+        defender_max_hp: Option<i64>,
         is_boss: bool,
     },
 
@@ -412,6 +413,7 @@ fn handle_task(
             is_lucky,
             hp_loss,
             shield_loss,
+            defender_max_hp,
             is_boss,
         } => {
             if let Some(enc_id) = *current_encounter_id {
@@ -428,6 +430,7 @@ fn handle_task(
                     is_lucky: if is_lucky { 1 } else { 0 },
                     hp_loss,
                     shield_loss,
+                    defender_max_hp,
                     is_boss: if is_boss { 1 } else { 0 },
                 };
                 diesel::insert_into(d::damage_events)
@@ -811,10 +814,12 @@ fn materialize_encounter_bosses(
             hits: i64,
             #[diesel(sql_type = diesel::sql_types::BigInt)]
             total_damage: i64,
+            #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::BigInt>)]
+            max_hp: Option<i64>,
         }
 
         let stats: BossStats = diesel::sql_query(
-            "SELECT COUNT(*) as hits, COALESCE(SUM(value), 0) as total_damage
+            "SELECT COUNT(*) as hits, COALESCE(SUM(value), 0) as total_damage, MAX(defender_max_hp) as max_hp
              FROM damage_events
              WHERE encounter_id = ?1 AND is_boss = 1 AND monster_name = ?2",
         )
@@ -828,6 +833,7 @@ fn materialize_encounter_bosses(
             monster_name: boss_name,
             hits: stats.hits as i32,
             total_damage: stats.total_damage,
+            max_hp: stats.max_hp,
         };
 
         diesel::insert_into(eb::encounter_bosses)
@@ -1021,6 +1027,7 @@ mod tests {
                 is_lucky: false,
                 hp_loss: 100,
                 shield_loss: 50,
+                defender_max_hp: None,
                 is_boss: false,
             },
             &mut enc_opt,
@@ -1058,6 +1065,7 @@ mod tests {
                 is_lucky: false,
                 hp_loss: 50,
                 shield_loss: 0,
+                defender_max_hp: None,
                 is_boss: true,
             },
             &mut enc_opt,
@@ -1129,6 +1137,7 @@ mod tests {
                 is_lucky: false,
                 hp_loss: 250,
                 shield_loss: 0,
+                defender_max_hp: None,
                 is_boss: false,
             },
             &mut enc_opt,
@@ -1162,7 +1171,7 @@ mod tests {
         .unwrap();
 
         // A subsequent event should refresh the snapshot immediately.
-        handle_task(
+            handle_task(
             &mut conn,
             DbTask::InsertDamageEvent {
                 timestamp_ms: 4_450,
@@ -1175,6 +1184,7 @@ mod tests {
                 is_lucky: false,
                 hp_loss: 150,
                 shield_loss: 0,
+                defender_max_hp: None,
                 is_boss: false,
             },
             &mut enc_opt,
@@ -1235,6 +1245,7 @@ mod tests {
                 is_lucky: false,
                 hp_loss: 500,
                 shield_loss: 0,
+                defender_max_hp: None,
                 is_boss: true,
             },
             &mut enc_opt,
@@ -1254,6 +1265,7 @@ mod tests {
                 is_lucky: true,
                 hp_loss: 100,
                 shield_loss: 50,
+                defender_max_hp: None,
                 is_boss: false,
             },
             &mut enc_opt,

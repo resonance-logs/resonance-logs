@@ -429,7 +429,7 @@
 								{#if enc.bosses.length > 0}
 									<div class="flex flex-wrap gap-1">
 										{#each enc.bosses as boss}
-											<span class="text-xs bg-neutral-800 px-1.5 py-0.5 rounded">{boss}</span>
+											<span class="text-xs bg-neutral-800 px-1.5 py-0.5 rounded">{boss.monsterName}</span>
 										{/each}
 									</div>
 								{:else}

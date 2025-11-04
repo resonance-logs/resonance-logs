@@ -523,6 +523,10 @@ pub fn process_aoi_sync_delta(
                 is_lucky,
                 hp_loss: hp_loss as i64,
                 shield_loss: shield_loss as i64,
+                defender_max_hp: defender_entity
+                    .attributes
+                    .get(&AttrType::MaxHp)
+                    .and_then(|v| v.as_int()),
                 is_boss,
             });
 

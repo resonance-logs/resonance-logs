@@ -42,6 +42,7 @@ diesel::table! {
         is_lucky -> Integer,
         hp_loss -> BigInt,
         shield_loss -> BigInt,
+        defender_max_hp -> Nullable<BigInt>,
         is_boss -> Integer,
     }
 }
@@ -140,6 +141,7 @@ diesel::table! {
         monster_name -> Text,
         hits -> Integer,
         total_damage -> BigInt,
+        max_hp -> Nullable<BigInt>,
     }
 }
 
