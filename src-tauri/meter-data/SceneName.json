@@ -1,342 +1,1362 @@
 {
-    "1001": "Tina's Mindrealm",
-    "1002": "Tina's Mindrealm",
-    "1011": "Unstable - Tina's Mindrealm",
-    "1021": "Unstable - Tina's Mindrealm",
-    "1031": "Tina's Mindrealm",
-    "1032": "Tina's Mindrealm",
-    "1033": "Tina's Mindrealm",
-    "1101": "Towering Ruin",
-    "1102": "Towering Ruin",
-    "1111": "Unstable - Towering Ruin",
-    "1112": "Unstable - Towering Ruin",
-    "1121": "Towering Ruin",
-    "1122": "Towering Ruin",
-    "1123": "Towering Ruin",
-    "1201": "Dragon Claw Valley",
-    "1202": "Dragon Claw Valley",
-    "1211": "Unstable - Dragon Claw Valley",
-    "1212": "Unstable - Dragon Claw Valley",
-    "1221": "Dragon Claw Valley",
-    "1222": "Dragon Claw Valley",
-    "1223": "Dragon Claw Valley",
-    "1301": "Level quest test",
-    "1302": "Dark Mist Fortress",
-    "1311": "Unstable - Dark Mist Fortress",
-    "1321": "Unstable - Dark Mist Fortress",
-    "1331": "Dark Mist Fortress",
-    "1332": "Dark Mist Fortress",
-    "1333": "Dark Mist Fortress",
-    "1401": "Illusory Bloom",
-    "1402": "Illusory Bloom",
-    "1403": "Illusory Bloom",
-    "5000": "Overworld",
-    "5033": "Tower Ruins",
-    "5200": "Lamond's Office",
-    "5206": "Asterleeds",
-    "5211": "Lamond's Office",
-    "5220": "Asterleeds",
-    "5401": "Kanamia Forest",
-    "5403": "Kanamia Brave Trial",
-    "5501": "Dragon Claw Valley",
-    "5602": "Fafala's Home",
-    "6001": "Heroic Dungeon Test Dungeon",
-    "6005": "Unstable - Goblin Lair",
-    "6006": "Unstable - Goblin Lair",
-    "6007": "Goblin Lair",
-    "6008": "Goblin Lair",
-    "6009": "Goblin Lair",
-    "6011": "Unstable - Kanamia Trial",
-    "6012": "Unstable - Kanamia Trial",
-    "6031": "Unstable - Kanamia Trial",
-    "6032": "Unstable - Kanamia Trial",
-    "6021": "Kanamia Trial",
-    "6022": "Kanamia Trial",
-    "6023": "Kanamia Trial",
-    "6041": "Unstable - Silent City",
-    "6042": "Unstable - Silent City",
-    "6043": "Silent City",
-    "6044": "Silent City",
-    "6045": "Silent City",
-    "6311": "Unstable - Devourer Cage",
-    "6321": "Unstable - Devourer Cage",
-    "6331": "Devourer Cage",
-    "6332": "Devourer Cage",
-    "6333": "Devourer Cage",
-    "7001": "Parkour",
-    "7002": "Parkour",
-    "7003": "Wasteland Race",
-    "7004": "Balloon Capture",
-    "7050": "Purify the Void",
-    "7051": "Purify the Void",
-    "7052": "Purify the Void",
-    "7053": "Purify the Void",
-    "7054": "Purify the Void",
-    "7055": "Void Mage Hunt",
-    "7056": "Void Mage Hunt",
-    "7057": "Void Mage Hunt",
-    "7058": "Void Mage Hunt",
-    "7060": "Canyon Battle",
-    "7061": "Canyon Battle",
-    "7065": "Urgent Delivery",
-    "7070": "Light Bridge",
-    "7071": "Light Bridge",
-    "7072": "Light Bridge",
-    "7073": "Light Bridge",
-    "7075": "Demi-Human Q&A",
-    "7076": "Demi-Human Q&A",
-    "7077": "Demi-Human Q&A",
-    "7080": "Wind Turbulence",
-    "7085": "Boars Run",
-    "7090": "Suppress the Eruption",
-    "7095": "Spider Mine",
-    "7101": "Sky Trial",
-    "7102": "Sky Trial",
-    "7103": "Sky Trial",
-    "7150": "World Dominator",
-    "8001": "Canyon Battle",
-    "8002": "Canyon Battle",
-    "8020": "Demi-Human Q&A",
-    "8021": "Demi-Human Q&A",
-    "9000": "Spider Mine",
-    "9200": "Dragon Shackles: Adept's Trial",
-    "10003": "Empty Copy 1",
-    "10004": "Test Logic Special Copy",
-    "10020": "Performance Test Scene 1",
-    "10021": "Performance Test Scene 2",
-    "12000": "Guild Hall",
-    "12011": "Guild Hunt - Hard",
-    "12012": "Guild Hunt - Normal",
-    "12013": "Guild Hunt - Easy",
-    "12014": "Guild Hunt - Normal",
-    "12015": "Guild Hunt - Hard",
-    "12016": "Guild Hunt - Normal",
-    "12017": "Guild Hunt - Hard",
-    "12030": "Ee-chan's Story",
-    "12040": "Ee-chan, don't stare at me!",
-    "12050": "Giant Golem Crusade",
-    "13001": "Clash! Floating Island",
-    "13002": "Brutal! Floating Island",
-    "13003": "Purge! Floating Island",
-    "15001": "Memory 1 - Normal",
-    "15002": "Memory 13 - Advanced",
-    "15003": "Memory 9 - Normal",
-    "15004": "Memory 7 - Normal",
-    "15005": "Memory 31 - Normal",
-    "15006": "Memory 32 - Normal",
-    "15007": "Memory 18 - Normal",
-    "15008": "Memory 22 - Normal",
-    "15009": "Memory 24 - Normal",
-    "15010": "Memory 48 - Normal",
-    "15011": "Memory 16 - Normal",
-    "15012": "Memory 42 - Normal",
-    "15501": "Memory 3 - Advanced",
-    "15502": "Memory 49 - Advanced",
-    "15503": "Memory 23 - Normal",
-    "15504": "Memory 15 - Expert",
-    "15505": "Memory 50 - Expert",
-    "15506": "Memory 30 - Expert",
-    "15507": "Memory 45 - Normal",
-    "15508": "Memory 40 - Expert",
-    "16001": "Memory 2 - Normal",
-    "16002": "Memory 14 - Advanced",
-    "16003": "Memory 20 - Normal",
-    "16004": "Memory 36 - Normal",
-    "16005": "Great Dungeon Survival Verification Template",
-    "16006": "Great Dungeon Survival Verification Template",
-    "16501": "Memory 4 - Normal",
-    "16502": "Memory 34 - Normal",
-    "16503": "Memory 41 - Normal",
-    "16504": "Memory 28 - Advanced - Healing and Purification",
-    "17001": "Memory 38 - Normal",
-    "17002": "Memory 46 - Advanced",
-    "17003": "Memory 11 - Normal",
-    "17004": "Memory 17 - Normal",
-    "17501": "Memory 35 - Normal",
-    "17502": "Memory 26 - Advanced",
-    "17503": "Memory 47 - Normal",
-    "17504": "Memory 10 - Normal",
-    "17505": "Memory 19 - Normal",
-    "18001": "Memory 6 - Normal",
-    "18002": "Memory 21 - Normal",
-    "18003": "Memory 44 - Normal",
-    "18004": "Memory 39 - Advanced",
-    "18501": "Memory 8 - Normal",
-    "18502": "Memory 27 - Normal",
-    "18503": "Memory 43 - Normal",
-    "18504": "Memory 37 - Advanced",
-    "19001": "Memory 5 - Normal",
-    "19002": "Memory 12 - Normal",
-    "19003": "Memory 25 - Normal",
-    "19004": "Memory 29 - Advanced",
-    "19005": "Memory 33 - Normal",
-    "20101": "Guardian 1",
-    "20102": "Guardian 10",
-    "20201": "Guardian 2",
-    "20202": "Guardian 22",
-    "20301": "Guardian 4",
-    "20302": "Guardian 13",
-    "20303": "Guardian 25",
-    "20401": "Guardian 5",
-    "20402": "Guardian 16",
-    "20501": "Guardian 7",
-    "20502": "Guardian 19",
-    "20701": "Guardian 14",
-    "20702": "Guardian 20",
-    "20801": "Guardian 8",
-    "20802": "Guardian 17",
-    "20803": "Guardian 26",
-    "21201": "Guardian 23",
-    "21202": "Guardian 29s",
-    "21301": "Guardian 6",
-    "21302": "Guardian 12",
-    "21303": "Guardian 18",
-    "21304": "Guardian 24",
-    "21305": "Guardian 30",
-    "21306": "Guardian 3",
-    "21307": "Guardian 9",
-    "21308": "Guardian 15",
-    "21309": "Guardian 21",
-    "21310": "Guardian 27",
-    "21401": "Guardian 11",
-    "21402": "Guardian 28",
-    "22101": "Attack 17",
-    "22201": "Attack 10",
-    "22202": "Attack 23",
-    "22301": "Attack 11",
-    "22401": "Attack 13",
-    "22402": "Attack 19",
-    "22501": "Attack 6",
-    "22502": "Attack 12",
-    "22503": "Attack 18",
-    "22504": "Attack 24",
-    "22505": "Attack 30",
-    "22601": "Attack 7",
-    "22602": "Attack 14",
-    "22701": "Attack 8",
-    "22702": "Attack 26",
-    "23101": "Attack 3",
-    "23102": "Attack 9",
-    "23103": "Attack 15",
-    "23104": "Attack 21",
-    "23105": "Attack 27",
-    "23201": "Attack 4",
-    "23301": "Attack 1",
-    "23302": "Attack 20",
-    "23401": "Attack 2",
-    "23501": "Attack 5",
-    "23502": "Attack 25",
-    "23601": "Attack 16",
-    "23602": "Attack 28",
-    "23701": "Attack 22",
-    "23702": "Attack 29",
-    "24101": "Support 3",
-    "24102": "Support 6",
-    "24103": "Support 9",
-    "24104": "Support 12",
-    "24105": "Support 15",
-    "24106": "Support 18",
-    "24107": "Support 21",
-    "24108": "Support 24",
-    "24109": "Support 27",
-    "24110": "Support 30",
-    "24201": "Support 2",
-    "24202": "Support 10",
-    "24203": "Support 17",
-    "24204": "Support 25",
-    "24301": "Support 5",
-    "24302": "Support 14",
-    "24303": "Support 20",
-    "24304": "Support 29",
-    "20043": "Support 4",
-    "24402": "Support 11",
-    "24403": "Support 19",
-    "24404": "Support 23",
-    "24501": "Support 7",
-    "24502": "Support 16",
-    "24503": "Support 22",
-    "24504": "Support 28",
-    "24601": "Support 1",
-    "24602": "Support 8",
-    "24603": "Support 13",
-    "24604": "Support 26",
-    "30001": "Community Map 1",
-    "30101": "Floor 1",
-    "30102": "Floor 2",
-    "30103": "Floor 3",
-    "30104": "Floor 4",
-    "30105": "Floor 5",
-    "30106": "Floor 6",
-    "30107": "Floor 7",
-    "30108": "Floor 8",
-    "30109": "Floor 9",
-    "30110": "Floor 10",
-    "30111": "Floor 11",
-    "30112": "Floor 12",
-    "30113": "Floor 13",
-    "30114": "Floor 14",
-    "30115": "Floor 15",
-    "30116": "Floor 16",
-    "30117": "Floor 17",
-    "30118": "Floor 18",
-    "30119": "Floor 19",
-    "30120": "Floor 20",
-    "30121": "Floor 21",
-    "30122": "Floor 22",
-    "30123": "Floor 23",
-    "30124": "Floor 24",
-    "30125": "Floor 25",
-    "30126": "Floor 26",
-    "30127": "Floor 27",
-    "30128": "Floor 28",
-    "30129": "Floor 29",
-    "30130": "Floor 30",
-    "30131": "Floor 31",
-    "30132": "Floor 32",
-    "30133": "Floor 33",
-    "30134": "Floor 34",
-    "30135": "Floor 35",
-    "30136": "Floor 36",
-    "30137": "Floor 37",
-    "30138": "Floor 38",
-    "30139": "Floor 39",
-    "30140": "Floor 40",
-    "30141": "Floor 41",
-    "30142": "Floor 42",
-    "30143": "Floor 43",
-    "30144": "Floor 44",
-    "30145": "Floor 45",
-    "30146": "Floor 46",
-    "30147": "Floor 47",
-    "30148": "Floor 48",
-    "30149": "Floor 49",
-    "30150": "Floor 50",
-    "30151": "Floor 51",
-    "30152": "Floor 52",
-    "30153": "Floor 53",
-    "30154": "Floor 54",
-    "30155": "Floor 55",
-    "30156": "Floor 56",
-    "30157": "Floor 57",
-    "30158": "Floor 58",
-    "30159": "Floor 59",
-    "30160": "Floor 60",
-    "30161": "Floor 61",
-    "30162": "Floor 62",
-    "30163": "Floor 63",
-    "30164": "Floor 64",
-    "30165": "Floor 65",
-    "30166": "Floor 66",
-    "30167": "Floor 67",
-    "30168": "Floor 68",
-    "30169": "Floor 69",
-    "30170": "Floor 70",
-    "30171": "Floor 71",
-    "30172": "Floor 72",
-    "30173": "Floor 73",
-    "30174": "Floor 74",
-    "30175": "Floor 75",
-    "30200": "Floor 100 - Event 01",
-    "40001": "Homeland Map 1",
-    "171001": "Isolated Island"
+    "1001": {
+        "Name": "Tina's Mindrealm",
+        "DungeonTypeName": ""
+    },
+    "1002": {
+        "Name": "Tina's Mindrealm",
+        "DungeonTypeName": ""
+    },
+    "1011": {
+        "Name": "Unstable - Tina's Mindrealm",
+        "DungeonTypeName": ""
+    },
+    "1021": {
+        "Name": "Unstable - Tina's Mindrealm",
+        "DungeonTypeName": ""
+    },
+    "1031": {
+        "Name": "Tina's Mindrealm",
+        "DungeonTypeName": "Normal"
+    },
+    "1032": {
+        "Name": "Tina's Mindrealm",
+        "DungeonTypeName": "Hard"
+    },
+    "1033": {
+        "Name": "Tina's Mindrealm",
+        "DungeonTypeName": "Master 1"
+    },
+    "1101": {
+        "Name": "Towering Ruin",
+        "DungeonTypeName": ""
+    },
+    "1102": {
+        "Name": "Towering Ruin",
+        "DungeonTypeName": ""
+    },
+    "1111": {
+        "Name": "Unstable - Towering Ruin",
+        "DungeonTypeName": ""
+    },
+    "1112": {
+        "Name": "Unstable - Towering Ruin",
+        "DungeonTypeName": ""
+    },
+    "1121": {
+        "Name": "Towering Ruin",
+        "DungeonTypeName": "Normal"
+    },
+    "1122": {
+        "Name": "Towering Ruin",
+        "DungeonTypeName": "Hard"
+    },
+    "1123": {
+        "Name": "Towering Ruin",
+        "DungeonTypeName": "Master 1"
+    },
+    "1201": {
+        "Name": "Dragon Claw Valley",
+        "DungeonTypeName": ""
+    },
+    "1202": {
+        "Name": "Dragon Claw Valley",
+        "DungeonTypeName": ""
+    },
+    "1211": {
+        "Name": "Unstable - Dragon Claw Valley",
+        "DungeonTypeName": ""
+    },
+    "1212": {
+        "Name": "Unstable - Dragon Claw Valley",
+        "DungeonTypeName": ""
+    },
+    "1221": {
+        "Name": "Dragon Claw Valley",
+        "DungeonTypeName": "Normal"
+    },
+    "1222": {
+        "Name": "Dragon Claw Valley",
+        "DungeonTypeName": "Hard"
+    },
+    "1223": {
+        "Name": "Dragon Claw Valley",
+        "DungeonTypeName": "Master 1"
+    },
+    "1301": {
+        "Name": "Level quest test",
+        "DungeonTypeName": ""
+    },
+    "1302": {
+        "Name": "Dark Mist Fortress",
+        "DungeonTypeName": ""
+    },
+    "1311": {
+        "Name": "Unstable - Dark Mist Fortress",
+        "DungeonTypeName": ""
+    },
+    "1321": {
+        "Name": "Unstable - Dark Mist Fortress",
+        "DungeonTypeName": ""
+    },
+    "1331": {
+        "Name": "Dark Mist Fortress",
+        "DungeonTypeName": "Normal"
+    },
+    "1332": {
+        "Name": "Dark Mist Fortress",
+        "DungeonTypeName": "Hard"
+    },
+    "1333": {
+        "Name": "Dark Mist Fortress",
+        "DungeonTypeName": "Master 1"
+    },
+    "1401": {
+        "Name": "Illusory Bloom",
+        "DungeonTypeName": ""
+    },
+    "1402": {
+        "Name": "Illusory Bloom",
+        "DungeonTypeName": ""
+    },
+    "1403": {
+        "Name": "Illusory Bloom",
+        "DungeonTypeName": ""
+    },
+    "5000": {
+        "Name": "Content mechanism test scene",
+        "DungeonTypeName": ""
+    },
+    "5033": {
+        "Name": "Tower Ruins",
+        "DungeonTypeName": ""
+    },
+    "5200": {
+        "Name": "Lamond's Office",
+        "DungeonTypeName": ""
+    },
+    "5206": {
+        "Name": "Asterleeds",
+        "DungeonTypeName": ""
+    },
+    "5211": {
+        "Name": "Lamond's Office",
+        "DungeonTypeName": ""
+    },
+    "5220": {
+        "Name": "Asterleeds",
+        "DungeonTypeName": ""
+    },
+    "5401": {
+        "Name": "Kanamia Forest",
+        "DungeonTypeName": ""
+    },
+    "5403": {
+        "Name": "Kanamia Brave Trial",
+        "DungeonTypeName": ""
+    },
+    "5501": {
+        "Name": "Dragon Claw Valley",
+        "DungeonTypeName": ""
+    },
+    "5602": {
+        "Name": "Fafala's Home",
+        "DungeonTypeName": ""
+    },
+    "6001": {
+        "Name": "Heroic Dungeon Test Dungeon",
+        "DungeonTypeName": ""
+    },
+    "6005": {
+        "Name": "Unstable - Goblin Lair",
+        "DungeonTypeName": ""
+    },
+    "6006": {
+        "Name": "Unstable - Goblin Lair",
+        "DungeonTypeName": ""
+    },
+    "6007": {
+        "Name": "Goblin Lair",
+        "DungeonTypeName": "Normal"
+    },
+    "6008": {
+        "Name": "Goblin Lair",
+        "DungeonTypeName": "Hard"
+    },
+    "6009": {
+        "Name": "Goblin Lair",
+        "DungeonTypeName": "Master 1"
+    },
+    "6011": {
+        "Name": "Unstable - Kanamia Trial",
+        "DungeonTypeName": ""
+    },
+    "6012": {
+        "Name": "Unstable - Kanamia Trial",
+        "DungeonTypeName": ""
+    },
+    "6031": {
+        "Name": "Unstable - Kanamia Trial",
+        "DungeonTypeName": ""
+    },
+    "6032": {
+        "Name": "Unstable - Kanamia Trial",
+        "DungeonTypeName": ""
+    },
+    "6021": {
+        "Name": "Kanamia Trial",
+        "DungeonTypeName": "Normal"
+    },
+    "6022": {
+        "Name": "Kanamia Trial",
+        "DungeonTypeName": "Hard"
+    },
+    "6023": {
+        "Name": "Kanamia Trial",
+        "DungeonTypeName": "Master 1"
+    },
+    "6041": {
+        "Name": "Unstable - Silent City",
+        "DungeonTypeName": ""
+    },
+    "6042": {
+        "Name": "Unstable - Silent City",
+        "DungeonTypeName": ""
+    },
+    "6043": {
+        "Name": "Silent City",
+        "DungeonTypeName": "Normal"
+    },
+    "6044": {
+        "Name": "Silent City",
+        "DungeonTypeName": "Hard"
+    },
+    "6045": {
+        "Name": "Silent City",
+        "DungeonTypeName": ""
+    },
+    "6311": {
+        "Name": "Unstable - Devourer Cage",
+        "DungeonTypeName": ""
+    },
+    "6321": {
+        "Name": "Unstable - Devourer Cage",
+        "DungeonTypeName": ""
+    },
+    "6331": {
+        "Name": "Devourer Cage",
+        "DungeonTypeName": "Normal"
+    },
+    "6332": {
+        "Name": "Devourer Cage",
+        "DungeonTypeName": "Hard"
+    },
+    "6333": {
+        "Name": "Devourer Cage",
+        "DungeonTypeName": "Master 1"
+    },
+    "7001": {
+        "Name": "Parkour",
+        "DungeonTypeName": ""
+    },
+    "7002": {
+        "Name": "Parkour",
+        "DungeonTypeName": ""
+    },
+    "7003": {
+        "Name": "Wasteland Race",
+        "DungeonTypeName": ""
+    },
+    "7004": {
+        "Name": "Balloon Capture",
+        "DungeonTypeName": ""
+    },
+    "7050": {
+        "Name": "Purify the Void",
+        "DungeonTypeName": ""
+    },
+    "7051": {
+        "Name": "Purify the Void",
+        "DungeonTypeName": ""
+    },
+    "7052": {
+        "Name": "Purify the Void",
+        "DungeonTypeName": ""
+    },
+    "7053": {
+        "Name": "Purify the Void",
+        "DungeonTypeName": ""
+    },
+    "7054": {
+        "Name": "Purify the Void",
+        "DungeonTypeName": ""
+    },
+    "7055": {
+        "Name": "Void Mage Hunt",
+        "DungeonTypeName": ""
+    },
+    "7056": {
+        "Name": "Void Mage Hunt",
+        "DungeonTypeName": ""
+    },
+    "7057": {
+        "Name": "Void Mage Hunt",
+        "DungeonTypeName": ""
+    },
+    "7058": {
+        "Name": "Void Mage Hunt",
+        "DungeonTypeName": ""
+    },
+    "7060": {
+        "Name": "Canyon Battle",
+        "DungeonTypeName": ""
+    },
+    "7061": {
+        "Name": "Canyon Battle",
+        "DungeonTypeName": ""
+    },
+    "7065": {
+        "Name": "Urgent Delivery",
+        "DungeonTypeName": ""
+    },
+    "7070": {
+        "Name": "Light Bridge",
+        "DungeonTypeName": ""
+    },
+    "7071": {
+        "Name": "Light Bridge",
+        "DungeonTypeName": ""
+    },
+    "7072": {
+        "Name": "Light Bridge",
+        "DungeonTypeName": ""
+    },
+    "7073": {
+        "Name": "Light Bridge",
+        "DungeonTypeName": ""
+    },
+    "7075": {
+        "Name": "Demi-Human Q&A",
+        "DungeonTypeName": ""
+    },
+    "7076": {
+        "Name": "Demi-Human Q&A",
+        "DungeonTypeName": ""
+    },
+    "7077": {
+        "Name": "Demi-Human Q&A",
+        "DungeonTypeName": ""
+    },
+    "7080": {
+        "Name": "Wind Turbulence",
+        "DungeonTypeName": ""
+    },
+    "7085": {
+        "Name": "Boars Run",
+        "DungeonTypeName": ""
+    },
+    "7090": {
+        "Name": "Suppress the Eruption",
+        "DungeonTypeName": ""
+    },
+    "7095": {
+        "Name": "Spider Mine",
+        "DungeonTypeName": ""
+    },
+    "7101": {
+        "Name": "Sky Trial",
+        "DungeonTypeName": ""
+    },
+    "7102": {
+        "Name": "Sky Trial",
+        "DungeonTypeName": ""
+    },
+    "7103": {
+        "Name": "Sky Trial",
+        "DungeonTypeName": ""
+    },
+    "7150": {
+        "Name": "World Dominator",
+        "DungeonTypeName": ""
+    },
+    "8001": {
+        "Name": "Canyon Battle",
+        "DungeonTypeName": ""
+    },
+    "8002": {
+        "Name": "Canyon Battle",
+        "DungeonTypeName": ""
+    },
+    "8020": {
+        "Name": "Demi-Human Q&A",
+        "DungeonTypeName": ""
+    },
+    "8021": {
+        "Name": "Demi-Human Q&A",
+        "DungeonTypeName": ""
+    },
+    "9000": {
+        "Name": "Spider Mine",
+        "DungeonTypeName": ""
+    },
+    "9200": {
+        "Name": "Dragon Shackles: Adept's Trial",
+        "DungeonTypeName": ""
+    },
+    "10003": {
+        "Name": "Empty Copy 1",
+        "DungeonTypeName": ""
+    },
+    "10004": {
+        "Name": "Test Logic Special Copy",
+        "DungeonTypeName": ""
+    },
+    "10020": {
+        "Name": "Performance Test Scene 1",
+        "DungeonTypeName": ""
+    },
+    "10021": {
+        "Name": "Performance Test Scene 2",
+        "DungeonTypeName": ""
+    },
+    "12000": {
+        "Name": "Guild Hall",
+        "DungeonTypeName": ""
+    },
+    "12011": {
+        "Name": "Guild Hunt - Hard",
+        "DungeonTypeName": ""
+    },
+    "12012": {
+        "Name": "Guild Hunt - Normal",
+        "DungeonTypeName": ""
+    },
+    "12013": {
+        "Name": "Guild Hunt - Easy",
+        "DungeonTypeName": ""
+    },
+    "12014": {
+        "Name": "Guild Hunt - Normal",
+        "DungeonTypeName": ""
+    },
+    "12015": {
+        "Name": "Guild Hunt - Hard",
+        "DungeonTypeName": ""
+    },
+    "12016": {
+        "Name": "Guild Hunt - Normal",
+        "DungeonTypeName": ""
+    },
+    "12017": {
+        "Name": "Guild Hunt - Hard",
+        "DungeonTypeName": ""
+    },
+    "12030": {
+        "Name": "Ee-chan's Story",
+        "DungeonTypeName": ""
+    },
+    "12040": {
+        "Name": "Ee-chan, don't stare at me!",
+        "DungeonTypeName": ""
+    },
+    "12050": {
+        "Name": "Giant Golem Crusade",
+        "DungeonTypeName": ""
+    },
+    "13001": {
+        "Name": "Clash! Floating Island",
+        "DungeonTypeName": ""
+    },
+    "13002": {
+        "Name": "Brutal! Floating Island",
+        "DungeonTypeName": ""
+    },
+    "13003": {
+        "Name": "Purge! Floating Island",
+        "DungeonTypeName": ""
+    },
+    "15001": {
+        "Name": "Memory 1 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15002": {
+        "Name": "Memory 13 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "15003": {
+        "Name": "Memory 9 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15004": {
+        "Name": "Memory 7 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15005": {
+        "Name": "Memory 31 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15006": {
+        "Name": "Memory 32 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15007": {
+        "Name": "Memory 18 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15008": {
+        "Name": "Memory 22 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15009": {
+        "Name": "Memory 24 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15010": {
+        "Name": "Memory 48 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15011": {
+        "Name": "Memory 16 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15012": {
+        "Name": "Memory 42 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15501": {
+        "Name": "Memory 3 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "15502": {
+        "Name": "Memory 49 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "15503": {
+        "Name": "Memory 23 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15504": {
+        "Name": "Memory 15 - Expert",
+        "DungeonTypeName": ""
+    },
+    "15505": {
+        "Name": "Memory 50 - Expert",
+        "DungeonTypeName": ""
+    },
+    "15506": {
+        "Name": "Memory 30 - Expert",
+        "DungeonTypeName": ""
+    },
+    "15507": {
+        "Name": "Memory 45 - Normal",
+        "DungeonTypeName": ""
+    },
+    "15508": {
+        "Name": "Memory 40 - Expert",
+        "DungeonTypeName": ""
+    },
+    "16001": {
+        "Name": "Memory 2 - Normal",
+        "DungeonTypeName": ""
+    },
+    "16002": {
+        "Name": "Memory 14 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "16003": {
+        "Name": "Memory 20 - Normal",
+        "DungeonTypeName": ""
+    },
+    "16004": {
+        "Name": "Memory 36 - Normal",
+        "DungeonTypeName": ""
+    },
+    "16005": {
+        "Name": "Great Dungeon Survival Verification Template",
+        "DungeonTypeName": ""
+    },
+    "16006": {
+        "Name": "Great Dungeon Survival Verification Template",
+        "DungeonTypeName": ""
+    },
+    "16501": {
+        "Name": "Memory 4 - Normal",
+        "DungeonTypeName": ""
+    },
+    "16502": {
+        "Name": "Memory 34 - Normal",
+        "DungeonTypeName": ""
+    },
+    "16503": {
+        "Name": "Memory 41 - Normal",
+        "DungeonTypeName": ""
+    },
+    "16504": {
+        "Name": "Memory 28 - Advanced - Healing and Purification",
+        "DungeonTypeName": ""
+    },
+    "17001": {
+        "Name": "Memory 38 - Normal",
+        "DungeonTypeName": ""
+    },
+    "17002": {
+        "Name": "Memory 46 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "17003": {
+        "Name": "Memory 11 - Normal",
+        "DungeonTypeName": ""
+    },
+    "17004": {
+        "Name": "Memory 17 - Normal",
+        "DungeonTypeName": ""
+    },
+    "17501": {
+        "Name": "Memory 35 - Normal",
+        "DungeonTypeName": ""
+    },
+    "17502": {
+        "Name": "Memory 26 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "17503": {
+        "Name": "Memory 47 - Normal",
+        "DungeonTypeName": ""
+    },
+    "17504": {
+        "Name": "Memory 10 - Normal",
+        "DungeonTypeName": ""
+    },
+    "17505": {
+        "Name": "Memory 19 - Normal",
+        "DungeonTypeName": ""
+    },
+    "18001": {
+        "Name": "Memory 6 - Normal",
+        "DungeonTypeName": ""
+    },
+    "18002": {
+        "Name": "Memory 21 - Normal",
+        "DungeonTypeName": ""
+    },
+    "18003": {
+        "Name": "Memory 44 - Normal",
+        "DungeonTypeName": ""
+    },
+    "18004": {
+        "Name": "Memory 39 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "18501": {
+        "Name": "Memory 8 - Normal",
+        "DungeonTypeName": ""
+    },
+    "18502": {
+        "Name": "Memory 27 - Normal",
+        "DungeonTypeName": ""
+    },
+    "18503": {
+        "Name": "Memory 43 - Normal",
+        "DungeonTypeName": ""
+    },
+    "18504": {
+        "Name": "Memory 37 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "19001": {
+        "Name": "Memory 5 - Normal",
+        "DungeonTypeName": ""
+    },
+    "19002": {
+        "Name": "Memory 12 - Normal",
+        "DungeonTypeName": ""
+    },
+    "19003": {
+        "Name": "Memory 25 - Normal",
+        "DungeonTypeName": ""
+    },
+    "19004": {
+        "Name": "Memory 29 - Advanced",
+        "DungeonTypeName": ""
+    },
+    "19005": {
+        "Name": "Memory 33 - Normal",
+        "DungeonTypeName": ""
+    },
+    "20101": {
+        "Name": "Guardian 1",
+        "DungeonTypeName": ""
+    },
+    "20102": {
+        "Name": "Guardian 10",
+        "DungeonTypeName": ""
+    },
+    "20201": {
+        "Name": "Guardian 2",
+        "DungeonTypeName": ""
+    },
+    "20202": {
+        "Name": "Guardian 22",
+        "DungeonTypeName": ""
+    },
+    "20301": {
+        "Name": "Guardian 4",
+        "DungeonTypeName": ""
+    },
+    "20302": {
+        "Name": "Guardian 13",
+        "DungeonTypeName": ""
+    },
+    "20303": {
+        "Name": "Guardian 25",
+        "DungeonTypeName": ""
+    },
+    "20401": {
+        "Name": "Guardian 5",
+        "DungeonTypeName": ""
+    },
+    "20402": {
+        "Name": "Guardian 16",
+        "DungeonTypeName": ""
+    },
+    "20501": {
+        "Name": "Guardian 7",
+        "DungeonTypeName": ""
+    },
+    "20502": {
+        "Name": "Guardian 19",
+        "DungeonTypeName": ""
+    },
+    "20701": {
+        "Name": "Guardian 14",
+        "DungeonTypeName": ""
+    },
+    "20702": {
+        "Name": "Guardian 20",
+        "DungeonTypeName": ""
+    },
+    "20801": {
+        "Name": "Guardian 8",
+        "DungeonTypeName": ""
+    },
+    "20802": {
+        "Name": "Guardian 17",
+        "DungeonTypeName": ""
+    },
+    "20803": {
+        "Name": "Guardian 26",
+        "DungeonTypeName": ""
+    },
+    "21201": {
+        "Name": "Guardian 23",
+        "DungeonTypeName": ""
+    },
+    "21202": {
+        "Name": "Guardian 29s",
+        "DungeonTypeName": ""
+    },
+    "21301": {
+        "Name": "Guardian 6",
+        "DungeonTypeName": ""
+    },
+    "21302": {
+        "Name": "Guardian 12",
+        "DungeonTypeName": ""
+    },
+    "21303": {
+        "Name": "Guardian 18",
+        "DungeonTypeName": ""
+    },
+    "21304": {
+        "Name": "Guardian 24",
+        "DungeonTypeName": ""
+    },
+    "21305": {
+        "Name": "Guardian 30",
+        "DungeonTypeName": ""
+    },
+    "21306": {
+        "Name": "Guardian 3",
+        "DungeonTypeName": ""
+    },
+    "21307": {
+        "Name": "Guardian 9",
+        "DungeonTypeName": ""
+    },
+    "21308": {
+        "Name": "Guardian 15",
+        "DungeonTypeName": ""
+    },
+    "21309": {
+        "Name": "Guardian 21",
+        "DungeonTypeName": ""
+    },
+    "21310": {
+        "Name": "Guardian 27",
+        "DungeonTypeName": ""
+    },
+    "21401": {
+        "Name": "Guardian 11",
+        "DungeonTypeName": ""
+    },
+    "21402": {
+        "Name": "Guardian 28",
+        "DungeonTypeName": ""
+    },
+    "22101": {
+        "Name": "Attack 17",
+        "DungeonTypeName": ""
+    },
+    "22201": {
+        "Name": "Attack 10",
+        "DungeonTypeName": ""
+    },
+    "22202": {
+        "Name": "Attack 23",
+        "DungeonTypeName": ""
+    },
+    "22301": {
+        "Name": "Attack 11",
+        "DungeonTypeName": ""
+    },
+    "22401": {
+        "Name": "Attack 13",
+        "DungeonTypeName": ""
+    },
+    "22402": {
+        "Name": "Attack 19",
+        "DungeonTypeName": ""
+    },
+    "22501": {
+        "Name": "Attack 6",
+        "DungeonTypeName": ""
+    },
+    "22502": {
+        "Name": "Attack 12",
+        "DungeonTypeName": ""
+    },
+    "22503": {
+        "Name": "Attack 18",
+        "DungeonTypeName": ""
+    },
+    "22504": {
+        "Name": "Attack 24",
+        "DungeonTypeName": ""
+    },
+    "22505": {
+        "Name": "Attack 30",
+        "DungeonTypeName": ""
+    },
+    "22601": {
+        "Name": "Attack 7",
+        "DungeonTypeName": ""
+    },
+    "22602": {
+        "Name": "Attack 14",
+        "DungeonTypeName": ""
+    },
+    "22701": {
+        "Name": "Attack 8",
+        "DungeonTypeName": ""
+    },
+    "22702": {
+        "Name": "Attack 26",
+        "DungeonTypeName": ""
+    },
+    "23101": {
+        "Name": "Attack 3",
+        "DungeonTypeName": ""
+    },
+    "23102": {
+        "Name": "Attack 9",
+        "DungeonTypeName": ""
+    },
+    "23103": {
+        "Name": "Attack 15",
+        "DungeonTypeName": ""
+    },
+    "23104": {
+        "Name": "Attack 21",
+        "DungeonTypeName": ""
+    },
+    "23105": {
+        "Name": "Attack 27",
+        "DungeonTypeName": ""
+    },
+    "23201": {
+        "Name": "Attack 4",
+        "DungeonTypeName": ""
+    },
+    "23301": {
+        "Name": "Attack 1",
+        "DungeonTypeName": ""
+    },
+    "23302": {
+        "Name": "Attack 20",
+        "DungeonTypeName": ""
+    },
+    "23401": {
+        "Name": "Attack 2",
+        "DungeonTypeName": ""
+    },
+    "23501": {
+        "Name": "Attack 5",
+        "DungeonTypeName": ""
+    },
+    "23502": {
+        "Name": "Attack 25",
+        "DungeonTypeName": ""
+    },
+    "23601": {
+        "Name": "Attack 16",
+        "DungeonTypeName": ""
+    },
+    "23602": {
+        "Name": "Attack 28",
+        "DungeonTypeName": ""
+    },
+    "23701": {
+        "Name": "Attack 22",
+        "DungeonTypeName": ""
+    },
+    "23702": {
+        "Name": "Attack 29",
+        "DungeonTypeName": ""
+    },
+    "24101": {
+        "Name": "Support 3",
+        "DungeonTypeName": ""
+    },
+    "24102": {
+        "Name": "Support 6",
+        "DungeonTypeName": ""
+    },
+    "24103": {
+        "Name": "Support 9",
+        "DungeonTypeName": ""
+    },
+    "24104": {
+        "Name": "Support 12",
+        "DungeonTypeName": ""
+    },
+    "24105": {
+        "Name": "Support 15",
+        "DungeonTypeName": ""
+    },
+    "24106": {
+        "Name": "Support 18",
+        "DungeonTypeName": ""
+    },
+    "24107": {
+        "Name": "Support 21",
+        "DungeonTypeName": ""
+    },
+    "24108": {
+        "Name": "Support 24",
+        "DungeonTypeName": ""
+    },
+    "24109": {
+        "Name": "Support 27",
+        "DungeonTypeName": ""
+    },
+    "24110": {
+        "Name": "Support 30",
+        "DungeonTypeName": ""
+    },
+    "24201": {
+        "Name": "Support 2",
+        "DungeonTypeName": ""
+    },
+    "24202": {
+        "Name": "Support 10",
+        "DungeonTypeName": ""
+    },
+    "24203": {
+        "Name": "Support 17",
+        "DungeonTypeName": ""
+    },
+    "24204": {
+        "Name": "Support 25",
+        "DungeonTypeName": ""
+    },
+    "24301": {
+        "Name": "Support 5",
+        "DungeonTypeName": ""
+    },
+    "24302": {
+        "Name": "Support 14",
+        "DungeonTypeName": ""
+    },
+    "24303": {
+        "Name": "Support 20",
+        "DungeonTypeName": ""
+    },
+    "24304": {
+        "Name": "Support 29",
+        "DungeonTypeName": ""
+    },
+    "20043": {
+        "Name": "Support 4",
+        "DungeonTypeName": ""
+    },
+    "24402": {
+        "Name": "Support 11",
+        "DungeonTypeName": ""
+    },
+    "24403": {
+        "Name": "Support 19",
+        "DungeonTypeName": ""
+    },
+    "24404": {
+        "Name": "Support 23",
+        "DungeonTypeName": ""
+    },
+    "24501": {
+        "Name": "Support 7",
+        "DungeonTypeName": ""
+    },
+    "24502": {
+        "Name": "Support 16",
+        "DungeonTypeName": ""
+    },
+    "24503": {
+        "Name": "Support 22",
+        "DungeonTypeName": ""
+    },
+    "24504": {
+        "Name": "Support 28",
+        "DungeonTypeName": ""
+    },
+    "24601": {
+        "Name": "Support 1",
+        "DungeonTypeName": ""
+    },
+    "24602": {
+        "Name": "Support 8",
+        "DungeonTypeName": ""
+    },
+    "24603": {
+        "Name": "Support 13",
+        "DungeonTypeName": ""
+    },
+    "24604": {
+        "Name": "Support 26",
+        "DungeonTypeName": ""
+    },
+    "30001": {
+        "Name": "Community Map 1",
+        "DungeonTypeName": ""
+    },
+    "30101": {
+        "Name": "Floor 1",
+        "DungeonTypeName": ""
+    },
+    "30102": {
+        "Name": "Floor 2",
+        "DungeonTypeName": ""
+    },
+    "30103": {
+        "Name": "Floor 3",
+        "DungeonTypeName": ""
+    },
+    "30104": {
+        "Name": "Floor 4",
+        "DungeonTypeName": ""
+    },
+    "30105": {
+        "Name": "Floor 5",
+        "DungeonTypeName": ""
+    },
+    "30106": {
+        "Name": "Floor 6",
+        "DungeonTypeName": ""
+    },
+    "30107": {
+        "Name": "Floor 7",
+        "DungeonTypeName": ""
+    },
+    "30108": {
+        "Name": "Floor 8",
+        "DungeonTypeName": ""
+    },
+    "30109": {
+        "Name": "Floor 9",
+        "DungeonTypeName": ""
+    },
+    "30110": {
+        "Name": "Floor 10",
+        "DungeonTypeName": ""
+    },
+    "30111": {
+        "Name": "Floor 11",
+        "DungeonTypeName": ""
+    },
+    "30112": {
+        "Name": "Floor 12",
+        "DungeonTypeName": ""
+    },
+    "30113": {
+        "Name": "Floor 13",
+        "DungeonTypeName": ""
+    },
+    "30114": {
+        "Name": "Floor 14",
+        "DungeonTypeName": ""
+    },
+    "30115": {
+        "Name": "Floor 15",
+        "DungeonTypeName": ""
+    },
+    "30116": {
+        "Name": "Floor 16",
+        "DungeonTypeName": ""
+    },
+    "30117": {
+        "Name": "Floor 17",
+        "DungeonTypeName": ""
+    },
+    "30118": {
+        "Name": "Floor 18",
+        "DungeonTypeName": ""
+    },
+    "30119": {
+        "Name": "Floor 19",
+        "DungeonTypeName": ""
+    },
+    "30120": {
+        "Name": "Floor 20",
+        "DungeonTypeName": ""
+    },
+    "30121": {
+        "Name": "Floor 21",
+        "DungeonTypeName": ""
+    },
+    "30122": {
+        "Name": "Floor 22",
+        "DungeonTypeName": ""
+    },
+    "30123": {
+        "Name": "Floor 23",
+        "DungeonTypeName": ""
+    },
+    "30124": {
+        "Name": "Floor 24",
+        "DungeonTypeName": ""
+    },
+    "30125": {
+        "Name": "Floor 25",
+        "DungeonTypeName": ""
+    },
+    "30126": {
+        "Name": "Floor 26",
+        "DungeonTypeName": ""
+    },
+    "30127": {
+        "Name": "Floor 27",
+        "DungeonTypeName": ""
+    },
+    "30128": {
+        "Name": "Floor 28",
+        "DungeonTypeName": ""
+    },
+    "30129": {
+        "Name": "Floor 29",
+        "DungeonTypeName": ""
+    },
+    "30130": {
+        "Name": "Floor 30",
+        "DungeonTypeName": ""
+    },
+    "30131": {
+        "Name": "Floor 31",
+        "DungeonTypeName": ""
+    },
+    "30132": {
+        "Name": "Floor 32",
+        "DungeonTypeName": ""
+    },
+    "30133": {
+        "Name": "Floor 33",
+        "DungeonTypeName": ""
+    },
+    "30134": {
+        "Name": "Floor 34",
+        "DungeonTypeName": ""
+    },
+    "30135": {
+        "Name": "Floor 35",
+        "DungeonTypeName": ""
+    },
+    "30136": {
+        "Name": "Floor 36",
+        "DungeonTypeName": ""
+    },
+    "30137": {
+        "Name": "Floor 37",
+        "DungeonTypeName": ""
+    },
+    "30138": {
+        "Name": "Floor 38",
+        "DungeonTypeName": ""
+    },
+    "30139": {
+        "Name": "Floor 39",
+        "DungeonTypeName": ""
+    },
+    "30140": {
+        "Name": "Floor 40",
+        "DungeonTypeName": ""
+    },
+    "30141": {
+        "Name": "Floor 41",
+        "DungeonTypeName": ""
+    },
+    "30142": {
+        "Name": "Floor 42",
+        "DungeonTypeName": ""
+    },
+    "30143": {
+        "Name": "Floor 43",
+        "DungeonTypeName": ""
+    },
+    "30144": {
+        "Name": "Floor 44",
+        "DungeonTypeName": ""
+    },
+    "30145": {
+        "Name": "Floor 45",
+        "DungeonTypeName": ""
+    },
+    "30146": {
+        "Name": "Floor 46",
+        "DungeonTypeName": ""
+    },
+    "30147": {
+        "Name": "Floor 47",
+        "DungeonTypeName": ""
+    },
+    "30148": {
+        "Name": "Floor 48",
+        "DungeonTypeName": ""
+    },
+    "30149": {
+        "Name": "Floor 49",
+        "DungeonTypeName": ""
+    },
+    "30150": {
+        "Name": "Floor 50",
+        "DungeonTypeName": ""
+    },
+    "30151": {
+        "Name": "Floor 51",
+        "DungeonTypeName": ""
+    },
+    "30152": {
+        "Name": "Floor 52",
+        "DungeonTypeName": ""
+    },
+    "30153": {
+        "Name": "Floor 53",
+        "DungeonTypeName": ""
+    },
+    "30154": {
+        "Name": "Floor 54",
+        "DungeonTypeName": ""
+    },
+    "30155": {
+        "Name": "Floor 55",
+        "DungeonTypeName": ""
+    },
+    "30156": {
+        "Name": "Floor 56",
+        "DungeonTypeName": ""
+    },
+    "30157": {
+        "Name": "Floor 57",
+        "DungeonTypeName": ""
+    },
+    "30158": {
+        "Name": "Floor 58",
+        "DungeonTypeName": ""
+    },
+    "30159": {
+        "Name": "Floor 59",
+        "DungeonTypeName": ""
+    },
+    "30160": {
+        "Name": "Floor 60",
+        "DungeonTypeName": ""
+    },
+    "30161": {
+        "Name": "Floor 61",
+        "DungeonTypeName": ""
+    },
+    "30162": {
+        "Name": "Floor 62",
+        "DungeonTypeName": ""
+    },
+    "30163": {
+        "Name": "Floor 63",
+        "DungeonTypeName": ""
+    },
+    "30164": {
+        "Name": "Floor 64",
+        "DungeonTypeName": ""
+    },
+    "30165": {
+        "Name": "Floor 65",
+        "DungeonTypeName": ""
+    },
+    "30166": {
+        "Name": "Floor 66",
+        "DungeonTypeName": ""
+    },
+    "30167": {
+        "Name": "Floor 67",
+        "DungeonTypeName": ""
+    },
+    "30168": {
+        "Name": "Floor 68",
+        "DungeonTypeName": ""
+    },
+    "30169": {
+        "Name": "Floor 69",
+        "DungeonTypeName": ""
+    },
+    "30170": {
+        "Name": "Floor 70",
+        "DungeonTypeName": ""
+    },
+    "30171": {
+        "Name": "Floor 71",
+        "DungeonTypeName": ""
+    },
+    "30172": {
+        "Name": "Floor 72",
+        "DungeonTypeName": ""
+    },
+    "30173": {
+        "Name": "Floor 73",
+        "DungeonTypeName": ""
+    },
+    "30174": {
+        "Name": "Floor 74",
+        "DungeonTypeName": ""
+    },
+    "30175": {
+        "Name": "Floor 75",
+        "DungeonTypeName": ""
+    },
+    "30200": {
+        "Name": "Floor 100 - Event 01",
+        "DungeonTypeName": ""
+    },
+    "40001": {
+        "Name": "Homeland Map 1",
+        "DungeonTypeName": ""
+    },
+    "171001": {
+        "Name": "Isolated Island",
+        "DungeonTypeName": ""
+    }
 }
