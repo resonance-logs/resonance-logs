@@ -391,17 +391,6 @@ impl AppStateManager {
                     }
                 }
 
-                if let Some(player_ent) = &info.player_ent {
-                    if let Some(player_attrs) = &player_ent.attrs {
-                        info!("Inspecting player_ent.attrs: #attrs={}", player_attrs.attrs.len());
-                        for attr in &player_attrs.attrs {
-                            let id = attr.id.unwrap_or(-1);
-                            let len = attr.raw_data.as_ref().map(|b| b.len()).unwrap_or(0);
-                            let snip = attr.raw_data.as_ref().map(|b| to_hex_snip(b)).unwrap_or_default();
-                            info!("  player attr id={} len={} snippet={}", id, len, snip);
-                        }
-                    }
-                }
             }
 
             // Emit a fallback scene change event so frontend still notifies the user
