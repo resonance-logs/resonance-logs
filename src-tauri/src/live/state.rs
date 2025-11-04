@@ -134,9 +134,11 @@ impl AppStateManager {
 
     async fn on_server_change(&self, state: &mut AppState) {
         use crate::live::opcodes_process::on_server_change;
-        // End any active encounter in DB
+        // End any active encounter in DB. Drain any detected dead boss names for persistence.
+        let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
             ended_at_ms: now_ms(),
+            defeated_bosses: if defeated.is_empty() { None } else { Some(defeated) },
         });
         on_server_change(&mut state.encounter);
 
@@ -389,17 +391,6 @@ impl AppStateManager {
                     }
                 }
 
-                if let Some(player_ent) = &info.player_ent {
-                    if let Some(player_attrs) = &player_ent.attrs {
-                        info!("Inspecting player_ent.attrs: #attrs={}", player_attrs.attrs.len());
-                        for attr in &player_attrs.attrs {
-                            let id = attr.id.unwrap_or(-1);
-                            let len = attr.raw_data.as_ref().map(|b| b.len()).unwrap_or(0);
-                            let snip = attr.raw_data.as_ref().map(|b| to_hex_snip(b)).unwrap_or_default();
-                            info!("  player attr id={} len={} snippet={}", id, len, snip);
-                        }
-                    }
-                }
             }
 
             // Emit a fallback scene change event so frontend still notifies the user
@@ -476,9 +467,11 @@ impl AppStateManager {
     }
 
     async fn reset_encounter(&self, state: &mut AppState) {
-        // End any active encounter in DB
+        // End any active encounter in DB. Drain any detected dead boss names for persistence.
+        let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
             ended_at_ms: now_ms(),
+            defeated_bosses: if defeated.is_empty() { None } else { Some(defeated) },
         });
         state.encounter.reset_combat_state();
         state.skill_subscriptions.clear();

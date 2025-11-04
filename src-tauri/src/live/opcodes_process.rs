@@ -523,6 +523,10 @@ pub fn process_aoi_sync_delta(
                 is_lucky,
                 hp_loss: hp_loss as i64,
                 shield_loss: shield_loss as i64,
+                defender_max_hp: defender_entity
+                    .attributes
+                    .get(&AttrType::MaxHp)
+                    .and_then(|v| v.as_int()),
                 is_boss,
             });
 
@@ -562,6 +566,8 @@ pub fn process_aoi_sync_delta(
         enqueue(DbTask::BeginEncounter {
             started_at_ms: timestamp_ms as i64,
             local_player_id: Some(encounter.local_player_uid),
+            scene_id: encounter.current_scene_id,
+            scene_name: encounter.current_scene_name.clone(),
         });
     }
     encounter.time_last_combat_packet_ms = timestamp_ms;

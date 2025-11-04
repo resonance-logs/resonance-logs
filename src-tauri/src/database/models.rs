@@ -52,6 +52,8 @@ pub struct EncounterRow {
     pub local_player_id: Option<i64>,
     pub total_dmg: Option<i64>,
     pub total_heal: Option<i64>,
+    pub scene_id: Option<i32>,
+    pub scene_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -62,6 +64,8 @@ pub struct NewEncounter {
     pub local_player_id: Option<i64>,
     pub total_dmg: Option<i64>,
     pub total_heal: Option<i64>,
+    pub scene_id: Option<i32>,
+    pub scene_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
@@ -79,6 +83,7 @@ pub struct DamageEventRow {
     pub is_lucky: i32,
     pub hp_loss: i64,
     pub shield_loss: i64,
+    pub defender_max_hp: Option<i64>,
     pub is_boss: i32,
 }
 
@@ -96,6 +101,7 @@ pub struct NewDamageEvent {
     pub is_lucky: i32,
     pub hp_loss: i64,
     pub shield_loss: i64,
+    pub defender_max_hp: Option<i64>,
     pub is_boss: i32,
 }
 
@@ -284,6 +290,8 @@ pub struct EncounterBossRow {
     pub monster_name: String,
     pub hits: i32,
     pub total_damage: i64,
+    pub max_hp: Option<i64>,
+    pub is_defeated: i32,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -293,4 +301,6 @@ pub struct NewEncounterBoss {
     pub monster_name: String,
     pub hits: i32,
     pub total_damage: i64,
+    pub max_hp: Option<i64>,
+    pub is_defeated: Option<i32>,
 }
