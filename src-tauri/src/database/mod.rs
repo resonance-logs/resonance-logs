@@ -214,6 +214,7 @@ pub enum DbTask {
     },
     EndEncounter {
         ended_at_ms: i64,
+        defeated_bosses: Option<Vec<String>>,
     },
 
     UpsertEntity {
@@ -300,7 +301,7 @@ fn handle_task(
                 .map_err(|e| e.to_string())?;
             *current_encounter_id = Some(id);
         }
-        DbTask::EndEncounter { ended_at_ms } => {
+        DbTask::EndEncounter { ended_at_ms, defeated_bosses } => {
             if let Some(id) = current_encounter_id.take() {
                 use sch::encounters::dsl as e;
                 diesel::update(e::encounters.filter(e::id.eq(id)))
@@ -336,6 +337,19 @@ fn handle_task(
                 // Aggregate damage events into damage_skill_stats and encounter_bosses
                 materialize_damage_skill_stats(conn, id)?;
                 materialize_encounter_bosses(conn, id)?;
+
+                // If any defeated boss names were provided, mark them in encounter_bosses
+                if let Some(names) = defeated_bosses {
+                    for name in names {
+                        diesel::sql_query(
+                            "UPDATE encounter_bosses SET is_defeated = 1 WHERE encounter_id = ?1 AND monster_name = ?2",
+                        )
+                        .bind::<diesel::sql_types::Integer, _>(id)
+                        .bind::<diesel::sql_types::Text, _>(&name)
+                        .execute(conn)
+                        .ok();
+                    }
+                }
 
                 // Aggregate heal events into heal_skill_stats
                 materialize_heal_skill_stats(conn, id)?;
@@ -834,6 +848,7 @@ fn materialize_encounter_bosses(
             hits: stats.hits as i32,
             total_damage: stats.total_damage,
             max_hp: stats.max_hp,
+            is_defeated: Some(0),
         };
 
         diesel::insert_into(eb::encounter_bosses)
@@ -1205,7 +1220,7 @@ mod tests {
         // Ending the encounter should also work with fully populated data and leave identity intact.
         handle_task(
             &mut conn,
-            DbTask::EndEncounter { ended_at_ms: 4_600 },
+            DbTask::EndEncounter { ended_at_ms: 4_600, defeated_bosses: None },
             &mut enc_opt,
         )
         .unwrap();
@@ -1289,7 +1304,7 @@ mod tests {
 
         handle_task(
             &mut conn,
-            DbTask::EndEncounter { ended_at_ms: 10_500 },
+            DbTask::EndEncounter { ended_at_ms: 10_500, defeated_bosses: None },
             &mut enc_opt,
         )
         .unwrap();

@@ -428,9 +428,9 @@
 							<td class="px-3 py-2 text-sm text-neutral-300">
 								{#if enc.bosses.length > 0}
 									<div class="flex flex-wrap gap-1">
-										{#each enc.bosses as boss}
-											<span class="text-xs bg-neutral-800 px-1.5 py-0.5 rounded">{boss.monsterName}</span>
-										{/each}
+																				{#each enc.bosses as boss}
+																					<span class="text-xs px-1.5 py-0.5 rounded {boss.isDefeated ? 'text-red-400 line-through bg-neutral-900' : 'bg-neutral-800'}">{boss.monsterName}</span>
+																				{/each}
 									</div>
 								{:else}
 									<span class="text-neutral-500 text-xs">No bosses</span>

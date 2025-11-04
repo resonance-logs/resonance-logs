@@ -291,6 +291,7 @@ pub struct EncounterBossRow {
     pub hits: i32,
     pub total_damage: i64,
     pub max_hp: Option<i64>,
+    pub is_defeated: i32,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -301,4 +302,5 @@ pub struct NewEncounterBoss {
     pub hits: i32,
     pub total_damage: i64,
     pub max_hp: Option<i64>,
+    pub is_defeated: Option<i32>,
 }

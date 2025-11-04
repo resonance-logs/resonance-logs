@@ -134,9 +134,11 @@ impl AppStateManager {
 
     async fn on_server_change(&self, state: &mut AppState) {
         use crate::live::opcodes_process::on_server_change;
-        // End any active encounter in DB
+        // End any active encounter in DB. Drain any detected dead boss names for persistence.
+        let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
             ended_at_ms: now_ms(),
+            defeated_bosses: if defeated.is_empty() { None } else { Some(defeated) },
         });
         on_server_change(&mut state.encounter);
 
@@ -476,9 +478,11 @@ impl AppStateManager {
     }
 
     async fn reset_encounter(&self, state: &mut AppState) {
-        // End any active encounter in DB
+        // End any active encounter in DB. Drain any detected dead boss names for persistence.
+        let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
             ended_at_ms: now_ms(),
+            defeated_bosses: if defeated.is_empty() { None } else { Some(defeated) },
         });
         state.encounter.reset_combat_state();
         state.skill_subscriptions.clear();

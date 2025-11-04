@@ -53,6 +53,7 @@ pub struct BossNamesResult {
 pub struct BossSummaryDto {
     pub monster_name: String,
     pub max_hp: Option<i64>,
+    pub is_defeated: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -525,17 +526,17 @@ pub fn get_recent_encounters_filtered(
 
     for (id, started, ended, td, th, scene_id, scene_name) in rows {
         // Get unique boss entries (name + max_hp) from the materialized encounter_bosses
-        let boss_rows: Vec<(String, Option<i64>)> = eb::encounter_bosses
+        let boss_rows: Vec<(String, Option<i64>, i32)> = eb::encounter_bosses
             .filter(eb::encounter_id.eq(id))
-            .select((eb::monster_name, eb::max_hp))
-            .load::<(String, Option<i64>)>(&mut conn)
+            .select((eb::monster_name, eb::max_hp, eb::is_defeated))
+            .load::<(String, Option<i64>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?;
 
         use std::collections::HashSet as StdHashSet;
-        let boss_names_set: StdHashSet<(String, Option<i64>)> = boss_rows.into_iter().collect();
+        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> = boss_rows.into_iter().collect();
         let boss_entries: Vec<BossSummaryDto> = boss_names_set
             .into_iter()
-            .map(|(name, max_hp)| BossSummaryDto { monster_name: name, max_hp })
+            .map(|(name, max_hp, defeated)| BossSummaryDto { monster_name: name, max_hp, is_defeated: defeated != 0 })
             .collect();
 
         // Get unique player names and class_ids from actor_encounter_stats where is_player=1
@@ -611,18 +612,18 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
         use sch::encounter_bosses::dsl as eb;
         use std::collections::HashSet;
 
-        // Get unique boss entries (name + max_hp) from the materialized encounter_bosses
-        let boss_rows: Vec<(String, Option<i64>)> = eb::encounter_bosses
+        // Get unique boss entries (name + max_hp + defeated) from the materialized encounter_bosses
+        let boss_rows: Vec<(String, Option<i64>, i32)> = eb::encounter_bosses
             .filter(eb::encounter_id.eq(id))
-            .select((eb::monster_name, eb::max_hp))
-            .load::<(String, Option<i64>)>(&mut conn)
+            .select((eb::monster_name, eb::max_hp, eb::is_defeated))
+            .load::<(String, Option<i64>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?;
 
         use std::collections::HashSet as StdHashSet;
-        let boss_names_set: StdHashSet<(String, Option<i64>)> = boss_rows.into_iter().collect();
+        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> = boss_rows.into_iter().collect();
         let boss_entries: Vec<BossSummaryDto> = boss_names_set
             .into_iter()
-            .map(|(name, max_hp)| BossSummaryDto { monster_name: name, max_hp })
+            .map(|(name, max_hp, defeated)| BossSummaryDto { monster_name: name, max_hp, is_defeated: defeated != 0 })
             .collect();
 
         // Get unique player names and class_ids from actor_encounter_stats where is_player=1
@@ -739,17 +740,17 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
 
     let actors = load_actor_stats(&mut conn, encounter_id)?;
 
-    let boss_rows: Vec<(String, Option<i64>)> = eb::encounter_bosses
+    let boss_rows: Vec<(String, Option<i64>, i32)> = eb::encounter_bosses
         .filter(eb::encounter_id.eq(encounter_id))
-        .select((eb::monster_name, eb::max_hp))
-        .load::<(String, Option<i64>)>(&mut conn)
+        .select((eb::monster_name, eb::max_hp, eb::is_defeated))
+        .load::<(String, Option<i64>, i32)>(&mut conn)
         .map_err(|er| er.to_string())?;
 
     use std::collections::HashSet as StdHashSet;
-    let boss_set: StdHashSet<(String, Option<i64>)> = boss_rows.into_iter().collect();
+    let boss_set: StdHashSet<(String, Option<i64>, i32)> = boss_rows.into_iter().collect();
     let boss_names: Vec<BossSummaryDto> = boss_set
         .into_iter()
-        .map(|(name, max_hp)| BossSummaryDto { monster_name: name, max_hp })
+        .map(|(name, max_hp, defeated)| BossSummaryDto { monster_name: name, max_hp, is_defeated: defeated != 0 })
         .collect();
 
     let players: Vec<PlayerInfoDto> = actors
@@ -835,18 +836,18 @@ pub fn get_recent_encounters_with_details(
     let mut results = Vec::new();
 
     for (id, started_at_ms, ended_at_ms, total_dmg, total_heal, scene_id, scene_name) in encounter_rows {
-        // Get unique boss entries (name + max_hp) from the materialized encounter_bosses
-        let boss_rows: Vec<(String, Option<i64>)> = eb::encounter_bosses
+        // Get unique boss entries (name + max_hp + defeated) from the materialized encounter_bosses
+        let boss_rows: Vec<(String, Option<i64>, i32)> = eb::encounter_bosses
             .filter(eb::encounter_id.eq(id))
-            .select((eb::monster_name, eb::max_hp))
-            .load::<(String, Option<i64>)>(&mut conn)
+            .select((eb::monster_name, eb::max_hp, eb::is_defeated))
+            .load::<(String, Option<i64>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?;
 
         use std::collections::HashSet as StdHashSet;
-        let boss_names_set: StdHashSet<(String, Option<i64>)> = boss_rows.into_iter().collect();
+        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> = boss_rows.into_iter().collect();
         let boss_entries: Vec<BossSummaryDto> = boss_names_set
             .into_iter()
-            .map(|(name, max_hp)| BossSummaryDto { monster_name: name, max_hp })
+            .map(|(name, max_hp, defeated)| BossSummaryDto { monster_name: name, max_hp, is_defeated: defeated != 0 })
             .collect();
 
         // Get unique player names and class_ids from actor_encounter_stats where is_player=1

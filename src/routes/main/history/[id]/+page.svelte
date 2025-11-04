@@ -224,7 +224,11 @@
               Encounter #{encounter.id}
               {#if encounter.bosses.length > 0}
                 <span class="text-neutral-400">—</span>
-                <span class="text-blue-400">{encounter.bosses.map(b => b.monsterName).join(', ')}</span>
+                <span>
+                  {#each encounter.bosses as b, i}
+                    <span class="{b.isDefeated ? 'text-red-400 line-through' : 'text-blue-400'}">{b.monsterName}{i < encounter.bosses.length - 1 ? ', ' : ''}</span>
+                  {/each}
+                </span>
               {/if}
             </h2>
             <div class="text-sm text-neutral-400">
@@ -315,15 +319,15 @@
                   {col.format(p[col.key] ?? 0)}
                 </td>
               {/each}
-              <TableRowGlow 
-                className={p.className} 
+              <TableRowGlow
+                className={p.className}
                 percentage={
-                  activeTab === 'healing' 
+                  activeTab === 'healing'
                     ? (SETTINGS.history.general.state.relativeToTopHealPlayer && maxHealPlayer > 0 ? (p.healDealt / maxHealPlayer) * 100 : p.healPct)
-                    : (activeTab === 'tanked' 
-                      ? p.tankedPct 
+                    : (activeTab === 'tanked'
+                      ? p.tankedPct
                       : (SETTINGS.history.general.state.relativeToTopDPSPlayer && maxDpsPlayer > 0 ? (p.totalDmg / maxDpsPlayer) * 100 : p.dmgPct))
-                } 
+                }
               />
             </tr>
           {/each}
@@ -371,13 +375,13 @@
                   {col.format(s[col.key] ?? 0)}
                 </td>
               {/each}
-              <TableRowGlow 
-                className={selectedPlayer.className} 
+              <TableRowGlow
+                className={selectedPlayer.className}
                 percentage={
                   skillType === 'heal'
                     ? (SETTINGS.history.general.state.relativeToTopHealSkill && maxHealSkill > 0 ? (s.totalDmg / maxHealSkill) * 100 : s.dmgPct)
                     : (SETTINGS.history.general.state.relativeToTopDPSSkill && maxDpsSkill > 0 ? (s.totalDmg / maxDpsSkill) * 100 : s.dmgPct)
-                } 
+                }
               />
             </tr>
           {/each}

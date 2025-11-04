@@ -142,6 +142,7 @@ diesel::table! {
         hits -> Integer,
         total_damage -> BigInt,
         max_hp -> Nullable<BigInt>,
+        is_defeated -> Integer,
     }
 }
 

@@ -4,6 +4,7 @@ use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use std::collections::HashMap;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::RwLock;
 
@@ -19,6 +20,8 @@ pub enum MetricType {
 pub struct EventManager {
     app_handle: Option<AppHandle>,
     dead_bosses: HashSet<i64>,
+    // Map boss_uid -> boss_name for persisted marking
+    dead_boss_names: HashMap<i64, String>,
 }
 
 impl EventManager {
@@ -26,6 +29,7 @@ impl EventManager {
         Self {
             app_handle: None,
             dead_bosses: HashSet::new(),
+            dead_boss_names: HashMap::new(),
         }
     }
 
@@ -108,6 +112,8 @@ impl EventManager {
     pub fn emit_boss_death(&mut self, boss_name: String, boss_uid: i64) {
         // Only emit if we haven't already emitted for this boss
         if self.dead_bosses.insert(boss_uid) {
+            // record the boss name for later persistence
+            self.dead_boss_names.insert(boss_uid, boss_name.clone());
             if let Some(app_handle) = &self.app_handle {
                 let payload = BossDeathPayload { boss_name };
                 match app_handle.emit("boss-death", payload) {
@@ -116,6 +122,18 @@ impl EventManager {
                 }
             }
         }
+    }
+
+    /// Drain and return any dead boss names that have been recorded by the event manager.
+    /// This consumes the stored names and uids so they won't be double-persisted.
+    pub fn take_dead_bosses(&mut self) -> Vec<String> {
+        let mut names: Vec<String> = Vec::new();
+        for (_uid, name) in self.dead_boss_names.drain() {
+            names.push(name);
+        }
+        // also clear uids set to keep parity
+        self.dead_bosses.clear();
+        names
     }
 
     pub fn clear_dead_bosses(&mut self) {

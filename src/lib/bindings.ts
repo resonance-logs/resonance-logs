@@ -161,7 +161,7 @@ async getPlayerNameCommand(uid: number) : Promise<Result<string | null, string>>
 
 export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; classId: number | null; abilityScore: number | null; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number; critTotalDealt: number; critTotalHeal: number; critTotalTaken: number; luckyTotalDealt: number; luckyTotalHeal: number; luckyTotalTaken: number; bossDamageDealt: number; bossHitsDealt: number; bossCritHitsDealt: number; bossLuckyHitsDealt: number; bossCritTotalDealt: number; bossLuckyTotalDealt: number; isLocalPlayer: boolean }
 export type BossNamesResult = { names: string[] }
-export type BossSummaryDto = { monsterName: string; maxHp: number | null }
+export type BossSummaryDto = { monsterName: string; maxHp: number | null; isDefeated: boolean }
 export type EncounterFiltersDto = { bossNames: string[] | null; encounterNames: string[] | null; playerName: string | null; playerNames: string[] | null; classIds: number[] | null; dateFromMs: number | null; dateToMs: number | null }
 export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number; sceneId: number | null; sceneName: string | null; bosses: BossSummaryDto[]; players: PlayerInfoDto[]; actors: ActorEncounterStatDto[] }
 export type PlayerInfoDto = { name: string; classId: number | null; isLocalPlayer: boolean }
