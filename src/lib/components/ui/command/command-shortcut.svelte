@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays a keyboard shortcut in a command menu.
+   */
   import { cn, type WithElementRef } from "$lib/utils.js";
   import type { HTMLAttributes } from "svelte/elements";
 

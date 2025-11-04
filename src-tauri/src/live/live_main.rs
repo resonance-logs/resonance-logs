@@ -8,6 +8,13 @@ use prost::Message;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 
+/// Starts the live meter.
+///
+/// This function captures packets, processes them, and emits events to the frontend.
+///
+/// # Arguments
+///
+/// * `app_handle` - A handle to the Tauri application instance.
 pub async fn start(app_handle: AppHandle) {
     // Get the state manager from app state
     let state_manager = app_handle.state::<AppStateManager>().inner().clone();

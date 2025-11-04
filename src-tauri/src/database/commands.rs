@@ -8,123 +8,210 @@ use crate::live::skill_names;
 use crate::live::commands_models as lc;
 
 
+/// A summary of an encounter.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EncounterSummaryDto {
+    /// The ID of the encounter.
     pub id: i32,
+    /// The start time of the encounter in milliseconds since the Unix epoch.
     pub started_at_ms: i64,
+    /// The end time of the encounter in milliseconds since the Unix epoch.
     pub ended_at_ms: Option<i64>,
+    /// The total damage dealt in the encounter.
     pub total_dmg: i64,
+    /// The total healing done in the encounter.
     pub total_heal: i64,
+    /// The ID of the scene where the encounter took place.
     pub scene_id: Option<i32>,
+    /// The name of the scene where the encounter took place.
     pub scene_name: Option<String>,
+    /// A list of bosses in the encounter.
     pub bosses: Vec<BossSummaryDto>,
+    /// A list of players in the encounter.
     pub players: Vec<PlayerInfoDto>,
+    /// A list of actor encounter stats.
     pub actors: Vec<ActorEncounterStatDto>,
 }
 
+/// The result of a query for recent encounters.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RecentEncountersResult {
+    /// The rows of encounter summaries.
     pub rows: Vec<EncounterSummaryDto>,
+    /// The total number of encounters.
     pub total_count: i64,
 }
 
+/// Filters for querying encounters.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EncounterFiltersDto {
+    /// A list of boss names to filter by.
     pub boss_names: Option<Vec<String>>,
+    /// A list of encounter names to filter by.
     pub encounter_names: Option<Vec<String>>,
+    /// A player name to filter by.
     pub player_name: Option<String>,
+    /// A list of player names to filter by.
     pub player_names: Option<Vec<String>>,
+    /// A list of class IDs to filter by.
     pub class_ids: Option<Vec<i32>>,
+    /// The start date to filter by in milliseconds since the Unix epoch.
     pub date_from_ms: Option<i64>,
+    /// The end date to filter by in milliseconds since the Unix epoch.
     pub date_to_ms: Option<i64>,
 }
 
+/// The result of a query for boss names.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BossNamesResult {
+    /// A list of boss names.
     pub names: Vec<String>,
 }
 
+/// A summary of a boss.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BossSummaryDto {
+    /// The name of the monster.
     pub monster_name: String,
+    /// The maximum HP of the monster.
     pub max_hp: Option<i64>,
+    /// Whether the boss was defeated.
     pub is_defeated: bool,
 }
 
+/// The result of a query for scene names.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SceneNamesResult {
+    /// A list of scene names.
     pub names: Vec<String>,
 }
 
+/// The result of a query for player names.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerNamesResult {
+    /// A list of player names.
     pub names: Vec<String>,
 }
 
+/// An encounter with details.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct EncounterWithDetailsDto {
+    /// The ID of the encounter.
     pub id: i32,
+    /// The start time of the encounter in milliseconds since the Unix epoch.
     pub started_at_ms: i64,
+    /// The end time of the encounter in milliseconds since the Unix epoch.
     pub ended_at_ms: Option<i64>,
+    /// The total damage dealt in the encounter.
     pub total_dmg: i64,
+    /// The total healing done in the encounter.
     pub total_heal: i64,
+    /// The ID of the scene where the encounter took place.
     pub scene_id: Option<i32>,
+    /// The name of the scene where the encounter took place.
     pub scene_name: Option<String>,
+    /// A list of bosses in the encounter.
     pub bosses: Vec<BossSummaryDto>,
+    /// A list of players in the encounter.
     pub players: Vec<PlayerInfoDto>,
 }
 
+/// Information about a player.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerInfoDto {
+    /// The name of the player.
     pub name: String,
+    /// The class ID of the player.
     pub class_id: Option<i32>,
+    /// Whether the player is the local player.
     pub is_local_player: bool,
 }
 
+/// Statistics for an actor in an encounter.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ActorEncounterStatDto {
+    /// The ID of the encounter.
     pub encounter_id: i32,
+    /// The ID of the actor.
     pub actor_id: i64,
+    /// The name of the actor.
     pub name: Option<String>,
+    /// The class ID of the actor.
     pub class_id: Option<i32>,
+    /// The ability score of the actor.
     pub ability_score: Option<i32>,
+    /// The total damage dealt by the actor.
     pub damage_dealt: i64,
+    /// The total healing done by the actor.
     pub heal_dealt: i64,
+    /// The total damage taken by the actor.
     pub damage_taken: i64,
+    /// The number of hits dealt by the actor.
     pub hits_dealt: i64,
+    /// The number of hits healed by the actor.
     pub hits_heal: i64,
+    /// The number of hits taken by the actor.
     pub hits_taken: i64,
+    /// The number of critical hits dealt by the actor.
     pub crit_hits_dealt: i64,
+    /// The number of critical hits healed by the actor.
     pub crit_hits_heal: i64,
+    /// The number of critical hits taken by the actor.
     pub crit_hits_taken: i64,
+    /// The number of lucky hits dealt by the actor.
     pub lucky_hits_dealt: i64,
+    /// The number of lucky hits healed by the actor.
     pub lucky_hits_heal: i64,
+    /// The number of lucky hits taken by the actor.
     pub lucky_hits_taken: i64,
+    /// The total critical damage dealt by the actor.
     pub crit_total_dealt: i64,
+    /// The total critical healing done by the actor.
     pub crit_total_heal: i64,
+    /// The total critical damage taken by the actor.
     pub crit_total_taken: i64,
+    /// The total lucky damage dealt by the actor.
     pub lucky_total_dealt: i64,
+    /// The total lucky healing done by the actor.
     pub lucky_total_heal: i64,
+    /// The total lucky damage taken by the actor.
     pub lucky_total_taken: i64,
+    /// The total damage dealt to bosses by the actor.
     pub boss_damage_dealt: i64,
+    /// The number of hits dealt to bosses by the actor.
     pub boss_hits_dealt: i64,
+    /// The number of critical hits dealt to bosses by the actor.
     pub boss_crit_hits_dealt: i64,
+    /// The number of lucky hits dealt to bosses by the actor.
     pub boss_lucky_hits_dealt: i64,
+    /// The total critical damage dealt to bosses by the actor.
     pub boss_crit_total_dealt: i64,
+    /// The total lucky damage dealt to bosses by the actor.
     pub boss_lucky_total_dealt: i64,
+    /// Whether the actor is the local player.
     pub is_local_player: bool,
 }
 
+/// Loads the actor stats for a given encounter.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<Vec<ActorEncounterStatDto>, String>` - A list of actor encounter stats.
 fn load_actor_stats(
     conn: &mut diesel::sqlite::SqliteConnection,
     encounter_id: i32,
@@ -275,12 +362,22 @@ fn load_actor_stats(
         .collect())
 }
 
+/// Gets a database connection.
+///
+/// # Returns
+///
+/// * `Result<diesel::sqlite::SqliteConnection, String>` - A database connection.
 fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
     let path = default_db_path();
     ensure_parent_dir(&path).map_err(|e| e.to_string())?;
     diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy()).map_err(|e| e.to_string())
 }
 
+/// Gets a list of unique boss names.
+///
+/// # Returns
+///
+/// * `Result<BossNamesResult, String>` - A list of unique boss names.
 #[tauri::command]
 #[specta::specta]
 pub fn get_unique_boss_names() -> Result<BossNamesResult, String> {
@@ -301,6 +398,11 @@ pub fn get_unique_boss_names() -> Result<BossNamesResult, String> {
     Ok(BossNamesResult { names: boss_names })
 }
 
+/// Gets a list of unique scene names.
+///
+/// # Returns
+///
+/// * `Result<SceneNamesResult, String>` - A list of unique scene names.
 #[tauri::command]
 #[specta::specta]
 pub fn get_unique_scene_names() -> Result<SceneNamesResult, String> {
@@ -322,6 +424,15 @@ pub fn get_unique_scene_names() -> Result<SceneNamesResult, String> {
     Ok(SceneNamesResult { names })
 }
 
+/// Gets a list of player names filtered by a prefix.
+///
+/// # Arguments
+///
+/// * `prefix` - The prefix to filter by.
+///
+/// # Returns
+///
+/// * `Result<PlayerNamesResult, String>` - A list of player names.
 #[tauri::command]
 #[specta::specta]
 pub fn get_player_names_filtered(prefix: String) -> Result<PlayerNamesResult, String> {
@@ -351,6 +462,17 @@ pub fn get_player_names_filtered(prefix: String) -> Result<PlayerNamesResult, St
     Ok(PlayerNamesResult { names: player_names })
 }
 
+/// Gets a list of recent encounters filtered by the given criteria.
+///
+/// # Arguments
+///
+/// * `limit` - The maximum number of encounters to return.
+/// * `offset` - The number of encounters to skip.
+/// * `filters` - The filters to apply.
+///
+/// # Returns
+///
+/// * `Result<RecentEncountersResult, String>` - A list of recent encounters.
 #[tauri::command]
 #[specta::specta]
 pub fn get_recent_encounters_filtered(
@@ -576,6 +698,16 @@ pub fn get_recent_encounters_filtered(
     })
 }
 
+/// Gets a list of recent encounters.
+///
+/// # Arguments
+///
+/// * `limit` - The maximum number of encounters to return.
+/// * `offset` - The number of encounters to skip.
+///
+/// # Returns
+///
+/// * `Result<RecentEncountersResult, String>` - A list of recent encounters.
 #[tauri::command]
 #[specta::specta]
 pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncountersResult, String> {
@@ -663,6 +795,15 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
     })
 }
 
+/// Gets the actor stats for a given encounter.
+///
+/// # Arguments
+///
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<Vec<ActorEncounterStatDto>, String>` - A list of actor encounter stats.
 #[tauri::command]
 #[specta::specta]
 pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounterStatDto>, String> {
@@ -671,6 +812,14 @@ pub fn get_encounter_actor_stats(encounter_id: i32) -> Result<Vec<ActorEncounter
 }
 
 /// Get player name by UID from database
+///
+/// # Arguments
+///
+/// * `uid` - The UID of the player.
+///
+/// # Returns
+///
+/// * `Result<Option<String>, String>` - The name of the player, or `None` if not found.
 pub fn get_name_by_uid(uid: i64) -> Result<Option<String>, String> {
     let mut conn = get_conn()?;
     use sch::entities::dsl as en;
@@ -686,6 +835,14 @@ pub fn get_name_by_uid(uid: i64) -> Result<Option<String>, String> {
 }
 
 /// Get recent players ordered by last_seen_ms (most recent first) kinda scuffed maybe update in future
+///
+/// # Arguments
+///
+/// * `limit` - The maximum number of players to return.
+///
+/// # Returns
+///
+/// * `Result<Vec<(i64, String)>, String>` - A list of recent players.
 pub fn get_recent_players(limit: i64) -> Result<Vec<(i64, String)>, String> {
     let mut conn = get_conn()?;
     use sch::entities::dsl as en;
@@ -704,18 +861,45 @@ pub fn get_recent_players(limit: i64) -> Result<Vec<(i64, String)>, String> {
         .collect())
 }
 
+/// A Tauri command to get a list of recent players.
+///
+/// # Arguments
+///
+/// * `limit` - The maximum number of players to return.
+///
+/// # Returns
+///
+/// * `Result<Vec<(i64, String)>, String>` - A list of recent players.
 #[tauri::command]
 #[specta::specta]
 pub fn get_recent_players_command(limit: i32) -> Result<Vec<(i64, String)>, String> {
     get_recent_players(limit as i64)
 }
 
+/// A Tauri command to get the name of a player by their UID.
+///
+/// # Arguments
+///
+/// * `uid` - The UID of the player.
+///
+/// # Returns
+///
+/// * `Result<Option<String>, String>` - The name of the player, or `None` if not found.
 #[tauri::command]
 #[specta::specta]
 pub fn get_player_name_command(uid: i64) -> Result<Option<String>, String> {
     get_name_by_uid(uid)
 }
 
+/// Gets an encounter by its ID.
+///
+/// # Arguments
+///
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<EncounterSummaryDto, String>` - The encounter summary.
 #[tauri::command]
 #[specta::specta]
 pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, String> {
@@ -780,6 +964,15 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
     })
 }
 
+/// Deletes an encounter by its ID.
+///
+/// # Arguments
+///
+/// * `encounter_id` - The ID of the encounter to delete.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 #[tauri::command]
 #[specta::specta]
 pub fn delete_encounter(encounter_id: i32) -> Result<(), String> {
@@ -803,6 +996,16 @@ pub fn delete_encounter(encounter_id: i32) -> Result<(), String> {
     Ok(())
 }
 
+/// Gets a list of recent encounters with details.
+///
+/// # Arguments
+///
+/// * `limit` - The maximum number of encounters to return.
+/// * `offset` - The number of encounters to skip.
+///
+/// # Returns
+///
+/// * `Result<Vec<EncounterWithDetailsDto>, String>` - A list of recent encounters with details.
 #[tauri::command]
 #[specta::specta]
 pub fn get_recent_encounters_with_details(
@@ -883,6 +1086,17 @@ pub fn get_recent_encounters_with_details(
     Ok(results)
 }
 
+/// Gets the skills used by a player in an encounter.
+///
+/// # Arguments
+///
+/// * `encounter_id` - The ID of the encounter.
+/// * `actor_id` - The ID of the actor.
+/// * `skill_type` - The type of skill to get (e.g., "dps", "heal").
+///
+/// # Returns
+///
+/// * `Result<lc::SkillsWindow, String>` - The skills window.
 #[tauri::command]
 #[specta::specta]
 pub fn get_encounter_player_skills(

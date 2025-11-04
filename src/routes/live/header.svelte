@@ -1,4 +1,8 @@
 <script lang="ts">
+  /**
+   * @file This component displays the header of the live meter,
+   * which includes encounter statistics, and buttons for controlling the meter.
+   */
   import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
   // import CameraIcon from "virtual:icons/lucide/camera";

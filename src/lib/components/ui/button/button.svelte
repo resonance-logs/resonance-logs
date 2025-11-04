@@ -38,6 +38,9 @@
 </script>
 
 <script lang="ts">
+  /**
+   * @file This component displays a button or a link with button styling.
+   */
   let { class: className, variant = "default", size = "default", ref = $bindable(null), href = undefined, type = "button", disabled, children, ...restProps }: ButtonProps = $props();
 </script>
 

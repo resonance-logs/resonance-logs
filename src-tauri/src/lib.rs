@@ -16,9 +16,14 @@ use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tauri_specta::{Builder, collect_commands};
 mod database;
 
+/// The label for the live window.
 pub const WINDOW_LIVE_LABEL: &str = "live";
+/// The label for the main window.
 pub const WINDOW_MAIN_LABEL: &str = "main";
 
+/// The main entry point for the application logic.
+///
+/// This function sets up and runs the Tauri application.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // std::panic::set_hook(Box::new(|info| {
@@ -111,6 +116,9 @@ pub fn run() {
     build_and_run(tauri_builder);
 }
 
+/// Starts the WinDivert driver.
+///
+/// This function executes a shell command to create and start the WinDivert driver service.
 fn start_windivert() {
     let status = Command::new("sc")
         .args([
@@ -131,6 +139,9 @@ fn start_windivert() {
     }
 }
 
+/// Stops the WinDivert driver.
+///
+/// This function executes a shell command to stop the WinDivert driver service.
 fn stop_windivert() {
     let status = Command::new("sc").args(["stop", "windivert"]).status();
     if status.is_ok_and(|status| status.success()) {
@@ -140,6 +151,9 @@ fn stop_windivert() {
     }
 }
 
+/// Removes the WinDivert driver.
+///
+/// This function executes a shell command to delete the WinDivert driver service.
 fn remove_windivert() {
     let status = Command::new("sc")
         .args(["delete", "windivert", "start=", "demand"])
@@ -172,6 +186,17 @@ fn remove_windivert() {
 //     Ok(())
 // }
 
+/// Sets up the logging for the application.
+///
+/// This function configures the logging targets and settings.
+///
+/// # Arguments
+///
+/// * `app` - A handle to the Tauri application instance.
+///
+/// # Returns
+///
+/// * `tauri::Result<()>` - An empty result indicating success or failure.
 fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()> {
     let app_version = &app.package_info().version;
     let pst_time = chrono::Utc::now()
@@ -201,6 +226,17 @@ fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+/// Sets up the system tray icon and menu.
+///
+/// This function creates the tray icon, defines its menu, and sets up event handlers.
+///
+/// # Arguments
+///
+/// * `app` - A handle to the Tauri application instance.
+///
+/// # Returns
+///
+/// * `tauri::Result<()>` - An empty result indicating success or failure.
 fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     fn show_window(window: &tauri::WebviewWindow) {
         window.show().unwrap();
@@ -291,6 +327,14 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+/// Handles window events.
+///
+/// This function is called whenever a window event occurs.
+///
+/// # Arguments
+///
+/// * `window` - The window that received the event.
+/// * `event` - The event that occurred.
 fn on_window_event_fn(window: &Window, event: &WindowEvent) {
     match event {
         // when you click the X button to close a window

@@ -1,4 +1,9 @@
 <script lang="ts">
+  /**
+   * @file This component displays the footer of the live meter,
+   * which includes navigation buttons for DPS, Heal, and Tanked views,
+   * as well as the application version.
+   */
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";

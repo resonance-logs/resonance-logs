@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * @file This component provides an autocomplete input for boss names.
+	 */
 	import { onMount } from 'svelte';
 
 	let {

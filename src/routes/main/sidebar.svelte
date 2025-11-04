@@ -1,4 +1,8 @@
 <script lang="ts">
+  /**
+   * @file This component displays the sidebar of the main application window.
+   * It includes links to the different pages of the application.
+   */
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 
   import { getVersion } from "@tauri-apps/api/app";

@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays a command menu in a dialog.
+   */
   import type { Command as CommandPrimitive, Dialog as DialogPrimitive } from "bits-ui";
   import type { Snippet } from "svelte";
   import Command from "./command.svelte";

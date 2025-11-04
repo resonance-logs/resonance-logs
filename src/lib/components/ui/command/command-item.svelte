@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays an item in a command menu.
+   */
   import { Command as CommandPrimitive } from "bits-ui";
   import { cn } from "$lib/utils.js";
 
