@@ -1,3 +1,7 @@
+/**
+ * @file This file contains the settings store for the application.
+ * It uses `@tauri-store/svelte` to create persistent stores for user settings.
+ */
 import { version } from '@tauri-apps/plugin-os';
 import { RuneStore } from '@tauri-store/svelte';
 

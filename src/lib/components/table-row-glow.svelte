@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays a glowing effect on a table row, based on the player's class and a percentage value.
+   */
   import { getClassColor } from '$lib/utils.svelte';
 
   let {

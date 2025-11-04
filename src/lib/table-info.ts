@@ -1,3 +1,7 @@
+/**
+ * @file This file contains column definitions for the tables in the application.
+ * It uses `@tanstack/table-core` to create column helpers and `svelte-table` to render components.
+ */
 import { createColumnHelper } from "@tanstack/table-core";
 
 import { renderComponent } from "$lib/svelte-table";

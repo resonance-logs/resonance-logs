@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * @file This component displays a list of filter chips that can be removed.
+	 */
 	interface Props {
 		filters: string[];
 		onRemove: (bossName: string) => void;

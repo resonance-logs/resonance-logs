@@ -1,3 +1,6 @@
+/**
+ * @file This file exports the button component and its variants.
+ */
 import Root, {
   type ButtonProps,
   type ButtonSize,

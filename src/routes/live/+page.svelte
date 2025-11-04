@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This page redirects to the DPS tab by default.
+   */
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";

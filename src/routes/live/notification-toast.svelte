@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays notification toasts.
+   */
   import { fly, fade } from "svelte/transition";
   import XIcon from "virtual:icons/lucide/x";
 

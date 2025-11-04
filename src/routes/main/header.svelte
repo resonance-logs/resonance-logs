@@ -1,4 +1,8 @@
 <script lang="ts">
+  /**
+   * @file This component displays the header of the main application window.
+   * It includes a button to toggle the sidebar and the title of the current page.
+   */
   import { Separator } from "$lib/components/ui/separator/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 

@@ -1,4 +1,8 @@
 <script lang="ts">
+  /**
+   * @file This is the layout for the main application window.
+   * It sets up the sidebar and header, and listens for navigation events.
+   */
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 
   import AppSidebar from "./sidebar.svelte";

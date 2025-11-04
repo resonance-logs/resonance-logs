@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays a number in an abbreviated format.
+   */
   let {
     num = 0,
   }: {

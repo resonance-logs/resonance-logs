@@ -1,4 +1,13 @@
 <script lang="ts">
+  /**
+   * @file This is the layout for the live meter.
+   * It sets up event listeners for live data, manages the pause state,
+   * and handles scroll position restoration.
+   *
+   * It also displays the header, footer, boss health, and notification toasts.
+   *
+   * @packageDocumentation
+   */
   import { onMount } from "svelte";
   import { commands } from "$lib/bindings";
   import { SETTINGS } from "$lib/settings-store";

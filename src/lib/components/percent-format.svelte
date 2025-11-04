@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays a number as a percentage.
+   */
   let {
     val = "",
     fractionDigits = 0,

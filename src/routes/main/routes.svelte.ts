@@ -1,3 +1,6 @@
+/**
+ * @file This file defines the routes for the sidebar.
+ */
 import HourglassIcon from "virtual:icons/lucide/hourglass";
 import ScrollTextIcon from "virtual:icons/lucide/scroll-text";
 import SettingsIcon from "virtual:icons/lucide/settings";

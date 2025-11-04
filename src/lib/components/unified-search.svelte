@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * @file This component provides a unified search input for bosses, players, and encounters.
+	 */
 	import { onMount } from 'svelte';
 	import { commands } from '$lib/bindings';
 

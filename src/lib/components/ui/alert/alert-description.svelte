@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays the description of an alert.
+   */
   import type { HTMLAttributes } from "svelte/elements";
   import { cn, type WithElementRef } from "$lib/utils.js";
 
