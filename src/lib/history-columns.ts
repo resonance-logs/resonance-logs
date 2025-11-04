@@ -1,5 +1,7 @@
-// Column configurations for history page tables
-// This provides a clean way to render columns without repetitive if statements
+/**
+ * @file This file contains column configurations for the history page tables.
+ * This provides a clean way to render columns without repetitive if statements.
+ */
 
 export const historyDpsPlayerColumns = [
   { key: 'totalDmg', header: 'DMG', label: 'DMG', description: "Show player's total damage dealt", format: (v: number) => v.toLocaleString() },

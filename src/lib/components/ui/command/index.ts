@@ -1,3 +1,6 @@
+/**
+ * @file This file exports the command components.
+ */
 import { Command as CommandPrimitive } from "bits-ui";
 
 import Root from "./command.svelte";

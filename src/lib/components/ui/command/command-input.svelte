@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays the input for a command menu.
+   */
   import { Command as CommandPrimitive } from "bits-ui";
   import SearchIcon from "@lucide/svelte/icons/search";
   import { cn } from "$lib/utils.js";

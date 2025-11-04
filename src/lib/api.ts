@@ -1,3 +1,8 @@
+/**
+ * @file This file contains type definitions for event payloads and functions for interacting with the backend.
+ *
+ * @packageDocumentation
+ */
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { commands } from "./bindings";

@@ -9,31 +9,54 @@ use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
 
+/// Represents the possible events that can be handled by the state manager.
 #[derive(Debug, Clone)]
 pub enum StateEvent {
+    /// A server change event.
     ServerChange,
+    /// An enter scene event.
     EnterScene(blueprotobuf::EnterScene),
+    /// A sync near entities event.
     SyncNearEntities(blueprotobuf::SyncNearEntities),
+    /// A sync container data event.
     SyncContainerData(blueprotobuf::SyncContainerData),
+    /// A sync container dirty data event.
     SyncContainerDirtyData(blueprotobuf::SyncContainerDirtyData),
+    /// A sync server time event.
     SyncServerTime(blueprotobuf::SyncServerTime),
+    /// A sync to me delta info event.
     SyncToMeDeltaInfo(blueprotobuf::SyncToMeDeltaInfo),
+    /// A sync near delta info event.
     SyncNearDeltaInfo(blueprotobuf::SyncNearDeltaInfo),
+    /// A pause encounter event.
     PauseEncounter(bool),
+    /// A reset encounter event.
     ResetEncounter,
 }
 
+/// Represents the state of the application.
 #[derive(Debug)]
 pub struct AppState {
+    /// The current encounter.
     pub encounter: Encounter,
+    /// The event manager.
     pub event_manager: EventManager,
+    /// The set of skill subscriptions.
     pub skill_subscriptions: HashSet<(i64, String)>,
+    /// A handle to the Tauri application instance.
     pub app_handle: AppHandle,
+    /// Whether to only show boss DPS.
     pub boss_only_dps: bool,
+    /// A map of low HP bosses.
     pub low_hp_bosses: HashMap<i64, u128>,
 }
 
 impl AppState {
+    /// Creates a new `AppState`.
+    ///
+    /// # Arguments
+    ///
+    /// * `app_handle` - A handle to the Tauri application instance.
     pub fn new(app_handle: AppHandle) -> Self {
         Self {
             encounter: Encounter::default(),
@@ -45,22 +68,35 @@ impl AppState {
         }
     }
 
+    /// Returns whether the encounter is paused.
     pub fn is_encounter_paused(&self) -> bool {
         self.encounter.is_encounter_paused
     }
 
+    /// Sets whether the encounter is paused.
+    ///
+    /// # Arguments
+    ///
+    /// * `paused` - Whether the encounter is paused.
     pub fn set_encounter_paused(&mut self, paused: bool) {
         self.encounter.is_encounter_paused = paused;
         self.event_manager.emit_encounter_pause(paused);
     }
 }
 
+/// Manages the state of the application.
 #[derive(Clone)]
 pub struct AppStateManager {
+    /// The state of the application.
     pub state: Arc<RwLock<AppState>>,
 }
 
 impl AppStateManager {
+    /// Creates a new `AppStateManager`.
+    ///
+    /// # Arguments
+    ///
+    /// * `app_handle` - A handle to the Tauri application instance.
     pub fn new(app_handle: AppHandle) -> Self {
         let state = AppState::new(app_handle);
         Self {
@@ -68,6 +104,11 @@ impl AppStateManager {
         }
     }
 
+    /// Handles a state event.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The event to handle.
     pub async fn handle_event(&self, event: StateEvent) {
         let mut state = self.state.write().await;
 
@@ -499,11 +540,16 @@ impl AppStateManager {
         state.skill_subscriptions.clear();
     }
 
+    /// Gets a clone of the current encounter.
     pub async fn get_encounter(&self) -> Encounter {
         self.state.read().await.encounter.clone()
     }
 
-    // Manage skill subscriptions
+    /// Updates the skill subscriptions.
+    ///
+    /// # Arguments
+    ///
+    /// * `update_fn` - A function that takes a mutable reference to the skill subscriptions and modifies it.
     pub async fn update_skill_subscriptions<F>(&self, update_fn: F)
     where
         F: FnOnce(&mut HashSet<(i64, String)>),
@@ -513,25 +559,62 @@ impl AppStateManager {
     }
 
     /// Get player name by UID from database
+    ///
+    /// # Arguments
+    ///
+    /// * `uid` - The UID of the player.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<String>` - The name of the player, or `None` if not found.
     pub async fn get_player_name(&self, uid: i64) -> Option<String> {
         PlayerNames::get_name_by_uid(uid)
     }
 
     /// Get recent players ordered by last seen (most recent first)
+    ///
+    /// # Arguments
+    ///
+    /// * `limit` - The maximum number of players to return.
+    ///
+    /// # Returns
+    ///
+    /// * `Vec<(i64, String)>` - A list of recent players.
     pub async fn get_recent_players(&self, limit: usize) -> Vec<(i64, String)> {
         PlayerNames::get_recent_players(limit)
     }
 
     /// Get multiple names by UIDs (batch query for performance)
+    ///
+    /// # Arguments
+    ///
+    /// * `uids` - A slice of UIDs.
+    ///
+    /// # Returns
+    ///
+    /// * `std::collections::HashMap<i64, String>` - A map of UIDs to names.
     pub async fn get_player_names(&self, uids: &[i64]) -> std::collections::HashMap<i64, String> {
         PlayerNames::get_names_by_uids(uids)
     }
 
     /// Check if a player exists in the database
+    ///
+    /// # Arguments
+    ///
+    /// * `uid` - The UID of the player.
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - Whether the player exists.
     pub async fn contains_player(&self, uid: i64) -> bool {
         PlayerNames::contains_player(uid)
     }
 
+    /// Updates the encounter.
+    ///
+    /// # Arguments
+    ///
+    /// * `update_fn` - A function that takes a mutable reference to the encounter and modifies it.
     pub async fn update_encounter<F>(&self, update_fn: F)
     where
         F: FnOnce(&mut Encounter),
@@ -540,10 +623,16 @@ impl AppStateManager {
         update_fn(&mut state.encounter);
     }
 
+    /// Gets a read guard for the application state.
     pub async fn get_encounter_ref(&self) -> tokio::sync::RwLockReadGuard<'_, AppState> {
         self.state.read().await
     }
 
+    /// Executes a function with a read-only reference to the application state.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The function to execute.
     pub async fn with_state<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&AppState) -> R,
@@ -552,6 +641,11 @@ impl AppStateManager {
         f(&*state)
     }
 
+    /// Executes a function with a mutable reference to the application state.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - The function to execute.
     pub async fn with_state_mut<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&mut AppState) -> R,
@@ -562,6 +656,7 @@ impl AppStateManager {
 }
 
 impl AppStateManager {
+    /// Updates and emits events.
     pub async fn update_and_emit_events(&self) {
         // First, read the encounter data to generate all the necessary information
         let (encounter, should_emit, boss_only) = {

@@ -1,4 +1,7 @@
 <script lang="ts">
+	/**
+	 * @file This component provides an autocomplete input for player names.
+	 */
 	import { onMount } from 'svelte';
 	import { commands } from '$lib/bindings';
 

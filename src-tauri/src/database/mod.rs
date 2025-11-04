@@ -16,9 +16,11 @@ use tokio::sync::mpsc::{self, UnboundedSender};
 use crate::database::models as m;
 use crate::database::schema as sch;
 
+/// A type alias for a database connection pool.
 #[allow(dead_code)]
 pub type DbPool = Pool<ConnectionManager<SqliteConnection>>;
 
+/// A constant holding the embedded database migrations.
 pub const MIGRATIONS: EmbeddedMigrations = diesel_migrations::embed_migrations!();
 
 // Sentinel value for unknown skill IDs in aggregated stats
@@ -31,14 +33,22 @@ static DB_SENDER: Lazy<Mutex<Option<UnboundedSender<DbTask>>>> = Lazy::new(|| Mu
 const BATCH_MAX_EVENTS: usize = 100;
 const BATCH_MAX_WAIT_MS: u64 = 50;
 
+/// An enumeration of possible errors that can occur during database initialization.
 #[derive(Debug, thiserror::Error)]
 pub enum DbInitError {
+    /// An error that occurred while creating the database connection pool.
     #[error("DB pool error: {0}")]
     Pool(String),
+    /// An error that occurred while running database migrations.
     #[error("Migration error: {0}")]
     Migration(String),
 }
 
+/// Returns the current time in milliseconds since the Unix epoch.
+///
+/// # Returns
+///
+/// * `i64` - The current time in milliseconds.
 pub fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -46,6 +56,11 @@ pub fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
+/// Returns the default path to the database file.
+///
+/// # Returns
+///
+/// * `PathBuf` - The default path to the database file.
 pub fn default_db_path() -> PathBuf {
     if let Some(mut dir) = dirs::data_local_dir() {
         dir.push("resonance-logs");
@@ -58,6 +73,15 @@ pub fn default_db_path() -> PathBuf {
     }
 }
 
+/// Ensures that the parent directory of a given path exists.
+///
+/// # Arguments
+///
+/// * `path` - The path to ensure the parent directory of.
+///
+/// # Returns
+///
+/// * `std::io::Result<()>` - An empty result indicating success or failure.
 pub fn ensure_parent_dir(path: &Path) -> std::io::Result<()> {
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir)?;
@@ -65,6 +89,11 @@ pub fn ensure_parent_dir(path: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
+/// Initializes the database and spawns a background writer thread.
+///
+/// # Returns
+///
+/// * `Result<(), DbInitError>` - An empty result indicating success or failure.
 pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
     let db_path = default_db_path();
     if let Err(e) = ensure_parent_dir(&db_path) {
@@ -198,25 +227,38 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
     Ok(())
 }
 
+/// Runs pending database migrations.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn run_migrations(conn: &mut SqliteConnection) -> Result<(), String> {
     conn.run_pending_migrations(MIGRATIONS)
         .map(|_| ())
         .map_err(|e| e.to_string())
 }
 
+/// An enumeration of possible database tasks.
 #[derive(Debug, Clone)]
 pub enum DbTask {
+    /// A task to begin a new encounter.
     BeginEncounter {
         started_at_ms: i64,
         local_player_id: Option<i64>,
         scene_id: Option<i32>,
         scene_name: Option<String>,
     },
+    /// A task to end the current encounter.
     EndEncounter {
         ended_at_ms: i64,
         defeated_bosses: Option<Vec<String>>,
     },
 
+    /// A task to insert or update an entity.
     UpsertEntity {
         entity_id: i64,
         name: Option<String>,
@@ -228,6 +270,7 @@ pub enum DbTask {
         attributes: Option<String>,
     },
 
+    /// A task to insert a damage event.
     InsertDamageEvent {
         timestamp_ms: i64,
         attacker_id: i64,
@@ -243,6 +286,7 @@ pub enum DbTask {
         is_boss: bool,
     },
 
+    /// A task to insert a heal event.
     InsertHealEvent {
         timestamp_ms: i64,
         healer_id: i64,
@@ -254,6 +298,11 @@ pub enum DbTask {
     },
 }
 
+/// Enqueues a database task to be processed by the background writer thread.
+///
+/// # Arguments
+///
+/// * `task` - The `DbTask` to enqueue.
 pub fn enqueue(task: DbTask) {
     // fire-and-forget; drop if not initialized
     let guard = DB_SENDER.lock();
@@ -265,6 +314,17 @@ pub fn enqueue(task: DbTask) {
     }
 }
 
+/// Handles a single database task.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `task` - The `DbTask` to handle.
+/// * `current_encounter_id` - A mutable reference to the current encounter ID.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn handle_task(
     conn: &mut SqliteConnection,
     task: DbTask,
@@ -538,6 +598,16 @@ fn handle_task(
     Ok(())
 }
 
+/// Gets the entity type of a given entity ID.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `entity_id` - The ID of the entity.
+///
+/// # Returns
+///
+/// * `Result<Option<i32>, String>` - The entity type, or `None` if the entity is not found.
 fn get_entity_type(conn: &mut SqliteConnection, entity_id: i64) -> Result<Option<i32>, String> {
     // Entities table no longer stores entity_type; we only persist players.
     // If an entity exists here, treat it as a player (EntChar); otherwise unknown.
@@ -551,6 +621,21 @@ fn get_entity_type(conn: &mut SqliteConnection, entity_id: i64) -> Result<Option
     Ok(exists.map(|_| blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32))
 }
 
+/// Upserts actor encounter stats for damage dealt.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+/// * `actor_id` - The ID of the actor.
+/// * `value` - The amount of damage dealt.
+/// * `is_crit` - Whether the damage was a critical hit.
+/// * `is_lucky` - Whether the damage was a lucky hit.
+/// * `is_boss` - Whether the target was a boss.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn upsert_stats_add_damage_dealt(
     conn: &mut SqliteConnection,
     encounter_id: i32,
@@ -618,6 +703,20 @@ fn upsert_stats_add_damage_dealt(
     .map_err(|e| e.to_string())
 }
 
+/// Upserts actor encounter stats for heal dealt.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+/// * `actor_id` - The ID of the actor.
+/// * `value` - The amount of heal dealt.
+/// * `is_crit` - Whether the heal was a critical hit.
+/// * `is_lucky` - Whether the heal was a lucky hit.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn upsert_stats_add_heal_dealt(
     conn: &mut SqliteConnection,
     encounter_id: i32,
@@ -670,6 +769,20 @@ fn upsert_stats_add_heal_dealt(
     .map_err(|e| e.to_string())
 }
 
+/// Upserts actor encounter stats for damage taken.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+/// * `actor_id` - The ID of the actor.
+/// * `value` - The amount of damage taken.
+/// * `is_crit` - Whether the damage was a critical hit.
+/// * `is_lucky` - Whether the damage was a lucky hit.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn upsert_stats_add_damage_taken(
     conn: &mut SqliteConnection,
     encounter_id: i32,
@@ -722,6 +835,16 @@ fn upsert_stats_add_damage_taken(
     .map_err(|e| e.to_string())
 }
 
+/// Materializes damage skill stats for an encounter.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn materialize_damage_skill_stats(
     conn: &mut SqliteConnection,
     encounter_id: i32,
@@ -811,6 +934,16 @@ fn materialize_damage_skill_stats(
     Ok(())
 }
 
+/// Materializes encounter bosses for an encounter.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn materialize_encounter_bosses(
     conn: &mut SqliteConnection,
     encounter_id: i32,
@@ -869,6 +1002,16 @@ fn materialize_encounter_bosses(
     Ok(())
 }
 
+/// Materializes heal skill stats for an encounter.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn materialize_heal_skill_stats(
     conn: &mut SqliteConnection,
     encounter_id: i32,
@@ -963,6 +1106,16 @@ fn materialize_heal_skill_stats(
     Ok(())
 }
 
+/// Prunes raw encounter events to save space.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
 fn prune_encounter_events(conn: &mut SqliteConnection, encounter_id: i32) -> Result<(), String> {
     use sch::damage_events::dsl as de;
     use sch::heal_events::dsl as he;

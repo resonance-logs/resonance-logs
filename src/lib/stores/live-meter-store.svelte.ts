@@ -1,3 +1,7 @@
+/**
+ * @file This file contains the store for the live meter data.
+ * It uses `@tauri-store/svelte` to create persistent stores for the DPS, heal, and tanked player data.
+ */
 import type { PlayersWindow } from "$lib/api";
 import { RuneStore } from '@tauri-store/svelte';
 

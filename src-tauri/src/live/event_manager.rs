@@ -8,14 +8,19 @@ use std::collections::HashMap;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::RwLock;
 
+/// Represents the type of metric being displayed.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum MetricType {
+    /// Damage per second.
     Dps,
+    /// Healing per second.
     Heal,
+    /// Damage taken per second.
     Tanked,
 }
 
+/// Manages events and emits them to the frontend.
 #[derive(Debug)]
 pub struct EventManager {
     app_handle: Option<AppHandle>,
@@ -25,6 +30,7 @@ pub struct EventManager {
 }
 
 impl EventManager {
+    /// Creates a new `EventManager`.
     pub fn new() -> Self {
         Self {
             app_handle: None,
@@ -33,11 +39,22 @@ impl EventManager {
         }
     }
 
+    /// Initializes the `EventManager` with a Tauri app handle.
+    ///
+    /// # Arguments
+    ///
+    /// * `app_handle` - A handle to the Tauri application instance.
     pub fn initialize(&mut self, app_handle: AppHandle) {
         self.app_handle = Some(app_handle);
         info!("Event manager initialized");
     }
 
+    /// Emits an encounter update event.
+    ///
+    /// # Arguments
+    ///
+    /// * `header_info` - The header information for the encounter.
+    /// * `is_paused` - Whether the encounter is paused.
     pub fn emit_encounter_update(&self, header_info: HeaderInfo, is_paused: bool) {
         if let Some(app_handle) = &self.app_handle {
             let payload = EncounterUpdatePayload {
@@ -51,6 +68,12 @@ impl EventManager {
         }
     }
 
+    /// Emits a players update event.
+    ///
+    /// # Arguments
+    ///
+    /// * `metric_type` - The type of metric being displayed.
+    /// * `players_window` - The players window data.
     pub fn emit_players_update(&self, metric_type: MetricType, players_window: PlayersWindow) {
         if let Some(app_handle) = &self.app_handle {
             let payload = PlayersUpdatePayload {
@@ -63,6 +86,13 @@ impl EventManager {
         }
     }
 
+    /// Emits a skills update event.
+    ///
+    /// # Arguments
+    ///
+    /// * `metric_type` - The type of metric being displayed.
+    /// * `player_uid` - The UID of the player.
+    /// * `skills_window` - The skills window data.
     pub fn emit_skills_update(
         &self,
         metric_type: MetricType,
@@ -81,6 +111,7 @@ impl EventManager {
         }
     }
 
+    /// Emits an encounter reset event.
     pub fn emit_encounter_reset(&self) {
         if let Some(app_handle) = &self.app_handle {
             match app_handle.emit("reset-encounter", "") {
@@ -90,6 +121,11 @@ impl EventManager {
         }
     }
 
+    /// Emits an encounter pause event.
+    ///
+    /// # Arguments
+    ///
+    /// * `is_paused` - Whether the encounter is paused.
     pub fn emit_encounter_pause(&self, is_paused: bool) {
         if let Some(app_handle) = &self.app_handle {
             match app_handle.emit("pause-encounter", is_paused) {
@@ -99,6 +135,11 @@ impl EventManager {
         }
     }
 
+    /// Emits a scene change event.
+    ///
+    /// # Arguments
+    ///
+    /// * `scene_name` - The name of the new scene.
     pub fn emit_scene_change(&self, scene_name: String) {
         if let Some(app_handle) = &self.app_handle {
             let payload = SceneChangePayload { scene_name };
@@ -109,6 +150,12 @@ impl EventManager {
         }
     }
 
+    /// Emits a boss death event.
+    ///
+    /// # Arguments
+    ///
+    /// * `boss_name` - The name of the boss that died.
+    /// * `boss_uid` - The UID of the boss that died.
     pub fn emit_boss_death(&mut self, boss_name: String, boss_uid: i64) {
         // Only emit if we haven't already emitted for this boss
         if self.dead_bosses.insert(boss_uid) {
@@ -136,46 +183,62 @@ impl EventManager {
         names
     }
 
+    /// Clears the list of dead bosses.
     pub fn clear_dead_bosses(&mut self) {
         self.dead_bosses.clear();
     }
 
+    /// Returns whether the `EventManager` should emit events.
     pub fn should_emit_events(&self) -> bool {
         self.app_handle.is_some()
     }
 }
 
+/// The payload for an encounter update event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EncounterUpdatePayload {
+    /// The header information for the encounter.
     pub header_info: HeaderInfo,
+    /// Whether the encounter is paused.
     pub is_paused: bool,
 }
 
+/// The payload for a players update event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayersUpdatePayload {
+    /// The type of metric being displayed.
     pub metric_type: MetricType,
+    /// The players window data.
     pub players_window: PlayersWindow,
 }
 
+/// The payload for a skills update event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SkillsUpdatePayload {
+    /// The type of metric being displayed.
     pub metric_type: MetricType,
+    /// The UID of the player.
     pub player_uid: i64,
+    /// The skills window data.
     pub skills_window: SkillsWindow,
 }
 
+/// The payload for a boss death event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BossDeathPayload {
+    /// The name of the boss that died.
     pub boss_name: String,
 }
 
+/// The payload for a scene change event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SceneChangePayload {
+    /// The name of the new scene.
     pub scene_name: String,
 }
 

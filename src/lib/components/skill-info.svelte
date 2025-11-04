@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays the name of a skill.
+   */
   let {
     skillName = "Unknown name",
   }: {

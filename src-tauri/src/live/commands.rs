@@ -7,6 +7,17 @@ use window_vibrancy::{apply_blur, clear_blur};
 // request_restart is not needed in this module at present
 use crate::live::event_manager; // for generate_skills_window_*
 
+/// Prettifies a player's name.
+///
+/// # Arguments
+///
+/// * `player_uid` - The UID of the player.
+/// * `local_player_uid` - The UID of the local player.
+/// * `player_name` - The name of the player.
+///
+/// # Returns
+///
+/// * `String` - The prettified name.
 fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -> String {
     // If entity name is empty, try to get it from the database
     let effective_name = if player_name.is_empty() {
@@ -27,6 +38,15 @@ fn prettify_name(player_uid: i64, local_player_uid: i64, player_name: &String) -
     }
 }
 
+/// Returns 0.0 if the value is NaN or infinite.
+///
+/// # Arguments
+///
+/// * `value` - The value to check.
+///
+/// # Returns
+///
+/// * `f64` - 0.0 if the value is NaN or infinite, otherwise the value.
 fn nan_is_zero(value: f64) -> f64 {
     if value.is_nan() || value.is_infinite() {
         0.0
@@ -35,6 +55,17 @@ fn nan_is_zero(value: f64) -> f64 {
     }
 }
 
+/// Subscribes to a player's skills.
+///
+/// # Arguments
+///
+/// * `uid` - The UID of the player.
+/// * `skill_type` - The type of skill to subscribe to.
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<crate::live::commands_models::SkillsWindow, String>` - The skills window.
 #[tauri::command]
 #[specta::specta]
 pub async fn subscribe_player_skills(
@@ -68,6 +99,17 @@ pub async fn subscribe_player_skills(
         .await
 }
 
+/// Unsubscribes from a player's skills.
+///
+/// # Arguments
+///
+/// * `uid` - The UID of the player.
+/// * `skill_type` - The type of skill to unsubscribe from.
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
 #[tauri::command]
 #[specta::specta]
 pub async fn unsubscribe_player_skills(
@@ -83,6 +125,17 @@ pub async fn unsubscribe_player_skills(
     Ok(())
 }
 
+/// Gets a player's skills.
+///
+/// # Arguments
+///
+/// * `uid` - The UID of the player.
+/// * `skill_type` - The type of skill to get.
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<crate::live::commands_models::SkillsWindow, String>` - The skills window.
 #[tauri::command]
 #[specta::specta]
 pub async fn get_player_skills(
@@ -108,6 +161,16 @@ pub async fn get_player_skills(
         .await
 }
 
+/// Sets whether to only show boss DPS.
+///
+/// # Arguments
+///
+/// * `enabled` - Whether to enable boss-only DPS.
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
 #[tauri::command]
 #[specta::specta]
 pub async fn set_boss_only_dps(
@@ -124,6 +187,11 @@ pub async fn set_boss_only_dps(
     Ok(())
 }
 
+/// Enables blur on the live meter window.
+///
+/// # Arguments
+///
+/// * `app` - A handle to the Tauri application instance.
 #[tauri::command]
 #[specta::specta]
 pub fn enable_blur(app: tauri::AppHandle) {
@@ -132,6 +200,11 @@ pub fn enable_blur(app: tauri::AppHandle) {
     }
 }
 
+/// Disables blur on the live meter window.
+///
+/// # Arguments
+///
+/// * `app` - A handle to the Tauri application instance.
 #[tauri::command]
 #[specta::specta]
 pub fn disable_blur(app: tauri::AppHandle) {
@@ -140,6 +213,16 @@ pub fn disable_blur(app: tauri::AppHandle) {
     }
 }
 
+/// Copies the sync container data to the clipboard.
+///
+/// # Arguments
+///
+/// * `app` - A handle to the Tauri application instance.
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
 #[tauri::command]
 #[specta::specta]
 pub async fn copy_sync_container_data(
@@ -187,6 +270,15 @@ pub async fn copy_sync_container_data(
 //     info!("Hard Reset");
 // }
 
+/// Resets the encounter.
+///
+/// # Arguments
+///
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
 #[tauri::command]
 #[specta::specta]
 pub async fn reset_encounter(
@@ -200,6 +292,15 @@ pub async fn reset_encounter(
     Ok(())
 }
 
+/// Toggles pausing the encounter.
+///
+/// # Arguments
+///
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
 #[tauri::command]
 #[specta::specta]
 pub async fn toggle_pause_encounter(

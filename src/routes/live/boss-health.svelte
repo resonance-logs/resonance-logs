@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays the health of the current boss(es).
+   */
   import { onMount } from "svelte";
   import { onEncounterUpdate, onResetEncounter, type HeaderInfo } from "$lib/api";
   import { tooltip } from "$lib/utils.svelte";

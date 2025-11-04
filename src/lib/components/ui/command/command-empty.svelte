@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component is displayed when a command menu is empty.
+   */
   import { Command as CommandPrimitive } from "bits-ui";
   import { cn } from "$lib/utils.js";
 

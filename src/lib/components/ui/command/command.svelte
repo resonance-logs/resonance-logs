@@ -1,4 +1,8 @@
 <script lang="ts">
+  /**
+   * @file This component is a command menu.
+   * It is built on top of the `bits-ui` command component.
+   */
   import { Command as CommandPrimitive } from "bits-ui";
   import { cn } from "$lib/utils.js";
 

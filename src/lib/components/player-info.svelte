@@ -1,4 +1,7 @@
 <script lang="ts">
+  /**
+   * @file This component displays information about a player, including their class, name, and ability score.
+   */
   import { SETTINGS } from "$lib/settings-store";
   import { copyToClipboard, getClassIcon, tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "./abbreviated-number.svelte";

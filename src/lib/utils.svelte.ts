@@ -1,3 +1,6 @@
+/**
+ * @file This file contains utility functions and constants for the application.
+ */
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import type { Attachment } from 'svelte/attachments';

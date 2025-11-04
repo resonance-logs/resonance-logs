@@ -18,6 +18,9 @@
 </script>
 
 <script lang="ts">
+  /**
+   * @file This component displays a callout for user attention.
+   */
   import type { HTMLAttributes } from "svelte/elements";
   import { cn, type WithElementRef } from "$lib/utils.js";
 

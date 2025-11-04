@@ -1,4 +1,8 @@
 <script lang="ts" generics="TData, TValue, TContext extends HeaderContext<TData, TValue> | CellContext<TData, TValue>">
+  /**
+   * @file This component is a Svelte implementation of TanStack Table's `flexRender` utility.
+   * It is used to render the content of a table cell or header.
+   */
   import type { CellContext, ColumnDefTemplate, HeaderContext } from "@tanstack/table-core";
   import { RenderComponentConfig, RenderSnippetConfig } from "./render-component";
 
