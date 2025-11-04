@@ -151,7 +151,10 @@
   <!-- Left side -->
   <div class="flex flex-col" data-tauri-drag-region>
     <div class="flex flex-wrap items-center {compactModeEnabled ? 'gap-1.5' : 'gap-2'}" data-tauri-drag-region>
-      <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'} font-medium" {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
+      {#if headerInfo.sceneName}
+        <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'} font-bold text-neutral-100" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName}</span>
+      {/if}
+      <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'} font-medium text-neutral-300" {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
       <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'}"><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
       <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'}"><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
     </div>

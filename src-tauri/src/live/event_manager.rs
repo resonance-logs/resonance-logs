@@ -875,6 +875,14 @@ pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<(H
         .iter()
         .filter_map(|(&uid, entity)| {
             if entity.is_boss() {
+                let current_hp = entity.hp();
+                let max_hp = entity.max_hp();
+
+                // Filter out bosses without HP attributes (cleared after reset)
+                if current_hp.is_none() && max_hp.is_none() {
+                    return None;
+                }
+
                 let name = if !entity.name.is_empty() {
                     entity.name.clone()
                 } else if let Some(packet_name) = &entity.monster_name_packet {
@@ -882,9 +890,6 @@ pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<(H
                 } else {
                     format!("Boss {uid}")
                 };
-
-                let current_hp = entity.hp();
-                let max_hp = entity.max_hp();
 
                 // Boss death detection: if boss has <5% HP and team DPS is high enough, assume boss is dead
                 let is_dead = if let (Some(curr_hp), Some(max_hp_val)) = (current_hp, max_hp) {

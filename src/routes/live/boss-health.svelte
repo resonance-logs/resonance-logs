@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { onEncounterUpdate, type HeaderInfo } from "$lib/api";
+  import { onEncounterUpdate, onResetEncounter, type HeaderInfo } from "$lib/api";
   import { tooltip } from "$lib/utils.svelte";
   import { settings } from "$lib/settings-store";
 
@@ -19,6 +19,7 @@
 
   onMount(() => {
     let encounterUnlisten: (() => void) | null = null;
+    let resetUnlisten: (() => void) | null = null;
 
     onEncounterUpdate((event) => {
       headerInfo = event.payload.headerInfo;
@@ -26,8 +27,15 @@
       encounterUnlisten = fn;
     });
 
+    onResetEncounter(() => {
+      headerInfo.bosses = [];
+    }).then((fn) => {
+      resetUnlisten = fn;
+    });
+
     return () => {
       if (encounterUnlisten) encounterUnlisten();
+      if (resetUnlisten) resetUnlisten();
     };
   });
 </script>

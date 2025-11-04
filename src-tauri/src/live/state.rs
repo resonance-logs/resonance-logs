@@ -487,6 +487,19 @@ impl AppStateManager {
             state.event_manager.emit_encounter_reset();
             // Clear dead bosses tracking on reset
             state.event_manager.clear_dead_bosses();
+
+            // Emit an encounter update with cleared state so frontend updates immediately
+            use crate::live::commands_models::HeaderInfo;
+            let cleared_header = HeaderInfo {
+                total_dps: 0.0,
+                total_dmg: 0,
+                elapsed_ms: 0,
+                fight_start_timestamp_ms: 0,
+                bosses: vec![],
+                scene_id: state.encounter.current_scene_id,
+                scene_name: state.encounter.current_scene_name.clone(),
+            };
+            state.event_manager.emit_encounter_update(cleared_header, false);
         }
 
         state.low_hp_bosses.clear();

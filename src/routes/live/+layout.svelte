@@ -44,7 +44,7 @@
     try {
       // Set up unified players listener
       const playersUnlisten = await onPlayersUpdate((event) => {
-        console.log("players websocket", event.payload)
+        // console.log("players websocket", event.payload)
         lastEventTime = Date.now();
 
         if (event.payload.metricType === "dps") {
@@ -91,7 +91,7 @@
       // Set up scene change listener
       const sceneChangeUnlisten = await onSceneChange((event) => {
         console.log("Scene change event received:", event.payload);
-        notificationToast?.showToast('notice', `Scene changed to ${event.payload.sceneName}`);
+        // notificationToast?.showToast('notice', `Scene changed to ${event.payload.sceneName}`);
       });
 
       console.log("Scene change listener set up");

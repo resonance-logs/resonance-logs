@@ -83,6 +83,7 @@
 			);
 
 			if (res.status === 'ok') {
+				console.log("encounter data", res.data)
 				encounters = res.data.rows ?? [];
 				totalCount = res.data.totalCount ?? 0;
 				errorMsg = null;
@@ -349,7 +350,7 @@
 			<thead>
 				<tr class="bg-neutral-800">
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-10">ID</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-48">Encounter</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-48">Bosses</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-[400px]">Players</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-12">Duration</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-48">Date</th>
