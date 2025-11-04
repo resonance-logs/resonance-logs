@@ -209,6 +209,8 @@ pub enum DbTask {
     BeginEncounter {
         started_at_ms: i64,
         local_player_id: Option<i64>,
+        scene_id: Option<i32>,
+        scene_name: Option<String>,
     },
     EndEncounter {
         ended_at_ms: i64,
@@ -270,6 +272,8 @@ fn handle_task(
         DbTask::BeginEncounter {
             started_at_ms,
             local_player_id,
+            scene_id,
+            scene_name,
         } => {
             if current_encounter_id.is_some() {
                 return Ok(());
@@ -281,6 +285,8 @@ fn handle_task(
                 local_player_id,
                 total_dmg: Some(0),
                 total_heal: Some(0),
+                scene_id,
+                scene_name,
             };
             diesel::insert_into(e::encounters)
                 .values(&new_enc)
@@ -974,6 +980,8 @@ mod tests {
             DbTask::BeginEncounter {
                 started_at_ms: 1000,
                 local_player_id: Some(1),
+                scene_id: None,
+                scene_name: None,
             },
             &mut enc_opt,
         )
@@ -1082,6 +1090,8 @@ mod tests {
             DbTask::BeginEncounter {
                 started_at_ms: 4_200,
                 local_player_id: Some(10),
+                scene_id: None,
+                scene_name: None,
             },
             &mut enc_opt,
         )
@@ -1204,6 +1214,8 @@ mod tests {
             DbTask::BeginEncounter {
                 started_at_ms: 10_000,
                 local_player_id: Some(1),
+                scene_id: None,
+                scene_name: None,
             },
             &mut enc_opt,
         )

@@ -67,6 +67,14 @@ async getRecentEncounters(limit: number, offset: number) : Promise<Result<Recent
     else return { status: "error", error: e  as any };
 }
 },
+async getUniqueSceneNames() : Promise<Result<SceneNamesResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_unique_scene_names") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getUniqueBossNames() : Promise<Result<BossNamesResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_unique_boss_names") };
@@ -153,12 +161,13 @@ async getPlayerNameCommand(uid: number) : Promise<Result<string | null, string>>
 
 export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; classId: number | null; abilityScore: number | null; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number; critTotalDealt: number; critTotalHeal: number; critTotalTaken: number; luckyTotalDealt: number; luckyTotalHeal: number; luckyTotalTaken: number; bossDamageDealt: number; bossHitsDealt: number; bossCritHitsDealt: number; bossLuckyHitsDealt: number; bossCritTotalDealt: number; bossLuckyTotalDealt: number; isLocalPlayer: boolean }
 export type BossNamesResult = { names: string[] }
-export type EncounterFiltersDto = { bossNames: string[] | null; playerName: string | null; playerNames: string[] | null; classIds: number[] | null; dateFromMs: number | null; dateToMs: number | null }
-export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number; bosses: string[]; players: PlayerInfoDto[]; actors: ActorEncounterStatDto[] }
+export type EncounterFiltersDto = { bossNames: string[] | null; encounterNames: string[] | null; playerName: string | null; playerNames: string[] | null; classIds: number[] | null; dateFromMs: number | null; dateToMs: number | null }
+export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number; sceneId: number | null; sceneName: string | null; bosses: string[]; players: PlayerInfoDto[]; actors: ActorEncounterStatDto[] }
 export type PlayerInfoDto = { name: string; classId: number | null; isLocalPlayer: boolean }
 export type PlayerNamesResult = { names: string[] }
 export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number; rankLevel: number | null; currentHp: number | null; maxHp: number | null; critStat: number | null; luckyStat: number | null; haste: number | null; mastery: number | null; elementFlag: number | null; energyFlag: number | null; reductionLevel: number | null }
 export type RecentEncountersResult = { rows: EncounterSummaryDto[]; totalCount: number }
+export type SceneNamesResult = { names: string[] }
 export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
 export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }
 

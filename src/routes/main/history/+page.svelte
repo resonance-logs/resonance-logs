@@ -21,12 +21,14 @@
 	let totalCount = $state(0);
 	let isRefreshing = $state(false);
 
-	// Unified search (boss and player names)
+	// Unified search (boss, player and encounter names)
 	let availableBossNames = $state<string[]>([]);
+	let availableEncounterNames = $state<string[]>([]);
 	let selectedBosses = $state<string[]>([]);
+	let selectedEncounters = $state<string[]>([]);
 	let selectedPlayerNames = $state<string[]>([]);
 	let searchValue = $state('');
-	let searchType = $state<'boss' | 'player'>('boss');
+	let searchType = $state<'boss' | 'player' | 'encounter'>('encounter');
 	let isLoadingBossNames = $state(false);
 
 	// Class filters
@@ -38,6 +40,20 @@
 	function getClassName(classId: number | null): string {
 		if (!classId) return '';
 		return CLASS_MAP[classId] ?? '';
+	}
+
+	async function loadSceneNames() {
+		try {
+			const res = await commands.getUniqueSceneNames();
+			if (res.status === 'ok') {
+				availableEncounterNames = res.data.names ?? [];
+			} else {
+				availableEncounterNames = [];
+			}
+		} catch (e) {
+			console.error('loadSceneNames error', e);
+			availableEncounterNames = [];
+		}
 	}
 
 	async function loadBossNames() {
@@ -101,10 +117,15 @@
 		}
 	}
 
-	function handleSearchSelect(name: string, type: 'boss' | 'player') {
+	function handleSearchSelect(name: string, type: 'boss' | 'player' | 'encounter') {
 		if (type === 'boss') {
 			if (!selectedBosses.includes(name)) {
 				selectedBosses = [...selectedBosses, name];
+				loadEncounters(0);
+			}
+		} else if (type === 'encounter') {
+			if (!selectedEncounters.includes(name)) {
+				selectedEncounters = [...selectedEncounters, name];
 				loadEncounters(0);
 			}
 		} else {
@@ -135,6 +156,16 @@
 		loadEncounters(0);
 	}
 
+	function removeEncounterFilter(sceneName: string) {
+		selectedEncounters = selectedEncounters.filter((n) => n !== sceneName);
+		loadEncounters(0);
+	}
+
+	function clearAllEncounterFilters() {
+		selectedEncounters = [];
+		loadEncounters(0);
+	}
+
 	function toggleClassFilter(classId: number, checked: boolean) {
 		if (checked) {
 			if (!selectedClassIds.includes(classId)) {
@@ -160,16 +191,18 @@
 		selectedBosses = [];
 		selectedPlayerNames = [];
 		selectedClassIds = [];
+		selectedEncounters = [];
 		loadEncounters(0);
 	}
 
-	const hasActiveFilters = $derived(
-		selectedBosses.length > 0 || selectedPlayerNames.length > 0 || selectedClassIds.length > 0
-	);
+    const hasActiveFilters = $derived(
+        selectedBosses.length > 0 || selectedPlayerNames.length > 0 || selectedClassIds.length > 0 || selectedEncounters.length > 0
+    );
 
 	onMount(() => {
-		loadBossNames();
-		loadEncounters(0);
+	loadBossNames();
+	loadSceneNames();
+	loadEncounters(0);
 
 		function handleDocumentClick(event: MouseEvent) {
 			const target = event.target as HTMLElement;
@@ -237,6 +270,7 @@
 					bind:value={searchValue}
 					bind:searchType={searchType}
 					availableBossNames={availableBossNames}
+					availableEncounterNames={availableEncounterNames}
 					onSelect={handleSearchSelect}
 					disabled={isLoadingBossNames}
 				/>
@@ -274,6 +308,7 @@
 									{/if}
 								</button>
 							{/each}
+
 							{#if selectedClassIds.length > 0}
 								<button
 									onclick={clearAllClassFilters}
@@ -350,6 +385,7 @@
 			<thead>
 				<tr class="bg-neutral-800">
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-10">ID</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-36">Encounter</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-48">Bosses</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-[400px]">Players</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-12">Duration</th>
@@ -382,6 +418,13 @@
 						onclick={() => onView(enc)}
 					>
 						<td class="px-3 py-2 text-sm text-neutral-300">{enc.id}</td>
+						<td class="px-3 py-2 text-sm text-neutral-300">
+							{#if enc.sceneName}
+								<span class="text-xs bg-neutral-800 px-1.5 py-0.5 rounded">{enc.sceneName}</span>
+							{:else}
+								<span class="text-neutral-500 text-xs">No scene</span>
+							{/if}
+						</td>
 							<td class="px-3 py-2 text-sm text-neutral-300">
 								{#if enc.bosses.length > 0}
 									<div class="flex flex-wrap gap-1">

@@ -52,6 +52,8 @@ pub struct EncounterRow {
     pub local_player_id: Option<i64>,
     pub total_dmg: Option<i64>,
     pub total_heal: Option<i64>,
+    pub scene_id: Option<i32>,
+    pub scene_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Insertable)]
@@ -62,6 +64,8 @@ pub struct NewEncounter {
     pub local_player_id: Option<i64>,
     pub total_dmg: Option<i64>,
     pub total_heal: Option<i64>,
+    pub scene_id: Option<i32>,
+    pub scene_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]

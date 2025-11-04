@@ -4,21 +4,23 @@
 
 	let {
 		value = $bindable(''),
-		searchType = $bindable<'boss' | 'player'>('boss'),
+		searchType = $bindable<'boss' | 'player' | 'encounter'>('encounter'),
 		placeholder,
 		disabled = false,
 		availableBossNames = [],
+		availableEncounterNames = [],
 		onSelect,
 		id
-	} = $props<{
-		value: string;
-		searchType: 'boss' | 'player';
-		placeholder?: string;
-		disabled?: boolean;
-		availableBossNames: string[];
-		onSelect: (name: string, type: 'boss' | 'player') => void;
-		id?: string;
-	}>();
+		} = $props<{
+			value: string;
+			searchType: 'boss' | 'player' | 'encounter';
+			placeholder?: string;
+			disabled?: boolean;
+			availableBossNames: string[];
+			availableEncounterNames: string[];
+			onSelect: (name: string, type: 'boss' | 'player' | 'encounter') => void;
+			id?: string;
+		}>();
 
 	let showDropdown = $state(false);
 	let filteredNames = $state<string[]>([]);
@@ -29,19 +31,22 @@
 		placeholder ||
 			(searchType === 'boss'
 				? 'Search for boss...'
+				: searchType === 'encounter'
+				? 'Search for encounter...'
 				: 'Search for player...')
 	);
 
 	async function handleInput() {
 		const trimmedValue = value.trim();
 
-		if (searchType === 'boss') {
+		if (searchType === 'boss' || searchType === 'encounter') {
 			// Boss filtering - filter locally from available names
 			if (trimmedValue === '') {
 				filteredNames = [];
 				showDropdown = false;
 			} else {
-				filteredNames = availableBossNames.filter((name: string) =>
+				const source = searchType === 'boss' ? availableBossNames : availableEncounterNames;
+				filteredNames = source.filter((name: string) =>
 					name.toLowerCase().includes(trimmedValue.toLowerCase())
 				);
 				showDropdown = filteredNames.length > 0;
@@ -106,7 +111,7 @@
 		showTypeDropdown = !showTypeDropdown;
 	}
 
-	function selectSearchType(type: 'boss' | 'player') {
+	function selectSearchType(type: 'boss' | 'player' | 'encounter') {
 		searchType = type;
 		showTypeDropdown = false;
 		value = '';
@@ -170,6 +175,13 @@
 					class="w-full px-3 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none transition-colors {searchType === 'player' ? 'bg-neutral-800 text-neutral-100' : ''}"
 				>
 					Player
+				</button>
+				<button
+					type="button"
+					onclick={() => selectSearchType('encounter')}
+					class="w-full px-3 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none transition-colors {searchType === 'encounter' ? 'bg-neutral-800 text-neutral-100' : ''}"
+				>
+					Encounter
 				</button>
 			</div>
 		{/if}

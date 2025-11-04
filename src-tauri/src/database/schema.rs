@@ -23,6 +23,8 @@ diesel::table! {
         local_player_id -> Nullable<BigInt>,
         total_dmg -> Nullable<BigInt>,
         total_heal -> Nullable<BigInt>,
+        scene_id -> Nullable<Integer>,
+        scene_name -> Nullable<Text>,
     }
 }
 
