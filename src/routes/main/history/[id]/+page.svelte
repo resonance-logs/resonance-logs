@@ -9,6 +9,7 @@
   import AbbreviatedNumber from '$lib/components/abbreviated-number.svelte';
   import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns } from '$lib/history-columns';
   import { settings, SETTINGS } from '$lib/settings-store';
+  import getDisplayName from '$lib/name-display.ts';
 
   // Get encounter ID from URL params
   let encounterId = $derived($page.params.id ? parseInt($page.params.id) : null);
@@ -307,7 +308,12 @@
                         <span class="text-neutral-400">{p.abilityScore}</span>
                       {/if}
                     {/if}
-                    {p.name || `#${p.uid}`}
+                    {getDisplayName({
+                      player: { uid: p.uid, name: p.name, className: p.className },
+                      showYourNameSetting: settings.state.history.general.showYourName,
+                      showOthersNameSetting: settings.state.history.general.showOthersName,
+                      isLocalPlayer: p.isLocalPlayer
+                    })}
                     {#if p.isLocalPlayer}
                       <span class="text-blue-400 ml-1">(You)</span>
                     {/if}
@@ -350,7 +356,12 @@
         <div>
           <h2 class="text-xl font-semibold text-neutral-200">Skill Breakdown</h2>
           <div class="text-sm text-neutral-400">
-            Player: {selectedPlayer.name} <span class="text-neutral-500">#{selectedPlayer.uid}</span>
+            Player: {getDisplayName({
+              player: { uid: selectedPlayer.uid, name: selectedPlayer.name, className: selectedPlayer.className },
+              showYourNameSetting: settings.state.history.general.showYourName,
+              showOthersNameSetting: settings.state.history.general.showOthersName,
+              isLocalPlayer: selectedPlayer.isLocalPlayer
+            })} <span class="text-neutral-500">#{selectedPlayer.uid}</span>
           </div>
         </div>
       </div>

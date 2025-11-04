@@ -199,6 +199,7 @@ export const settings = {
     accessibility: SETTINGS.accessibility.state,
     shortcuts: SETTINGS.shortcuts.state,
     live: {
+      general: SETTINGS.live.general.state,
       dps: {
         players: SETTINGS.live.dps.players.state,
         skillBreakdown: SETTINGS.live.dps.skillBreakdown.state,
@@ -213,6 +214,7 @@ export const settings = {
       },
     },
     history: {
+      general: SETTINGS.history.general.state,
       dps: {
         players: SETTINGS.history.dps.players.state,
         skillBreakdown: SETTINGS.history.dps.skillBreakdown.state,

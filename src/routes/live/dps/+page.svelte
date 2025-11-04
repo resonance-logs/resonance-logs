@@ -2,11 +2,12 @@
   import { getClassIcon, tooltip } from "$lib/utils.svelte";
   import { goto } from "$app/navigation";
   import { settings, SETTINGS } from "$lib/settings-store";
- import { getDpsPlayers } from "$lib/stores/live-meter-store.svelte";
+  import { getDpsPlayers } from "$lib/stores/live-meter-store.svelte";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
   import { historyDpsPlayerColumns } from "$lib/history-columns";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import PercentFormat from "$lib/components/percent-format.svelte";
+  import getDisplayName from "$lib/name-display";
 
   // Create reactive references
   let dpsData = $state(getDpsPlayers().playerRows);
@@ -54,7 +55,18 @@
     </thead>
     <tbody>
       {#each dpsData as player (player.uid)}
-        {@const className = player.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
+        {@const isLocalPlayer = player.name.includes("You")}
+        {@const displayName = getDisplayName({
+          player: {
+            uid: player.uid,
+            name: player.name,
+            className: player.className
+          },
+          showYourNameSetting: SETTINGS_YOUR_NAME,
+          showOthersNameSetting: SETTINGS_OTHERS_NAME,
+          isLocalPlayer
+        })}
+        {@const className = isLocalPlayer ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
         <tr
           class="relative bg-neutral-900/60 hover:bg-neutral-800/60 transition-all cursor-pointer {isCompactMode ? 'h-7' : 'h-14'} {isCompactMode ? 'text-xs' : 'text-base'} group"
           onclick={() => goto(`/live/dps/skills?playerUid=${player.uid}`)}
@@ -75,7 +87,7 @@
                     <span class="text-neutral-400">{player.abilityScore}</span>
                   {/if}
                 {/if}
-                {player.name || `#${player.uid}`}
+                {displayName || `#${player.uid}`}
               </span>
             </div>
           </td>
