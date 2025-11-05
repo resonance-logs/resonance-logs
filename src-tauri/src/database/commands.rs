@@ -1030,6 +1030,435 @@ pub fn get_encounter_attempts(encounter_id: i32) -> Result<Vec<AttemptDto>, Stri
     Ok(mapped)
 }
 
+/// Gets per-attempt (phase) actor stats for a given encounter and attempt index.
+/// This aggregates raw damage_events and heal_events for the specified attempt.
+#[tauri::command]
+#[specta::specta]
+pub fn get_encounter_attempt_actor_stats(encounter_id: i32, attempt_index: i32) -> Result<Vec<ActorEncounterStatDto>, String> {
+    let mut conn = get_conn()?;
+    use sch::actor_encounter_stats::dsl as a;
+
+    // Get list of player actor ids that participated in the encounter
+    let player_rows: Vec<(i64, Option<String>, Option<i32>, Option<i32>, i32)> = a::actor_encounter_stats
+        .filter(a::encounter_id.eq(encounter_id))
+        .filter(a::is_player.eq(1))
+        .select((a::actor_id, a::name, a::class_id, a::ability_score, a::is_local_player))
+        .load::<(i64, Option<String>, Option<i32>, Option<i32>, i32)>(&mut conn)
+        .map_err(|e| e.to_string())?;
+
+    let mut results: Vec<ActorEncounterStatDto> = Vec::new();
+
+    for (actor_id, name_opt, class_id_opt, ability_score_opt, is_local) in player_rows {
+        // Aggregate damage dealt by this actor in this attempt
+        #[derive(diesel::QueryableByName)]
+        struct DmgAgg {
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            total_value: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_total: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_total: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            boss_total: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            boss_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            boss_crit_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            boss_lucky_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            boss_crit_total: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            boss_lucky_total: i64,
+        }
+
+        let dmg_sql = "SELECT COUNT(*) as hits, COALESCE(SUM(value),0) as total_value,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN 1 ELSE 0 END),0) as crit_hits,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN 1 ELSE 0 END),0) as lucky_hits,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN value ELSE 0 END),0) as crit_total,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN value ELSE 0 END),0) as lucky_total,
+            COALESCE(SUM(CASE WHEN is_boss = 1 THEN value ELSE 0 END),0) as boss_total,
+            COALESCE(SUM(CASE WHEN is_boss = 1 THEN 1 ELSE 0 END),0) as boss_hits,
+            COALESCE(SUM(CASE WHEN is_boss = 1 AND is_crit = 1 THEN 1 ELSE 0 END),0) as boss_crit_hits,
+            COALESCE(SUM(CASE WHEN is_boss = 1 AND is_lucky = 1 THEN 1 ELSE 0 END),0) as boss_lucky_hits,
+            COALESCE(SUM(CASE WHEN is_boss = 1 AND is_crit = 1 THEN value ELSE 0 END),0) as boss_crit_total,
+            COALESCE(SUM(CASE WHEN is_boss = 1 AND is_lucky = 1 THEN value ELSE 0 END),0) as boss_lucky_total
+            FROM damage_events
+            WHERE encounter_id = ?1 AND attempt_index = ?2 AND attacker_id = ?3";
+
+        let dmg_row: DmgAgg = diesel::sql_query(dmg_sql)
+            .bind::<diesel::sql_types::Integer, _>(encounter_id)
+            .bind::<diesel::sql_types::Integer, _>(attempt_index)
+            .bind::<diesel::sql_types::BigInt, _>(actor_id)
+            .get_result::<DmgAgg>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        // Aggregate damage taken (defender)
+        #[derive(diesel::QueryableByName)]
+        struct TakenAgg {
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            total_value: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_total: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_total: i64,
+        }
+
+        let taken_sql = "SELECT COUNT(*) as hits, COALESCE(SUM(value),0) as total_value,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN 1 ELSE 0 END),0) as crit_hits,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN 1 ELSE 0 END),0) as lucky_hits,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN value ELSE 0 END),0) as crit_total,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN value ELSE 0 END),0) as lucky_total
+            FROM damage_events
+            WHERE encounter_id = ?1 AND attempt_index = ?2 AND defender_id = ?3";
+
+        let taken_row: TakenAgg = diesel::sql_query(taken_sql)
+            .bind::<diesel::sql_types::Integer, _>(encounter_id)
+            .bind::<diesel::sql_types::Integer, _>(attempt_index)
+            .bind::<diesel::sql_types::BigInt, _>(actor_id)
+            .get_result::<TakenAgg>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        // Aggregate heals by this actor in this attempt
+        #[derive(diesel::QueryableByName)]
+        struct HealAgg {
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            total_value: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_total: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_total: i64,
+        }
+
+        let heal_sql = "SELECT COUNT(*) as hits, COALESCE(SUM(value),0) as total_value,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN 1 ELSE 0 END),0) as crit_hits,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN 1 ELSE 0 END),0) as lucky_hits,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN value ELSE 0 END),0) as crit_total,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN value ELSE 0 END),0) as lucky_total
+            FROM heal_events
+            WHERE encounter_id = ?1 AND attempt_index = ?2 AND healer_id = ?3";
+
+        let heal_row: HealAgg = diesel::sql_query(heal_sql)
+            .bind::<diesel::sql_types::Integer, _>(encounter_id)
+            .bind::<diesel::sql_types::Integer, _>(attempt_index)
+            .bind::<diesel::sql_types::BigInt, _>(actor_id)
+            .get_result::<HealAgg>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        results.push(ActorEncounterStatDto {
+            encounter_id,
+            actor_id,
+            name: name_opt,
+            class_id: class_id_opt,
+            ability_score: ability_score_opt,
+            damage_dealt: dmg_row.total_value,
+            heal_dealt: heal_row.total_value,
+            damage_taken: taken_row.total_value,
+            hits_dealt: dmg_row.hits,
+            hits_heal: heal_row.hits,
+            hits_taken: taken_row.hits,
+            crit_hits_dealt: dmg_row.crit_hits,
+            crit_hits_heal: heal_row.crit_hits,
+            crit_hits_taken: taken_row.crit_hits,
+            lucky_hits_dealt: dmg_row.lucky_hits,
+            lucky_hits_heal: heal_row.lucky_hits,
+            lucky_hits_taken: taken_row.lucky_hits,
+            crit_total_dealt: dmg_row.crit_total,
+            crit_total_heal: heal_row.crit_total,
+            crit_total_taken: taken_row.crit_total,
+            lucky_total_dealt: dmg_row.lucky_total,
+            lucky_total_heal: heal_row.lucky_total,
+            lucky_total_taken: taken_row.lucky_total,
+            boss_damage_dealt: dmg_row.boss_total,
+            boss_hits_dealt: dmg_row.boss_hits,
+            boss_crit_hits_dealt: dmg_row.boss_crit_hits,
+            boss_lucky_hits_dealt: dmg_row.boss_lucky_hits,
+            boss_crit_total_dealt: dmg_row.boss_crit_total,
+            boss_lucky_total_dealt: dmg_row.boss_lucky_total,
+            is_local_player: is_local != 0,
+        });
+    }
+
+    Ok(results)
+}
+
+/// Gets per-attempt skill breakdown for a player in an encounter (dps/heal).
+#[tauri::command]
+#[specta::specta]
+pub fn get_encounter_attempt_player_skills(
+    encounter_id: i32,
+    actor_id: i64,
+    attempt_index: i32,
+    skill_type: String,
+) -> Result<lc::SkillsWindow, String> {
+    let mut conn = get_conn()?;
+
+    // Attempt timing: try to use attempt start/end if present
+    use sch::attempts::dsl as a;
+    let attempt_row = a::attempts
+        .filter(a::encounter_id.eq(encounter_id))
+        .filter(a::attempt_index.eq(attempt_index))
+        .select((a::started_at_ms, a::ended_at_ms))
+        .first::<(i64, Option<i64>)>(&mut conn)
+        .optional()
+        .map_err(|e| e.to_string())?;
+
+    let (started_ms, ended_opt) = attempt_row.unwrap_or((0_i64, None));
+    let duration_secs = match ended_opt {
+        Some(ended) if ended > started_ms => ((ended - started_ms) as f64) / 1000.0,
+        _ => 1.0,
+    };
+
+    // Curr player minimal fields (try to get name/ability from entities)
+    use sch::entities::dsl as en;
+    let (name_opt, ability_score_opt) = en::entities
+        .filter(en::entity_id.eq(actor_id))
+        .select((en::name.nullable(), en::ability_score.nullable()))
+        .first::<(Option<String>, Option<i32>)>(&mut conn)
+        .optional()
+        .map_err(|e| e.to_string())?
+        .unwrap_or((None, None));
+
+    let player_name = name_opt.clone().unwrap_or_else(|| String::from(""));
+
+    // Aggregate skills depending on skill_type
+    let mut skill_rows: Vec<lc::SkillRow> = Vec::new();
+
+    if skill_type == "dps" || skill_type == "tanked" {
+        #[derive(diesel::QueryableByName)]
+        struct SkillAgg {
+            #[diesel(sql_type = diesel::sql_types::Integer)]
+            skill_id: i32,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            total_value: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_total: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_total: i64,
+        }
+
+        let sql = "SELECT COALESCE(skill_id, -1) as skill_id, COUNT(*) as hits, COALESCE(SUM(value),0) as total_value,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN 1 ELSE 0 END),0) as crit_hits,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN 1 ELSE 0 END),0) as lucky_hits,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN value ELSE 0 END),0) as crit_total,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN value ELSE 0 END),0) as lucky_total
+            FROM damage_events
+            WHERE encounter_id = ?1 AND attempt_index = ?2 AND attacker_id = ?3
+            GROUP BY skill_id
+            ORDER BY total_value DESC";
+
+        let rows: Vec<SkillAgg> = diesel::sql_query(sql)
+            .bind::<diesel::sql_types::Integer, _>(encounter_id)
+            .bind::<diesel::sql_types::Integer, _>(attempt_index)
+            .bind::<diesel::sql_types::BigInt, _>(actor_id)
+            .load::<SkillAgg>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        let mut actor_total_dmg: i64 = 0;
+        let mut actor_hits: i64 = 0;
+        let mut actor_crit_hits: i64 = 0;
+        let mut actor_lucky_hits: i64 = 0;
+
+        for r in &rows {
+            actor_total_dmg += r.total_value;
+            actor_hits += r.hits;
+            actor_crit_hits += r.crit_hits;
+            actor_lucky_hits += r.lucky_hits;
+        }
+
+        for r in rows {
+            let name = if r.skill_id > 0 {
+                skill_names::lookup(r.skill_id)
+                    .unwrap_or_else(|| String::from("Unknown Skill"))
+            } else {
+                String::from("Unknown Skill")
+            };
+
+            let hits_f = r.hits as f64;
+            let total_dmg_f = r.total_value as f64;
+            let sr = lc::SkillRow {
+                name,
+                total_dmg: r.total_value.max(0) as u128,
+                dps: if duration_secs > 0.0 { total_dmg_f / duration_secs } else { 0.0 },
+                dmg_pct: if actor_total_dmg > 0 { total_dmg_f * 100.0 / (actor_total_dmg as f64) } else { 0.0 },
+                crit_rate: if r.hits > 0 { (r.crit_hits as f64) / hits_f } else { 0.0 },
+                crit_dmg_rate: if r.total_value > 0 { (r.crit_total as f64) / total_dmg_f } else { 0.0 },
+                lucky_rate: if r.hits > 0 { (r.lucky_hits as f64) / hits_f } else { 0.0 },
+                lucky_dmg_rate: if r.total_value > 0 { (r.lucky_total as f64) / total_dmg_f } else { 0.0 },
+                hits: r.hits.max(0) as u128,
+                hits_per_minute: if duration_secs > 0.0 { (r.hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+            };
+            skill_rows.push(sr);
+        }
+
+        let curr_player = lc::PlayerRow {
+            uid: actor_id as u128,
+            name: player_name.clone(),
+            class_name: String::from(""),
+            class_spec_name: String::from(""),
+            ability_score: ability_score_opt.unwrap_or(0) as u128,
+            total_dmg: actor_total_dmg as u128,
+            dps: if duration_secs > 0.0 { (actor_total_dmg as f64) / duration_secs } else { 0.0 },
+            dmg_pct: 0.0,
+            crit_rate: if actor_hits > 0 { (actor_crit_hits as f64) / (actor_hits as f64) } else { 0.0 },
+            crit_dmg_rate: 0.0,
+            lucky_rate: if actor_hits > 0 { (actor_lucky_hits as f64) / (actor_hits as f64) } else { 0.0 },
+            lucky_dmg_rate: 0.0,
+            hits: actor_hits as u128,
+            hits_per_minute: if duration_secs > 0.0 { (actor_hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+            rank_level: None,
+            current_hp: None,
+            max_hp: None,
+            crit_stat: None,
+            lucky_stat: None,
+            haste: None,
+            mastery: None,
+            element_flag: None,
+            energy_flag: None,
+            reduction_level: None,
+        };
+
+        let sw = lc::SkillsWindow {
+            curr_player: vec![curr_player],
+            skill_rows,
+        };
+
+        return Ok(sw);
+    } else if skill_type == "heal" {
+        #[derive(diesel::QueryableByName)]
+        struct HealSkillAgg {
+            #[diesel(sql_type = diesel::sql_types::Integer)]
+            skill_id: i32,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            total_value: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_hits: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            crit_total: i64,
+            #[diesel(sql_type = diesel::sql_types::BigInt)]
+            lucky_total: i64,
+        }
+
+        let sql = "SELECT COALESCE(skill_id, -1) as skill_id, COUNT(*) as hits, COALESCE(SUM(value),0) as total_value,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN 1 ELSE 0 END),0) as crit_hits,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN 1 ELSE 0 END),0) as lucky_hits,
+            COALESCE(SUM(CASE WHEN is_crit = 1 THEN value ELSE 0 END),0) as crit_total,
+            COALESCE(SUM(CASE WHEN is_lucky = 1 THEN value ELSE 0 END),0) as lucky_total
+            FROM heal_events
+            WHERE encounter_id = ?1 AND attempt_index = ?2 AND healer_id = ?3
+            GROUP BY skill_id
+            ORDER BY total_value DESC";
+
+        let rows: Vec<HealSkillAgg> = diesel::sql_query(sql)
+            .bind::<diesel::sql_types::Integer, _>(encounter_id)
+            .bind::<diesel::sql_types::Integer, _>(attempt_index)
+            .bind::<diesel::sql_types::BigInt, _>(actor_id)
+            .load::<HealSkillAgg>(&mut conn)
+            .map_err(|e| e.to_string())?;
+
+        let mut actor_total_heal: i64 = 0;
+        let mut actor_hits: i64 = 0;
+        let mut actor_crit_hits: i64 = 0;
+        let mut actor_lucky_hits: i64 = 0;
+
+        for r in &rows {
+            actor_total_heal += r.total_value;
+            actor_hits += r.hits;
+            actor_crit_hits += r.crit_hits;
+            actor_lucky_hits += r.lucky_hits;
+        }
+
+        for r in rows {
+            let name = if r.skill_id > 0 {
+                skill_names::lookup(r.skill_id)
+                    .unwrap_or_else(|| String::from("Unknown Skill"))
+            } else {
+                String::from("Unknown Skill")
+            };
+
+            let hits_f = r.hits as f64;
+            let total_heal_f = r.total_value as f64;
+            let sr = lc::SkillRow {
+                name,
+                total_dmg: r.total_value.max(0) as u128,
+                dps: if duration_secs > 0.0 { total_heal_f / duration_secs } else { 0.0 },
+                dmg_pct: if actor_total_heal > 0 { total_heal_f * 100.0 / (actor_total_heal as f64) } else { 0.0 },
+                crit_rate: if r.hits > 0 { (r.crit_hits as f64) / hits_f } else { 0.0 },
+                crit_dmg_rate: if r.total_value > 0 { (r.crit_total as f64) / total_heal_f } else { 0.0 },
+                lucky_rate: if r.hits > 0 { (r.lucky_hits as f64) / hits_f } else { 0.0 },
+                lucky_dmg_rate: if r.total_value > 0 { (r.lucky_total as f64) / total_heal_f } else { 0.0 },
+                hits: r.hits.max(0) as u128,
+                hits_per_minute: if duration_secs > 0.0 { (r.hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+            };
+            skill_rows.push(sr);
+        }
+
+        let curr_player = lc::PlayerRow {
+            uid: actor_id as u128,
+            name: player_name.clone(),
+            class_name: String::from(""),
+            class_spec_name: String::from(""),
+            ability_score: ability_score_opt.unwrap_or(0) as u128,
+            total_dmg: actor_total_heal as u128,
+            dps: if duration_secs > 0.0 { (actor_total_heal as f64) / duration_secs } else { 0.0 },
+            dmg_pct: 0.0,
+            crit_rate: if actor_hits > 0 { (actor_crit_hits as f64) / (actor_hits as f64) } else { 0.0 },
+            crit_dmg_rate: 0.0,
+            lucky_rate: if actor_hits > 0 { (actor_lucky_hits as f64) / (actor_hits as f64) } else { 0.0 },
+            lucky_dmg_rate: 0.0,
+            hits: actor_hits as u128,
+            hits_per_minute: if duration_secs > 0.0 { (actor_hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+            rank_level: None,
+            current_hp: None,
+            max_hp: None,
+            crit_stat: None,
+            lucky_stat: None,
+            haste: None,
+            mastery: None,
+            element_flag: None,
+            energy_flag: None,
+            reduction_level: None,
+        };
+
+        let sw = lc::SkillsWindow {
+            curr_player: vec![curr_player],
+            skill_rows,
+        };
+
+        return Ok(sw);
+    } else {
+        Err(format!("Invalid skill type: {}", skill_type))
+    }
+}
+
 /// Deletes an encounter by its ID.
 ///
 /// # Arguments

@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { commands } from '$lib/bindings';
   import type { ActorEncounterStatDto, EncounterSummaryDto, SkillsWindow } from '$lib/bindings';
-  import { getEncounterAttempts, type Attempt } from '$lib/api';
+  import { getEncounterAttempts, getEncounterAttemptActorStats, getEncounterAttemptPlayerSkills, type Attempt } from '$lib/api';
   import { getClassIcon, tooltip, CLASS_MAP } from '$lib/utils.svelte';
   import { slide } from 'svelte/transition';
   import CrownIcon from "virtual:icons/lucide/crown";
@@ -101,7 +101,13 @@
     console.log("encounter res", encounterRes)
     if (encounterRes.status === 'ok') {
       encounter = encounterRes.data;
-      actors = encounterRes.data.actors ?? []; // enconters also
+      // If a specific attempt is selected, fetch attempt-specific actor stats
+      if (selectedAttemptIndex !== null) {
+        const attemptActors = await getEncounterAttemptActorStats(encounterId as number, selectedAttemptIndex as number);
+        actors = attemptActors ?? [];
+      } else {
+        actors = encounterRes.data.actors ?? [];
+      }
     } else {
       error = String(encounterRes.error);
       return;
@@ -166,13 +172,24 @@
     }
 
     const playerUid = parseInt(charId);
-    const res = await commands.getEncounterPlayerSkills(encounterId, playerUid, skillType);
-    if (res.status === 'ok') {
-      console.log('skills', res)
-      skillsWindow = res.data;
-      selectedPlayer = players.find(p => p.uid === playerUid);
+    if (selectedAttemptIndex !== null) {
+      // Fetch attempt-specific skills from aggregated raw events
+      try {
+        skillsWindow = await getEncounterAttemptPlayerSkills(encounterId as number, selectedAttemptIndex as number, playerUid, skillType as any);
+        selectedPlayer = players.find(p => p.uid === playerUid);
+      } catch (e) {
+        console.error('Failed to fetch attempt player skills', e);
+        skillsWindow = null;
+      }
     } else {
-      error = String(res.error);
+      const res = await commands.getEncounterPlayerSkills(encounterId, playerUid, skillType);
+      if (res.status === 'ok') {
+        console.log('skills', res)
+        skillsWindow = res.data;
+        selectedPlayer = players.find(p => p.uid === playerUid);
+      } else {
+        error = String(res.error);
+      }
     }
   }
 
@@ -209,10 +226,15 @@
   }
 
   $effect(() => {
+    // Depend on selectedAttemptIndex so changing the selected attempt reloads players
+    selectedAttemptIndex;
     loadEncounter();
   });
 
   $effect(() => {
+    // Re-run when charId or selectedAttemptIndex changes
+    charId;
+    selectedAttemptIndex;
     if (charId) {
       loadPlayerSkills();
     } else {

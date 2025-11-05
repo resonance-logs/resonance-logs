@@ -125,7 +125,7 @@ export const onPauseEncounter = (handler: (event: { payload: boolean }) => void)
   listen("pause-encounter", handler);
 
 // Command wrappers (still using generated bindings)
-import type { Result } from "./bindings";
+import type { Result, ActorEncounterStatDto as BindingActorEncounterStatDto, SkillsWindow as BindingSkillsWindow } from "./bindings";
 
 export const resetEncounter = (): Promise<Result<null, string>> => commands.resetEncounter();
 export const togglePauseEncounter = (): Promise<Result<null, string>> => commands.togglePauseEncounter();
@@ -158,5 +158,35 @@ export const getEncounterAttempts = async (encounterId: number): Promise<Attempt
   } catch (e) {
     console.error("Failed to fetch encounter attempts:", e);
     return [];
+  }
+};
+
+/** Fetch per-attempt actor stats (aggregated from raw events). */
+export const getEncounterAttemptActorStats = async (
+  encounterId: number,
+  attemptIndex: number
+): Promise<BindingActorEncounterStatDto[]> => {
+  try {
+    const res = await invoke("get_encounter_attempt_actor_stats", { encounterId, attemptIndex });
+    return res as BindingActorEncounterStatDto[];
+  } catch (e) {
+    console.error("Failed to fetch attempt actor stats:", e);
+    return [];
+  }
+};
+
+/** Fetch per-attempt player skills (aggregated from raw events). */
+export const getEncounterAttemptPlayerSkills = async (
+  encounterId: number,
+  attemptIndex: number,
+  actorId: number,
+  skillType: MetricType = "dps"
+): Promise<BindingSkillsWindow> => {
+  try {
+    const res = await invoke("get_encounter_attempt_player_skills", { encounterId, actorId, attemptIndex, skillType });
+    return res as BindingSkillsWindow;
+  } catch (e) {
+    console.error("Failed to fetch attempt player skills:", e);
+    return { currPlayer: [], skillRows: [] } as BindingSkillsWindow;
   }
 };
