@@ -597,13 +597,27 @@ pub fn process_aoi_sync_delta(
             scene_id: encounter.current_scene_id,
             scene_name: encounter.current_scene_name.clone(),
         });
-        // Begin first attempt
+        // Determine current boss HP (if a boss entity is present) and begin first attempt
+        let initial_boss_hp = encounter
+            .entity_uid_to_entity
+            .values()
+            .find(|e| e.is_boss())
+            .and_then(|e| e.hp());
+
+        // Begin first attempt with boss HP if available
         enqueue(DbTask::BeginAttempt {
             attempt_index: 1,
             started_at_ms: timestamp_ms as i64,
             reason: "initial".to_string(),
-            boss_hp_start: None,
+            boss_hp_start: initial_boss_hp,
         });
+
+        // Initialize encounter tracking for attempts
+        encounter.boss_hp_at_attempt_start = initial_boss_hp;
+        if let Some(bhp) = initial_boss_hp {
+            // Initialize lowest boss HP percentage tracking
+            update_boss_hp_tracking(encounter, bhp);
+        }
     }
     encounter.time_last_combat_packet_ms = timestamp_ms;
     Some(())

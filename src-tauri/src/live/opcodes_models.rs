@@ -27,7 +27,7 @@ pub struct Encounter {
     // Attempt tracking for boss splitting
     pub current_attempt_index: i32,
     pub boss_hp_at_attempt_start: Option<i64>,
-    pub lowest_boss_hp: Option<i64>,
+    pub lowest_boss_hp: Option<f64>,
     pub party_member_uids: HashSet<i64>, // Track party members for wipe detection
     pub last_attempt_split_ms: u128,     // Cooldown to avoid rapid splits
 }

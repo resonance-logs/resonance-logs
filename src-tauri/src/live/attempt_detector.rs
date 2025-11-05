@@ -26,8 +26,10 @@ pub struct AttemptConfig {
 impl Default for AttemptConfig {
     fn default() -> Self {
         Self {
-            min_hp_decrease_pct: 80.0,
-            hp_rollback_threshold_pct: 95.0,
+            // Use conservative defaults: consider a rollback when boss dropped below 60% then later
+            // returned to >=90% (these match the unit tests and expected behavior).
+            min_hp_decrease_pct: 60.0,
+            hp_rollback_threshold_pct: 90.0,
             split_cooldown_ms: 2000,
             enable_wipe_detection: true,
             enable_hp_rollback_detection: true,
@@ -75,19 +77,17 @@ pub fn check_hp_rollback_condition(
         return false;
     };
 
-    let Some(lowest_hp) = encounter.lowest_boss_hp else {
+    // lowest_boss_hp is stored as a percentage in Encounter (0.0 - 100.0)
+    let Some(lowest_pct) = encounter.lowest_boss_hp else {
         return false;
     };
 
-    // Calculate lowest HP as percentage
-    // lowest_hp is stored as absolute HP value
-    // We need max HP to calculate percentage
-    // For now, assume current_pct is already calculated by caller
-    // Check if we dropped below min threshold and are now above rollback threshold
-    let dropped_significantly = lowest_hp < (config.min_hp_decrease_pct * 100.0) as i64;
+    // Check if we dropped below configured low threshold and have since rolled back above the
+    // configured rollback threshold.
+    let dropped_below_threshold = lowest_pct < config.min_hp_decrease_pct;
     let rolled_back = current_pct >= config.hp_rollback_threshold_pct;
 
-    dropped_significantly && rolled_back
+    dropped_below_threshold && rolled_back
 }
 
 /// Initiates an attempt split.
@@ -117,11 +117,23 @@ pub fn split_attempt(
         .filter(|(_, _, _, ts)| *ts as u128 >= encounter.time_fight_start_ms)
         .count() as i32;
 
+    // Resolve boss HP to store: prefer the provided value, then the current boss entity HP,
+    // then fall back to the attempt-start HP if available.
+    let resolved_boss_hp = boss_hp
+        .or_else(|| {
+            encounter
+                .entity_uid_to_entity
+                .values()
+                .find(|e| e.is_boss())
+                .and_then(|e| e.hp())
+        })
+        .or(encounter.boss_hp_at_attempt_start);
+
     // End current attempt
     enqueue(DbTask::EndAttempt {
         attempt_index: current_attempt,
         ended_at_ms: timestamp_ms as i64,
-        boss_hp_end: boss_hp,
+        boss_hp_end: resolved_boss_hp,
         total_deaths: deaths_in_attempt,
     });
 
@@ -133,12 +145,23 @@ pub fn split_attempt(
         attempt_index: encounter.current_attempt_index,
         started_at_ms: timestamp_ms as i64,
         reason: reason.to_string(),
-        boss_hp_start: boss_hp,
+        boss_hp_start: resolved_boss_hp,
     });
 
     // Reset tracking for new attempt
-    encounter.boss_hp_at_attempt_start = boss_hp;
-    encounter.lowest_boss_hp = boss_hp;
+    encounter.boss_hp_at_attempt_start = resolved_boss_hp;
+    // Initialize lowest seen HP percentage to the starting boss HP (if available)
+    if let Some(bhp) = resolved_boss_hp {
+        // Try to compute percentage using the boss max HP if present
+        let pct = encounter
+            .entity_uid_to_entity
+            .values()
+            .find(|e| e.is_boss())
+            .and_then(|e| e.max_hp().map(|max| (bhp as f64 / max as f64) * 100.0));
+        encounter.lowest_boss_hp = pct;
+    } else {
+        encounter.lowest_boss_hp = None;
+    }
     encounter.last_attempt_split_ms = timestamp_ms;
     encounter.pending_player_deaths.clear();
     encounter.last_death_ms.clear();
@@ -153,9 +176,20 @@ pub fn split_attempt(
 
 /// Updates encounter state with current boss HP and checks for rollback.
 pub fn update_boss_hp_tracking(encounter: &mut Encounter, current_hp: i64) {
-    // Track lowest HP seen
-    if encounter.lowest_boss_hp.is_none() || current_hp < encounter.lowest_boss_hp.unwrap() {
-        encounter.lowest_boss_hp = Some(current_hp);
+    // Track lowest HP seen as a percentage (0.0 - 100.0). We need the boss max HP
+    // to convert absolute HP to percent.
+    if let Some(max_hp) = encounter
+        .entity_uid_to_entity
+        .values()
+        .find(|e| e.is_boss())
+        .and_then(|e| e.max_hp())
+    {
+        if max_hp > 0 {
+            let current_pct = (current_hp as f64 / max_hp as f64) * 100.0;
+            if encounter.lowest_boss_hp.is_none() || current_pct < encounter.lowest_boss_hp.unwrap() {
+                encounter.lowest_boss_hp = Some(current_pct);
+            }
+        }
     }
 }
 

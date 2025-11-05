@@ -1308,6 +1308,7 @@ mod tests {
                 shield_loss: 50,
                 defender_max_hp: None,
                 is_boss: false,
+                attempt_index: None,
             },
             &mut enc_opt,
         )
@@ -1346,6 +1347,7 @@ mod tests {
                 shield_loss: 0,
                 defender_max_hp: None,
                 is_boss: true,
+                attempt_index: None,
             },
             &mut enc_opt,
         )
@@ -1418,6 +1420,7 @@ mod tests {
                 shield_loss: 0,
                 defender_max_hp: None,
                 is_boss: false,
+                attempt_index: None,
             },
             &mut enc_opt,
         )
@@ -1451,23 +1454,24 @@ mod tests {
 
         // A subsequent event should refresh the snapshot immediately.
             handle_task(
-            &mut conn,
-            DbTask::InsertDamageEvent {
-                timestamp_ms: 4_450,
-                attacker_id: 10,
-                defender_id: None,
-                monster_name: None,
-                skill_id: Some(1002),
-                value: 150,
-                is_crit: true,
-                is_lucky: false,
-                hp_loss: 150,
-                shield_loss: 0,
-                defender_max_hp: None,
-                is_boss: false,
-            },
-            &mut enc_opt,
-        )
+                &mut conn,
+                DbTask::InsertDamageEvent {
+                    timestamp_ms: 4_450,
+                    attacker_id: 10,
+                    defender_id: None,
+                    monster_name: None,
+                    skill_id: Some(1002),
+                    value: 150,
+                    is_crit: true,
+                    is_lucky: false,
+                    hp_loss: 150,
+                    shield_loss: 0,
+                    defender_max_hp: None,
+                    is_boss: false,
+                    attempt_index: None,
+                },
+                &mut enc_opt,
+            )
         .unwrap();
 
         let refreshed_identity: (Option<i32>, Option<i32>, Option<i32>, Option<i32>) =
@@ -1526,6 +1530,7 @@ mod tests {
                 shield_loss: 0,
                 defender_max_hp: None,
                 is_boss: true,
+                attempt_index: None,
             },
             &mut enc_opt,
         )
@@ -1546,6 +1551,7 @@ mod tests {
                 shield_loss: 50,
                 defender_max_hp: None,
                 is_boss: false,
+                attempt_index: None,
             },
             &mut enc_opt,
         )
@@ -1561,6 +1567,7 @@ mod tests {
                 value: 420,
                 is_crit: true,
                 is_lucky: false,
+                attempt_index: None,
             },
             &mut enc_opt,
         )
