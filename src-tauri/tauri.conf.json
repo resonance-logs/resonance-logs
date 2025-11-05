@@ -47,7 +47,7 @@
             "icons/icon.icns",
             "icons/icon.ico"
         ],
-        "resources": ["./WinDivert.dll", "./WinDivert64.sys", "./meter-data/**"],
+        "resources": ["./WinDivert.dll", "./WinDivert64.sys", "./meter-data/"],
         "createUpdaterArtifacts": false
     }
 }

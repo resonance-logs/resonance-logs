@@ -5,7 +5,9 @@ mod packets;
 use crate::build_app::build_and_run;
 use log::{info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
-use std::process::Command;
+use std::process::{Command, Stdio};
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 
 use chrono_tz;
 use tauri::menu::MenuBuilder;
@@ -120,18 +122,20 @@ pub fn run() {
 ///
 /// This function executes a shell command to create and start the WinDivert driver service.
 fn start_windivert() {
-    let status = Command::new("sc")
-        .args([
-            "create",
-            "windivert",
-            "type=",
-            "kernel",
-            "binPath=",
-            "WinDivert64.sys",
-            "start=",
-            "demand",
-        ])
-        .status();
+    // Run the command silently (no console window) on Windows. On other platforms, just
+    // redirect stdio to null so nothing is printed.
+    let mut cmd = Command::new("sc");
+    cmd.args([
+        "create",
+        "windivert",
+        "type=",
+        "kernel",
+        "binPath=",
+        "WinDivert64.sys",
+        "start=",
+        "demand",
+    ]);
+    let status = run_command_silently(&mut cmd);
     if status.is_ok_and(|status| status.success()) {
         info!("started driver");
     } else {
@@ -143,7 +147,9 @@ fn start_windivert() {
 ///
 /// This function executes a shell command to stop the WinDivert driver service.
 fn stop_windivert() {
-    let status = Command::new("sc").args(["stop", "windivert"]).status();
+    let mut cmd = Command::new("sc");
+    cmd.args(["stop", "windivert"]);
+    let status = run_command_silently(&mut cmd);
     if status.is_ok_and(|status| status.success()) {
         info!("stopped driver");
     } else {
@@ -155,13 +161,36 @@ fn stop_windivert() {
 ///
 /// This function executes a shell command to delete the WinDivert driver service.
 fn remove_windivert() {
-    let status = Command::new("sc")
-        .args(["delete", "windivert", "start=", "demand"])
-        .status();
+    let mut cmd = Command::new("sc");
+    cmd.args(["delete", "windivert", "start=", "demand"]);
+    let status = run_command_silently(&mut cmd);
     if status.is_ok_and(|status| status.success()) {
         info!("deleted driver");
     } else {
         warn!("could not execute command to delete driver");
+    }
+}
+
+/// Helper to run a prepared Command with stdio redirected to null and (on Windows)
+/// with the CREATE_NO_WINDOW flag so no console window appears.
+fn run_command_silently(cmd: &mut Command) -> std::io::Result<std::process::ExitStatus> {
+    #[cfg(windows)]
+    {
+        // CREATE_NO_WINDOW = 0x08000000
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .stdin(Stdio::null())
+            .status()
+    }
+
+    #[cfg(not(windows))]
+    {
+        cmd.stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .stdin(Stdio::null())
+            .status()
     }
 }
 
