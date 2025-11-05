@@ -1,5 +1,9 @@
 // NOTE: opcodes_process works on Encounter directly; avoid importing opcodes_models at top-level.
 use crate::database::{DbTask, enqueue, now_ms};
+use crate::live::attempt_detector::{
+    check_hp_rollback_condition, check_wipe_condition, get_boss_hp_percentage, split_attempt,
+    track_party_member, update_boss_hp_tracking, AttemptConfig,
+};
 use crate::live::opcodes_models::class::{
     ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
 };
@@ -50,6 +54,7 @@ fn record_death(
         killer_id,
         skill_id,
         is_local_player: is_local,
+        attempt_index: Some(encounter.current_attempt_index),
     });
 }
 
@@ -137,6 +142,24 @@ pub fn process_sync_near_entities(
             });
         }
     }
+
+    // Track party members for wipe detection (collect data first to avoid borrow issues)
+    let player_data: Vec<(i64, EEntityType, Option<i64>)> = encounter
+        .entity_uid_to_entity
+        .iter()
+        .filter_map(|(uid, entity)| {
+            if entity.entity_type == EEntityType::EntChar {
+                Some((*uid, entity.entity_type, entity.team_id()))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    for (uid, entity_type, team_id) in player_data {
+        track_party_member(encounter, uid, entity_type, team_id);
+    }
+
     Some(())
 }
 
@@ -380,6 +403,7 @@ pub fn process_aoi_sync_delta(
                     value: actual_value as i64,
                     is_crit: is_crit_local,
                     is_lucky: is_lucky_local,
+                    attempt_index: Some(encounter.current_attempt_index),
                 });
 
                 (is_crit_local, is_lucky_local, attacker_entity.entity_type)
@@ -507,6 +531,7 @@ pub fn process_aoi_sync_delta(
                 shield_loss: shield_loss as i64,
                 defender_max_hp: defender_entity.attributes.get(&AttrType::MaxHp).and_then(|v| v.as_int()),
                 is_boss,
+                attempt_index: Some(encounter.current_attempt_index),
             });
 
             // Taken stats (only when attacker is not a player)
@@ -529,11 +554,41 @@ pub fn process_aoi_sync_delta(
         }
     }
 
-    // Figure out timestamps
+    // Figure out timestamps (moved earlier for use in attempt detection)
     let timestamp_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards")
         .as_millis();
+
+    // Check for wipe condition after recording deaths
+    let config = AttemptConfig::default();
+    if check_wipe_condition(encounter, &config) {
+        let boss_hp = encounter.entity_uid_to_entity.values()
+            .find(|e| e.is_boss())
+            .and_then(|e| e.hp());
+        split_attempt(encounter, "wipe", timestamp_ms, boss_hp);
+    }
+
+    // Check for HP rollback after processing damage events
+    if let Some(boss_hp_pct) = get_boss_hp_percentage(encounter) {
+        // Update boss HP tracking - find boss HP first
+        let boss_hp_opt = encounter.entity_uid_to_entity.values()
+            .find(|e| e.is_boss())
+            .and_then(|e| e.hp());
+
+        if let Some(boss_hp) = boss_hp_opt {
+            update_boss_hp_tracking(encounter, boss_hp);
+        }
+
+        // Check for HP rollback
+        if check_hp_rollback_condition(encounter, Some(boss_hp_pct), &config) {
+            let boss_hp = encounter.entity_uid_to_entity.values()
+                .find(|e| e.is_boss())
+                .and_then(|e| e.hp());
+            split_attempt(encounter, "hp_rollback", timestamp_ms, boss_hp);
+        }
+    }
+
     if encounter.time_fight_start_ms == Default::default() {
         encounter.time_fight_start_ms = timestamp_ms;
         enqueue(DbTask::BeginEncounter {
@@ -541,6 +596,13 @@ pub fn process_aoi_sync_delta(
             local_player_id: Some(encounter.local_player_uid),
             scene_id: encounter.current_scene_id,
             scene_name: encounter.current_scene_name.clone(),
+        });
+        // Begin first attempt
+        enqueue(DbTask::BeginAttempt {
+            attempt_index: 1,
+            started_at_ms: timestamp_ms as i64,
+            reason: "initial".to_string(),
+            boss_hp_start: None,
         });
     }
     encounter.time_last_combat_packet_ms = timestamp_ms;

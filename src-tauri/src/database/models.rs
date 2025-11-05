@@ -145,6 +145,8 @@ pub struct DamageEventRow {
     pub defender_max_hp: Option<i64>,
     /// Whether the target was a boss.
     pub is_boss: i32,
+    /// The attempt index this event occurred in.
+    pub attempt_index: Option<i32>,
 }
 
 /// Represents a new damage event to be inserted into the `damage_events` table.
@@ -177,6 +179,8 @@ pub struct NewDamageEvent {
     pub defender_max_hp: Option<i64>,
     /// Whether the target was a boss.
     pub is_boss: i32,
+    /// The attempt index this event occurred in.
+    pub attempt_index: Option<i32>,
 }
 
 /// Represents a row in the `heal_events` table.
@@ -201,6 +205,8 @@ pub struct HealEventRow {
     pub is_crit: i32,
     /// Whether the heal was a lucky hit.
     pub is_lucky: i32,
+    /// The attempt index this event occurred in.
+    pub attempt_index: Option<i32>,
 }
 
 /// Represents a new heal event to be inserted into the `heal_events` table.
@@ -223,6 +229,8 @@ pub struct NewHealEvent {
     pub is_crit: i32,
     /// Whether the heal was a lucky hit.
     pub is_lucky: i32,
+    /// The attempt index this event occurred in.
+    pub attempt_index: Option<i32>,
 }
 
 /// Represents a row in the `death_events` table.
@@ -243,6 +251,8 @@ pub struct DeathEventRow {
     pub skill_id: Option<i32>,
     /// Whether the actor was the local player.
     pub is_local_player: i32,
+    /// The attempt index this death occurred in.
+    pub attempt_index: Option<i32>,
 }
 
 /// Represents a new death event to be inserted into the `death_events` table.
@@ -261,6 +271,8 @@ pub struct NewDeathEvent {
     pub skill_id: Option<i32>,
     /// Whether the actor was the local player.
     pub is_local_player: i32,
+    /// The attempt index this death occurred in.
+    pub attempt_index: Option<i32>,
 }
 
 /// Represents a row in the `actor_encounter_stats` table.
@@ -571,4 +583,50 @@ pub struct NewEncounterBoss {
     pub max_hp: Option<i64>,
     /// Whether the boss was defeated.
     pub is_defeated: Option<i32>,
+}
+
+/// Represents a row in the `attempts` table.
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::attempts, belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct AttemptRow {
+    /// The unique ID of the attempt.
+    pub id: i32,
+    /// The ID of the encounter this attempt belongs to.
+    pub encounter_id: i32,
+    /// The attempt index (1-based).
+    pub attempt_index: i32,
+    /// The timestamp of when the attempt started, in milliseconds since the Unix epoch.
+    pub started_at_ms: i64,
+    /// The timestamp of when the attempt ended, in milliseconds since the Unix epoch.
+    pub ended_at_ms: Option<i64>,
+    /// The reason for the attempt split ('wipe', 'hp_rollback', 'manual').
+    pub reason: String,
+    /// The boss HP at the start of the attempt.
+    pub boss_hp_start: Option<i64>,
+    /// The boss HP at the end of the attempt.
+    pub boss_hp_end: Option<i64>,
+    /// The total number of deaths in this attempt.
+    pub total_deaths: i32,
+}
+
+/// Represents a new attempt to be inserted into the `attempts` table.
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::attempts)]
+pub struct NewAttempt {
+    /// The ID of the encounter this attempt belongs to.
+    pub encounter_id: i32,
+    /// The attempt index (1-based).
+    pub attempt_index: i32,
+    /// The timestamp of when the attempt started, in milliseconds since the Unix epoch.
+    pub started_at_ms: i64,
+    /// The timestamp of when the attempt ended, in milliseconds since the Unix epoch.
+    pub ended_at_ms: Option<i64>,
+    /// The reason for the attempt split ('wipe', 'hp_rollback', 'manual').
+    pub reason: String,
+    /// The boss HP at the start of the attempt.
+    pub boss_hp_start: Option<i64>,
+    /// The boss HP at the end of the attempt.
+    pub boss_hp_end: Option<i64>,
+    /// The total number of deaths in this attempt.
+    pub total_deaths: i32,
 }
