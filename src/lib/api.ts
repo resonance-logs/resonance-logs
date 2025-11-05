@@ -134,3 +134,29 @@ export const disableBlur = (): Promise<void> => commands.disableBlur();
 
 // New: toggle boss-only DPS filtering on the backend
 export const setBossOnlyDps = (enabled: boolean): Promise<void> => invoke("set_boss_only_dps", { enabled });
+
+// Attempt (phase) metadata returned by the backend for an encounter
+export type Attempt = {
+  id: number;
+  attemptIndex: number;
+  startedAtMs: number;
+  endedAtMs: number | null;
+  reason: string;
+  bossHpStart: number | null;
+  bossHpEnd: number | null;
+  totalDeaths: number;
+};
+
+/**
+ * Fetch attempts (phases) for a historical encounter on demand.
+ * Returns an array of Attempt DTOs.
+ */
+export const getEncounterAttempts = async (encounterId: number): Promise<Attempt[]> => {
+  try {
+    const res = await invoke("get_encounter_attempts", { encounterId });
+    return res as Attempt[];
+  } catch (e) {
+    console.error("Failed to fetch encounter attempts:", e);
+    return [];
+  }
+};

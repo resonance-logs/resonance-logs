@@ -34,6 +34,28 @@ pub struct EncounterSummaryDto {
     pub actors: Vec<ActorEncounterStatDto>,
 }
 
+/// A DTO representing an attempt (phase) within an encounter.
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AttemptDto {
+    /// The unique ID of the attempt row.
+    pub id: i32,
+    /// The 1-based attempt index.
+    pub attempt_index: i32,
+    /// Timestamp when attempt started (ms since epoch).
+    pub started_at_ms: i64,
+    /// Timestamp when attempt ended (ms since epoch) or null if still running.
+    pub ended_at_ms: Option<i64>,
+    /// Reason for the split ('wipe', 'hp_rollback', 'manual').
+    pub reason: String,
+    /// Boss HP at attempt start (if known).
+    pub boss_hp_start: Option<i64>,
+    /// Boss HP at attempt end (if known).
+    pub boss_hp_end: Option<i64>,
+    /// Total deaths recorded for this attempt.
+    pub total_deaths: i32,
+}
+
 /// The result of a query for recent encounters.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -965,6 +987,47 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         players,
         actors,
     })
+}
+
+/// Gets a list of attempts (phases) for a given encounter.
+///
+/// # Arguments
+///
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<Vec<AttemptDto>, String>` - A list of attempts for the encounter.
+#[tauri::command]
+#[specta::specta]
+pub fn get_encounter_attempts(encounter_id: i32) -> Result<Vec<AttemptDto>, String> {
+    let mut conn = get_conn()?;
+    use sch::attempts::dsl as a;
+
+    let rows: Vec<(i32, i32, i64, Option<i64>, String, Option<i64>, Option<i64>, i32)> = a::attempts
+        .filter(a::encounter_id.eq(encounter_id))
+        .order(a::attempt_index.asc())
+        .select((
+            a::id,
+            a::attempt_index,
+            a::started_at_ms,
+            a::ended_at_ms,
+            a::reason,
+            a::boss_hp_start,
+            a::boss_hp_end,
+            a::total_deaths,
+        ))
+        .load(&mut conn)
+        .map_err(|e| e.to_string())?;
+
+    let mapped: Vec<AttemptDto> = rows
+        .into_iter()
+        .map(|(id, attempt_index, started_at_ms, ended_at_ms, reason, boss_hp_start, boss_hp_end, total_deaths)|
+            AttemptDto { id, attempt_index, started_at_ms, ended_at_ms, reason, boss_hp_start, boss_hp_end, total_deaths }
+        )
+        .collect();
+
+    Ok(mapped)
 }
 
 /// Deletes an encounter by its ID.
