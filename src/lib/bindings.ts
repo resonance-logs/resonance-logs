@@ -5,12 +5,37 @@
 
 
 export const commands = {
+/**
+ * Enables blur on the live meter window.
+ * 
+ * # Arguments
+ * 
+ * * `app` - A handle to the Tauri application instance.
+ */
 async enableBlur() : Promise<void> {
     await TAURI_INVOKE("enable_blur");
 },
+/**
+ * Disables blur on the live meter window.
+ * 
+ * # Arguments
+ * 
+ * * `app` - A handle to the Tauri application instance.
+ */
 async disableBlur() : Promise<void> {
     await TAURI_INVOKE("disable_blur");
 },
+/**
+ * Resets the encounter.
+ * 
+ * # Arguments
+ * 
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result.
+ */
 async resetEncounter() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("reset_encounter") };
@@ -19,6 +44,17 @@ async resetEncounter() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Toggles pausing the encounter.
+ * 
+ * # Arguments
+ * 
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result.
+ */
 async togglePauseEncounter() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("toggle_pause_encounter") };
@@ -27,6 +63,19 @@ async togglePauseEncounter() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets a player's skills.
+ * 
+ * # Arguments
+ * 
+ * * `uid` - The UID of the player.
+ * * `skill_type` - The type of skill to get.
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<crate::live::commands_models::SkillsWindow, String>` - The skills window.
+ */
 async getPlayerSkills(uid: number, skillType: string) : Promise<Result<SkillsWindow, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_player_skills", { uid, skillType }) };
@@ -35,6 +84,19 @@ async getPlayerSkills(uid: number, skillType: string) : Promise<Result<SkillsWin
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Subscribes to a player's skills.
+ * 
+ * # Arguments
+ * 
+ * * `uid` - The UID of the player.
+ * * `skill_type` - The type of skill to subscribe to.
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<crate::live::commands_models::SkillsWindow, String>` - The skills window.
+ */
 async subscribePlayerSkills(uid: number, skillType: string) : Promise<Result<SkillsWindow, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("subscribe_player_skills", { uid, skillType }) };
@@ -43,6 +105,19 @@ async subscribePlayerSkills(uid: number, skillType: string) : Promise<Result<Ski
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Unsubscribes from a player's skills.
+ * 
+ * # Arguments
+ * 
+ * * `uid` - The UID of the player.
+ * * `skill_type` - The type of skill to unsubscribe from.
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result.
+ */
 async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("unsubscribe_player_skills", { uid, skillType }) };
@@ -51,6 +126,18 @@ async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<Result<n
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Sets whether to only show boss DPS.
+ * 
+ * # Arguments
+ * 
+ * * `enabled` - Whether to enable boss-only DPS.
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result.
+ */
 async setBossOnlyDps(enabled: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("set_boss_only_dps", { enabled }) };
@@ -59,6 +146,18 @@ async setBossOnlyDps(enabled: boolean) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets a list of recent encounters.
+ * 
+ * # Arguments
+ * 
+ * * `limit` - The maximum number of encounters to return.
+ * * `offset` - The number of encounters to skip.
+ * 
+ * # Returns
+ * 
+ * * `Result<RecentEncountersResult, String>` - A list of recent encounters.
+ */
 async getRecentEncounters(limit: number, offset: number) : Promise<Result<RecentEncountersResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_recent_encounters", { limit, offset }) };
@@ -67,6 +166,13 @@ async getRecentEncounters(limit: number, offset: number) : Promise<Result<Recent
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets a list of unique scene names.
+ * 
+ * # Returns
+ * 
+ * * `Result<SceneNamesResult, String>` - A list of unique scene names.
+ */
 async getUniqueSceneNames() : Promise<Result<SceneNamesResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_unique_scene_names") };
@@ -75,6 +181,13 @@ async getUniqueSceneNames() : Promise<Result<SceneNamesResult, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets a list of unique boss names.
+ * 
+ * # Returns
+ * 
+ * * `Result<BossNamesResult, String>` - A list of unique boss names.
+ */
 async getUniqueBossNames() : Promise<Result<BossNamesResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_unique_boss_names") };
@@ -83,6 +196,17 @@ async getUniqueBossNames() : Promise<Result<BossNamesResult, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets a list of player names filtered by a prefix.
+ * 
+ * # Arguments
+ * 
+ * * `prefix` - The prefix to filter by.
+ * 
+ * # Returns
+ * 
+ * * `Result<PlayerNamesResult, String>` - A list of player names.
+ */
 async getPlayerNamesFiltered(prefix: string) : Promise<Result<PlayerNamesResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_player_names_filtered", { prefix }) };
@@ -91,6 +215,19 @@ async getPlayerNamesFiltered(prefix: string) : Promise<Result<PlayerNamesResult,
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets a list of recent encounters filtered by the given criteria.
+ * 
+ * # Arguments
+ * 
+ * * `limit` - The maximum number of encounters to return.
+ * * `offset` - The number of encounters to skip.
+ * * `filters` - The filters to apply.
+ * 
+ * # Returns
+ * 
+ * * `Result<RecentEncountersResult, String>` - A list of recent encounters.
+ */
 async getRecentEncountersFiltered(limit: number, offset: number, filters: EncounterFiltersDto | null) : Promise<Result<RecentEncountersResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_recent_encounters_filtered", { limit, offset, filters }) };
@@ -99,6 +236,17 @@ async getRecentEncountersFiltered(limit: number, offset: number, filters: Encoun
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets the actor stats for a given encounter.
+ * 
+ * # Arguments
+ * 
+ * * `encounter_id` - The ID of the encounter.
+ * 
+ * # Returns
+ * 
+ * * `Result<Vec<ActorEncounterStatDto>, String>` - A list of actor encounter stats.
+ */
 async getEncounterActorStats(encounterId: number) : Promise<Result<ActorEncounterStatDto[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_encounter_actor_stats", { encounterId }) };
@@ -107,6 +255,17 @@ async getEncounterActorStats(encounterId: number) : Promise<Result<ActorEncounte
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets an encounter by its ID.
+ * 
+ * # Arguments
+ * 
+ * * `encounter_id` - The ID of the encounter.
+ * 
+ * # Returns
+ * 
+ * * `Result<EncounterSummaryDto, String>` - The encounter summary.
+ */
 async getEncounterById(encounterId: number) : Promise<Result<EncounterSummaryDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_encounter_by_id", { encounterId }) };
@@ -115,6 +274,19 @@ async getEncounterById(encounterId: number) : Promise<Result<EncounterSummaryDto
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Gets the skills used by a player in an encounter.
+ * 
+ * # Arguments
+ * 
+ * * `encounter_id` - The ID of the encounter.
+ * * `actor_id` - The ID of the actor.
+ * * `skill_type` - The type of skill to get (e.g., "dps", "heal").
+ * 
+ * # Returns
+ * 
+ * * `Result<lc::SkillsWindow, String>` - The skills window.
+ */
 async getEncounterPlayerSkills(encounterId: number, actorId: number, skillType: string) : Promise<Result<SkillsWindow, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_encounter_player_skills", { encounterId, actorId, skillType }) };
@@ -123,6 +295,17 @@ async getEncounterPlayerSkills(encounterId: number, actorId: number, skillType: 
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Deletes an encounter by its ID.
+ * 
+ * # Arguments
+ * 
+ * * `encounter_id` - The ID of the encounter to delete.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result indicating success or failure.
+ */
 async deleteEncounter(encounterId: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("delete_encounter", { encounterId }) };
@@ -131,6 +314,17 @@ async deleteEncounter(encounterId: number) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * A Tauri command to get a list of recent players.
+ * 
+ * # Arguments
+ * 
+ * * `limit` - The maximum number of players to return.
+ * 
+ * # Returns
+ * 
+ * * `Result<Vec<(i64, String)>, String>` - A list of recent players.
+ */
 async getRecentPlayersCommand(limit: number) : Promise<Result<([number, string])[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_recent_players_command", { limit }) };
@@ -139,6 +333,17 @@ async getRecentPlayersCommand(limit: number) : Promise<Result<([number, string])
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * A Tauri command to get the name of a player by their UID.
+ * 
+ * # Arguments
+ * 
+ * * `uid` - The UID of the player.
+ * 
+ * # Returns
+ * 
+ * * `Result<Option<String>, String>` - The name of the player, or `None` if not found.
+ */
 async getPlayerNameCommand(uid: number) : Promise<Result<string | null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_player_name_command", { uid }) };
@@ -159,18 +364,430 @@ async getPlayerNameCommand(uid: number) : Promise<Result<string | null, string>>
 
 /** user-defined types **/
 
-export type ActorEncounterStatDto = { encounterId: number; actorId: number; name: string | null; classId: number | null; abilityScore: number | null; damageDealt: number; healDealt: number; damageTaken: number; hitsDealt: number; hitsHeal: number; hitsTaken: number; critHitsDealt: number; critHitsHeal: number; critHitsTaken: number; luckyHitsDealt: number; luckyHitsHeal: number; luckyHitsTaken: number; critTotalDealt: number; critTotalHeal: number; critTotalTaken: number; luckyTotalDealt: number; luckyTotalHeal: number; luckyTotalTaken: number; bossDamageDealt: number; bossHitsDealt: number; bossCritHitsDealt: number; bossLuckyHitsDealt: number; bossCritTotalDealt: number; bossLuckyTotalDealt: number; isLocalPlayer: boolean }
-export type BossNamesResult = { names: string[] }
-export type BossSummaryDto = { monsterName: string; maxHp: number | null; isDefeated: boolean }
-export type EncounterFiltersDto = { bossNames: string[] | null; encounterNames: string[] | null; playerName: string | null; playerNames: string[] | null; classIds: number[] | null; dateFromMs: number | null; dateToMs: number | null }
-export type EncounterSummaryDto = { id: number; startedAtMs: number; endedAtMs: number | null; totalDmg: number; totalHeal: number; sceneId: number | null; sceneName: string | null; bosses: BossSummaryDto[]; players: PlayerInfoDto[]; actors: ActorEncounterStatDto[] }
-export type PlayerInfoDto = { name: string; classId: number | null; isLocalPlayer: boolean }
-export type PlayerNamesResult = { names: string[] }
-export type PlayerRow = { uid: number; name: string; className: string; classSpecName: string; abilityScore: number; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number; rankLevel: number | null; currentHp: number | null; maxHp: number | null; critStat: number | null; luckyStat: number | null; haste: number | null; mastery: number | null; elementFlag: number | null; energyFlag: number | null; reductionLevel: number | null }
-export type RecentEncountersResult = { rows: EncounterSummaryDto[]; totalCount: number }
-export type SceneNamesResult = { names: string[] }
-export type SkillRow = { name: string; totalDmg: number; dps: number; dmgPct: number; critRate: number; critDmgRate: number; luckyRate: number; luckyDmgRate: number; hits: number; hitsPerMinute: number }
-export type SkillsWindow = { currPlayer: PlayerRow[]; skillRows: SkillRow[] }
+/**
+ * Statistics for an actor in an encounter.
+ */
+export type ActorEncounterStatDto = { 
+/**
+ * The ID of the encounter.
+ */
+encounterId: number; 
+/**
+ * The ID of the actor.
+ */
+actorId: number; 
+/**
+ * The name of the actor.
+ */
+name: string | null; 
+/**
+ * The class ID of the actor.
+ */
+classId: number | null; 
+/**
+ * The ability score of the actor.
+ */
+abilityScore: number | null; 
+/**
+ * The total damage dealt by the actor.
+ */
+damageDealt: number; 
+/**
+ * The total healing done by the actor.
+ */
+healDealt: number; 
+/**
+ * The total damage taken by the actor.
+ */
+damageTaken: number; 
+/**
+ * The number of hits dealt by the actor.
+ */
+hitsDealt: number; 
+/**
+ * The number of hits healed by the actor.
+ */
+hitsHeal: number; 
+/**
+ * The number of hits taken by the actor.
+ */
+hitsTaken: number; 
+/**
+ * The number of critical hits dealt by the actor.
+ */
+critHitsDealt: number; 
+/**
+ * The number of critical hits healed by the actor.
+ */
+critHitsHeal: number; 
+/**
+ * The number of critical hits taken by the actor.
+ */
+critHitsTaken: number; 
+/**
+ * The number of lucky hits dealt by the actor.
+ */
+luckyHitsDealt: number; 
+/**
+ * The number of lucky hits healed by the actor.
+ */
+luckyHitsHeal: number; 
+/**
+ * The number of lucky hits taken by the actor.
+ */
+luckyHitsTaken: number; 
+/**
+ * The total critical damage dealt by the actor.
+ */
+critTotalDealt: number; 
+/**
+ * The total critical healing done by the actor.
+ */
+critTotalHeal: number; 
+/**
+ * The total critical damage taken by the actor.
+ */
+critTotalTaken: number; 
+/**
+ * The total lucky damage dealt by the actor.
+ */
+luckyTotalDealt: number; 
+/**
+ * The total lucky healing done by the actor.
+ */
+luckyTotalHeal: number; 
+/**
+ * The total lucky damage taken by the actor.
+ */
+luckyTotalTaken: number; 
+/**
+ * The total damage dealt to bosses by the actor.
+ */
+bossDamageDealt: number; 
+/**
+ * The number of hits dealt to bosses by the actor.
+ */
+bossHitsDealt: number; 
+/**
+ * The number of critical hits dealt to bosses by the actor.
+ */
+bossCritHitsDealt: number; 
+/**
+ * The number of lucky hits dealt to bosses by the actor.
+ */
+bossLuckyHitsDealt: number; 
+/**
+ * The total critical damage dealt to bosses by the actor.
+ */
+bossCritTotalDealt: number; 
+/**
+ * The total lucky damage dealt to bosses by the actor.
+ */
+bossLuckyTotalDealt: number; 
+/**
+ * Whether the actor is the local player.
+ */
+isLocalPlayer: boolean }
+/**
+ * The result of a query for boss names.
+ */
+export type BossNamesResult = { 
+/**
+ * A list of boss names.
+ */
+names: string[] }
+/**
+ * A summary of a boss.
+ */
+export type BossSummaryDto = { 
+/**
+ * The name of the monster.
+ */
+monsterName: string; 
+/**
+ * The maximum HP of the monster.
+ */
+maxHp: number | null; 
+/**
+ * Whether the boss was defeated.
+ */
+isDefeated: boolean }
+/**
+ * Filters for querying encounters.
+ */
+export type EncounterFiltersDto = { 
+/**
+ * A list of boss names to filter by.
+ */
+bossNames: string[] | null; 
+/**
+ * A list of encounter names to filter by.
+ */
+encounterNames: string[] | null; 
+/**
+ * A player name to filter by.
+ */
+playerName: string | null; 
+/**
+ * A list of player names to filter by.
+ */
+playerNames: string[] | null; 
+/**
+ * A list of class IDs to filter by.
+ */
+classIds: number[] | null; 
+/**
+ * The start date to filter by in milliseconds since the Unix epoch.
+ */
+dateFromMs: number | null; 
+/**
+ * The end date to filter by in milliseconds since the Unix epoch.
+ */
+dateToMs: number | null }
+/**
+ * A summary of an encounter.
+ */
+export type EncounterSummaryDto = { 
+/**
+ * The ID of the encounter.
+ */
+id: number; 
+/**
+ * The start time of the encounter in milliseconds since the Unix epoch.
+ */
+startedAtMs: number; 
+/**
+ * The end time of the encounter in milliseconds since the Unix epoch.
+ */
+endedAtMs: number | null; 
+/**
+ * The total damage dealt in the encounter.
+ */
+totalDmg: number; 
+/**
+ * The total healing done in the encounter.
+ */
+totalHeal: number; 
+/**
+ * The ID of the scene where the encounter took place.
+ */
+sceneId: number | null; 
+/**
+ * The name of the scene where the encounter took place.
+ */
+sceneName: string | null; 
+/**
+ * A list of bosses in the encounter.
+ */
+bosses: BossSummaryDto[]; 
+/**
+ * A list of players in the encounter.
+ */
+players: PlayerInfoDto[]; 
+/**
+ * A list of actor encounter stats.
+ */
+actors: ActorEncounterStatDto[] }
+/**
+ * Information about a player.
+ */
+export type PlayerInfoDto = { 
+/**
+ * The name of the player.
+ */
+name: string; 
+/**
+ * The class ID of the player.
+ */
+classId: number | null; 
+/**
+ * Whether the player is the local player.
+ */
+isLocalPlayer: boolean }
+/**
+ * The result of a query for player names.
+ */
+export type PlayerNamesResult = { 
+/**
+ * A list of player names.
+ */
+names: string[] }
+/**
+ * Represents a row in the players window.
+ */
+export type PlayerRow = { 
+/**
+ * The unique ID of the player.
+ */
+uid: number; 
+/**
+ * The name of the player.
+ */
+name: string; 
+/**
+ * The class name of the player.
+ */
+className: string; 
+/**
+ * The class spec name of the player.
+ */
+classSpecName: string; 
+/**
+ * The ability score of the player.
+ */
+abilityScore: number; 
+/**
+ * The total damage dealt by the player.
+ */
+totalDmg: number; 
+/**
+ * The DPS of the player.
+ */
+dps: number; 
+/**
+ * The damage percentage of the player.
+ */
+dmgPct: number; 
+/**
+ * The critical hit rate of the player.
+ */
+critRate: number; 
+/**
+ * The critical damage rate of the player.
+ */
+critDmgRate: number; 
+/**
+ * The lucky hit rate of the player.
+ */
+luckyRate: number; 
+/**
+ * The lucky damage rate of the player.
+ */
+luckyDmgRate: number; 
+/**
+ * The number of hits dealt by the player.
+ */
+hits: number; 
+/**
+ * The number of hits per minute dealt by the player.
+ */
+hitsPerMinute: number; 
+/**
+ * The rank level of the player.
+ */
+rankLevel: number | null; 
+/**
+ * The current HP of the player.
+ */
+currentHp: number | null; 
+/**
+ * The maximum HP of the player.
+ */
+maxHp: number | null; 
+/**
+ * The critical hit stat of the player.
+ */
+critStat: number | null; 
+/**
+ * The lucky hit stat of the player.
+ */
+luckyStat: number | null; 
+/**
+ * The haste of the player.
+ */
+haste: number | null; 
+/**
+ * The mastery of the player.
+ */
+mastery: number | null; 
+/**
+ * The element flag of the player.
+ */
+elementFlag: number | null; 
+/**
+ * The energy flag of the player.
+ */
+energyFlag: number | null; 
+/**
+ * The reduction level of the player.
+ */
+reductionLevel: number | null }
+/**
+ * The result of a query for recent encounters.
+ */
+export type RecentEncountersResult = { 
+/**
+ * The rows of encounter summaries.
+ */
+rows: EncounterSummaryDto[]; 
+/**
+ * The total number of encounters.
+ */
+totalCount: number }
+/**
+ * The result of a query for scene names.
+ */
+export type SceneNamesResult = { 
+/**
+ * A list of scene names.
+ */
+names: string[] }
+/**
+ * Represents a row in the skills window.
+ */
+export type SkillRow = { 
+/**
+ * The name of the skill.
+ */
+name: string; 
+/**
+ * The total damage dealt by the skill.
+ */
+totalDmg: number; 
+/**
+ * The DPS of the skill.
+ */
+dps: number; 
+/**
+ * The damage percentage of the skill.
+ */
+dmgPct: number; 
+/**
+ * The critical hit rate of the skill.
+ */
+critRate: number; 
+/**
+ * The critical damage rate of the skill.
+ */
+critDmgRate: number; 
+/**
+ * The lucky hit rate of the skill.
+ */
+luckyRate: number; 
+/**
+ * The lucky damage rate of the skill.
+ */
+luckyDmgRate: number; 
+/**
+ * The number of hits dealt by the skill.
+ */
+hits: number; 
+/**
+ * The number of hits per minute dealt by the skill.
+ */
+hitsPerMinute: number }
+/**
+ * Represents the skills window.
+ */
+export type SkillsWindow = { 
+/**
+ * A list of player rows for the current player.
+ */
+currPlayer: PlayerRow[]; 
+/**
+ * A list of skill rows.
+ */
+skillRows: SkillRow[] }
 
 /** tauri-specta globals **/
 

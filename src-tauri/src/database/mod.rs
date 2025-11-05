@@ -296,6 +296,14 @@ pub enum DbTask {
         is_crit: bool,
         is_lucky: bool,
     },
+    /// A task to insert a death event.
+    InsertDeathEvent {
+        timestamp_ms: i64,
+        actor_id: i64,
+        killer_id: Option<i64>,
+        skill_id: Option<i32>,
+        is_local_player: bool,
+    },
 }
 
 /// Enqueues a database task to be processed by the background writer thread.
@@ -592,6 +600,29 @@ fn handle_task(
 
                 // Materialize per-actor stats: healer heal_dealt
                 upsert_stats_add_heal_dealt(conn, enc_id, healer_id, value, is_crit, is_lucky)?;
+            }
+        }
+        DbTask::InsertDeathEvent {
+            timestamp_ms,
+            actor_id,
+            killer_id,
+            skill_id,
+            is_local_player,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                use sch::death_events::dsl as d;
+                let ins = m::NewDeathEvent {
+                    encounter_id: enc_id,
+                    timestamp_ms,
+                    actor_id,
+                    killer_id,
+                    skill_id,
+                    is_local_player: if is_local_player { 1 } else { 0 },
+                };
+                diesel::insert_into(d::death_events)
+                    .values(&ins)
+                    .execute(conn)
+                    .map_err(|e| e.to_string())?;
             }
         }
     }

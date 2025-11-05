@@ -225,6 +225,44 @@ pub struct NewHealEvent {
     pub is_lucky: i32,
 }
 
+/// Represents a row in the `death_events` table.
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::death_events, belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct DeathEventRow {
+    /// The unique ID of the death event.
+    pub id: i32,
+    /// The ID of the encounter this event belongs to.
+    pub encounter_id: i32,
+    /// The timestamp of the event, in milliseconds since the Unix epoch.
+    pub timestamp_ms: i64,
+    /// The ID of the actor who died.
+    pub actor_id: i64,
+    /// The ID of the killer (if known).
+    pub killer_id: Option<i64>,
+    /// The ID of the skill that caused the death (if known).
+    pub skill_id: Option<i32>,
+    /// Whether the actor was the local player.
+    pub is_local_player: i32,
+}
+
+/// Represents a new death event to be inserted into the `death_events` table.
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::death_events)]
+pub struct NewDeathEvent {
+    /// The ID of the encounter this event belongs to.
+    pub encounter_id: i32,
+    /// The timestamp of the event, in milliseconds since the Unix epoch.
+    pub timestamp_ms: i64,
+    /// The ID of the actor who died.
+    pub actor_id: i64,
+    /// The ID of the killer (if known).
+    pub killer_id: Option<i64>,
+    /// The ID of the skill that caused the death (if known).
+    pub skill_id: Option<i32>,
+    /// Whether the actor was the local player.
+    pub is_local_player: i32,
+}
+
 /// Represents a row in the `actor_encounter_stats` table.
 #[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
 #[diesel(table_name = sch::actor_encounter_stats, primary_key(encounter_id, actor_id))]
