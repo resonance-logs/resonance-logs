@@ -2,7 +2,7 @@ use crate::live::opcodes_models::class::ClassSpec;
 use crate::live::skill_names;
 use blueprotobuf_lib::blueprotobuf::{EEntityType, SyncContainerData};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 use tokio::sync::RwLock;
 
@@ -19,6 +19,17 @@ pub struct Encounter {
     pub local_player: SyncContainerData,
     pub current_scene_id: Option<i32>,
     pub current_scene_name: Option<String>,
+    // Pending player death events detected during packet processing. Each tuple is
+    // (actor_uid, killer_uid_opt, skill_id_opt, timestamp_ms)
+    pub pending_player_deaths: Vec<(i64, Option<i64>, Option<i32>, i64)>,
+    // Last recorded death timestamp per actor (ms) to avoid immediate duplicates.
+    pub last_death_ms: HashMap<i64, u128>,
+    // Attempt tracking for boss splitting
+    pub current_attempt_index: i32,
+    pub boss_hp_at_attempt_start: Option<i64>,
+    pub lowest_boss_hp: Option<i64>,
+    pub party_member_uids: HashSet<i64>, // Track party members for wipe detection
+    pub last_attempt_split_ms: u128,     // Cooldown to avoid rapid splits
 }
 
 // Use an async-aware RwLock so readers don't block the tokio runtime threads.
@@ -425,6 +436,16 @@ impl Encounter {
             entity.hits_taken = 0;
             entity.skill_uid_to_taken_skill.clear();
         }
+        // Clear any pending player death tracking for a fresh encounter
+        self.pending_player_deaths.clear();
+        self.last_death_ms.clear();
+
+        // Reset attempt tracking
+        self.current_attempt_index = 1;
+        self.boss_hp_at_attempt_start = None;
+        self.lowest_boss_hp = None;
+        self.party_member_uids.clear();
+        self.last_attempt_split_ms = 0;
     }
 }
 

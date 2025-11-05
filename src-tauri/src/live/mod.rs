@@ -1,3 +1,4 @@
+pub mod attempt_detector;
 pub mod commands;
 pub mod commands_models;
 pub mod event_manager;

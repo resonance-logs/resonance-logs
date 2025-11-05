@@ -284,6 +284,7 @@ pub enum DbTask {
         shield_loss: i64,
         defender_max_hp: Option<i64>,
         is_boss: bool,
+        attempt_index: Option<i32>,
     },
 
     /// A task to insert a heal event.
@@ -295,6 +296,32 @@ pub enum DbTask {
         value: i64,
         is_crit: bool,
         is_lucky: bool,
+        attempt_index: Option<i32>,
+    },
+    /// A task to insert a death event.
+    InsertDeathEvent {
+        timestamp_ms: i64,
+        actor_id: i64,
+        killer_id: Option<i64>,
+        skill_id: Option<i32>,
+        is_local_player: bool,
+        attempt_index: Option<i32>,
+    },
+
+    /// A task to begin a new attempt within the current encounter.
+    BeginAttempt {
+        attempt_index: i32,
+        started_at_ms: i64,
+        reason: String,
+        boss_hp_start: Option<i64>,
+    },
+
+    /// A task to end the current attempt.
+    EndAttempt {
+        attempt_index: i32,
+        ended_at_ms: i64,
+        boss_hp_end: Option<i64>,
+        total_deaths: i32,
     },
 }
 
@@ -492,6 +519,7 @@ fn handle_task(
             shield_loss,
             defender_max_hp,
             is_boss,
+            attempt_index,
         } => {
             if let Some(enc_id) = *current_encounter_id {
                 use sch::damage_events::dsl as d;
@@ -509,6 +537,7 @@ fn handle_task(
                     shield_loss,
                     defender_max_hp,
                     is_boss: if is_boss { 1 } else { 0 },
+                    attempt_index,
                 };
                 diesel::insert_into(d::damage_events)
                     .values(&ins)
@@ -564,6 +593,7 @@ fn handle_task(
             value,
             is_crit,
             is_lucky,
+            attempt_index,
         } => {
             if let Some(enc_id) = *current_encounter_id {
                 use sch::heal_events::dsl as h;
@@ -576,6 +606,7 @@ fn handle_task(
                     value,
                     is_crit: if is_crit { 1 } else { 0 },
                     is_lucky: if is_lucky { 1 } else { 0 },
+                    attempt_index,
                 };
                 diesel::insert_into(h::heal_events)
                     .values(&ins)
@@ -592,6 +623,77 @@ fn handle_task(
 
                 // Materialize per-actor stats: healer heal_dealt
                 upsert_stats_add_heal_dealt(conn, enc_id, healer_id, value, is_crit, is_lucky)?;
+            }
+        }
+        DbTask::InsertDeathEvent {
+            timestamp_ms,
+            actor_id,
+            killer_id,
+            skill_id,
+            is_local_player,
+            attempt_index,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                use sch::death_events::dsl as d;
+                let ins = m::NewDeathEvent {
+                    encounter_id: enc_id,
+                    timestamp_ms,
+                    actor_id,
+                    killer_id,
+                    skill_id,
+                    is_local_player: if is_local_player { 1 } else { 0 },
+                    attempt_index,
+                };
+                diesel::insert_into(d::death_events)
+                    .values(&ins)
+                    .execute(conn)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        DbTask::BeginAttempt {
+            attempt_index,
+            started_at_ms,
+            reason,
+            boss_hp_start,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                use sch::attempts::dsl as a;
+                let ins = m::NewAttempt {
+                    encounter_id: enc_id,
+                    attempt_index,
+                    started_at_ms,
+                    ended_at_ms: None,
+                    reason,
+                    boss_hp_start,
+                    boss_hp_end: None,
+                    total_deaths: 0,
+                };
+                diesel::insert_into(a::attempts)
+                    .values(&ins)
+                    .execute(conn)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        DbTask::EndAttempt {
+            attempt_index,
+            ended_at_ms,
+            boss_hp_end,
+            total_deaths,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                use sch::attempts::dsl as a;
+                diesel::update(
+                    a::attempts
+                        .filter(a::encounter_id.eq(enc_id))
+                        .filter(a::attempt_index.eq(attempt_index)),
+                )
+                .set((
+                    a::ended_at_ms.eq(Some(ended_at_ms)),
+                    a::boss_hp_end.eq(boss_hp_end),
+                    a::total_deaths.eq(total_deaths),
+                ))
+                .execute(conn)
+                .map_err(|e| e.to_string())?;
             }
         }
     }

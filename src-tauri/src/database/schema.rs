@@ -78,6 +78,8 @@ diesel::table! {
         defender_max_hp -> Nullable<BigInt>,
         /// Whether the target was a boss.
         is_boss -> Integer,
+        /// The attempt index this event occurred in.
+        attempt_index -> Nullable<Integer>,
     }
 }
 
@@ -102,6 +104,8 @@ diesel::table! {
         is_crit -> Integer,
         /// Whether the heal was a lucky hit.
         is_lucky -> Integer,
+        /// The attempt index this event occurred in.
+        attempt_index -> Nullable<Integer>,
     }
 }
 
@@ -259,6 +263,52 @@ diesel::table! {
     }
 }
 
+/// Represents the `death_events` table.
+diesel::table! {
+    death_events (id) {
+        /// The unique ID of the death event.
+        id -> Integer,
+        /// The ID of the encounter this event belongs to.
+        encounter_id -> Integer,
+        /// The timestamp of the event, in milliseconds since the Unix epoch.
+        timestamp_ms -> BigInt,
+        /// The ID of the actor who died.
+        actor_id -> BigInt,
+        /// The ID of the killer (if known).
+        killer_id -> Nullable<BigInt>,
+        /// The skill ID that caused the death (if known).
+        skill_id -> Nullable<Integer>,
+        /// Whether the actor was the local player.
+        is_local_player -> Integer,
+        /// The attempt index this death occurred in.
+        attempt_index -> Nullable<Integer>,
+    }
+}
+
+/// Represents the `attempts` table.
+diesel::table! {
+    attempts (id) {
+        /// The unique ID of the attempt.
+        id -> Integer,
+        /// The ID of the encounter this attempt belongs to.
+        encounter_id -> Integer,
+        /// The attempt index (1-based).
+        attempt_index -> Integer,
+        /// The timestamp of when the attempt started, in milliseconds since the Unix epoch.
+        started_at_ms -> BigInt,
+        /// The timestamp of when the attempt ended, in milliseconds since the Unix epoch.
+        ended_at_ms -> Nullable<BigInt>,
+        /// The reason for the attempt split ('wipe', 'hp_rollback', 'manual').
+        reason -> Text,
+        /// The boss HP at the start of the attempt.
+        boss_hp_start -> Nullable<BigInt>,
+        /// The boss HP at the end of the attempt.
+        boss_hp_end -> Nullable<BigInt>,
+        /// The total number of deaths in this attempt.
+        total_deaths -> Integer,
+    }
+}
+
 // Joins
 
 diesel::joinable!(damage_events -> encounters (encounter_id));
@@ -266,6 +316,8 @@ diesel::joinable!(heal_events -> encounters (encounter_id));
 diesel::joinable!(damage_skill_stats -> encounters (encounter_id));
 diesel::joinable!(heal_skill_stats -> encounters (encounter_id));
 diesel::joinable!(encounter_bosses -> encounters (encounter_id));
+diesel::joinable!(death_events -> encounters (encounter_id));
+diesel::joinable!(attempts -> encounters (encounter_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     entities,
@@ -276,4 +328,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     damage_skill_stats,
     heal_skill_stats,
     encounter_bosses,
+    death_events,
+    attempts,
 );
