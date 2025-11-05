@@ -26,8 +26,8 @@
 	async function handleInput() {
 		const trimmedValue = value.trim();
 
-		// Only query if 3 or more characters
-		if (trimmedValue.length < 3) {
+		// Only query if 1 or more characters (search immediately on single-char input)
+		if (trimmedValue.length < 1) {
 			filteredPlayerNames = [];
 			showDropdown = false;
 			isLoading = false;
@@ -38,8 +38,10 @@
 		try {
 			const res = await commands.getPlayerNamesFiltered(trimmedValue);
 			if (res.status === 'ok') {
-				filteredPlayerNames = res.data.names ?? [];
-				showDropdown = filteredPlayerNames.length > 0;
+				// Limit displayed results to 5
+				const names = res.data.names ?? [];
+				filteredPlayerNames = names.slice(0, 5);
+				showDropdown = names.length > 0;
 			} else {
 				console.error('Failed to load player names:', res.error);
 				filteredPlayerNames = [];
@@ -69,7 +71,7 @@
 	}
 
 	function handleFocus() {
-		if (value.trim().length >= 3) {
+		if (value.trim().length >= 1) {
 			handleInput();
 		}
 	}
@@ -126,7 +128,7 @@
 				</button>
 			{/each}
 		</div>
-	{:else if value.trim().length >= 3 && !isLoading && filteredPlayerNames.length === 0}
+	{:else if value.trim().length >= 1 && !isLoading && filteredPlayerNames.length === 0}
 		<div class="absolute z-10 w-full mt-1 bg-neutral-800 border border-neutral-700 rounded shadow-lg px-3 py-2">
 			<div class="text-neutral-500 text-sm">No players found</div>
 		</div>

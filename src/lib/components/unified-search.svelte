@@ -49,10 +49,13 @@
 				showDropdown = false;
 			} else {
 				const source = searchType === 'boss' ? availableBossNames : availableEncounterNames;
-				filteredNames = source.filter((name: string) =>
+				// Limit local filter results to at most 5 items for responsiveness
+				const matches = source.filter((name: string) =>
 					name.toLowerCase().includes(trimmedValue.toLowerCase())
 				);
-				showDropdown = filteredNames.length > 0;
+				filteredNames = matches.slice(0, 5);
+				// show dropdown if any matches exist (even if we only display the first 5)
+				showDropdown = matches.length > 0;
 			}
 		} else {
 			// Player filtering - query backend with 1-char minimum
@@ -67,8 +70,11 @@
 			try {
 				const res = await commands.getPlayerNamesFiltered(trimmedValue);
 				if (res.status === 'ok') {
-					filteredNames = res.data.names ?? [];
-					showDropdown = filteredNames.length > 0;
+					// Limit backend results shown to the user to improve UX and avoid huge lists
+					const names = res.data.names ?? [];
+					filteredNames = names.slice(0, 5);
+					// show dropdown if any results exist
+					showDropdown = names.length > 0;
 				} else {
 					console.error('Failed to load player names:', res.error);
 					filteredNames = [];

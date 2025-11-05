@@ -199,6 +199,8 @@ async getUniqueBossNames() : Promise<Result<BossNamesResult, string>> {
 /**
  * Gets a list of player names filtered by a prefix.
  * 
+ * This will return up to 5 matching player names (to keep the UI responsive).
+ * 
  * # Arguments
  * 
  * * `prefix` - The prefix to filter by.

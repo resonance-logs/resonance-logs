@@ -426,6 +426,8 @@ pub fn get_unique_scene_names() -> Result<SceneNamesResult, String> {
 
 /// Gets a list of player names filtered by a prefix.
 ///
+/// This will return up to 5 matching player names (to keep the UI responsive).
+///
 /// # Arguments
 ///
 /// * `prefix` - The prefix to filter by.
@@ -436,8 +438,8 @@ pub fn get_unique_scene_names() -> Result<SceneNamesResult, String> {
 #[tauri::command]
 #[specta::specta]
 pub fn get_player_names_filtered(prefix: String) -> Result<PlayerNamesResult, String> {
-    // Only query if prefix is at least 3 characters
-    if prefix.trim().len() < 3 {
+    // Only query if prefix is at least 1 character
+    if prefix.trim().len() < 1 {
         return Ok(PlayerNamesResult { names: vec![] });
     }
 
@@ -446,17 +448,18 @@ pub fn get_player_names_filtered(prefix: String) -> Result<PlayerNamesResult, St
     use std::collections::HashSet;
 
     let pattern = format!("%{}%", prefix.trim());
+    // Use distinct + limit to get up to 5 unique matching names from the DB
     let player_names: Vec<String> = s::actor_encounter_stats
         .select(s::name)
+        .distinct()
         .filter(s::is_player.eq(1))
         .filter(s::name.is_not_null())
         .filter(s::name.like(pattern))
+        .limit(5)
         .load::<Option<String>>(&mut conn)
         .map_err(|e| e.to_string())?
         .into_iter()
         .flatten()
-        .collect::<HashSet<_>>()
-        .into_iter()
         .collect();
 
     Ok(PlayerNamesResult { names: player_names })
