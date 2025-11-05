@@ -12,10 +12,9 @@
   import { commands } from "$lib/bindings";
   import { SETTINGS } from "$lib/settings-store";
   import { cn } from "$lib/utils";
-  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange } from "$lib/api";
+  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter } from "$lib/api";
   import { writable } from "svelte/store";
   import { beforeNavigate, afterNavigate } from "$app/navigation";
-  import { page } from "$app/stores";
 
   // Store for pause state
   export const isPaused = writable(false);
@@ -33,12 +32,13 @@
   // let screenshotDiv: HTMLDivElement | undefined = $state();
 
   let notificationToast: NotificationToast;
-  let mainElement: HTMLElement | null = null;
+  let mainElement: HTMLElement | undefined = undefined;
   let unlisten: (() => void) | null = null;
   let lastEventTime = Date.now();
+  let hadAnyEvent = false; // becomes true after the first live event arrives
   let reconnectInterval: ReturnType<typeof setInterval> | null = null;
   let isReconnecting = false;
-  const RECONNECT_DELAY = 1000;
+  let reconnectDelay = 1000; // exponential backoff base
   const DISCONNECT_THRESHOLD = 5000;
 
   async function setupEventListeners() {
@@ -55,6 +55,7 @@
       const playersUnlisten = await onPlayersUpdate((event) => {
         // console.log("players websocket", event.payload)
         lastEventTime = Date.now();
+        hadAnyEvent = true;
 
         if (event.payload.metricType === "dps") {
           setDpsPlayers(event.payload.playersWindow);
@@ -77,6 +78,7 @@
       const encounterUnlisten = await onEncounterUpdate((event) => {
         // Treat encounter updates as keep-alive too so reconnect logic doesn't fire
         lastEventTime = Date.now();
+        hadAnyEvent = true;
         const newPaused = event.payload.isPaused;
         const elapsedMs = event.payload.headerInfo.elapsedMs;
         // update the store regardless
@@ -94,13 +96,26 @@
 
       // Set up boss death listener
       const bossDeathUnlisten = await onBossDeath((event) => {
+        // Treat boss death as a keep-alive
+        lastEventTime = Date.now();
+        hadAnyEvent = true;
         notificationToast?.showToast('notice', `${event.payload.bossName} defeated!`);
       });
 
       // Set up scene change listener
       const sceneChangeUnlisten = await onSceneChange((event) => {
+        // Treat scene change as a keep-alive
+        lastEventTime = Date.now();
+        hadAnyEvent = true;
         console.log("Scene change event received:", event.payload);
         // notificationToast?.showToast('notice', `Scene changed to ${event.payload.sceneName}`);
+      });
+
+      // Listen for explicit pause/resume events as a keep-alive as well
+      const pauseUnlisten = await onPauseEncounter((event) => {
+        lastEventTime = Date.now();
+        hadAnyEvent = true;
+        isPaused.set(!!event.payload);
       });
 
       console.log("Scene change listener set up");
@@ -112,6 +127,7 @@
         encounterUnlisten();
         bossDeathUnlisten();
         sceneChangeUnlisten();
+        pauseUnlisten();
       };
 
       console.log("Event listeners set up for live meter data");
@@ -121,19 +137,26 @@
       setTimeout(() => {
         isReconnecting = false;
         setupEventListeners();
-      }, RECONNECT_DELAY);
+      }, reconnectDelay);
+      // increase backoff cap at ~10s
+      reconnectDelay = Math.min(reconnectDelay * 2, 10_000);
     }
   }
 
   function startReconnectCheck() {
     reconnectInterval = setInterval(() => {
-      if (Date.now() - lastEventTime > DISCONNECT_THRESHOLD) {
-        console.warn("Event stream disconnected, attempting reconnection");
+      const now = Date.now();
+      if (hadAnyEvent && now - lastEventTime > DISCONNECT_THRESHOLD) {
+        console.warn("Live event stream disconnected, attempting reconnection");
         if (unlisten) {
           unlisten();
           unlisten = null;
         }
+        // reset timer to avoid tight loop spam
+        lastEventTime = now;
         setupEventListeners();
+        // backoff after each timer-triggered reconnect
+        reconnectDelay = Math.min(reconnectDelay * 2, 10_000);
       }
     }, 1000);
   }
@@ -143,7 +166,7 @@
     if (mainElement && from?.url.pathname) {
       scrollPositions.update(positions => ({
         ...positions,
-        [from.url.pathname]: mainElement.scrollTop
+        [from.url.pathname]: mainElement!.scrollTop
       }));
     }
   });
@@ -167,9 +190,28 @@
     setupEventListeners();
     startReconnectCheck();
 
+    // When the window regains focus or visibility, proactively recheck listeners
+    const onFocus = () => {
+      // Attempt a lightweight refresh of listeners to recover from any suspended state
+      if (!isReconnecting) {
+        if (unlisten) {
+          unlisten();
+          unlisten = null;
+        }
+        reconnectDelay = 1000;
+        setupEventListeners();
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") onFocus();
+    });
+
     return () => {
       if (reconnectInterval) clearInterval(reconnectInterval);
       if (unlisten) unlisten();
+      window.removeEventListener("focus", onFocus);
+      // visibilitychange listener is anonymous; it's fine to leave or we can no-op
       cleanupStores();
     };
   });
