@@ -416,7 +416,19 @@
               </td>
               {#each visiblePlayerColumns as col (col.key)}
                 <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">
-                  {col.format(p[col.key] ?? 0)}
+                  {#if (col.key === 'totalDmg' || col.key === 'dps') && (
+                    (activeTab === 'damage' && settings.state.history.general.shortenDps) ||
+                    (activeTab === 'healing' && settings.state.history.general.shortenDps) ||
+                    (activeTab === 'tanked' && settings.state.history.general.shortenDps)
+                  )}
+                    {#if SETTINGS.history.general.state.shortenDps}
+                      <AbbreviatedNumber num={p[col.key] ?? 0} />
+                    {:else}
+                      {col.format(p[col.key] ?? 0)}
+                    {/if}
+                  {:else}
+                    {col.format(p[col.key] ?? 0)}
+                  {/if}
                 </td>
               {/each}
               <TableRowGlow
@@ -477,7 +489,11 @@
               <td class="px-3 py-3 text-sm text-neutral-300 relative z-10">{s.name}</td>
               {#each visibleSkillColumns as col (col.key)}
                 <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">
-                  {col.format(s[col.key] ?? 0)}
+                  {#if (col.key === 'totalDmg' || col.key === 'dps') && SETTINGS.history.general.state.shortenDps}
+                    <AbbreviatedNumber num={s[col.key] ?? 0} />
+                  {:else}
+                    {col.format(s[col.key] ?? 0)}
+                  {/if}
                 </td>
               {/each}
               <TableRowGlow

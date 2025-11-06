@@ -106,8 +106,8 @@
         {@const currPlayer = dpsSkillBreakdownWindow.currPlayer[0]}
         {#if currPlayer}
           {@const className = currPlayer.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? currPlayer.className : ""}
-          <tr 
-            class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors h-6 text-xs" 
+          <tr
+            class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors h-6 text-xs"
           >
             <td class="px-2 py-1 text-xs text-neutral-300 relative z-10">
               <div class="flex items-center gap-1 h-full">
@@ -117,7 +117,17 @@
             {#each visibleSkillColumns as col (col.key)}
               <td class="px-2 py-1 text-right text-xs text-neutral-300 relative z-10">
                 {#if col.key === 'totalDmg'}
-                  <AbbreviatedNumber num={skill.totalDmg} />
+                  {#if SETTINGS.live.general.state.shortenDps}
+                    <AbbreviatedNumber num={skill.totalDmg} />
+                  {:else}
+                    {skill.totalDmg.toLocaleString()}
+                  {/if}
+                {:else if col.key === 'dps'}
+                  {#if SETTINGS.live.general.state.shortenDps}
+                    <AbbreviatedNumber num={skill.dps} />
+                  {:else}
+                    {Math.round(skill.dps).toLocaleString()}
+                  {/if}
                 {:else if col.key === 'dmgPct'}
                   <PercentFormat val={skill.dmgPct} fractionDigits={0} />
                 {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}

@@ -94,7 +94,17 @@
           {#each visiblePlayerColumns as col (col.key)}
             <td class="{isCompactMode ? 'px-2 py-1' : 'px-3 py-3'} text-right {isCompactMode ? 'text-xs' : 'text-base'} text-neutral-200 relative z-10">
               {#if col.key === 'totalDmg'}
-                <AbbreviatedNumber num={player.totalDmg} />
+                {#if SETTINGS.live.general.state.shortenDps}
+                  <AbbreviatedNumber num={player.totalDmg} />
+                {:else}
+                  {player.totalDmg.toLocaleString()}
+                {/if}
+              {:else if col.key === 'dps'}
+                {#if SETTINGS.live.general.state.shortenDps}
+                  <AbbreviatedNumber num={player.dps} />
+                {:else}
+                  {Math.round(player.dps).toLocaleString()}
+                {/if}
               {:else if col.key === 'dmgPct'}
                 <PercentFormat val={player.dmgPct} fractionDigits={0} />
               {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}

@@ -55,6 +55,7 @@ const DEFAULT_GENERAL_SETTINGS = {
   relativeToTopHealPlayer: false,
   relativeToTopHealSkill: false,
   shortenAbilityScore: true,
+  shortenDps: false,
   bossOnlyDps: false,
 };
 

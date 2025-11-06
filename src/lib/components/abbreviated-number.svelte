@@ -17,6 +17,9 @@
   }
 
   let abbreviatedNumberTuple = $derived(abbreviateNumberSplit(num));
+  let fullNumberString = $derived(num.toLocaleString());
 </script>
 
-{abbreviatedNumberTuple[0]}<span class="text-tiny text-gray-300">{abbreviatedNumberTuple[1]}</span>
+<div title={fullNumberString}>
+  {abbreviatedNumberTuple[0]}<span class="text-tiny text-gray-300">{abbreviatedNumberTuple[1]}</span>
+</div>
