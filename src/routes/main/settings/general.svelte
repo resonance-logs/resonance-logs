@@ -7,9 +7,21 @@
 
   const SETTINGS_CATEGORY = "general";
 
-  // Sync boss damage setting to backend
+  // Sync boss damage setting to backend when user actually changes it.
+  // Avoid calling on initial mount because the settings layout mounts all tabs
+  // at once which would trigger multiple backend invocations and can stall
+  // the live emitter. Only invoke the backend after the component is mounted
+  // and the value changes.
+  import { onMount } from 'svelte';
+  let _mounted = false;
+  onMount(() => {
+    _mounted = true;
+  });
+
   $effect(() => {
-    setBossOnlyDps(SETTINGS.general.state.bossOnlyDps);
+    if (_mounted) {
+      void setBossOnlyDps(SETTINGS.general.state.bossOnlyDps);
+    }
   });
 </script>
 
