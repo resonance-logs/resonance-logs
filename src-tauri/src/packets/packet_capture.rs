@@ -22,7 +22,7 @@ pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Ve
     // packet capture/decoding under heavy load. A capacity of 8192 provides ample
     // headroom for bursts without risking unbounded memory growth.
     let (packet_sender, packet_receiver) =
-        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(8192);
+        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(4096);
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
     tauri::async_runtime::spawn(async move {
