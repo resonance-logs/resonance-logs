@@ -36,6 +36,10 @@
   let unlisten: (() => void) | null = null;
   let lastEventTime = Date.now();
   let hadAnyEvent = false; // becomes true after the first live event arrives
+  // Persist last known pause state across listener reconnections so we don't
+  // show a spurious "Encounter resumed" toast every time listeners are
+  // re-attached (e.g. on window focus/visibility change).
+  let lastPauseState: boolean | null = null;
   let reconnectInterval: ReturnType<typeof setInterval> | null = null;
   let isReconnecting = false;
   let reconnectDelay = 1000; // exponential backoff base
@@ -73,8 +77,6 @@
       });
 
       // Set up encounter update listener (pause/resume)
-      // track previous pause state locally to avoid spamming toasts on every update
-      let lastPauseState: boolean | null = null;
       const encounterUnlisten = await onEncounterUpdate((event) => {
         // Treat encounter updates as keep-alive too so reconnect logic doesn't fire
         lastEventTime = Date.now();
@@ -84,7 +86,9 @@
         // update the store regardless
         isPaused.set(newPaused);
         // only show a toast if the pause state actually changed AND we've started receiving combat data
-        if (elapsedMs > 0 && (lastPauseState === null || lastPauseState !== newPaused)) {
+        // Note: do NOT show a toast on the initial listener attach (lastPauseState === null)
+        // to avoid spurious "Encounter resumed" messages when reattaching listeners
+        if (elapsedMs > 0 && lastPauseState !== null && lastPauseState !== newPaused) {
           if (newPaused) {
             notificationToast?.showToast('notice', 'Encounter paused');
           } else {
