@@ -24,8 +24,10 @@ fn record_death(
     skill_id: Option<i32>,
     timestamp_ms: i64,
 ) {
-    // Dedupe close-together events for the same actor (2s window)
-    let should_record = match encounter.last_death_ms.get(&actor_id) {
+    // Dedupe close-together events for the same actor (2s window) using a
+    // dedicated map for DB death inserts. We no longer use death tracking for
+    // wipe detection/UI; death events are still persisted to the DB.
+    let should_record = match encounter.last_death_db_ms.get(&actor_id) {
         Some(last_ms) => {
             let diff = (timestamp_ms as i128 - *last_ms as i128).abs();
             diff > 2000
@@ -38,13 +40,8 @@ fn record_death(
     }
 
     encounter
-        .last_death_ms
+        .last_death_db_ms
         .insert(actor_id, timestamp_ms as u128);
-
-    // Push to pending player deaths for UI emission
-    encounter
-        .pending_player_deaths
-        .push((actor_id, killer_id, skill_id, timestamp_ms));
 
     // Enqueue DB task; mark as local player when matching tracked local UID
     let is_local = encounter.local_player_uid == actor_id;
@@ -56,6 +53,33 @@ fn record_death(
         is_local_player: is_local,
         attempt_index: Some(encounter.current_attempt_index),
     });
+}
+
+/// Record a revive event into the encounter for UI emission.
+fn record_revive(encounter: &mut Encounter, actor_id: i64, timestamp_ms: i64) {
+    // Dedupe close-together revives for the same actor (2s window)
+    let should_record = match encounter.last_revive_ms.get(&actor_id) {
+        Some(last_ms) => {
+            let diff = (timestamp_ms as i128 - *last_ms as i128).abs();
+            diff > 2000
+        }
+        None => true,
+    };
+
+    if !should_record {
+        return;
+    }
+
+    encounter
+        .last_revive_ms
+        .insert(actor_id, timestamp_ms as u128);
+
+    // Push to pending player revives for UI emission
+    encounter
+        .pending_player_revives
+        .push((actor_id, None, None, timestamp_ms));
+
+    info!("Recorded revive for UID {}", actor_id);
 }
 
 /// Serialize entity attributes HashMap to JSON string for database storage.
@@ -96,6 +120,35 @@ pub fn on_server_change(encounter: &mut Encounter) {
     info!("on server change");
     // Preserve entity identity and local player info; only reset combat state
     encounter.reset_combat_state();
+}
+
+/// Process a NotifyReviveUser packet: record a revive for the actor.
+///
+/// This will add a revive entry to the encounter's pending revives for UI emission
+/// (we no longer clear death markers here because death tracking is not used for
+/// wipe detection).
+pub fn process_notify_revive_user(
+    encounter: &mut Encounter,
+    notify_revive: blueprotobuf::NotifyReviveUser,
+) -> Option<()> {
+    let actor_uuid = notify_revive.v_actor_uuid?;
+    // Actor UUID in protobuf is signed i64; interpret bits as u64 for shifting
+    let actor_uuid_u = actor_uuid as u64;
+    let uid = (actor_uuid_u >> 16) as i64;
+
+    // Record revive for UI emission (timestamp using now_ms helper)
+    let ts = now_ms();
+    record_revive(encounter, uid, ts);
+    // Persist revive to DB (increment per-actor revive counter)
+    let is_local = encounter.local_player_uid == uid;
+    enqueue(DbTask::InsertReviveEvent {
+        timestamp_ms: ts,
+        actor_id: uid,
+        is_local_player: is_local,
+        attempt_index: Some(encounter.current_attempt_index),
+    });
+    info!("Processed NotifyReviveUser: recorded revive for UID {}", uid);
+    Some(())
 }
 
 pub fn process_sync_near_entities(

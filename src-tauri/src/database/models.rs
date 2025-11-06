@@ -342,6 +342,8 @@ pub struct ActorEncounterStatRow {
     pub boss_crit_total_dealt: i64,
     /// The total lucky damage dealt to bosses by the actor.
     pub boss_lucky_total_dealt: i64,
+    /// The number of revives for the actor during the encounter.
+    pub revives: i64,
     /// Whether the actor is a player.
     pub is_player: i32,
     /// Whether the actor is the local player.
@@ -416,6 +418,8 @@ pub struct NewActorEncounterStat {
     pub boss_crit_total_dealt: i64,
     /// The total lucky damage dealt to bosses by the actor.
     pub boss_lucky_total_dealt: i64,
+    /// The number of revives for the actor during the encounter.
+    pub revives: i64,
 }
 
 /// Represents a row in the `damage_skill_stats` table.

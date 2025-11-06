@@ -28,6 +28,8 @@ pub enum StateEvent {
     SyncToMeDeltaInfo(blueprotobuf::SyncToMeDeltaInfo),
     /// A sync near delta info event.
     SyncNearDeltaInfo(blueprotobuf::SyncNearDeltaInfo),
+    /// A notify revive user event.
+    NotifyReviveUser(blueprotobuf::NotifyReviveUser),
     /// A pause encounter event.
     PauseEncounter(bool),
     /// A reset encounter event.
@@ -163,6 +165,9 @@ impl AppStateManager {
                 self.process_sync_near_delta_info(&mut state, data).await;
                 // Note: Player names are automatically stored in the database via UpsertEntity tasks
                 // No need to maintain a separate cache anymore
+            }
+            StateEvent::NotifyReviveUser(data) => {
+                self.process_notify_revive_user(&mut state, data).await;
             }
             StateEvent::PauseEncounter(paused) => {
                 state.set_encounter_paused(paused);
@@ -504,6 +509,13 @@ impl AppStateManager {
         for aoi_sync_delta in sync_near_delta_info.delta_infos {
             // Missing fields are normal, no need to log
             let _ = process_aoi_sync_delta(&mut state.encounter, aoi_sync_delta);
+        }
+    }
+
+    async fn process_notify_revive_user(&self, state: &mut AppState, notify: blueprotobuf::NotifyReviveUser) {
+        use crate::live::opcodes_process::process_notify_revive_user;
+        if process_notify_revive_user(&mut state.encounter, notify).is_none() {
+            warn!("Error processing NotifyReviveUser.. ignoring.");
         }
     }
 

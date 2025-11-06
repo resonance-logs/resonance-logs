@@ -1,8 +1,8 @@
 /// Attempt detection module for boss splitting feature.
 ///
 /// Detects when to split encounters into separate attempts based on:
-/// - Raid wipes (all party members dead)
-/// - Boss HP rollback (boss HP returns to >=90% after being lower)
+/// - Optionally: raid wipes (all party members dead) — disabled by default
+/// - Boss HP rollback (boss HP returns to >95% after being lower)
 use crate::database::{enqueue, DbTask};
 use crate::live::opcodes_models::{AttrType, Encounter, Entity};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
@@ -13,7 +13,7 @@ use log::info;
 pub struct AttemptConfig {
     /// Minimum HP percentage decrease before a rollback can trigger a split (default: 60%)
     pub min_hp_decrease_pct: f64,
-    /// HP percentage threshold for rollback detection (default: 90%)
+    /// HP percentage threshold for rollback detection (default: 95%)
     pub hp_rollback_threshold_pct: f64,
     /// Cooldown period in milliseconds to avoid rapid splits (default: 2000ms)
     pub split_cooldown_ms: u128,
@@ -27,11 +27,14 @@ impl Default for AttemptConfig {
     fn default() -> Self {
         Self {
             // Use conservative defaults: consider a rollback when boss dropped below 60% then later
-            // returned to >=90% (these match the unit tests and expected behavior).
-            min_hp_decrease_pct: 60.0,
-            hp_rollback_threshold_pct: 90.0,
+            // returned to >95% — for wipe/reset detection we consider any return above
+            // 95% from a previously lower value as a reset.
+            min_hp_decrease_pct: 95.0,
+            hp_rollback_threshold_pct: 95.0,
             split_cooldown_ms: 2000,
-            enable_wipe_detection: true,
+            // We disable death-based wipe detection by default since player death tracking
+            // is unreliable; prefer HP rollback detection.
+            enable_wipe_detection: false,
             enable_hp_rollback_detection: true,
         }
     }
@@ -40,7 +43,8 @@ impl Default for AttemptConfig {
 /// Checks if a wipe has occurred (all party members dead).
 ///
 /// A wipe is detected when all players in the party have died recently.
-/// This uses the pending_player_deaths queue to check for recent deaths.
+/// This uses the death DB dedupe map to check for recent death events when
+/// wipe detection is enabled. Note: wipe detection is disabled by default.
 pub fn check_wipe_condition(encounter: &Encounter, config: &AttemptConfig) -> bool {
     if !config.enable_wipe_detection {
         return false;
@@ -51,9 +55,9 @@ pub fn check_wipe_condition(encounter: &Encounter, config: &AttemptConfig) -> bo
         return false;
     }
 
-    // Check if all party members have died recently
+    // Check if all party members have recorded death DB timestamps recently
     let all_dead = encounter.party_member_uids.iter().all(|uid| {
-        encounter.last_death_ms.get(uid).is_some()
+        encounter.last_death_db_ms.get(uid).is_some()
     });
 
     all_dead && encounter.party_member_uids.len() >= 1
@@ -82,10 +86,10 @@ pub fn check_hp_rollback_condition(
         return false;
     };
 
-    // Check if we dropped below configured low threshold and have since rolled back above the
-    // configured rollback threshold.
+    // Detect a rollback when the boss was ever below the configured minimum and has now
+    // returned strictly above the rollback threshold (use > to avoid edge equality cases).
     let dropped_below_threshold = lowest_pct < config.min_hp_decrease_pct;
-    let rolled_back = current_pct >= config.hp_rollback_threshold_pct;
+    let rolled_back = current_pct > config.hp_rollback_threshold_pct;
 
     dropped_below_threshold && rolled_back
 }
@@ -110,9 +114,9 @@ pub fn split_attempt(
 
     let current_attempt = encounter.current_attempt_index;
 
-    // Count deaths in current attempt
+    // Count revives in current attempt (we track revives instead of deaths for UI).
     let deaths_in_attempt = encounter
-        .pending_player_deaths
+        .pending_player_revives
         .iter()
         .filter(|(_, _, _, ts)| *ts as u128 >= encounter.time_fight_start_ms)
         .count() as i32;
@@ -163,8 +167,8 @@ pub fn split_attempt(
         encounter.lowest_boss_hp = None;
     }
     encounter.last_attempt_split_ms = timestamp_ms;
-    encounter.pending_player_deaths.clear();
-    encounter.last_death_ms.clear();
+    encounter.pending_player_revives.clear();
+    encounter.last_revive_ms.clear();
 
     info!(
         "Attempt split: {} -> Attempt {} (reason: {})",
@@ -234,10 +238,10 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = AttemptConfig::default();
-        assert_eq!(config.min_hp_decrease_pct, 60.0);
-        assert_eq!(config.hp_rollback_threshold_pct, 90.0);
+        assert_eq!(config.min_hp_decrease_pct, 95.0);
+        assert_eq!(config.hp_rollback_threshold_pct, 95.0);
         assert_eq!(config.split_cooldown_ms, 2000);
-        assert!(config.enable_wipe_detection);
+        assert!(!config.enable_wipe_detection);
         assert!(config.enable_hp_rollback_detection);
     }
 

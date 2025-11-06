@@ -174,6 +174,8 @@ diesel::table! {
         boss_crit_total_dealt -> BigInt,
         /// The total lucky damage dealt to bosses by the actor.
         boss_lucky_total_dealt -> BigInt,
+        /// The number of revives for the actor during the encounter.
+        revives -> BigInt,
         /// Whether the actor is a player.
         is_player -> Integer,
         /// Whether the actor is the local player.

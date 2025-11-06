@@ -307,6 +307,13 @@ pub enum DbTask {
         is_local_player: bool,
         attempt_index: Option<i32>,
     },
+    /// A task to record a revive (increments per-actor revive counter in actor_encounter_stats).
+    InsertReviveEvent {
+        timestamp_ms: i64,
+        actor_id: i64,
+        is_local_player: bool,
+        attempt_index: Option<i32>,
+    },
 
     /// A task to begin a new attempt within the current encounter.
     BeginAttempt {
@@ -650,6 +657,17 @@ fn handle_task(
                     .map_err(|e| e.to_string())?;
             }
         }
+        DbTask::InsertReviveEvent {
+            timestamp_ms: _,
+            actor_id,
+            is_local_player: _,
+            attempt_index: _,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                // Increment per-actor revive counter
+                upsert_stats_add_revive(conn, enc_id, actor_id)?;
+            }
+        }
         DbTask::BeginAttempt {
             attempt_index,
             started_at_ms,
@@ -751,42 +769,44 @@ fn upsert_stats_add_damage_dealt(
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
     let boss_hit = if is_boss { 1_i64 } else { 0_i64 };
         diesel::sql_query(
-                                    "INSERT INTO actor_encounter_stats (
-                                             encounter_id, actor_id, name, class_id, ability_score, level, is_player,
-                                             class_spec, is_local_player, attributes,
-                                             damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt,
-                                             boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt, boss_crit_total_dealt, boss_lucky_total_dealt
-                                     ) VALUES (
-                                             ?1, ?2,
-                                             (SELECT name FROM entities WHERE entity_id = ?2),
-                                             NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
-                                             NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
-                                             NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
-                                             CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
-                                             NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
-                                             CASE WHEN ?2 = (SELECT local_player_id FROM encounters WHERE id = ?1) THEN 1 ELSE 0 END,
-                                             (SELECT attributes FROM entities WHERE entity_id = ?2),
-                                             ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13
-                                     ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
-                                        name = COALESCE(NULLIF(actor_encounter_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
-                                            class_id = COALESCE(NULLIF(actor_encounter_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
-                                            class_spec = COALESCE(NULLIF(actor_encounter_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
-                                        ability_score = COALESCE(NULLIF(actor_encounter_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
-                                        level = COALESCE(NULLIF(actor_encounter_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
-                                        attributes = COALESCE(NULLIF(actor_encounter_stats.attributes, ''), (SELECT attributes FROM entities WHERE entity_id = excluded.actor_id)),
-                                         damage_dealt = damage_dealt + excluded.damage_dealt,
-                                         hits_dealt = hits_dealt + excluded.hits_dealt,
-                                         crit_hits_dealt = crit_hits_dealt + excluded.crit_hits_dealt,
-                                         lucky_hits_dealt = lucky_hits_dealt + excluded.lucky_hits_dealt,
-                                         crit_total_dealt = crit_total_dealt + excluded.crit_total_dealt,
-                                         lucky_total_dealt = lucky_total_dealt + excluded.lucky_total_dealt,
-                                         boss_damage_dealt = boss_damage_dealt + excluded.boss_damage_dealt,
-                                         boss_hits_dealt = boss_hits_dealt + excluded.boss_hits_dealt,
-                                         boss_crit_hits_dealt = boss_crit_hits_dealt + excluded.boss_crit_hits_dealt,
-                                         boss_lucky_hits_dealt = boss_lucky_hits_dealt + excluded.boss_lucky_hits_dealt,
-                                         boss_crit_total_dealt = boss_crit_total_dealt + excluded.boss_crit_total_dealt,
-                                         boss_lucky_total_dealt = boss_lucky_total_dealt + excluded.boss_lucky_total_dealt"
-                )
+                        "INSERT INTO actor_encounter_stats (
+                             encounter_id, actor_id, name, class_id, ability_score, level, is_player,
+                             class_spec, is_local_player, attributes,
+                             damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt,
+                             boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt, boss_crit_total_dealt, boss_lucky_total_dealt,
+                             revives
+                         ) VALUES (
+                             ?1, ?2,
+                             (SELECT name FROM entities WHERE entity_id = ?2),
+                             NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
+                             NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
+                             NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
+                             CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+                             NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
+                             CASE WHEN ?2 = (SELECT local_player_id FROM encounters WHERE id = ?1) THEN 1 ELSE 0 END,
+                             (SELECT attributes FROM entities WHERE entity_id = ?2),
+                             ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14
+                         ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
+                        name = COALESCE(NULLIF(actor_encounter_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
+                            class_id = COALESCE(NULLIF(actor_encounter_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                            class_spec = COALESCE(NULLIF(actor_encounter_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                        ability_score = COALESCE(NULLIF(actor_encounter_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                        level = COALESCE(NULLIF(actor_encounter_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
+                        attributes = COALESCE(NULLIF(actor_encounter_stats.attributes, ''), (SELECT attributes FROM entities WHERE entity_id = excluded.actor_id)),
+                         damage_dealt = damage_dealt + excluded.damage_dealt,
+                         hits_dealt = hits_dealt + excluded.hits_dealt,
+                         crit_hits_dealt = crit_hits_dealt + excluded.crit_hits_dealt,
+                         lucky_hits_dealt = lucky_hits_dealt + excluded.lucky_hits_dealt,
+                         crit_total_dealt = crit_total_dealt + excluded.crit_total_dealt,
+                         lucky_total_dealt = lucky_total_dealt + excluded.lucky_total_dealt,
+                         boss_damage_dealt = boss_damage_dealt + excluded.boss_damage_dealt,
+                         boss_hits_dealt = boss_hits_dealt + excluded.boss_hits_dealt,
+                         boss_crit_hits_dealt = boss_crit_hits_dealt + excluded.boss_crit_hits_dealt,
+                         boss_lucky_hits_dealt = boss_lucky_hits_dealt + excluded.boss_lucky_hits_dealt,
+                         boss_crit_total_dealt = boss_crit_total_dealt + excluded.boss_crit_total_dealt,
+                         boss_lucky_total_dealt = boss_lucky_total_dealt + excluded.boss_lucky_total_dealt,
+                         revives = revives + excluded.revives"
+            )
     .bind::<diesel::sql_types::Integer, _>(encounter_id)
     .bind::<diesel::sql_types::BigInt, _>(actor_id)
     .bind::<diesel::sql_types::BigInt, _>(value)
@@ -800,6 +820,8 @@ fn upsert_stats_add_damage_dealt(
     .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_lucky { 1 } else { 0 })
     .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_crit { value } else { 0 })
     .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_lucky { value } else { 0 })
+    // revives column (no revive added for damage events)
+    .bind::<diesel::sql_types::BigInt, _>(0_i64)
     .execute(conn)
     .map(|_| ())
     .map_err(|e| e.to_string())
@@ -866,6 +888,45 @@ fn upsert_stats_add_heal_dealt(
     .bind::<diesel::sql_types::BigInt, _>(lucky_hit)
     .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
     .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+    .execute(conn)
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
+/// Upserts actor encounter stats for a revive event (increments revive counter).
+fn upsert_stats_add_revive(
+    conn: &mut SqliteConnection,
+    encounter_id: i32,
+    actor_id: i64,
+) -> Result<(), String> {
+    diesel::sql_query(
+        "INSERT INTO actor_encounter_stats (
+                 encounter_id, actor_id, name, class_id, ability_score, level, is_player,
+                 class_spec, is_local_player, attributes,
+                 revives
+         ) VALUES (
+                 ?1, ?2,
+                 (SELECT name FROM entities WHERE entity_id = ?2),
+                 NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
+                 NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
+                 NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
+                 CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+                 NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
+                 CASE WHEN ?2 = (SELECT local_player_id FROM encounters WHERE id = ?1) THEN 1 ELSE 0 END,
+                 (SELECT attributes FROM entities WHERE entity_id = ?2),
+                 ?3
+         ) ON CONFLICT(encounter_id, actor_id) DO UPDATE SET
+            name = COALESCE(NULLIF(actor_encounter_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
+            class_id = COALESCE(NULLIF(actor_encounter_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
+            class_spec = COALESCE(NULLIF(actor_encounter_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
+            ability_score = COALESCE(NULLIF(actor_encounter_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
+            level = COALESCE(NULLIF(actor_encounter_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
+            attributes = COALESCE(NULLIF(actor_encounter_stats.attributes, ''), (SELECT attributes FROM entities WHERE entity_id = excluded.actor_id)),
+            revives = revives + excluded.revives"
+    )
+    .bind::<diesel::sql_types::Integer, _>(encounter_id)
+    .bind::<diesel::sql_types::BigInt, _>(actor_id)
+    .bind::<diesel::sql_types::BigInt, _>(1_i64)
     .execute(conn)
     .map(|_| ())
     .map_err(|e| e.to_string())

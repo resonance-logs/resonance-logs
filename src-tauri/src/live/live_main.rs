@@ -101,6 +101,15 @@ pub async fn start(app_handle: AppHandle) {
                     }
                 }
             }
+            packets::opcodes::Pkt::NotifyReviveUser => {
+                match blueprotobuf::NotifyReviveUser::decode(Bytes::from(data)) {
+                    Ok(v) => StateEvent::NotifyReviveUser(v),
+                    Err(e) => {
+                        warn!("Error decoding NotifyReviveUser.. ignoring: {e}");
+                        continue;
+                    }
+                }
+            }
             _ => {
                 trace!("Unhandled packet opcode: {op:?}");
                 continue;
