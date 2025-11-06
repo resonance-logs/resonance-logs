@@ -20,6 +20,6 @@
   let fullNumberString = $derived(num.toLocaleString());
 </script>
 
-<div title={fullNumberString}>
+<span title={fullNumberString} class="whitespace-nowrap inline-flex items-baseline gap-1">
   {abbreviatedNumberTuple[0]}<span class="text-tiny text-gray-300">{abbreviatedNumberTuple[1]}</span>
-</div>
+</span>

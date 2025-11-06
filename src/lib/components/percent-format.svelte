@@ -11,4 +11,7 @@
   } = $props();
 </script>
 
-{typeof val === "number" ? val.toFixed(fractionDigits) : val}<span class="text-tiny text-gray-300">%</span>
+<span class="whitespace-nowrap inline-flex items-baseline gap-1">
+  {typeof val === "number" ? val.toFixed(fractionDigits) : val}
+  <span class="text-tiny text-gray-300">%</span>
+</span>
