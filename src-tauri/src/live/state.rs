@@ -310,7 +310,11 @@ impl AppStateManager {
                         if let Some(raw) = &attr.raw_data {
                             // If attr id suggests a scene id, prefer that first
                             if let Some(attr_id) = attr.id {
-                                if attr_id == 0x01 || attr_id == 0x0a {
+                                // Prefer ATTR_ID (0x0a) which contains numeric identifiers.
+                                // Do NOT treat ATTR_NAME (0x01) as a varint: its raw_data is a
+                                // length-prefixed string and decoding it as a varint can yield
+                                // the string length (false positive scene id).
+                                if attr_id == crate::live::opcodes_models::attr_type::ATTR_ID {
                                     let mut buf = &raw[..];
                                     if let Ok(v) = prost::encoding::decode_varint(&mut buf) {
                                         let cand = v as i32;
