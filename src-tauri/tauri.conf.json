@@ -4,8 +4,8 @@
     "version": "0.2.0",
     "identifier": "com.resonance-logs",
     "build": {
-        "beforeDevCommand": "npm run dev",
-        "beforeBuildCommand": "npm run build",
+        "beforeDevCommand": "npm run dev:stop-windivert",
+        "beforeBuildCommand": "npm run build:stop-windivert",
         "devUrl": "http://localhost:1420",
         "frontendDist": "../build"
     },
