@@ -129,6 +129,112 @@ pub async fn start(app_handle: AppHandle) {
                 // Handle the event
                 state_manager.handle_event(event).await;
 
+                // Drain additional queued packets quickly to keep up under bursty load.
+                // This reduces per-event overhead and helps avoid UI "freezes" when
+                // the capture pipeline outpaces the consumer.
+                let mut drained = 0usize;
+                while drained < 1024 {
+                    match rx.try_recv() {
+                        Ok((op, data)) => {
+                            let event = match op {
+                                packets::opcodes::Pkt::ServerChangeInfo => StateEvent::ServerChange,
+                                packets::opcodes::Pkt::EnterScene => {
+                                    match blueprotobuf::EnterScene::decode(Bytes::from(data)) {
+                                        Ok(v) => StateEvent::EnterScene(v),
+                                        Err(e) => {
+                                            warn!("Error decoding EnterScene.. ignoring: {e}");
+                                            drained += 1; // count and continue draining
+                                            continue;
+                                        }
+                                    }
+                                }
+                                packets::opcodes::Pkt::SyncNearEntities => {
+                                    match blueprotobuf::SyncNearEntities::decode(Bytes::from(data)) {
+                                        Ok(v) => StateEvent::SyncNearEntities(v),
+                                        Err(e) => {
+                                            warn!("Error decoding SyncNearEntities.. ignoring: {e}");
+                                            drained += 1;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                packets::opcodes::Pkt::SyncContainerData => {
+                                    match blueprotobuf::SyncContainerData::decode(Bytes::from(data)) {
+                                        Ok(v) => StateEvent::SyncContainerData(v),
+                                        Err(e) => {
+                                            warn!("Error decoding SyncContainerData.. ignoring: {e}");
+                                            drained += 1;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                packets::opcodes::Pkt::SyncContainerDirtyData => {
+                                    match blueprotobuf::SyncContainerDirtyData::decode(Bytes::from(data)) {
+                                        Ok(v) => StateEvent::SyncContainerDirtyData(v),
+                                        Err(e) => {
+                                            warn!("Error decoding SyncContainerDirtyData.. ignoring: {e}");
+                                            drained += 1;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                packets::opcodes::Pkt::SyncServerTime => {
+                                    match blueprotobuf::SyncServerTime::decode(Bytes::from(data)) {
+                                        Ok(v) => StateEvent::SyncServerTime(v),
+                                        Err(e) => {
+                                            warn!("Error decoding SyncServerTime.. ignoring: {e}");
+                                            drained += 1;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                packets::opcodes::Pkt::SyncToMeDeltaInfo => {
+                                    match blueprotobuf::SyncToMeDeltaInfo::decode(Bytes::from(data)) {
+                                        Ok(v) => StateEvent::SyncToMeDeltaInfo(v),
+                                        Err(e) => {
+                                            warn!("Error decoding SyncToMeDeltaInfo.. ignoring: {e}");
+                                            drained += 1;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                packets::opcodes::Pkt::SyncNearDeltaInfo => {
+                                    match blueprotobuf::SyncNearDeltaInfo::decode(Bytes::from(data)) {
+                                        Ok(v) => StateEvent::SyncNearDeltaInfo(v),
+                                        Err(e) => {
+                                            warn!("Error decoding SyncNearDeltaInfo.. ignoring: {e}");
+                                            drained += 1;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                packets::opcodes::Pkt::NotifyReviveUser => {
+                                    match blueprotobuf::NotifyReviveUser::decode(Bytes::from(data)) {
+                                        Ok(v) => StateEvent::NotifyReviveUser(v),
+                                        Err(e) => {
+                                            warn!("Error decoding NotifyReviveUser.. ignoring: {e}");
+                                            drained += 1;
+                                            continue;
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    trace!("Unhandled packet opcode: {op:?}");
+                                    drained += 1;
+                                    continue;
+                                }
+                            };
+                            state_manager.handle_event(event).await;
+                            drained += 1;
+                        }
+                        Err(tokio::sync::mpsc::error::TryRecvError::Empty) => break,
+                        Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
+                            warn!("Packet capture channel closed (disconnected) while draining");
+                            break;
+                        }
+                    }
+                }
+
                 // Check if we should emit events (throttling)
                 let now = Instant::now();
                 if now.duration_since(last_emit_time) >= emit_throttle_duration {

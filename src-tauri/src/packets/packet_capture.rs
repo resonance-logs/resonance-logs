@@ -18,8 +18,11 @@ static RESTART_SENDER: OnceCell<watch::Sender<bool>> = OnceCell::new();
 const MAX_BACKTRACK_BYTES: u32 = 2 * 1024 * 1024; // 2 MiB safety window before considering a reset
 
 pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
+    // Use a larger bounded channel to prevent producer backpressure from stalling
+    // packet capture/decoding under heavy load. A capacity of 8192 provides ample
+    // headroom for bursts without risking unbounded memory growth.
     let (packet_sender, packet_receiver) =
-        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(1);
+        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(8192);
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
     tauri::async_runtime::spawn(async move {
