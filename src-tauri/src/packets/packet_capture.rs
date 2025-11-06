@@ -2,7 +2,7 @@ use crate::packets;
 use crate::packets::opcodes::Pkt;
 use crate::packets::packet_process::process_packet;
 use crate::packets::reassembler::Reassembler;
-use crate::packets::utils::{BinaryReader, Server, TCPReassembler};
+use crate::packets::utils::{BinaryReader, Server, TCPReassembler, tcp_sequence_before};
 use etherparse::NetSlice::Ipv4;
 use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
@@ -14,6 +14,8 @@ use windivert::prelude::WinDivertFlags;
 
 // Global sender for restart signal
 static RESTART_SENDER: OnceCell<watch::Sender<bool>> = OnceCell::new();
+
+const MAX_BACKTRACK_BYTES: u32 = 2 * 1024 * 1024; // 2 MiB safety window before considering a reset
 
 pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
     let (packet_sender, packet_receiver) =
@@ -96,12 +98,24 @@ async fn read_packets(
                         if bytes[4] == 0 {
                             const FRAG_LENGTH_SIZE: usize = 4;
                             const SIGNATURE: [u8; 6] = [0x00, 0x63, 0x33, 0x53, 0x42, 0x00];
+                            const MAX_FRAG_ITERATIONS: usize = 2000; // Circuit breaker
+
                             let mut i = 0;
                             while tcp_payload_reader.remaining() >= FRAG_LENGTH_SIZE {
                                 i += 1;
-                                if i > 1000 {
-                                    info!(
-                                        "Line: {} - Stuck at 1. Try to identify game server via small packets?",
+                                if i >= MAX_FRAG_ITERATIONS {
+                                    error!(
+                                        "TCP fragment processing stuck after {i} iterations - forcing recovery. \
+                                        remaining={}, line={}",
+                                        tcp_payload_reader.remaining(),
+                                        line!()
+                                    );
+                                    break;
+                                }
+                                if i % 1000 == 0 {
+                                    warn!(
+                                        "High iteration count in fragment processing: iteration={i}, remaining={}, line={}",
+                                        tcp_payload_reader.remaining(),
                                         line!()
                                     );
                                 }
@@ -122,9 +136,16 @@ async fn read_packets(
                                                     "Got Scene Server Address (by change): {curr_server}"
                                                 );
                                                 known_server = Some(curr_server);
-                                                tcp_reassembler.clear_reassembler(
-                                                    tcp_packet.sequence_number() as usize
-                                                        + tcp_payload_reader.len(),
+                                                let payload_len =
+                                                    u32::try_from(tcp_payload_reader.len())
+                                                        .unwrap_or(u32::MAX);
+                                                let seq_end = tcp_packet
+                                                    .sequence_number()
+                                                    .wrapping_add(payload_len);
+                                                reset_stream(
+                                                    &mut tcp_reassembler,
+                                                    &mut reassembler,
+                                                    Some(seq_end),
                                                 );
                                                 if let Err(err) = packet_sender
                                                     .send((Pkt::ServerChangeInfo, Vec::new()))
@@ -163,9 +184,9 @@ async fn read_packets(
                 {
                     info!("Got Scene Server Address by Login Return Packet: {curr_server}");
                     known_server = Some(curr_server);
-                    tcp_reassembler.clear_reassembler(
-                        tcp_packet.sequence_number() as usize + tcp_payload.len(),
-                    );
+                    let payload_len = u32::try_from(tcp_payload.len()).unwrap_or(u32::MAX);
+                    let seq_end = tcp_packet.sequence_number().wrapping_add(payload_len);
+                    reset_stream(&mut tcp_reassembler, &mut reassembler, Some(seq_end));
                     if let Err(err) = packet_sender
                         .send((Pkt::ServerChangeInfo, Vec::new()))
                         .await
@@ -177,51 +198,61 @@ async fn read_packets(
             continue;
         }
 
-        if tcp_reassembler.next_seq.is_none() {
-            tcp_reassembler.next_seq = Some(tcp_packet.sequence_number() as usize);
-        }
-        if tcp_reassembler
-            .next_seq
-            .unwrap()
-            .saturating_sub(tcp_packet.sequence_number() as usize)
-            == 0
-        {
-            tcp_reassembler.cache.insert(
-                tcp_packet.sequence_number() as usize,
-                Vec::from(tcp_packet.payload()),
+        let sequence_number = tcp_packet.sequence_number();
+        let payload = tcp_packet.payload();
+        let payload_len = payload.len();
+
+        if tcp_packet.syn() {
+            info!("SYN observed for {curr_server}; resetting TCP reassembler state");
+            reset_stream(
+                &mut tcp_reassembler,
+                &mut reassembler,
+                Some(sequence_number.wrapping_add(1)),
             );
-        }
-        let mut i = 0;
-        while tcp_reassembler
-            .cache
-            .contains_key(&tcp_reassembler.next_seq.unwrap())
-        {
-            i += 1;
-            if i % 1000 == 0 {
-                warn!(
-                    "Potential infinite loop in cache processing: iteration={i}, next_seq={:?}, cache_size={}, _data_len={}",
-                    tcp_reassembler.next_seq,
-                    tcp_reassembler.cache.len(),
-                    tcp_reassembler._data.len()
-                );
+            if payload_len == 0 {
+                continue;
             }
-            let seq = &tcp_reassembler.next_seq.unwrap();
-            let cached_tcp_data = tcp_reassembler.cache.get(seq).unwrap();
-            if tcp_reassembler._data.is_empty() {
-                tcp_reassembler._data = cached_tcp_data.clone();
-            } else {
-                tcp_reassembler._data.extend_from_slice(cached_tcp_data);
+        }
+
+        let mut defer_reset = false;
+        if tcp_packet.fin() || tcp_packet.rst() {
+            defer_reset = true;
+        }
+
+        if payload_len == 0 {
+            if defer_reset {
+                reset_stream(&mut tcp_reassembler, &mut reassembler, None);
             }
-            tcp_reassembler.next_seq = Some(seq.wrapping_add(cached_tcp_data.len()));
-            tcp_reassembler.cache.remove(seq);
+            continue;
         }
-        // Feed any available reassembled bytes into the new Reassembler and
-        // yield full frames via try_next()
-        if !tcp_reassembler._data.is_empty() {
-            reassembler.feed_owned(std::mem::take(&mut tcp_reassembler._data));
+
+        if let Some(expected) = tcp_reassembler.next_sequence() {
+            if tcp_sequence_before(sequence_number, expected) {
+                let backwards = expected.wrapping_sub(sequence_number);
+                if backwards > MAX_BACKTRACK_BYTES {
+                    warn!(
+                        "Sequence regression detected for {curr_server}: expected {expected}, \
+                        got {sequence_number} (backwards {backwards} bytes). Resetting stream"
+                    );
+                    reset_stream(
+                        &mut tcp_reassembler,
+                        &mut reassembler,
+                        Some(sequence_number),
+                    );
+                }
+            }
         }
+
+        if let Some(buffer) = tcp_reassembler.insert_segment(sequence_number, payload) {
+            reassembler.feed_owned(buffer);
+        }
+
         while let Some(packet) = reassembler.try_next() {
             process_packet(BinaryReader::from(packet), packet_sender.clone()).await;
+        }
+
+        if defer_reset {
+            reset_stream(&mut tcp_reassembler, &mut reassembler, None);
         }
         if *restart_receiver.borrow() {
             break;
@@ -235,4 +266,13 @@ pub fn request_restart() {
     if let Some(sender) = RESTART_SENDER.get() {
         let _ = sender.send(true);
     }
+}
+
+fn reset_stream(
+    tcp_reassembler: &mut TCPReassembler,
+    reassembler: &mut Reassembler,
+    next_seq: Option<u32>,
+) {
+    reassembler.take_remaining();
+    tcp_reassembler.reset(next_seq);
 }

@@ -1,8 +1,8 @@
 // NOTE: opcodes_process works on Encounter directly; avoid importing opcodes_models at top-level.
 use crate::database::{DbTask, enqueue, now_ms};
 use crate::live::attempt_detector::{
-    check_hp_rollback_condition, check_wipe_condition, get_boss_hp_percentage, split_attempt,
-    track_party_member, update_boss_hp_tracking, AttemptConfig,
+    AttemptConfig, check_hp_rollback_condition, check_wipe_condition, get_boss_hp_percentage,
+    split_attempt, track_party_member, update_boss_hp_tracking,
 };
 use crate::live::opcodes_models::class::{
     ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
@@ -147,7 +147,10 @@ pub fn process_notify_revive_user(
         is_local_player: is_local,
         attempt_index: Some(encounter.current_attempt_index),
     });
-    info!("Processed NotifyReviveUser: recorded revive for UID {}", uid);
+    info!(
+        "Processed NotifyReviveUser: recorded revive for UID {}",
+        uid
+    );
     Some(())
 }
 
@@ -392,15 +395,22 @@ pub fn process_aoi_sync_delta(
         let skill_uid = sync_damage_info.owner_id?;
         let flag = sync_damage_info.type_flag.unwrap_or_default();
         // Pre-calculate whether this target is recognized as a boss and local player id
-        let is_boss_target = encounter.entity_uid_to_entity.get(&target_uid).map(|e| e.is_boss()).unwrap_or(false);
+        let is_boss_target = encounter
+            .entity_uid_to_entity
+            .get(&target_uid)
+            .map(|e| e.is_boss())
+            .unwrap_or(false);
         let local_player_uid_copy = encounter.local_player_uid;
 
         // First update attacker-side state in its own scope (single mutable borrow)
         let (is_crit, is_lucky, attacker_entity_type_copy) = {
-            let attacker_entity = encounter.entity_uid_to_entity.entry(attacker_uid).or_insert_with(|| Entity {
-                entity_type: EEntityType::from(attacker_uuid),
-                ..Default::default()
-            });
+            let attacker_entity = encounter
+                .entity_uid_to_entity
+                .entry(attacker_uid)
+                .or_insert_with(|| Entity {
+                    entity_type: EEntityType::from(attacker_uuid),
+                    ..Default::default()
+                });
 
             if attacker_entity.class_spec == ClassSpec::Unknown {
                 let class_spec = get_class_spec_from_skill_id(skill_uid);
@@ -414,7 +424,10 @@ pub fn process_aoi_sync_delta(
             let is_crit_local = (flag & CRIT_BIT) != 0;
 
             if is_heal {
-                let skill = attacker_entity.skill_uid_to_heal_skill.entry(skill_uid).or_insert_with(|| Skill::default());
+                let skill = attacker_entity
+                    .skill_uid_to_heal_skill
+                    .entry(skill_uid)
+                    .or_insert_with(|| Skill::default());
                 if is_crit_local {
                     attacker_entity.crit_hits_heal += 1;
                     attacker_entity.crit_total_heal += actual_value;
@@ -437,7 +450,11 @@ pub fn process_aoi_sync_delta(
                 if matches!(attacker_entity.entity_type, EEntityType::EntChar) {
                     enqueue(DbTask::UpsertEntity {
                         entity_id: attacker_uid,
-                        name: if attacker_entity.name.is_empty() { None } else { Some(attacker_entity.name.clone()) },
+                        name: if attacker_entity.name.is_empty() {
+                            None
+                        } else {
+                            Some(attacker_entity.name.clone())
+                        },
                         class_id: Some(attacker_entity.class_id),
                         class_spec: Some(attacker_entity.class_spec as i32),
                         ability_score: Some(attacker_entity.ability_score),
@@ -461,7 +478,10 @@ pub fn process_aoi_sync_delta(
 
                 (is_crit_local, is_lucky_local, attacker_entity.entity_type)
             } else {
-                let skill = attacker_entity.skill_uid_to_dmg_skill.entry(skill_uid).or_insert_with(|| Skill::default());
+                let skill = attacker_entity
+                    .skill_uid_to_dmg_skill
+                    .entry(skill_uid)
+                    .or_insert_with(|| Skill::default());
                 if is_crit_local {
                     attacker_entity.crit_hits_dmg += 1;
                     attacker_entity.crit_total_dmg += actual_value;
@@ -481,7 +501,10 @@ pub fn process_aoi_sync_delta(
                 skill.total_value += actual_value;
 
                 if is_boss_target {
-                    let skill_boss_only = attacker_entity.skill_uid_to_dmg_skill_boss_only.entry(skill_uid).or_insert_with(|| Skill::default());
+                    let skill_boss_only = attacker_entity
+                        .skill_uid_to_dmg_skill_boss_only
+                        .entry(skill_uid)
+                        .or_insert_with(|| Skill::default());
                     if is_crit_local {
                         attacker_entity.crit_hits_dmg_boss_only += 1;
                         attacker_entity.crit_total_dmg_boss_only += actual_value;
@@ -504,20 +527,35 @@ pub fn process_aoi_sync_delta(
                 // Track per-target totals
                 use std::collections::hash_map::Entry;
                 match attacker_entity.dmg_to_target.entry(target_uid) {
-                    Entry::Occupied(mut e) => { *e.get_mut() += actual_value; }
-                    Entry::Vacant(e) => { e.insert(actual_value); }
+                    Entry::Occupied(mut e) => {
+                        *e.get_mut() += actual_value;
+                    }
+                    Entry::Vacant(e) => {
+                        e.insert(actual_value);
+                    }
                 }
-                let per_skill = attacker_entity.skill_dmg_to_target.entry(skill_uid).or_insert_with(HashMap::new);
+                let per_skill = attacker_entity
+                    .skill_dmg_to_target
+                    .entry(skill_uid)
+                    .or_insert_with(HashMap::new);
                 match per_skill.entry(target_uid) {
-                    Entry::Occupied(mut e) => { *e.get_mut() += actual_value; }
-                    Entry::Vacant(e) => { e.insert(actual_value); }
+                    Entry::Occupied(mut e) => {
+                        *e.get_mut() += actual_value;
+                    }
+                    Entry::Vacant(e) => {
+                        e.insert(actual_value);
+                    }
                 }
 
                 // Persist attacker
                 if matches!(attacker_entity.entity_type, EEntityType::EntChar) {
                     enqueue(DbTask::UpsertEntity {
                         entity_id: attacker_uid,
-                        name: if attacker_entity.name.is_empty() { None } else { Some(attacker_entity.name.clone()) },
+                        name: if attacker_entity.name.is_empty() {
+                            None
+                        } else {
+                            Some(attacker_entity.name.clone())
+                        },
                         class_id: Some(attacker_entity.class_id),
                         class_spec: Some(attacker_entity.class_spec as i32),
                         ability_score: Some(attacker_entity.ability_score),
@@ -536,27 +574,42 @@ pub fn process_aoi_sync_delta(
             // Track damage taken
             let hp_loss = sync_damage_info.hp_lessen_value.unwrap_or(0).max(0) as u128;
             let shield_loss = sync_damage_info.shield_lessen_value.unwrap_or(0).max(0) as u128;
-            let effective_value = if hp_loss + shield_loss > 0 { hp_loss + shield_loss } else { actual_value };
+            let effective_value = if hp_loss + shield_loss > 0 {
+                hp_loss + shield_loss
+            } else {
+                actual_value
+            };
 
-            let defender_entity = encounter.entity_uid_to_entity.entry(target_uid).or_insert_with(|| Entity {
-                entity_type: EEntityType::from(target_uuid),
-                ..Default::default()
-            });
+            let defender_entity = encounter
+                .entity_uid_to_entity
+                .entry(target_uid)
+                .or_insert_with(|| Entity {
+                    entity_type: EEntityType::from(target_uuid),
+                    ..Default::default()
+                });
 
             // Check for death
             let prev_hp_opt = defender_entity.hp();
             let mut died = false;
             if let Some(prev_hp) = prev_hp_opt {
-                if (hp_loss as i64) >= prev_hp { died = true; }
+                if (hp_loss as i64) >= prev_hp {
+                    died = true;
+                }
             } else if let Some(def_max_hp) = defender_entity.max_hp() {
-                if (hp_loss + shield_loss) >= (def_max_hp as u128) { died = true; }
+                if (hp_loss + shield_loss) >= (def_max_hp as u128) {
+                    died = true;
+                }
             }
 
             // Persist defender
             if matches!(defender_entity.entity_type, EEntityType::EntChar) {
                 enqueue(DbTask::UpsertEntity {
                     entity_id: target_uid,
-                    name: if defender_entity.name.is_empty() { None } else { Some(defender_entity.name.clone()) },
+                    name: if defender_entity.name.is_empty() {
+                        None
+                    } else {
+                        Some(defender_entity.name.clone())
+                    },
                     class_id: Some(defender_entity.class_id),
                     class_spec: Some(defender_entity.class_spec as i32),
                     ability_score: Some(defender_entity.ability_score),
@@ -568,9 +621,18 @@ pub fn process_aoi_sync_delta(
 
             // Insert damage event
             let is_boss = defender_entity.is_boss();
-            let monster_name_for_event = if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
-                defender_entity.monster_name_packet.clone().or_else(|| if defender_entity.name.is_empty() { None } else { Some(defender_entity.name.clone()) })
-            } else { None };
+            let monster_name_for_event =
+                if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
+                    defender_entity.monster_name_packet.clone().or_else(|| {
+                        if defender_entity.name.is_empty() {
+                            None
+                        } else {
+                            Some(defender_entity.name.clone())
+                        }
+                    })
+                } else {
+                    None
+                };
             enqueue(DbTask::InsertDamageEvent {
                 timestamp_ms: timestamp_ms as i64,
                 attacker_id: attacker_uid,
@@ -582,23 +644,48 @@ pub fn process_aoi_sync_delta(
                 is_lucky,
                 hp_loss: hp_loss as i64,
                 shield_loss: shield_loss as i64,
-                defender_max_hp: defender_entity.attributes.get(&AttrType::MaxHp).and_then(|v| v.as_int()),
+                defender_max_hp: defender_entity
+                    .attributes
+                    .get(&AttrType::MaxHp)
+                    .and_then(|v| v.as_int()),
                 is_boss,
                 attempt_index: Some(encounter.current_attempt_index),
             });
 
             // Taken stats (only when attacker is not a player)
             if attacker_entity_type_copy != EEntityType::EntChar {
-                let taken_skill = defender_entity.skill_uid_to_taken_skill.entry(skill_uid).or_insert_with(|| Skill::default());
-                if is_crit { defender_entity.crit_hits_taken += 1; defender_entity.crit_total_taken += effective_value; taken_skill.crit_hits += 1; taken_skill.crit_total_value += effective_value; }
-                if is_lucky { defender_entity.lucky_hits_taken += 1; defender_entity.lucky_total_taken += effective_value; taken_skill.lucky_hits += 1; taken_skill.lucky_total_value += effective_value; }
+                let taken_skill = defender_entity
+                    .skill_uid_to_taken_skill
+                    .entry(skill_uid)
+                    .or_insert_with(|| Skill::default());
+                if is_crit {
+                    defender_entity.crit_hits_taken += 1;
+                    defender_entity.crit_total_taken += effective_value;
+                    taken_skill.crit_hits += 1;
+                    taken_skill.crit_total_value += effective_value;
+                }
+                if is_lucky {
+                    defender_entity.lucky_hits_taken += 1;
+                    defender_entity.lucky_total_taken += effective_value;
+                    taken_skill.lucky_hits += 1;
+                    taken_skill.lucky_total_value += effective_value;
+                }
                 defender_entity.hits_taken += 1;
                 defender_entity.total_taken += effective_value;
                 taken_skill.hits += 1;
                 taken_skill.total_value += effective_value;
             }
 
-            if died { Some((target_uid, Some(attacker_uid), Some(skill_uid), timestamp_ms as i64)) } else { None }
+            if died {
+                Some((
+                    target_uid,
+                    Some(attacker_uid),
+                    Some(skill_uid),
+                    timestamp_ms as i64,
+                ))
+            } else {
+                None
+            }
         };
 
         // If death detected, record it (dedupe handled inside record_death)
@@ -616,7 +703,9 @@ pub fn process_aoi_sync_delta(
     // Check for wipe condition after recording deaths
     let config = AttemptConfig::default();
     if check_wipe_condition(encounter, &config) {
-        let boss_hp = encounter.entity_uid_to_entity.values()
+        let boss_hp = encounter
+            .entity_uid_to_entity
+            .values()
             .find(|e| e.is_boss())
             .and_then(|e| e.hp());
         split_attempt(encounter, "wipe", timestamp_ms, boss_hp);
@@ -625,7 +714,9 @@ pub fn process_aoi_sync_delta(
     // Check for HP rollback after processing damage events
     if let Some(boss_hp_pct) = get_boss_hp_percentage(encounter) {
         // Update boss HP tracking - find boss HP first
-        let boss_hp_opt = encounter.entity_uid_to_entity.values()
+        let boss_hp_opt = encounter
+            .entity_uid_to_entity
+            .values()
             .find(|e| e.is_boss())
             .and_then(|e| e.hp());
 
@@ -635,7 +726,9 @@ pub fn process_aoi_sync_delta(
 
         // Check for HP rollback
         if check_hp_rollback_condition(encounter, Some(boss_hp_pct), &config) {
-            let boss_hp = encounter.entity_uid_to_entity.values()
+            let boss_hp = encounter
+                .entity_uid_to_entity
+                .values()
                 .find(|e| e.is_boss())
                 .and_then(|e| e.hp());
             split_attempt(encounter, "hp_rollback", timestamp_ms, boss_hp);

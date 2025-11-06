@@ -3,7 +3,7 @@
 /// Detects when to split encounters into separate attempts based on:
 /// - Optionally: raid wipes (all party members dead) — disabled by default
 /// - Boss HP rollback (boss HP returns to >95% after being lower)
-use crate::database::{enqueue, DbTask};
+use crate::database::{DbTask, enqueue};
 use crate::live::opcodes_models::{AttrType, Encounter, Entity};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::info;
@@ -56,9 +56,10 @@ pub fn check_wipe_condition(encounter: &Encounter, config: &AttemptConfig) -> bo
     }
 
     // Check if all party members have recorded death DB timestamps recently
-    let all_dead = encounter.party_member_uids.iter().all(|uid| {
-        encounter.last_death_db_ms.get(uid).is_some()
-    });
+    let all_dead = encounter
+        .party_member_uids
+        .iter()
+        .all(|uid| encounter.last_death_db_ms.get(uid).is_some());
 
     all_dead && encounter.party_member_uids.len() >= 1
 }
@@ -172,9 +173,7 @@ pub fn split_attempt(
 
     info!(
         "Attempt split: {} -> Attempt {} (reason: {})",
-        current_attempt,
-        encounter.current_attempt_index,
-        reason
+        current_attempt, encounter.current_attempt_index, reason
     );
 }
 
@@ -190,7 +189,8 @@ pub fn update_boss_hp_tracking(encounter: &mut Encounter, current_hp: i64) {
     {
         if max_hp > 0 {
             let current_pct = (current_hp as f64 / max_hp as f64) * 100.0;
-            if encounter.lowest_boss_hp.is_none() || current_pct < encounter.lowest_boss_hp.unwrap() {
+            if encounter.lowest_boss_hp.is_none() || current_pct < encounter.lowest_boss_hp.unwrap()
+            {
                 encounter.lowest_boss_hp = Some(current_pct);
             }
         }
@@ -198,7 +198,12 @@ pub fn update_boss_hp_tracking(encounter: &mut Encounter, current_hp: i64) {
 }
 
 /// Tracks party member UIDs for wipe detection.
-pub fn track_party_member(encounter: &mut Encounter, uid: i64, entity_type: EEntityType, team_id: Option<i64>) {
+pub fn track_party_member(
+    encounter: &mut Encounter,
+    uid: i64,
+    entity_type: EEntityType,
+    team_id: Option<i64>,
+) {
     if entity_type == EEntityType::EntChar {
         // Add player to party tracking
         // Use team_id to determine if they're in the same party
@@ -260,6 +265,10 @@ mod tests {
         let mut config = AttemptConfig::default();
         config.enable_hp_rollback_detection = false;
 
-        assert!(!check_hp_rollback_condition(&encounter, Some(95.0), &config));
+        assert!(!check_hp_rollback_condition(
+            &encounter,
+            Some(95.0),
+            &config
+        ));
     }
 }

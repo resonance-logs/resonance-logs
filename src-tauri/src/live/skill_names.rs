@@ -26,7 +26,8 @@ static SKILL_NAME_CACHE: LazyLock<RwLock<SkillNameCache>> = LazyLock::new(|| {
     })
 });
 
-const DEFAULT_SKILL_JSON_RELATIVE: &str = "raw-game-files/4_Final/CombinedTranslatedWithManualOverrides.json";
+const DEFAULT_SKILL_JSON_RELATIVE: &str =
+    "raw-game-files/4_Final/CombinedTranslatedWithManualOverrides.json";
 const SKILL_JSON_ENV: &str = "RESONANCE_LOGS_SKILL_JSON";
 
 /// Returns the best available name for the given skill id, reloading the cache if needed.

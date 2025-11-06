@@ -1,10 +1,12 @@
-use crate::live::commands_models::{BossHealth, HeaderInfo, PlayerRow, PlayersWindow, SkillRow, SkillsWindow};
+use crate::live::commands_models::{
+    BossHealth, HeaderInfo, PlayerRow, PlayersWindow, SkillRow, SkillsWindow,
+};
 use crate::live::opcodes_models::{Encounter, Entity, Skill, class};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::RwLock;
 
@@ -191,6 +193,17 @@ impl EventManager {
     /// Returns whether the `EventManager` should emit events.
     pub fn should_emit_events(&self) -> bool {
         self.app_handle.is_some()
+    }
+
+    /// Returns a clone of the app handle for lock-free event emission.
+    pub fn get_app_handle(&self) -> Option<AppHandle> {
+        self.app_handle.clone()
+    }
+
+    /// Marks a boss as dead (used for deduplication).
+    /// Returns true if this is a new death, false if already recorded.
+    pub fn mark_boss_dead(&mut self, boss_uid: i64) -> bool {
+        self.dead_bosses.insert(boss_uid)
     }
 }
 
@@ -921,7 +934,10 @@ pub fn generate_skill_rows(entity: &Entity, time_elapsed_secs: f64) -> Vec<Skill
     skill_rows
 }
 
-pub fn generate_header_info(encounter: &Encounter, boss_only: bool) -> Option<(HeaderInfo, Vec<(i64, String)>)> {
+pub fn generate_header_info(
+    encounter: &Encounter,
+    boss_only: bool,
+) -> Option<(HeaderInfo, Vec<(i64, String)>)> {
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
         .saturating_sub(encounter.time_fight_start_ms);

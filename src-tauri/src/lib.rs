@@ -5,9 +5,9 @@ mod packets;
 use crate::build_app::build_and_run;
 use log::{info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
-use std::process::{Command, Stdio};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
+use std::process::{Command, Stdio};
 
 use chrono_tz;
 use tauri::menu::MenuBuilder;

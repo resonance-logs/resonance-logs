@@ -4,9 +4,8 @@ use serde::{Deserialize, Serialize};
 use crate::database::models as m;
 use crate::database::schema as sch;
 use crate::database::{default_db_path, ensure_parent_dir};
-use crate::live::skill_names;
 use crate::live::commands_models as lc;
-
+use crate::live::skill_names;
 
 /// A summary of an encounter.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -484,7 +483,9 @@ pub fn get_player_names_filtered(prefix: String) -> Result<PlayerNamesResult, St
         .flatten()
         .collect();
 
-    Ok(PlayerNamesResult { names: player_names })
+    Ok(PlayerNamesResult {
+        names: player_names,
+    })
 }
 
 /// Gets a list of recent encounters filtered by the given criteria.
@@ -506,9 +507,9 @@ pub fn get_recent_encounters_filtered(
     filters: Option<EncounterFiltersDto>,
 ) -> Result<RecentEncountersResult, String> {
     let mut conn = get_conn()?;
-    use sch::encounters::dsl as e;
-    use sch::encounter_bosses::dsl as eb;
     use sch::actor_encounter_stats::dsl as s;
+    use sch::encounter_bosses::dsl as eb;
+    use sch::encounters::dsl as e;
     use std::collections::HashSet;
 
     // Start with base query for encounters
@@ -602,7 +603,8 @@ pub fn get_recent_encounters_filtered(
 
         if let Some(ref class_ids) = filter.class_ids {
             if !class_ids.is_empty() {
-                let class_filters: Vec<Option<i32>> = class_ids.iter().map(|id| Some(*id)).collect();
+                let class_filters: Vec<Option<i32>> =
+                    class_ids.iter().map(|id| Some(*id)).collect();
                 let class_encounter_ids: HashSet<i32> = s::actor_encounter_stats
                     .filter(s::is_player.eq(1))
                     .filter(s::class_id.is_not_null())
@@ -646,7 +648,15 @@ pub fn get_recent_encounters_filtered(
     }
 
     // Get encounter rows
-    let rows: Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<String>)> = encounter_query
+    let rows: Vec<(
+        i32,
+        i64,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<String>,
+    )> = encounter_query
         .order(e::started_at_ms.desc())
         .select((
             e::id,
@@ -680,10 +690,15 @@ pub fn get_recent_encounters_filtered(
             .map_err(|er| er.to_string())?;
 
         use std::collections::HashSet as StdHashSet;
-        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> = boss_rows.into_iter().collect();
+        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> =
+            boss_rows.into_iter().collect();
         let boss_entries: Vec<BossSummaryDto> = boss_names_set
             .into_iter()
-            .map(|(name, max_hp, defeated)| BossSummaryDto { monster_name: name, max_hp, is_defeated: defeated != 0 })
+            .map(|(name, max_hp, defeated)| BossSummaryDto {
+                monster_name: name,
+                max_hp,
+                is_defeated: defeated != 0,
+            })
             .collect();
 
         // Get unique player names and class_ids from actor_encounter_stats where is_player=1
@@ -694,11 +709,13 @@ pub fn get_recent_encounters_filtered(
             .load::<(Option<String>, Option<i32>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?
             .into_iter()
-            .filter_map(|(name, class_id, is_local)| name.map(|n| PlayerInfoDto {
-                name: n,
-                class_id,
-                is_local_player: is_local != 0,
-            }))
+            .filter_map(|(name, class_id, is_local)| {
+                name.map(|n| PlayerInfoDto {
+                    name: n,
+                    class_id,
+                    is_local_player: is_local != 0,
+                })
+            })
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
@@ -738,7 +755,15 @@ pub fn get_recent_encounters_filtered(
 pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncountersResult, String> {
     let mut conn = get_conn()?;
     use sch::encounters::dsl as e;
-    let rows: Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<String>)> = e::encounters
+    let rows: Vec<(
+        i32,
+        i64,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<String>,
+    )> = e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .order(e::started_at_ms.desc())
         .select((
@@ -777,10 +802,15 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             .map_err(|er| er.to_string())?;
 
         use std::collections::HashSet as StdHashSet;
-        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> = boss_rows.into_iter().collect();
+        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> =
+            boss_rows.into_iter().collect();
         let boss_entries: Vec<BossSummaryDto> = boss_names_set
             .into_iter()
-            .map(|(name, max_hp, defeated)| BossSummaryDto { monster_name: name, max_hp, is_defeated: defeated != 0 })
+            .map(|(name, max_hp, defeated)| BossSummaryDto {
+                monster_name: name,
+                max_hp,
+                is_defeated: defeated != 0,
+            })
             .collect();
 
         // Get unique player names and class_ids from actor_encounter_stats where is_player=1
@@ -791,11 +821,13 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             .load::<(Option<String>, Option<i32>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?
             .into_iter()
-            .filter_map(|(name, class_id, is_local)| name.map(|n| PlayerInfoDto {
-                name: n,
-                class_id,
-                is_local_player: is_local != 0,
-            }))
+            .filter_map(|(name, class_id, is_local)| {
+                name.map(|n| PlayerInfoDto {
+                    name: n,
+                    class_id,
+                    is_local_player: is_local != 0,
+                })
+            })
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
@@ -933,7 +965,15 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
     use sch::encounters::dsl as e;
     use std::collections::HashSet;
 
-    let row: (i32, i64, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<String>) = e::encounters
+    let row: (
+        i32,
+        i64,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<String>,
+    ) = e::encounters
         .filter(e::id.eq(encounter_id))
         .select((
             e::id,
@@ -959,7 +999,11 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
     let boss_set: StdHashSet<(String, Option<i64>, i32)> = boss_rows.into_iter().collect();
     let boss_names: Vec<BossSummaryDto> = boss_set
         .into_iter()
-        .map(|(name, max_hp, defeated)| BossSummaryDto { monster_name: name, max_hp, is_defeated: defeated != 0 })
+        .map(|(name, max_hp, defeated)| BossSummaryDto {
+            monster_name: name,
+            max_hp,
+            is_defeated: defeated != 0,
+        })
         .collect();
 
     let players: Vec<PlayerInfoDto> = actors
@@ -1004,7 +1048,16 @@ pub fn get_encounter_attempts(encounter_id: i32) -> Result<Vec<AttemptDto>, Stri
     let mut conn = get_conn()?;
     use sch::attempts::dsl as a;
 
-    let rows: Vec<(i32, i32, i64, Option<i64>, String, Option<i64>, Option<i64>, i32)> = a::attempts
+    let rows: Vec<(
+        i32,
+        i32,
+        i64,
+        Option<i64>,
+        String,
+        Option<i64>,
+        Option<i64>,
+        i32,
+    )> = a::attempts
         .filter(a::encounter_id.eq(encounter_id))
         .order(a::attempt_index.asc())
         .select((
@@ -1022,8 +1075,26 @@ pub fn get_encounter_attempts(encounter_id: i32) -> Result<Vec<AttemptDto>, Stri
 
     let mapped: Vec<AttemptDto> = rows
         .into_iter()
-        .map(|(id, attempt_index, started_at_ms, ended_at_ms, reason, boss_hp_start, boss_hp_end, total_deaths)|
-            AttemptDto { id, attempt_index, started_at_ms, ended_at_ms, reason, boss_hp_start, boss_hp_end, total_deaths }
+        .map(
+            |(
+                id,
+                attempt_index,
+                started_at_ms,
+                ended_at_ms,
+                reason,
+                boss_hp_start,
+                boss_hp_end,
+                total_deaths,
+            )| AttemptDto {
+                id,
+                attempt_index,
+                started_at_ms,
+                ended_at_ms,
+                reason,
+                boss_hp_start,
+                boss_hp_end,
+                total_deaths,
+            },
         )
         .collect();
 
@@ -1034,17 +1105,27 @@ pub fn get_encounter_attempts(encounter_id: i32) -> Result<Vec<AttemptDto>, Stri
 /// This aggregates raw damage_events and heal_events for the specified attempt.
 #[tauri::command]
 #[specta::specta]
-pub fn get_encounter_attempt_actor_stats(encounter_id: i32, attempt_index: i32) -> Result<Vec<ActorEncounterStatDto>, String> {
+pub fn get_encounter_attempt_actor_stats(
+    encounter_id: i32,
+    attempt_index: i32,
+) -> Result<Vec<ActorEncounterStatDto>, String> {
     let mut conn = get_conn()?;
     use sch::actor_encounter_stats::dsl as a;
 
     // Get list of player actor ids that participated in the encounter
-    let player_rows: Vec<(i64, Option<String>, Option<i32>, Option<i32>, i32)> = a::actor_encounter_stats
-        .filter(a::encounter_id.eq(encounter_id))
-        .filter(a::is_player.eq(1))
-        .select((a::actor_id, a::name, a::class_id, a::ability_score, a::is_local_player))
-        .load::<(i64, Option<String>, Option<i32>, Option<i32>, i32)>(&mut conn)
-        .map_err(|e| e.to_string())?;
+    let player_rows: Vec<(i64, Option<String>, Option<i32>, Option<i32>, i32)> =
+        a::actor_encounter_stats
+            .filter(a::encounter_id.eq(encounter_id))
+            .filter(a::is_player.eq(1))
+            .select((
+                a::actor_id,
+                a::name,
+                a::class_id,
+                a::ability_score,
+                a::is_local_player,
+            ))
+            .load::<(i64, Option<String>, Option<i32>, Option<i32>, i32)>(&mut conn)
+            .map_err(|e| e.to_string())?;
 
     let mut results: Vec<ActorEncounterStatDto> = Vec::new();
 
@@ -1292,8 +1373,7 @@ pub fn get_encounter_attempt_player_skills(
 
         for r in rows {
             let name = if r.skill_id > 0 {
-                skill_names::lookup(r.skill_id)
-                    .unwrap_or_else(|| String::from("Unknown Skill"))
+                skill_names::lookup(r.skill_id).unwrap_or_else(|| String::from("Unknown Skill"))
             } else {
                 String::from("Unknown Skill")
             };
@@ -1303,14 +1383,42 @@ pub fn get_encounter_attempt_player_skills(
             let sr = lc::SkillRow {
                 name,
                 total_dmg: r.total_value.max(0) as u128,
-                dps: if duration_secs > 0.0 { total_dmg_f / duration_secs } else { 0.0 },
-                dmg_pct: if actor_total_dmg > 0 { total_dmg_f * 100.0 / (actor_total_dmg as f64) } else { 0.0 },
-                crit_rate: if r.hits > 0 { (r.crit_hits as f64) / hits_f } else { 0.0 },
-                crit_dmg_rate: if r.total_value > 0 { (r.crit_total as f64) / total_dmg_f } else { 0.0 },
-                lucky_rate: if r.hits > 0 { (r.lucky_hits as f64) / hits_f } else { 0.0 },
-                lucky_dmg_rate: if r.total_value > 0 { (r.lucky_total as f64) / total_dmg_f } else { 0.0 },
+                dps: if duration_secs > 0.0 {
+                    total_dmg_f / duration_secs
+                } else {
+                    0.0
+                },
+                dmg_pct: if actor_total_dmg > 0 {
+                    total_dmg_f * 100.0 / (actor_total_dmg as f64)
+                } else {
+                    0.0
+                },
+                crit_rate: if r.hits > 0 {
+                    (r.crit_hits as f64) / hits_f
+                } else {
+                    0.0
+                },
+                crit_dmg_rate: if r.total_value > 0 {
+                    (r.crit_total as f64) / total_dmg_f
+                } else {
+                    0.0
+                },
+                lucky_rate: if r.hits > 0 {
+                    (r.lucky_hits as f64) / hits_f
+                } else {
+                    0.0
+                },
+                lucky_dmg_rate: if r.total_value > 0 {
+                    (r.lucky_total as f64) / total_dmg_f
+                } else {
+                    0.0
+                },
                 hits: r.hits.max(0) as u128,
-                hits_per_minute: if duration_secs > 0.0 { (r.hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+                hits_per_minute: if duration_secs > 0.0 {
+                    (r.hits as f64) / (duration_secs / 60.0)
+                } else {
+                    0.0
+                },
             };
             skill_rows.push(sr);
         }
@@ -1322,14 +1430,30 @@ pub fn get_encounter_attempt_player_skills(
             class_spec_name: String::from(""),
             ability_score: ability_score_opt.unwrap_or(0) as u128,
             total_dmg: actor_total_dmg as u128,
-            dps: if duration_secs > 0.0 { (actor_total_dmg as f64) / duration_secs } else { 0.0 },
+            dps: if duration_secs > 0.0 {
+                (actor_total_dmg as f64) / duration_secs
+            } else {
+                0.0
+            },
             dmg_pct: 0.0,
-            crit_rate: if actor_hits > 0 { (actor_crit_hits as f64) / (actor_hits as f64) } else { 0.0 },
+            crit_rate: if actor_hits > 0 {
+                (actor_crit_hits as f64) / (actor_hits as f64)
+            } else {
+                0.0
+            },
             crit_dmg_rate: 0.0,
-            lucky_rate: if actor_hits > 0 { (actor_lucky_hits as f64) / (actor_hits as f64) } else { 0.0 },
+            lucky_rate: if actor_hits > 0 {
+                (actor_lucky_hits as f64) / (actor_hits as f64)
+            } else {
+                0.0
+            },
             lucky_dmg_rate: 0.0,
             hits: actor_hits as u128,
-            hits_per_minute: if duration_secs > 0.0 { (actor_hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+            hits_per_minute: if duration_secs > 0.0 {
+                (actor_hits as f64) / (duration_secs / 60.0)
+            } else {
+                0.0
+            },
             rank_level: None,
             current_hp: None,
             max_hp: None,
@@ -1398,8 +1522,7 @@ pub fn get_encounter_attempt_player_skills(
 
         for r in rows {
             let name = if r.skill_id > 0 {
-                skill_names::lookup(r.skill_id)
-                    .unwrap_or_else(|| String::from("Unknown Skill"))
+                skill_names::lookup(r.skill_id).unwrap_or_else(|| String::from("Unknown Skill"))
             } else {
                 String::from("Unknown Skill")
             };
@@ -1409,14 +1532,42 @@ pub fn get_encounter_attempt_player_skills(
             let sr = lc::SkillRow {
                 name,
                 total_dmg: r.total_value.max(0) as u128,
-                dps: if duration_secs > 0.0 { total_heal_f / duration_secs } else { 0.0 },
-                dmg_pct: if actor_total_heal > 0 { total_heal_f * 100.0 / (actor_total_heal as f64) } else { 0.0 },
-                crit_rate: if r.hits > 0 { (r.crit_hits as f64) / hits_f } else { 0.0 },
-                crit_dmg_rate: if r.total_value > 0 { (r.crit_total as f64) / total_heal_f } else { 0.0 },
-                lucky_rate: if r.hits > 0 { (r.lucky_hits as f64) / hits_f } else { 0.0 },
-                lucky_dmg_rate: if r.total_value > 0 { (r.lucky_total as f64) / total_heal_f } else { 0.0 },
+                dps: if duration_secs > 0.0 {
+                    total_heal_f / duration_secs
+                } else {
+                    0.0
+                },
+                dmg_pct: if actor_total_heal > 0 {
+                    total_heal_f * 100.0 / (actor_total_heal as f64)
+                } else {
+                    0.0
+                },
+                crit_rate: if r.hits > 0 {
+                    (r.crit_hits as f64) / hits_f
+                } else {
+                    0.0
+                },
+                crit_dmg_rate: if r.total_value > 0 {
+                    (r.crit_total as f64) / total_heal_f
+                } else {
+                    0.0
+                },
+                lucky_rate: if r.hits > 0 {
+                    (r.lucky_hits as f64) / hits_f
+                } else {
+                    0.0
+                },
+                lucky_dmg_rate: if r.total_value > 0 {
+                    (r.lucky_total as f64) / total_heal_f
+                } else {
+                    0.0
+                },
                 hits: r.hits.max(0) as u128,
-                hits_per_minute: if duration_secs > 0.0 { (r.hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+                hits_per_minute: if duration_secs > 0.0 {
+                    (r.hits as f64) / (duration_secs / 60.0)
+                } else {
+                    0.0
+                },
             };
             skill_rows.push(sr);
         }
@@ -1428,14 +1579,30 @@ pub fn get_encounter_attempt_player_skills(
             class_spec_name: String::from(""),
             ability_score: ability_score_opt.unwrap_or(0) as u128,
             total_dmg: actor_total_heal as u128,
-            dps: if duration_secs > 0.0 { (actor_total_heal as f64) / duration_secs } else { 0.0 },
+            dps: if duration_secs > 0.0 {
+                (actor_total_heal as f64) / duration_secs
+            } else {
+                0.0
+            },
             dmg_pct: 0.0,
-            crit_rate: if actor_hits > 0 { (actor_crit_hits as f64) / (actor_hits as f64) } else { 0.0 },
+            crit_rate: if actor_hits > 0 {
+                (actor_crit_hits as f64) / (actor_hits as f64)
+            } else {
+                0.0
+            },
             crit_dmg_rate: 0.0,
-            lucky_rate: if actor_hits > 0 { (actor_lucky_hits as f64) / (actor_hits as f64) } else { 0.0 },
+            lucky_rate: if actor_hits > 0 {
+                (actor_lucky_hits as f64) / (actor_hits as f64)
+            } else {
+                0.0
+            },
             lucky_dmg_rate: 0.0,
             hits: actor_hits as u128,
-            hits_per_minute: if duration_secs > 0.0 { (actor_hits as f64) / (duration_secs / 60.0) } else { 0.0 },
+            hits_per_minute: if duration_secs > 0.0 {
+                (actor_hits as f64) / (duration_secs / 60.0)
+            } else {
+                0.0
+            },
             rank_level: None,
             current_hp: None,
             max_hp: None,
@@ -1514,7 +1681,15 @@ pub fn get_recent_encounters_with_details(
     use std::collections::HashSet;
 
     // Get encounter summaries
-    let encounter_rows: Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<String>)> = e::encounters
+    let encounter_rows: Vec<(
+        i32,
+        i64,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<String>,
+    )> = e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .order(e::started_at_ms.desc())
         .select((
@@ -1533,7 +1708,9 @@ pub fn get_recent_encounters_with_details(
 
     let mut results = Vec::new();
 
-    for (id, started_at_ms, ended_at_ms, total_dmg, total_heal, scene_id, scene_name) in encounter_rows {
+    for (id, started_at_ms, ended_at_ms, total_dmg, total_heal, scene_id, scene_name) in
+        encounter_rows
+    {
         // Get unique boss entries (name + max_hp + defeated) from the materialized encounter_bosses
         let boss_rows: Vec<(String, Option<i64>, i32)> = eb::encounter_bosses
             .filter(eb::encounter_id.eq(id))
@@ -1542,10 +1719,15 @@ pub fn get_recent_encounters_with_details(
             .map_err(|er| er.to_string())?;
 
         use std::collections::HashSet as StdHashSet;
-        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> = boss_rows.into_iter().collect();
+        let boss_names_set: StdHashSet<(String, Option<i64>, i32)> =
+            boss_rows.into_iter().collect();
         let boss_entries: Vec<BossSummaryDto> = boss_names_set
             .into_iter()
-            .map(|(name, max_hp, defeated)| BossSummaryDto { monster_name: name, max_hp, is_defeated: defeated != 0 })
+            .map(|(name, max_hp, defeated)| BossSummaryDto {
+                monster_name: name,
+                max_hp,
+                is_defeated: defeated != 0,
+            })
             .collect();
 
         // Get unique player names and class_ids from actor_encounter_stats where is_player=1
@@ -1556,11 +1738,13 @@ pub fn get_recent_encounters_with_details(
             .load::<(Option<String>, Option<i32>, i32)>(&mut conn)
             .map_err(|er| er.to_string())?
             .into_iter()
-            .filter_map(|(name, class_id, is_local)| name.map(|n| PlayerInfoDto {
-                name: n,
-                class_id,
-                is_local_player: is_local != 0,
-            }))
+            .filter_map(|(name, class_id, is_local)| {
+                name.map(|n| PlayerInfoDto {
+                    name: n,
+                    class_id,
+                    is_local_player: is_local != 0,
+                })
+            })
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
@@ -1607,7 +1791,15 @@ pub fn get_encounter_player_skills(
     use std::collections::HashMap;
 
     // Get encounter timings
-    let encounter_row: (i32, i64, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<String>) = e::encounters
+    let encounter_row: (
+        i32,
+        i64,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<String>,
+    ) = e::encounters
         .filter(e::id.eq(encounter_id))
         .select((
             e::id,
@@ -1715,9 +1907,7 @@ pub fn get_encounter_player_skills(
 
         let mut agg: HashMap<i32, (i64, i64, i64, i64, i64, i64)> = HashMap::new();
         for stat in stats {
-            let entry = agg
-                .entry(stat.skill_id)
-                .or_insert((0, 0, 0, 0, 0, 0));
+            let entry = agg.entry(stat.skill_id).or_insert((0, 0, 0, 0, 0, 0));
             entry.0 += stat.total_value;
             entry.1 += stat.hits as i64;
             entry.2 += stat.crit_hits as i64;
@@ -1727,12 +1917,11 @@ pub fn get_encounter_player_skills(
         }
 
         let mut items: Vec<(i32, (i64, i64, i64, i64, i64, i64))> = agg.into_iter().collect();
-        items.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
+        items.sort_by(|a, b| b.1.0.cmp(&a.1.0));
 
         for (skill_id, (total_dmg, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items {
             let name = if skill_id > 0 {
-                skill_names::lookup(skill_id)
-                    .unwrap_or_else(|| String::from("Unknown Skill"))
+                skill_names::lookup(skill_id).unwrap_or_else(|| String::from("Unknown Skill"))
             } else {
                 String::from("Unknown Skill")
             };
@@ -1790,9 +1979,7 @@ pub fn get_encounter_player_skills(
 
         let mut agg: HashMap<i32, (i64, i64, i64, i64, i64, i64)> = HashMap::new();
         for stat in stats {
-            let entry = agg
-                .entry(stat.skill_id)
-                .or_insert((0, 0, 0, 0, 0, 0));
+            let entry = agg.entry(stat.skill_id).or_insert((0, 0, 0, 0, 0, 0));
             entry.0 += stat.total_value;
             entry.1 += stat.hits as i64;
             entry.2 += stat.crit_hits as i64;
@@ -1802,12 +1989,12 @@ pub fn get_encounter_player_skills(
         }
 
         let mut items: Vec<(i32, (i64, i64, i64, i64, i64, i64))> = agg.into_iter().collect();
-        items.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
+        items.sort_by(|a, b| b.1.0.cmp(&a.1.0));
 
-        for (skill_id, (total_heal, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items {
+        for (skill_id, (total_heal, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items
+        {
             let name = if skill_id > 0 {
-                skill_names::lookup(skill_id)
-                    .unwrap_or_else(|| String::from("Unknown Skill"))
+                skill_names::lookup(skill_id).unwrap_or_else(|| String::from("Unknown Skill"))
             } else {
                 String::from("Unknown Skill")
             };

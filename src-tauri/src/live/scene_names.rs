@@ -70,11 +70,19 @@ fn load_scene_names() -> SceneNameCache {
                 warn!("Scene names JSON is not an object at {}", path.display());
             }
             Err(err) => {
-                warn!("Failed to parse scene names JSON at {}: {}", path.display(), err);
+                warn!(
+                    "Failed to parse scene names JSON at {}: {}",
+                    path.display(),
+                    err
+                );
             }
         },
         Err(err) => {
-            warn!("Failed to read scene names JSON at {}: {}", path.display(), err);
+            warn!(
+                "Failed to read scene names JSON at {}: {}",
+                path.display(),
+                err
+            );
         }
     }
 

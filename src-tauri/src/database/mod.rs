@@ -395,7 +395,10 @@ fn handle_task(
                 .map_err(|e| e.to_string())?;
             *current_encounter_id = Some(id);
         }
-        DbTask::EndEncounter { ended_at_ms, defeated_bosses } => {
+        DbTask::EndEncounter {
+            ended_at_ms,
+            defeated_bosses,
+        } => {
             if let Some(id) = current_encounter_id.take() {
                 use sch::encounters::dsl as e;
                 diesel::update(e::encounters.filter(e::id.eq(id)))
@@ -768,7 +771,7 @@ fn upsert_stats_add_damage_dealt(
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
     let boss_hit = if is_boss { 1_i64 } else { 0_i64 };
-        diesel::sql_query(
+    diesel::sql_query(
                         "INSERT INTO actor_encounter_stats (
                              encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                              class_spec, is_local_player, attributes,
@@ -851,7 +854,7 @@ fn upsert_stats_add_heal_dealt(
 ) -> Result<(), String> {
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
-        diesel::sql_query(
+    diesel::sql_query(
                                     "INSERT INTO actor_encounter_stats (
                                              encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                                              class_spec, is_local_player, attributes,
@@ -956,7 +959,7 @@ fn upsert_stats_add_damage_taken(
 ) -> Result<(), String> {
     let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
     let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
-        diesel::sql_query(
+    diesel::sql_query(
                                     "INSERT INTO actor_encounter_stats (
                                              encounter_id, actor_id, name, class_id, ability_score, level, is_player,
                                              class_spec, is_local_player, attributes,
@@ -1017,7 +1020,12 @@ fn materialize_damage_skill_stats(
     // Query all damage events for this encounter
     let events: Vec<m::DamageEventRow> = de::damage_events
         .filter(de::encounter_id.eq(encounter_id))
-        .order((de::attacker_id, de::defender_id, de::skill_id, de::timestamp_ms))
+        .order((
+            de::attacker_id,
+            de::defender_id,
+            de::skill_id,
+            de::timestamp_ms,
+        ))
         .load::<m::DamageEventRow>(conn)
         .map_err(|e| e.to_string())?;
 
@@ -1514,25 +1522,25 @@ mod tests {
         .unwrap();
 
         // A subsequent event should refresh the snapshot immediately.
-            handle_task(
-                &mut conn,
-                DbTask::InsertDamageEvent {
-                    timestamp_ms: 4_450,
-                    attacker_id: 10,
-                    defender_id: None,
-                    monster_name: None,
-                    skill_id: Some(1002),
-                    value: 150,
-                    is_crit: true,
-                    is_lucky: false,
-                    hp_loss: 150,
-                    shield_loss: 0,
-                    defender_max_hp: None,
-                    is_boss: false,
-                    attempt_index: None,
-                },
-                &mut enc_opt,
-            )
+        handle_task(
+            &mut conn,
+            DbTask::InsertDamageEvent {
+                timestamp_ms: 4_450,
+                attacker_id: 10,
+                defender_id: None,
+                monster_name: None,
+                skill_id: Some(1002),
+                value: 150,
+                is_crit: true,
+                is_lucky: false,
+                hp_loss: 150,
+                shield_loss: 0,
+                defender_max_hp: None,
+                is_boss: false,
+                attempt_index: None,
+            },
+            &mut enc_opt,
+        )
         .unwrap();
 
         let refreshed_identity: (Option<i32>, Option<i32>, Option<i32>, Option<i32>) =
@@ -1549,7 +1557,10 @@ mod tests {
         // Ending the encounter should also work with fully populated data and leave identity intact.
         handle_task(
             &mut conn,
-            DbTask::EndEncounter { ended_at_ms: 4_600, defeated_bosses: None },
+            DbTask::EndEncounter {
+                ended_at_ms: 4_600,
+                defeated_bosses: None,
+            },
             &mut enc_opt,
         )
         .unwrap();
@@ -1636,7 +1647,10 @@ mod tests {
 
         handle_task(
             &mut conn,
-            DbTask::EndEncounter { ended_at_ms: 10_500, defeated_bosses: None },
+            DbTask::EndEncounter {
+                ended_at_ms: 10_500,
+                defeated_bosses: None,
+            },
             &mut enc_opt,
         )
         .unwrap();

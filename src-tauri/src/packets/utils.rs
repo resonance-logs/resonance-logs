@@ -1,5 +1,4 @@
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
-use etherparse::TcpSlice;
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read};
 use std::{fmt, io};
@@ -40,10 +39,19 @@ fn ip_to_str(ip: &[u8; 4]) -> String {
     format!("{}.{}.{}.{}", ip[0], ip[1], ip[2], ip[3])
 }
 
+#[inline]
+pub fn tcp_sequence_before(a: u32, b: u32) -> bool {
+    (a.wrapping_sub(b) as i32) < 0
+}
+
+#[inline]
+pub fn tcp_sequence_after(a: u32, b: u32) -> bool {
+    (a.wrapping_sub(b) as i32) > 0
+}
+
 pub struct TCPReassembler {
-    pub cache: BTreeMap<usize, Vec<u8>>, // sequence -> payload
-    pub next_seq: Option<usize>,         // next expected sequence
-    pub _data: Vec<u8>,
+    cache: BTreeMap<u32, Vec<u8>>, // sequence -> payload
+    next_seq: Option<u32>,         // next expected sequence
 }
 
 impl TCPReassembler {
@@ -51,51 +59,77 @@ impl TCPReassembler {
         Self {
             cache: BTreeMap::new(),
             next_seq: None,
-            _data: Vec::new(),
         }
     }
 
-    // Push a TCP segment and try to reassemble contiguous data.
-    /// Returns Some(Vec<u8>) if contiguous data is available, None otherwise.
-    pub fn push_segment(&mut self, packet: TcpSlice) -> Option<(usize, Vec<u8>)> {
-        let payload = packet.payload().to_vec();
-        let seq = packet.sequence_number() as usize;
+    /// Insert a TCP payload segment for the given sequence number.
+    /// Returns Some(Vec<u8>) when new contiguous bytes starting at the
+    /// expected sequence become available.
+    pub fn insert_segment(&mut self, sequence_number: u32, payload: &[u8]) -> Option<Vec<u8>> {
         if payload.is_empty() {
             return None;
         }
 
-        // Insert segment into cache
-        self.cache.insert(seq, payload);
+        let expected = match self.next_seq {
+            Some(seq) => seq,
+            None => {
+                self.next_seq = Some(sequence_number);
+                sequence_number
+            }
+        };
 
-        // Initialize next_seq to the lowest sequence seen if not set
-        if self.next_seq.is_none() {
-            if let Some((&lowest_seq, _)) = self.cache.first_key_value() {
-                self.next_seq = Some(lowest_seq);
+        let mut start_seq = sequence_number;
+        let mut data = payload;
+
+        if tcp_sequence_before(start_seq, expected) {
+            let overlap = expected.wrapping_sub(start_seq) as usize;
+            if overlap >= data.len() {
+                return None;
+            }
+            start_seq = expected;
+            data = &data[overlap..];
+        }
+
+        // Avoid storing duplicates unless the new payload is longer.
+        match self.cache.get_mut(&start_seq) {
+            Some(existing) => {
+                if data.len() > existing.len() {
+                    existing.clear();
+                    existing.extend_from_slice(data);
+                }
+            }
+            None => {
+                self.cache.insert(start_seq, data.to_vec());
             }
         }
 
-        // Try to assemble contiguous data
-        let mut output = Vec::new();
-        while let Some(next) = self.next_seq {
-            if let Some(segment) = self.cache.remove(&next) {
-                // advance next_seq only when we actually use this segment
-                self.next_seq = Some(next.wrapping_add(segment.len()));
-                output.extend(segment);
+        let mut cursor = expected;
+        let mut output: Vec<u8> = Vec::new();
+
+        while let Some(mut segment) = self.cache.remove(&cursor) {
+            cursor = cursor.wrapping_add(segment.len() as u32);
+            if output.is_empty() {
+                output = std::mem::take(&mut segment);
             } else {
-                break;
+                output.extend_from_slice(&segment);
             }
         }
 
         if output.is_empty() {
             None
         } else {
-            Some((self.next_seq?, output))
+            self.next_seq = Some(cursor);
+            Some(output)
         }
     }
 
-    pub fn clear_reassembler(&mut self, seq_number: usize) {
-        self.cache = BTreeMap::new();
-        self.next_seq = Some(seq_number)
+    pub fn reset(&mut self, next_seq: Option<u32>) {
+        self.cache.clear();
+        self.next_seq = next_seq;
+    }
+
+    pub fn next_sequence(&self) -> Option<u32> {
+        self.next_seq
     }
 }
 
@@ -162,5 +196,62 @@ impl BinaryReader {
         let start_range = self.cursor.position() as usize;
         let buf = self.cursor.get_mut();
         buf.splice(start_range.., data.iter().cloned());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::TCPReassembler;
+
+    #[test]
+    fn reassembles_in_order() {
+        let mut reassembler = TCPReassembler::new();
+        assert_eq!(
+            reassembler.insert_segment(10, b"abc"),
+            Some(b"abc".to_vec())
+        );
+        assert_eq!(
+            reassembler.insert_segment(13, b"def"),
+            Some(b"def".to_vec())
+        );
+    }
+
+    #[test]
+    fn reassembles_out_of_order_once_gap_filled() {
+        let mut reassembler = TCPReassembler::new();
+        assert_eq!(
+            reassembler.insert_segment(100, b"abc"),
+            Some(b"abc".to_vec())
+        );
+        assert!(reassembler.insert_segment(106, b"ghi").is_none());
+        assert_eq!(
+            reassembler.insert_segment(103, b"def"),
+            Some(b"defghi".to_vec())
+        );
+    }
+
+    #[test]
+    fn trims_overlapping_segments_and_ignores_duplicates() {
+        let mut reassembler = TCPReassembler::new();
+        assert!(reassembler.insert_segment(50, b"abc").is_some());
+        // Duplicate shorter payload should be ignored
+        assert!(reassembler.insert_segment(50, b"ab").is_none());
+        // Overlapping payload should emit only unseen bytes
+        assert_eq!(
+            reassembler.insert_segment(51, b"bcdef"),
+            Some(b"def".to_vec())
+        );
+    }
+
+    #[test]
+    fn reset_drops_state_and_reinitializes() {
+        let mut reassembler = TCPReassembler::new();
+        assert!(reassembler.insert_segment(500, b"abc").is_some());
+        reassembler.reset(None);
+        assert_eq!(reassembler.next_sequence(), None);
+        assert_eq!(
+            reassembler.insert_segment(42, b"xyz"),
+            Some(b"xyz".to_vec())
+        );
     }
 }

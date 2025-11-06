@@ -3,10 +3,10 @@ use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
 use blueprotobuf_lib::blueprotobuf;
-use log::{info, warn};
+use log::{error, info, warn};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 use tokio::sync::RwLock;
 
 /// Represents the possible events that can be handled by the state manager.
@@ -184,7 +184,11 @@ impl AppStateManager {
         let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
             ended_at_ms: now_ms(),
-            defeated_bosses: if defeated.is_empty() { None } else { Some(defeated) },
+            defeated_bosses: if defeated.is_empty() {
+                None
+            } else {
+                Some(defeated)
+            },
         });
         on_server_change(&mut state.encounter);
 
@@ -199,7 +203,7 @@ impl AppStateManager {
         state.skill_subscriptions.clear();
         state.low_hp_bosses.clear();
     }
-        // all scene id extraction logic is here (its pretty rough)
+    // all scene id extraction logic is here (its pretty rough)
     async fn process_enter_scene(
         &self,
         state: &mut AppState,
@@ -345,14 +349,20 @@ impl AppStateManager {
                             }
                             if let Some(val) = &kv.value {
                                 if let Some(cand) = find_scene_id_in_bytes(val) {
-                                    info!("Found scene_id {} in map_attr value (map id {:?})", cand, map_attr.id);
+                                    info!(
+                                        "Found scene_id {} in map_attr value (map id {:?})",
+                                        cand, map_attr.id
+                                    );
                                     found_scene = Some(cand);
                                     break;
                                 }
                             }
                             if let Some(key) = &kv.key {
                                 if let Some(cand) = find_scene_id_in_bytes(key) {
-                                    info!("Found scene_id {} in map_attr key (map id {:?})", cand, map_attr.id);
+                                    info!(
+                                        "Found scene_id {} in map_attr key (map id {:?})",
+                                        cand, map_attr.id
+                                    );
                                     found_scene = Some(cand);
                                     break;
                                 }
@@ -401,7 +411,9 @@ impl AppStateManager {
                 warn!("Event manager not ready, skipping scene change emit");
             }
         } else {
-            warn!("Could not extract scene_id from EnterScene packet - dumping attrs for debugging");
+            warn!(
+                "Could not extract scene_id from EnterScene packet - dumping attrs for debugging"
+            );
 
             // Helper to produce a short hex snippet for binary data
             let to_hex_snip = |data: &[u8]| -> String {
@@ -413,30 +425,54 @@ impl AppStateManager {
             };
 
             if let Some(info) = enter_scene.enter_scene_info.as_ref() {
-                for (label, maybe_attrs) in [("subscene_attrs", info.subscene_attrs.as_ref()), ("scene_attrs", info.scene_attrs.as_ref())] {
+                for (label, maybe_attrs) in [
+                    ("subscene_attrs", info.subscene_attrs.as_ref()),
+                    ("scene_attrs", info.scene_attrs.as_ref()),
+                ] {
                     if let Some(attrs) = maybe_attrs {
-                        info!("Inspecting {}: uuid={:?}, #attrs={}, #map_attrs={}", label, attrs.uuid, attrs.attrs.len(), attrs.map_attrs.len());
+                        info!(
+                            "Inspecting {}: uuid={:?}, #attrs={}, #map_attrs={}",
+                            label,
+                            attrs.uuid,
+                            attrs.attrs.len(),
+                            attrs.map_attrs.len()
+                        );
 
                         for attr in &attrs.attrs {
                             let id = attr.id.unwrap_or(-1);
                             let len = attr.raw_data.as_ref().map(|b| b.len()).unwrap_or(0);
-                            let snip = attr.raw_data.as_ref().map(|b| to_hex_snip(b)).unwrap_or_default();
+                            let snip = attr
+                                .raw_data
+                                .as_ref()
+                                .map(|b| to_hex_snip(b))
+                                .unwrap_or_default();
                             info!("  attr id={} len={} snippet={}", id, len, snip);
                         }
 
                         for map_attr in &attrs.map_attrs {
-                            info!("  map_attr id={:?} #entries={}", map_attr.id, map_attr.attrs.len());
+                            info!(
+                                "  map_attr id={:?} #entries={}",
+                                map_attr.id,
+                                map_attr.attrs.len()
+                            );
                             for kv in &map_attr.attrs {
                                 let key_len = kv.key.as_ref().map(|k| k.len()).unwrap_or(0);
                                 let val_len = kv.value.as_ref().map(|v| v.len()).unwrap_or(0);
-                                let key_snip = kv.key.as_ref().map(|k| to_hex_snip(k)).unwrap_or_default();
-                                let val_snip = kv.value.as_ref().map(|v| to_hex_snip(v)).unwrap_or_default();
-                                info!("    entry key_len={} val_len={} key_snip={} val_snip={}", key_len, val_len, key_snip, val_snip);
+                                let key_snip =
+                                    kv.key.as_ref().map(|k| to_hex_snip(k)).unwrap_or_default();
+                                let val_snip = kv
+                                    .value
+                                    .as_ref()
+                                    .map(|v| to_hex_snip(v))
+                                    .unwrap_or_default();
+                                info!(
+                                    "    entry key_len={} val_len={} key_snip={} val_snip={}",
+                                    key_len, val_len, key_snip, val_snip
+                                );
                             }
                         }
                     }
                 }
-
             }
 
             // Emit a fallback scene change event so frontend still notifies the user
@@ -512,7 +548,11 @@ impl AppStateManager {
         }
     }
 
-    async fn process_notify_revive_user(&self, state: &mut AppState, notify: blueprotobuf::NotifyReviveUser) {
+    async fn process_notify_revive_user(
+        &self,
+        state: &mut AppState,
+        notify: blueprotobuf::NotifyReviveUser,
+    ) {
         use crate::live::opcodes_process::process_notify_revive_user;
         if process_notify_revive_user(&mut state.encounter, notify).is_none() {
             warn!("Error processing NotifyReviveUser.. ignoring.");
@@ -524,7 +564,11 @@ impl AppStateManager {
         let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
             ended_at_ms: now_ms(),
-            defeated_bosses: if defeated.is_empty() { None } else { Some(defeated) },
+            defeated_bosses: if defeated.is_empty() {
+                None
+            } else {
+                Some(defeated)
+            },
         });
         state.encounter.reset_combat_state();
         state.skill_subscriptions.clear();
@@ -545,7 +589,9 @@ impl AppStateManager {
                 scene_id: state.encounter.current_scene_id,
                 scene_name: state.encounter.current_scene_name.clone(),
             };
-            state.event_manager.emit_encounter_update(cleared_header, false);
+            state
+                .event_manager
+                .emit_encounter_update(cleared_header, false);
         }
 
         state.low_hp_bosses.clear();
@@ -685,7 +731,8 @@ impl AppStateManager {
         }
 
         // Generate all the data we need without holding the lock
-        let header_info_with_deaths = crate::live::event_manager::generate_header_info(&encounter, boss_only);
+        let header_info_with_deaths =
+            crate::live::event_manager::generate_header_info(&encounter, boss_only);
         let dps_players =
             crate::live::event_manager::generate_players_window_dps(&encounter, boss_only);
         let heal_players = crate::live::event_manager::generate_players_window_heal(&encounter);
@@ -733,111 +780,165 @@ impl AppStateManager {
             subscribed_players.push(entity_uid);
         }
 
-        // Now, acquire the write lock and update everything
-        let mut state = self.state.write().await;
+        // Process boss death detection and collect ALL data needed for emission
+        // We'll do ALL emissions without holding any locks to prevent deadlock
+        let (final_header_info, boss_deaths, skill_subscriptions_clone, app_handle_opt) = {
+            let mut state = self.state.write().await;
 
-        // Emit encounter update and handle boss deaths
-        if let Some((mut header_info, mut dead_bosses)) = header_info_with_deaths {
-            use std::collections::HashSet;
+            let (final_header, final_deaths) = if let Some((mut header_info, mut dead_bosses)) =
+                header_info_with_deaths
+            {
+                use std::collections::HashSet;
 
-            let mut dead_ids: HashSet<i64> = dead_bosses.iter().map(|(uid, _)| *uid).collect();
-            let current_time_ms = now_ms() as u128;
+                let mut dead_ids: HashSet<i64> = dead_bosses.iter().map(|(uid, _)| *uid).collect();
+                let current_time_ms = now_ms() as u128;
 
-            for boss in &mut header_info.bosses {
-                let hp_percent = if let (Some(curr_hp), Some(max_hp)) = (boss.current_hp, boss.max_hp) {
-                    if max_hp > 0 {
-                        curr_hp as f64 / max_hp as f64 * 100.0
-                    } else {
-                        0.0
-                    }
-                } else {
-                    100.0
-                };
+                for boss in &mut header_info.bosses {
+                    let hp_percent =
+                        if let (Some(curr_hp), Some(max_hp)) = (boss.current_hp, boss.max_hp) {
+                            if max_hp > 0 {
+                                curr_hp as f64 / max_hp as f64 * 100.0
+                            } else {
+                                0.0
+                            }
+                        } else {
+                            100.0
+                        };
 
-                if hp_percent < 5.0 {
-                    let entry = state.low_hp_bosses.entry(boss.uid).or_insert(current_time_ms);
-                    if current_time_ms.saturating_sub(*entry) >= 5_000 {
-                        if dead_ids.insert(boss.uid) {
-                            dead_bosses.push((boss.uid, boss.name.clone()));
+                    if hp_percent < 5.0 {
+                        let entry = state
+                            .low_hp_bosses
+                            .entry(boss.uid)
+                            .or_insert(current_time_ms);
+                        if current_time_ms.saturating_sub(*entry) >= 5_000 {
+                            if dead_ids.insert(boss.uid) {
+                                dead_bosses.push((boss.uid, boss.name.clone()));
+                            }
                         }
+                    } else {
+                        state.low_hp_bosses.remove(&boss.uid);
                     }
-                } else {
-                    state.low_hp_bosses.remove(&boss.uid);
+
+                    if dead_ids.contains(&boss.uid) {
+                        boss.current_hp = Some(0);
+                        state.low_hp_bosses.remove(&boss.uid);
+                    }
                 }
 
-                if dead_ids.contains(&boss.uid) {
-                    boss.current_hp = Some(0);
-                    state.low_hp_bosses.remove(&boss.uid);
+                (Some(header_info), dead_bosses)
+            } else {
+                (None, Vec::new())
+            };
+
+            // Clone app_handle and skill_subscriptions to use outside the lock
+            (
+                final_header,
+                final_deaths,
+                state.skill_subscriptions.clone(),
+                state.event_manager.get_app_handle(),
+            )
+        }; // Write lock is FULLY released here - CRITICAL for preventing deadlock!
+
+        // ALL emissions happen here WITHOUT holding ANY locks
+        // This completely prevents deadlock scenarios
+        if let Some(app_handle) = app_handle_opt {
+            // Emit encounter update
+            if let Some(header_info) = final_header_info {
+                let payload = crate::live::event_manager::EncounterUpdatePayload {
+                    header_info,
+                    is_paused: encounter.is_encounter_paused,
+                };
+                if let Err(e) = app_handle.emit("encounter-update", payload) {
+                    error!("Failed to emit encounter-update event: {}", e);
                 }
             }
 
-            state.event_manager.emit_encounter_update(
-                header_info,
-                encounter.is_encounter_paused, // Use the original encounter state
-            );
-
-            // Emit boss death events for newly dead bosses
-            for (boss_uid, boss_name) in dead_bosses {
-                state.event_manager.emit_boss_death(boss_name, boss_uid);
+            // Emit boss death events (need to update dead_bosses tracking after)
+            let boss_death_uids: Vec<i64> = boss_deaths.iter().map(|(uid, _)| *uid).collect();
+            for (_boss_uid, boss_name) in boss_deaths {
+                let payload = crate::live::event_manager::BossDeathPayload { boss_name };
+                if let Err(e) = app_handle.emit("boss-death", payload) {
+                    error!("Failed to emit boss-death event: {}", e);
+                }
             }
-        }
 
-        // Emit DPS players update
-        if !dps_players.player_rows.is_empty() {
-            state
-                .event_manager
-                .emit_players_update(MetricType::Dps, dps_players);
-        }
-
-        // Emit heal players update
-        if !heal_players.player_rows.is_empty() {
-            state
-                .event_manager
-                .emit_players_update(MetricType::Heal, heal_players);
-        }
-
-        // Emit tanked players update
-        if !tanked_players.player_rows.is_empty() {
-            state
-                .event_manager
-                .emit_players_update(MetricType::Tanked, tanked_players);
-        }
-
-        // Emit skills updates only for subscribed players using precomputed windows
-        for (entity_uid, skills_window) in &dps_skill_windows {
-            if state
-                .skill_subscriptions
-                .contains(&(*entity_uid, "dps".to_string()))
-            {
-                state.event_manager.emit_skills_update(
-                    MetricType::Dps,
-                    *entity_uid,
-                    skills_window.clone(),
-                );
+            // Update dead_bosses tracking with brief write lock AFTER emitting
+            if !boss_death_uids.is_empty() {
+                let mut state = self.state.write().await;
+                for uid in boss_death_uids {
+                    state.event_manager.mark_boss_dead(uid);
+                }
             }
-        }
-        for (entity_uid, skills_window) in &heal_skill_windows {
-            if state
-                .skill_subscriptions
-                .contains(&(*entity_uid, "heal".to_string()))
-            {
-                state.event_manager.emit_skills_update(
-                    MetricType::Heal,
-                    *entity_uid,
-                    skills_window.clone(),
-                );
+
+            // Emit DPS players update
+            if !dps_players.player_rows.is_empty() {
+                let payload = crate::live::event_manager::PlayersUpdatePayload {
+                    metric_type: MetricType::Dps,
+                    players_window: dps_players,
+                };
+                if let Err(e) = app_handle.emit("players-update", payload) {
+                    error!("Failed to emit players-update event: {}", e);
+                }
             }
-        }
-        for (entity_uid, skills_window) in &tanked_skill_windows {
-            if state
-                .skill_subscriptions
-                .contains(&(*entity_uid, "tanked".to_string()))
-            {
-                state.event_manager.emit_skills_update(
-                    MetricType::Tanked,
-                    *entity_uid,
-                    skills_window.clone(),
-                );
+
+            // Emit heal players update
+            if !heal_players.player_rows.is_empty() {
+                let payload = crate::live::event_manager::PlayersUpdatePayload {
+                    metric_type: MetricType::Heal,
+                    players_window: heal_players,
+                };
+                if let Err(e) = app_handle.emit("players-update", payload) {
+                    error!("Failed to emit players-update event: {}", e);
+                }
+            }
+
+            // Emit tanked players update
+            if !tanked_players.player_rows.is_empty() {
+                let payload = crate::live::event_manager::PlayersUpdatePayload {
+                    metric_type: MetricType::Tanked,
+                    players_window: tanked_players,
+                };
+                if let Err(e) = app_handle.emit("players-update", payload) {
+                    error!("Failed to emit players-update event: {}", e);
+                }
+            }
+
+            // Emit skills updates only for subscribed players
+            for (entity_uid, skills_window) in &dps_skill_windows {
+                if skill_subscriptions_clone.contains(&(*entity_uid, "dps".to_string())) {
+                    let payload = crate::live::event_manager::SkillsUpdatePayload {
+                        metric_type: MetricType::Dps,
+                        player_uid: *entity_uid,
+                        skills_window: skills_window.clone(),
+                    };
+                    if let Err(e) = app_handle.emit("skills-update", payload) {
+                        error!("Failed to emit skills-update event: {}", e);
+                    }
+                }
+            }
+            for (entity_uid, skills_window) in &heal_skill_windows {
+                if skill_subscriptions_clone.contains(&(*entity_uid, "heal".to_string())) {
+                    let payload = crate::live::event_manager::SkillsUpdatePayload {
+                        metric_type: MetricType::Heal,
+                        player_uid: *entity_uid,
+                        skills_window: skills_window.clone(),
+                    };
+                    if let Err(e) = app_handle.emit("skills-update", payload) {
+                        error!("Failed to emit skills-update event: {}", e);
+                    }
+                }
+            }
+            for (entity_uid, skills_window) in &tanked_skill_windows {
+                if skill_subscriptions_clone.contains(&(*entity_uid, "tanked".to_string())) {
+                    let payload = crate::live::event_manager::SkillsUpdatePayload {
+                        metric_type: MetricType::Tanked,
+                        player_uid: *entity_uid,
+                        skills_window: skills_window.clone(),
+                    };
+                    if let Err(e) = app_handle.emit("skills-update", payload) {
+                        error!("Failed to emit skills-update event: {}", e);
+                    }
+                }
             }
         }
     }
