@@ -18,7 +18,7 @@
   });
 
   // Track compact mode
-  let isCompactMode = $derived(settings.state.accessibility.compactMode);
+  let density = $derived(settings.state.accessibility.density ?? "comfortable");
 
   onMount(() => {
     let encounterUnlisten: (() => void) | null = null;
@@ -44,19 +44,19 @@
 </script>
 
 {#if headerInfo.bosses.length > 0}
-  <div class="{isCompactMode ? 'mb-1' : 'mb-2'} flex flex-col {isCompactMode ? 'gap-1' : 'gap-2'} bg-neutral-900/60 {isCompactMode ? 'px-2 py-1.5' : 'px-4 py-3'} rounded-lg">
+  <div class="{density === 'comfortable' ? 'mb-2 gap-2 px-4 py-3' : density === 'medium' ? 'mb-1.5 gap-1.5 px-3 py-2' : 'mb-1 gap-1 px-2 py-1.5'} flex flex-col bg-neutral-900/60 rounded-lg">
     {#each headerInfo.bosses as boss (boss.uid)}
       {@const hpPercent = boss.maxHp && boss.currentHp !== null ? Math.min(100, Math.max(0, (boss.currentHp / boss.maxHp) * 100)) : 0}
-      <div class="flex items-center {isCompactMode ? 'gap-2' : 'gap-3'}">
-        <span class="{isCompactMode ? 'min-w-24 text-[11px]' : 'min-w-32 text-base'} truncate text-neutral-200 font-semibold" {@attach tooltip(() => boss.name)}>{boss.name}</span>
-        <div class="relative {isCompactMode ? 'h-1.5' : 'h-3'} flex-1 rounded-md bg-neutral-800/80 overflow-hidden shadow-inner">
+      <div class="flex items-center {density === 'comfortable' ? 'gap-3' : density === 'medium' ? 'gap-2' : 'gap-2'}">
+        <span class="{density === 'comfortable' ? 'min-w-32 text-base' : density === 'medium' ? 'min-w-28 text-[13px]' : 'min-w-24 text-[11px]'} truncate text-neutral-200 font-semibold" {@attach tooltip(() => boss.name)}>{boss.name}</span>
+        <div class="relative {density === 'comfortable' ? 'h-3' : density === 'medium' ? 'h-2' : 'h-1.5'} flex-1 rounded-md bg-neutral-800/80 overflow-hidden shadow-inner">
           <div
             class="absolute inset-0 rounded-md transition-all duration-300 ease-out bg-gradient-to-r from-cyan-500 to-blue-500"
-            style={`width: ${hpPercent}%; box-shadow: 0 0 ${isCompactMode ? '4px' : '8px'} rgba(34, 211, 238, 0.5)`}
+            style={`width: ${hpPercent}%; box-shadow: 0 0 ${density === 'comfortable' ? '8px' : density === 'medium' ? '6px' : '4px'} rgba(34, 211, 238, 0.5)`}
           >
           </div>
         </div>
-        {#if !isCompactMode}
+        {#if density === 'comfortable'}
           <span class="text-neutral-300 tabular-nums text-sm font-medium min-w-40 text-right">
             {boss.currentHp !== null ? boss.currentHp.toLocaleString() : "?"}{boss.maxHp ? ` / ${boss.maxHp.toLocaleString()}` : ""}
             <span class="text-neutral-400 ml-1.5">({hpPercent.toFixed(1)}%)</span>

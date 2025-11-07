@@ -115,7 +115,7 @@
   });
   let isEncounterPaused = $state(false);
   let bossOnlyDpsEnabled = $derived(SETTINGS.general.state.bossOnlyDps);
-  let compactModeEnabled = $derived(SETTINGS.accessibility.state.compactMode);
+  let density = $derived(SETTINGS.accessibility.state.density ?? "comfortable");
   // const {
   //   screenshotDiv,
   // }: {
@@ -139,8 +139,24 @@
     void setBossOnlyDps(nextValue);
   }
 
-  function toggleCompactMode() {
-    SETTINGS.accessibility.state.compactMode = !SETTINGS.accessibility.state.compactMode;
+  let densityAnimating = $state(false);
+
+  function triggerDensityAnimation(next: string) {
+    // Shrink while in medium/compact, restore when going back to comfortable
+    densityAnimating = next !== "comfortable";
+    if (next === "comfortable") {
+      // Allow one frame for CSS transition to play back to normal
+      setTimeout(() => {
+        densityAnimating = false;
+      }, 150);
+    }
+  }
+
+  function toggleDensity() {
+    const current = SETTINGS.accessibility.state.density ?? "comfortable";
+    const next = current === "comfortable" ? "medium" : current === "medium" ? "compact" : "comfortable";
+    SETTINGS.accessibility.state.density = next;
+    triggerDensityAnimation(next);
   }
     // When reset encounter button is pressed -> reset boss hp bar info
   function handleResetEncounter() {
@@ -151,20 +167,20 @@
 </script>
 
 <!-- justify-between to create left/right sides -->
-<header data-tauri-drag-region class="flex w-full items-center justify-between gap-1 bg-neutral-900 {compactModeEnabled ? 'px-2 py-1.5' : 'px-4 py-3'} {compactModeEnabled ? 'text-[11px]' : 'text-sm'} rounded-t-lg">
+<header data-tauri-drag-region class="flex w-full items-center justify-between gap-1 bg-neutral-900 {density === 'comfortable' ? 'px-4 py-3 text-sm' : density === 'medium' ? 'px-3 py-2 text-[12px]' : 'px-2 py-1.5 text-[11px]'} rounded-t-lg">
   <!-- Left side -->
   <div class="flex flex-col" data-tauri-drag-region>
-    <div class="flex flex-wrap items-center {compactModeEnabled ? 'gap-1.5' : 'gap-2'}" data-tauri-drag-region>
+    <div class="flex flex-wrap items-center {density === 'comfortable' ? 'gap-2' : density === 'medium' ? 'gap-1.5' : 'gap-1.5'}" data-tauri-drag-region>
       {#if headerInfo.sceneName}
-        <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'} font-bold text-neutral-100" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName}</span>
+        <span class="{density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-[12px]' : 'text-[11px]'} font-bold text-neutral-100" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName}</span>
       {/if}
-      <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'} font-medium text-neutral-300" {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
-      <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'}"><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
-      <span class="{compactModeEnabled ? 'text-[11px]' : 'text-sm'}"><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
+      <span class="{density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-[12px]' : 'text-[11px]'} font-medium text-neutral-300" {@attach tooltip(() => "Time Elapsed")}>{formatElapsed(clientElapsedMs)}</span>
+      <span class="{density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-[12px]' : 'text-[11px]'}"><span {@attach tooltip(() => "Total Damage Dealt")}>T.DMG</span> <span {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span></span>
+      <span class="{density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-[12px]' : 'text-[11px]'}"><span {@attach tooltip(() => "Total Damage per Second")}>T.DPS</span> <span {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span></span>
     </div>
   </div>
   <!-- Right side -->
-  <span class="flex {compactModeEnabled ? 'gap-1' : 'gap-2'}">
+  <span class="flex {density === 'comfortable' ? 'gap-2' : 'gap-1.5'}">
     <!-- TODO: add responsive clicks, toaster -->
     <!-- <button
       onclick={async () => takeScreenshot(screenshotDiv)}
@@ -172,7 +188,7 @@
     >
       <CameraIcon />
     </button> -->
-    <button onclick={handleResetEncounter} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" /></button>
+    <button onclick={handleResetEncounter} {@attach tooltip(() => "Reset Encounter")}><RefreshCwIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-5' : 'size-4'} /></button>
     <button
       onclick={() => {
         togglePauseEncounter();
@@ -180,9 +196,9 @@
       }}
     >
       {#if isEncounterPaused}
-        <PlayIcon {@attach tooltip(() => "Resume Encounter")} class="{compactModeEnabled ? 'size-4' : 'size-5'}" />
+        <PlayIcon {@attach tooltip(() => "Resume Encounter")} class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-5' : 'size-4'} />
       {:else}
-        <PauseIcon {@attach tooltip(() => "Pause Encounter")} class="{compactModeEnabled ? 'size-4' : 'size-5'}" />
+        <PauseIcon {@attach tooltip(() => "Pause Encounter")} class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-5' : 'size-4'} />
       {/if}
     </button>
     <button
@@ -192,20 +208,20 @@
       onclick={toggleBossOnlyDamage}
       {@attach tooltip(() => (bossOnlyDpsEnabled ? "Boss Only Damage Enabled" : "Enable Boss Only Damage"))}
     >
-      <CrownIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" />
+      <CrownIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4.5' : 'size-4'} />
     </button>
     <button
       class="compact-mode-toggle"
-      class:compact-mode-active={compactModeEnabled}
-      aria-pressed={compactModeEnabled}
-      onclick={toggleCompactMode}
-      {@attach tooltip(() => (compactModeEnabled ? "Compact Mode Enabled" : "Enable Compact Mode"))}
-    >
-      <MinimizeIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" />
+      class:compact-mode-active={density !== 'comfortable'}
+      class:density-animating={densityAnimating}
+      aria-pressed={density !== 'comfortable'}
+      onclick={toggleDensity}
+      {@attach tooltip(() => density === 'comfortable' ? "Density: Comfortable" : density === 'medium' ? "Density: Medium" : "Density: Compact")}>
+      <MinimizeIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4.5' : 'size-4'} />
     </button>
-    <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" /></button>
-    <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" /></button>
-    <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon class="{compactModeEnabled ? 'size-4' : 'size-5'}" /></button>
+    <button onclick={() => appWindow.setIgnoreCursorEvents(true)} {@attach tooltip(() => "Clickthrough")}><PointerIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-5' : 'size-4'} /></button>
+    <button onclick={() => openSettings()} {@attach tooltip(() => "Settings")}><SettingsIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-5' : 'size-4'} /></button>
+    <button onclick={() => appWindow.hide()} {@attach tooltip(() => "Minimize")}><MinusIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-5' : 'size-4'} /></button>
   </span>
 </header>
 
@@ -223,7 +239,8 @@
   }
 
   .compact-mode-toggle {
-    transition: color 150ms ease;
+    transition: color 150ms ease, transform 150ms ease;
+    transform-origin: center;
   }
 
   .compact-mode-toggle:hover {
@@ -232,5 +249,9 @@
 
   .compact-mode-toggle.compact-mode-active {
     color: #60a5fa;
+  }
+
+  .compact-mode-toggle.density-animating {
+    transform: scale(0.8);
   }
 </style>

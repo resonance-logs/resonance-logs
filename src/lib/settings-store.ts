@@ -64,7 +64,7 @@ const DEFAULT_SETTINGS = {
   accessibility: {
     blur: !IS_WIN_11,
     transparency: false,
-    compactMode: false,
+    density: "comfortable" as "comfortable" | "medium" | "compact",
   },
   shortcuts: {
     showLiveMeter: "",
@@ -232,3 +232,17 @@ export const settings = {
     misc: SETTINGS.misc.state,
   },
 };
+
+// Derived helpers for accessibility density with backward compatibility
+export type DensityMode = "comfortable" | "medium" | "compact";
+
+export function getAccessibilityDensity(): DensityMode {
+  const state = SETTINGS.accessibility.state as { blur: boolean; transparency: boolean; density?: DensityMode; compactMode?: boolean };
+
+  // If legacy compactMode exists in stored state, map it: true -> compact, false -> comfortable
+  if (typeof state.compactMode === "boolean") {
+    return state.compactMode ? "compact" : "comfortable";
+  }
+  const density = state.density;
+  return density === "medium" || density === "compact" ? density : "comfortable";
+}
