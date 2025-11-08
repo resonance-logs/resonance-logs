@@ -39,7 +39,7 @@ build-tauri:
     - if: $CI_PIPELINE_SOURCE == "api"
     # Add this rule to make the job exist, but not run, on web pipelines
     - if: $CI_PIPELINE_SOURCE == "web"
-      when: manual
+      when: never
   # ---
   tags:
     - saas-windows-medium-amd64
