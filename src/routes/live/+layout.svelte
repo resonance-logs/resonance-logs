@@ -229,12 +229,12 @@
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-<div class="flex h-screen flex-col bg-neutral-900 text-[13px] text-neutral-100 p-3 rounded-xl ring-1 ring-neutral-800/60 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]">
+<div class="flex h-screen flex-col bg-neutral-900 text-[13px] text-neutral-100 p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]">
   <Header />
-  <main
+    <main
     bind:this={mainElement}
-    class="flex-1 overflow-y-auto gap-4 bg-neutral-900/50 ring-1 ring-neutral-800/60 rounded-lg p-3"
-  >
+    class="flex-1 overflow-y-auto gap-4 rounded-lg"
+    >
     {@render children()}
   </main>
   <!-- Footer removed; navigation and version moved into Header -->
