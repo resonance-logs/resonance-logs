@@ -112,28 +112,19 @@ pages:
   stage: pages
   image: alpine:3.18
   needs:
+    # This 'optional: true' is the key that works with the fix above
     - job: build-tauri
       artifacts: true
       optional: true
-
-  # 1. Add before_script to install tools
   before_script:
-    # We need 'curl' to call the API and 'unzip' to extract the old artifacts
     - apk add curl unzip
-
-  # 2. Update script to download, merge, and upload
   script:
-    # Create a staging directory to build our new 'public' folder
+    # ... (your existing script for merging artifacts is correct) ...
     - mkdir deploy
-
-    # Try to download and unzip the *last successful* pages artifact
-    # We use the $CI_DEFAULT_BRANCH as the 'source' for the last live deploy.
-    # The '|| true' ensures the pipeline doesn't fail if no artifacts exist yet (e.g., first run).
     - echo "Downloading previous Pages artifacts..."
     - |
       curl --location --output artifacts.zip --header "JOB-TOKEN: $CI_JOB_TOKEN" \
         "$CI_API_V4_URL/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_DEFAULT_BRANCH/download?job=pages" || true
-
     - |
       if [ -f artifacts.zip ]; then
         echo "Unzipping previous artifacts into staging directory."
@@ -141,9 +132,6 @@ pages:
       else
         echo "No previous artifacts found. Starting fresh."
       fi
-
-    # Copy your repo's /public folder (index.html, etc.) into the staging dir
-    # This will OVERWRITE any existing index.html, which is what we want.
     - |
       if [ -d "public" ]; then
         echo "Copying files from repo's /public directory..."
@@ -151,9 +139,6 @@ pages:
       else
         echo "No /public directory found in repo. Skipping."
       fi
-
-    # Copy NEW build artifacts (if this is a TAG pipeline) into the staging dir
-    # This adds the new installers without deleting old ones.
     - |
       if [ -d "src-tauri/target/release/bundle" ]; then
         echo "Copying new release bundles..."
@@ -164,17 +149,13 @@ pages:
         echo "Copying new debug bundles..."
         cp -r src-tauri/target/debug/bundle/* deploy/
       fi
-
-    # Rename our completed staging dir to 'public' for GitLab Pages
     - mv deploy public
     - echo "Final contents of /public directory:"
     - ls -la public
-
   artifacts:
     paths:
       - public
     expire_in: 1 week
   rules:
-    # Rules are unchanged: run on tags (for new releases) or web (for static updates)
     - if: $CI_COMMIT_TAG
     - if: $CI_PIPELINE_SOURCE == "web"
