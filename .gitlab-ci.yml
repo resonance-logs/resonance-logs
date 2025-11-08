@@ -83,6 +83,8 @@ build-tauri:
       - src-tauri/target/release/bundle/
       - src-tauri/target/debug/bundle/
       - release_body.txt
+    # Make artifacts last long enough for pages job
+    expire_in: 1 week
 
 release-job:
   stage: release
@@ -104,23 +106,48 @@ release-job:
           url: '$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=build-tauri'
           link_type: 'package'
 
+# --- FIXED PAGES JOB ---
+
 pages:
   stage: pages
   image: alpine:3.18
+  needs:
+    # 1. Add 'needs' to fetch artifacts from the build job
+    - job: build-tauri
+      artifacts: true
   script:
-    - ls -la public || true
-    - echo "does this work?"
+    # 2. Create public dir and copy build bundles into it
+    - mkdir -p public
+    - |
+      if [ -d "src-tauri/target/release/bundle" ]; then
+        echo "Copying release bundles..."
+        cp -r src-tauri/target/release/bundle/* public/
+      fi
+    - |
+      if [ -d "src-tauri/target/debug/bundle" ]; then
+        echo "Copying debug bundles..."
+        cp -r src-tauri/target/debug/bundle/* public/
+      fi
+
+    # 3. (Optional) Create a simple index.html to link to the files
+    - |
+      echo "<html><body><h1>Application Downloads</h1><ul>" > public/index.html
+      for f in public/*; do
+        if [ -f "$f" ]; then
+          filename=$(basename "$f")
+          if [ "$filename" != "index.html" ]; then
+            echo "<li><a href=\"$filename\">$filename</a></li>" >> public/index.html
+          fi
+        fi
+      done
+      echo "</ul></body></html>" >> public/index.html
+    - echo "Public directory contents:"
+    - ls -la public
+
   artifacts:
     paths:
       - public
     expire_in: 1 week
   rules:
+    # 4. Simplify rules to only run on tags, just like the release job
     - if: $CI_COMMIT_TAG
-      when: always
-    - if: $CI_PIPELINE_SOURCE == "web"
-      when: always
-    - if: $CI_PIPELINE_SOURCE == "trigger"
-      when: always
-    - if: $CI_PIPELINE_SOURCE == "api"
-      when: always
-    - when: never
