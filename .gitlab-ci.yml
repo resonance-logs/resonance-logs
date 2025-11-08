@@ -1,104 +1,16 @@
-workflow:
+# The Docker image that will be used to build your app
+image: hugomods/hugo:exts
+create-pages:
+  pages:
+    # The folder that contains the files to be exposed at the Page URL
+    publish: public
   rules:
-    # Run automatically for created tags (recommended for releases)
-    - if: $CI_COMMIT_TAG
-      when: always
-    # Allow manual runs from the GitLab UI
-    - if: $CI_PIPELINE_SOURCE == "web"
-      when: always
-    # Allow API and trigger-based runs (useful for CI triggers)
-    - if: $CI_PIPELINE_SOURCE == "trigger"
-      when: always
-    - if: $CI_PIPELINE_SOURCE == "api"
-      when: always
-    # Default: don't run for other pipeline sources (push to branches, merge requests, etc.)
-    - when: never
-
-stages:
-  - build
-  - release
-
-variables:
-  CARGO_HOME: $CI_PROJECT_DIR/.cargo
-  npm_config_cache: $CI_PROJECT_DIR/.npm
-
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - .cargo/
-    - .npm/
-    - src-tauri/target/
-
-build-tauri:
-  stage: build
-  tags:
-    - saas-windows-medium-amd64
+    # This ensures that only pushes to the default branch will trigger
+    # a pages deploy
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  # Functions that should be executed before the build script is run
   before_script:
-    # Install Node.js LTS
-    - choco install nodejs-lts -y
-    - $env:PATH = "C:\Program Files\nodejs;$env:PATH"
-
-    # Install Rust using rustup
-    - |
-      Invoke-WebRequest -Uri https://win.rustup.rs/x86_64 -OutFile rustup-init.exe
-      .\rustup-init.exe -y --default-toolchain stable --profile minimal
-      Remove-Item rustup-init.exe
-    - $env:PATH = "$CI_PROJECT_DIR\.cargo\bin;$env:PATH"
-
-    # Verify installations
-    - node --version
-    - npm --version
-    - rustc --version
-    - cargo --version
-
+    - hugo version
+    - hugo mod get -u $THEME_URL
   script:
-    # Install frontend dependencies
-    - npm install
-
-    # Read changelog for release body
-    - |
-      $RELEASE_BODY = @(
-        '# Changelog'
-        (git log -1 --pretty=%B | Select-Object -Skip 1)
-        ''
-        if (Test-Path .github/workflows/RELEASE.md) {
-          Get-Content .github/workflows/RELEASE.md
-        }
-      ) -join "`n"
-      $RELEASE_BODY | Out-File -FilePath release_body.txt -Encoding utf8
-
-    # Build Tauri app
-    - |
-      if ($CI_COMMIT_REF_NAME -eq 'release') {
-        $env:TAURI_SIGNING_PRIVATE_KEY = $env:TAURI_SIGNING_PRIVATE_KEY
-        npm run tauri build
-      } else {
-        npm run tauri build -- --debug
-      }
-
-  artifacts:
-    name: "resonance-logs-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - src-tauri/target/release/bundle/
-      - src-tauri/target/debug/bundle/
-      - release_body.txt
-
-release-job:
-  stage: release
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
-  rules:
-    - if: $CI_COMMIT_TAG
-  needs:
-    - job: build-tauri
-      artifacts: true
-  script:
-    - echo "Creating release $CI_COMMIT_TAG"
-  release:
-    name: 'Release $CI_COMMIT_TAG'
-    description: './release_body.txt'
-    tag_name: '$CI_COMMIT_TAG'
-    assets:
-      links:
-        - name: 'Download All Artifacts'
-          url: '$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=build-tauri'
-          link_type: 'package'
+    - hugo --minify
