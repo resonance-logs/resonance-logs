@@ -11,7 +11,6 @@
   import { onMount } from "svelte";
   import { commands } from "$lib/bindings";
   import { SETTINGS } from "$lib/settings-store";
-  import { cn } from "$lib/utils";
   import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter } from "$lib/api";
   import { writable } from "svelte/store";
   import { beforeNavigate, afterNavigate } from "$app/navigation";
@@ -23,9 +22,8 @@
   const scrollPositions = writable<Record<string, number>>({});
 
   import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores } from "$lib/stores/live-meter-store.svelte";
-  import Footer from "./footer.svelte";
   import Header from "./header.svelte";
-  import BossHealth from "./boss-health.svelte";
+
   import NotificationToast from "./notification-toast.svelte";
 
   let { children } = $props();
@@ -231,13 +229,15 @@
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-<div class="flex h-screen flex-col text-xs text-white">
+<div class="flex h-screen flex-col bg-neutral-900 text-[13px] text-neutral-100 p-3 rounded-xl ring-1 ring-neutral-800/60 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]">
   <Header />
-  <main bind:this={mainElement} class={cn("flex-1 overflow-y-auto px-2 py-2 gap-4", !SETTINGS.accessibility.state.transparency && "bg-neutral-900/40")}>
-    <BossHealth />
+  <main
+    bind:this={mainElement}
+    class="flex-1 overflow-y-auto gap-4 bg-neutral-900/50 ring-1 ring-neutral-800/60 rounded-lg p-3"
+  >
     {@render children()}
   </main>
-  <Footer />
+  <!-- Footer removed; navigation and version moved into Header -->
   <NotificationToast bind:this={notificationToast} />
 </div>
 

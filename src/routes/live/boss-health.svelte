@@ -12,7 +12,14 @@
     totalDmg: 0,
     elapsedMs: 0,
     fightStartTimestampMs: 0,
-    bosses: [],
+    bosses: [
+      {
+        uid: 1,
+        currentHp: 20,
+        maxHp: 50,
+        name: "Boss Example"
+      }
+    ],
     sceneId: null,
     sceneName: null,
   });
@@ -24,8 +31,8 @@
     let encounterUnlisten: (() => void) | null = null;
     let resetUnlisten: (() => void) | null = null;
 
-    onEncounterUpdate((event) => {
-      headerInfo = event.payload.headerInfo;
+    onEncounterUpdate(() => {
+      // headerInfo = event.payload.headerInfo;
     }).then((fn) => {
       encounterUnlisten = fn;
     });
@@ -44,25 +51,18 @@
 </script>
 
 {#if headerInfo.bosses.length > 0}
-  <div class="{density === 'comfortable' ? 'mb-2 gap-2 px-4 py-3' : density === 'medium' ? 'mb-1.5 gap-1.5 px-3 py-2' : 'mb-1 gap-1 px-2 py-1.5'} flex flex-col bg-neutral-900/60 rounded-lg">
+  <div class="rounded-md border border-neutral-800/60 bg-neutral-900/50 px-3 py-2">
     {#each headerInfo.bosses as boss (boss.uid)}
       {@const hpPercent = boss.maxHp && boss.currentHp !== null ? Math.min(100, Math.max(0, (boss.currentHp / boss.maxHp) * 100)) : 0}
-      <div class="flex items-center {density === 'comfortable' ? 'gap-3' : density === 'medium' ? 'gap-2' : 'gap-2'}">
-        <span class="{density === 'comfortable' ? 'min-w-32 text-base' : density === 'medium' ? 'min-w-28 text-[13px]' : 'min-w-24 text-[11px]'} truncate text-neutral-200 font-semibold" {@attach tooltip(() => boss.name)}>{boss.name}</span>
-        <div class="relative {density === 'comfortable' ? 'h-3' : density === 'medium' ? 'h-2' : 'h-1.5'} flex-1 rounded-md bg-neutral-800/80 overflow-hidden shadow-inner">
-          <div
-            class="absolute inset-0 rounded-md transition-all duration-300 ease-out bg-gradient-to-r from-cyan-500 to-blue-500"
-            style={`width: ${hpPercent}%; box-shadow: 0 0 ${density === 'comfortable' ? '8px' : density === 'medium' ? '6px' : '4px'} rgba(34, 211, 238, 0.5)`}
-          >
-          </div>
-        </div>
+      <div class="flex items-center gap-3">
+        <span class="{density === 'comfortable' ? 'text-[13px]' : density === 'medium' ? 'text-[12px]' : 'text-[11px]'} truncate text-neutral-200 font-semibold tracking-tight" {@attach tooltip(() => boss.name)}>{boss.name}</span>
         {#if density === 'comfortable'}
-          <span class="text-neutral-300 tabular-nums text-sm font-medium min-w-40 text-right">
+          <span class="text-neutral-300 tabular-nums text-[12px] font-medium">
             {boss.currentHp !== null ? boss.currentHp.toLocaleString() : "?"}{boss.maxHp ? ` / ${boss.maxHp.toLocaleString()}` : ""}
             <span class="text-neutral-400 ml-1.5">({hpPercent.toFixed(1)}%)</span>
           </span>
         {:else}
-          <span class="text-neutral-300 tabular-nums text-[11px] font-medium min-w-12 text-right">
+          <span class="text-neutral-300 tabular-nums text-[11px] font-medium">
             {hpPercent.toFixed(1)}%
           </span>
         {/if}

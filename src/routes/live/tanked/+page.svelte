@@ -45,16 +45,16 @@
   // Helper functions for density-based styling
   let isCompact = $derived(density === "compact");
   let isMedium = $derived(density === "medium");
-  let isComfortable = $derived(density === "comfortable");
+  // removed unused isComfortable derived value
 </script>
 
-<div class="relative flex flex-col gap-1 overflow-hidden">
+<div class="relative flex flex-col gap-2 overflow-hidden rounded-lg ring-1 ring-neutral-800/60 bg-neutral-950/40 backdrop-blur-sm">
   <table class="w-full border-collapse overflow-hidden">
     <thead>
-      <tr class="bg-neutral-900/60">
-        <th class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-xs'} text-left font-medium uppercase tracking-wider text-neutral-500">Player</th>
+      <tr class="bg-neutral-900/70">
+        <th class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-left font-medium uppercase tracking-wide text-neutral-400">Player</th>
         {#each visiblePlayerColumns as col (col.key)}
-          <th class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-xs'} text-right font-medium uppercase tracking-wider text-neutral-500">{col.header}</th>
+          <th class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-right font-medium uppercase tracking-wide text-neutral-400">{col.header}</th>
         {/each}
       </tr>
     </thead>
@@ -73,10 +73,10 @@
         })}
         {@const className = isLocalPlayer ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
         <tr
-          class="relative bg-neutral-900/60 hover:bg-neutral-800/60 transition-all cursor-pointer {isCompact ? 'h-7' : isMedium ? 'h-10' : 'h-14'} {isCompact ? 'text-xs' : isMedium ? 'text-sm' : 'text-base'} group"
+          class="relative bg-neutral-900/50 hover:bg-neutral-800/70 transition-colors cursor-pointer {isCompact ? 'h-7' : isMedium ? 'h-10' : 'h-14'} {isCompact ? 'text-[11px]' : isMedium ? 'text-[12px]' : 'text-[13px]'} group"
           onclick={() => goto(`/live/tanked/skills?playerUid=${player.uid}`)}
         >
-          <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} {isCompact ? 'text-xs' : isMedium ? 'text-sm' : 'text-base'} text-neutral-200 relative z-10">
+          <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} relative z-10">
             <div class="flex items-center h-full {isCompact ? 'gap-1' : isMedium ? 'gap-1.5' : 'gap-2'}">
               <img
                 class="{isCompact ? 'size-4' : isMedium ? 'size-5' : 'size-6'} object-contain"
@@ -86,16 +86,16 @@
               />
               {#if player.abilityScore > 0}
                 {#if SETTINGS.live.general.state.shortenAbilityScore}
-                  <span class="text-neutral-400"><AbbreviatedNumber num={player.abilityScore} /></span>
+                  <span class="text-neutral-400 tabular-nums"><AbbreviatedNumber num={player.abilityScore} /></span>
                 {:else}
-                  <span class="text-neutral-400">{player.abilityScore}</span>
+                  <span class="text-neutral-400 tabular-nums">{player.abilityScore}</span>
                 {/if}
               {/if}
-              <span class="truncate font-medium">{displayName || `#${player.uid}`}</span>
+              <span class="truncate font-medium text-neutral-200">{displayName || `#${player.uid}`}</span>
             </div>
           </td>
           {#each visiblePlayerColumns as col (col.key)}
-            <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} text-right {isCompact ? 'text-xs' : isMedium ? 'text-sm' : 'text-base'} text-neutral-200 relative z-10">
+            <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} text-right relative z-10 tabular-nums font-medium text-neutral-300">
               {#if col.key === 'totalDmg'}
                 <AbbreviatedNumber num={player.totalDmg} />
               {:else if col.key === 'dmgPct'}
