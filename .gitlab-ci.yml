@@ -106,42 +106,68 @@ release-job:
           url: '$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=build-tauri'
           link_type: 'package'
 
-# --- FIXED PAGES JOB ---
+# --- Pages JOB ---
 
 pages:
   stage: pages
   image: alpine:3.18
   needs:
-    # 1. Add 'needs' to fetch artifacts from the build job
     - job: build-tauri
       artifacts: true
+      optional: true
+
+  # 1. Add before_script to install tools
+  before_script:
+    # We need 'curl' to call the API and 'unzip' to extract the old artifacts
+    - apk add curl unzip
+
+  # 2. Update script to download, merge, and upload
   script:
-    # 2. Create public dir and copy build bundles into it
-    - mkdir -p public
+    # Create a staging directory to build our new 'public' folder
+    - mkdir deploy
+
+    # Try to download and unzip the *last successful* pages artifact
+    # We use the $CI_DEFAULT_BRANCH as the 'source' for the last live deploy.
+    # The '|| true' ensures the pipeline doesn't fail if no artifacts exist yet (e.g., first run).
+    - echo "Downloading previous Pages artifacts..."
+    - |
+      curl --location --output artifacts.zip --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_DEFAULT_BRANCH/download?job=pages" || true
+
+    - |
+      if [ -f artifacts.zip ]; then
+        echo "Unzipping previous artifacts into staging directory."
+        unzip artifacts.zip -d deploy
+      else
+        echo "No previous artifacts found. Starting fresh."
+      fi
+
+    # Copy your repo's /public folder (index.html, etc.) into the staging dir
+    # This will OVERWRITE any existing index.html, which is what we want.
+    - |
+      if [ -d "public" ]; then
+        echo "Copying files from repo's /public directory..."
+        cp -r public/* deploy/
+      else
+        echo "No /public directory found in repo. Skipping."
+      fi
+
+    # Copy NEW build artifacts (if this is a TAG pipeline) into the staging dir
+    # This adds the new installers without deleting old ones.
     - |
       if [ -d "src-tauri/target/release/bundle" ]; then
-        echo "Copying release bundles..."
-        cp -r src-tauri/target/release/bundle/* public/
+        echo "Copying new release bundles..."
+        cp -r src-tauri/target/release/bundle/* deploy/
       fi
     - |
       if [ -d "src-tauri/target/debug/bundle" ]; then
-        echo "Copying debug bundles..."
-        cp -r src-tauri/target/debug/bundle/* public/
+        echo "Copying new debug bundles..."
+        cp -r src-tauri/target/debug/bundle/* deploy/
       fi
 
-    # 3. (Optional) Create a simple index.html to link to the files
-    - |
-      echo "<html><body><h1>Application Downloads</h1><ul>" > public/index.html
-      for f in public/*; do
-        if [ -f "$f" ]; then
-          filename=$(basename "$f")
-          if [ "$filename" != "index.html" ]; then
-            echo "<li><a href=\"$filename\">$filename</a></li>" >> public/index.html
-          fi
-        fi
-      done
-      echo "</ul></body></html>" >> public/index.html
-    - echo "Public directory contents:"
+    # Rename our completed staging dir to 'public' for GitLab Pages
+    - mv deploy public
+    - echo "Final contents of /public directory:"
     - ls -la public
 
   artifacts:
@@ -149,5 +175,6 @@ pages:
       - public
     expire_in: 1 week
   rules:
-    # 4. Simplify rules to only run on tags, just like the release job
+    # Rules are unchanged: run on tags (for new releases) or web (for static updates)
     - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
