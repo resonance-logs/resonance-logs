@@ -109,6 +109,7 @@ pages:
   image: alpine:3.18
   script:
     - ls -la public || true
+    - echo "does this work?"
   artifacts:
     paths:
       - public
