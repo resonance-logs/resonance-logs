@@ -17,6 +17,7 @@ workflow:
 stages:
   - build
   - release
+  - pages
 
 variables:
   CARGO_HOME: $CI_PROJECT_DIR/.cargo
@@ -102,3 +103,24 @@ release-job:
         - name: 'Download All Artifacts'
           url: '$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=build-tauri'
           link_type: 'package'
+
+pages:
+  stage: pages
+  image: alpine:3.18
+  script:
+    - echo "Publishing GitLab Pages site: listing files in public/"
+    - ls -la public || true
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "api"
+      when: always
+    - when: never
