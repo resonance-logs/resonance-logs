@@ -195,7 +195,7 @@
   </div>
 
   <!-- Row 1, Col 2: Buttons -->
-  <div class="col-start-2 row-start-1 flex items-center justify-self-end {density === 'comfortable' ? 'gap-2' : 'gap-1.5'} shrink-0">
+  <div class="col-start-2 row-start-1 flex items-center justify-self-end {density === 'comfortable' ? 'gap-2' : 'gap-0.5'} shrink-0">
     <button
       class="text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/60 rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200"
       onclick={handleResetEncounter}
@@ -281,19 +281,19 @@
   </div>
 
   <!-- Row 2, Col 2: DPS/HEAL/TANKED Tabs (Connected) -->
-  <div class="col-start-2 row-start-2 justify-self-end flex items-center border border-neutral-700 rounded-lg overflow-hidden bg-neutral-800/30 shrink-0">
+  <div class="col-start-2 row-start-2 justify-self-end flex items-center border border-neutral-700 rounded-lg overflow-hidden bg-neutral-800/30 shrink-0 m-1">
     <button
-      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2.5 py-1'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] border-r border-neutral-700 whitespace-nowrap ${$page.url.pathname.includes('dps') ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/60'}`}
+      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2 py-0.75'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] border-r border-neutral-700 whitespace-nowrap ${$page.url.pathname.includes('dps') ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/60'}`}
       aria-current={$page.url.pathname.includes('dps') ? 'page' : undefined}
       onclick={() => goto(resolve('/live/dps'))}
     >DPS</button>
     <button
-      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2.5 py-1'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] border-r border-neutral-700 whitespace-nowrap ${$page.url.pathname.includes('heal') ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/60'}`}
+      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2 py-0.75'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] border-r border-neutral-700 whitespace-nowrap ${$page.url.pathname.includes('heal') ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/60'}`}
       aria-current={$page.url.pathname.includes('heal') ? 'page' : undefined}
       onclick={() => goto(resolve('/live/heal'))}
     >HEAL</button>
     <button
-      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2.5 py-1'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] whitespace-nowrap ${$page.url.pathname.includes('tanked') ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/60'}`}
+      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2 py-0.75'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] whitespace-nowrap ${$page.url.pathname.includes('tanked') ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/60'}`}
       aria-current={$page.url.pathname.includes('tanked') ? 'page' : undefined}
       onclick={() => goto(resolve('/live/tanked'))}
     >TANKED</button>
