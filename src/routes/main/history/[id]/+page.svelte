@@ -3,9 +3,8 @@
   import { goto } from '$app/navigation';
   import { commands } from '$lib/bindings';
   import type { ActorEncounterStatDto, EncounterSummaryDto, SkillsWindow } from '$lib/bindings';
-  import { getEncounterAttempts, getEncounterAttemptActorStats, getEncounterAttemptPlayerSkills, type Attempt } from '$lib/api';
+  import type { MetricType } from '$lib/api';
   import { getClassIcon, tooltip, CLASS_MAP } from '$lib/utils.svelte';
-  import { slide } from 'svelte/transition';
   import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from '$lib/components/table-row-glow.svelte';
   import AbbreviatedNumber from '$lib/components/abbreviated-number.svelte';
@@ -32,12 +31,6 @@
   // Tab state for encounter view
   let activeTab = $state<'damage' | 'tanked' | 'healing'>('damage');
   let bossOnlyMode = $state(false);
-
-  // Attempts (phases) UI state
-  let attempts: Attempt[] | null = $state(null);
-  let attemptsLoading = $state(false);
-  let showAttempts = $state(false);
-  let selectedAttemptIndex = $state<number | null>(null);
 
   // Skills view state
   let skillsWindow = $state<SkillsWindow | null>(null);
@@ -101,13 +94,7 @@
     console.log("encounter res", encounterRes)
     if (encounterRes.status === 'ok') {
       encounter = encounterRes.data;
-      // If a specific attempt is selected, fetch attempt-specific actor stats
-      if (selectedAttemptIndex !== null) {
-        const attemptActors = await getEncounterAttemptActorStats(encounterId as number, selectedAttemptIndex as number);
-        actors = attemptActors ?? [];
-      } else {
-        actors = encounterRes.data.actors ?? [];
-      }
+      actors = encounterRes.data.actors ?? [];
     } else {
       error = String(encounterRes.error);
       return;
@@ -172,44 +159,13 @@
     }
 
     const playerUid = parseInt(charId);
-    if (selectedAttemptIndex !== null) {
-      // Fetch attempt-specific skills from aggregated raw events
-      try {
-        skillsWindow = await getEncounterAttemptPlayerSkills(encounterId as number, selectedAttemptIndex as number, playerUid, skillType as any);
-        selectedPlayer = players.find(p => p.uid === playerUid);
-      } catch (e) {
-        console.error('Failed to fetch attempt player skills', e);
-        skillsWindow = null;
-      }
+    const res = await commands.getEncounterPlayerSkills(encounterId, playerUid, skillType);
+    if (res.status === 'ok') {
+      console.log('skills', res)
+      skillsWindow = res.data;
+      selectedPlayer = players.find(p => p.uid === playerUid);
     } else {
-      const res = await commands.getEncounterPlayerSkills(encounterId, playerUid, skillType);
-      if (res.status === 'ok') {
-        console.log('skills', res)
-        skillsWindow = res.data;
-        selectedPlayer = players.find(p => p.uid === playerUid);
-      } else {
-        error = String(res.error);
-      }
-    }
-  }
-
-  async function loadAttempts() {
-    if (!encounterId) return;
-    // Toggle if already loaded
-    if (attempts) {
-      showAttempts = !showAttempts;
-      return;
-    }
-
-    attemptsLoading = true;
-    try {
-      attempts = await getEncounterAttempts(encounterId as number);
-      showAttempts = true;
-    } catch (e) {
-      console.error('Failed to load attempts', e);
-      attempts = [];
-    } finally {
-      attemptsLoading = false;
+      error = String(res.error);
     }
   }
 
@@ -226,15 +182,12 @@
   }
 
   $effect(() => {
-    // Depend on selectedAttemptIndex so changing the selected attempt reloads players
-    selectedAttemptIndex;
     loadEncounter();
   });
 
   $effect(() => {
-    // Re-run when charId or selectedAttemptIndex changes
+    // Re-run when charId changes
     charId;
-    selectedAttemptIndex;
     if (charId) {
       loadPlayerSkills();
     } else {
@@ -286,35 +239,6 @@
               {new Date(encounter.startedAtMs).toLocaleString()} — Duration: {Math.floor(Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000) / 60)}m
             </div>
             </div>
-
-            {#if showAttempts}
-              <div transition:slide class="mb-3">
-                <div class="flex gap-2 flex-wrap items-center">
-                  {#each attempts ?? [] as a}
-                    <button
-                      onclick={() => selectedAttemptIndex = a.attemptIndex}
-                      class="px-3 py-1 text-xs rounded transition-all {selectedAttemptIndex === a.attemptIndex ? 'bg-blue-500 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'}"
-                    >
-                      Attempt {a.attemptIndex}{#if a.reason} · {a.reason}{/if}
-                    </button>
-                  {/each}
-
-                  <button
-                    onclick={() => selectedAttemptIndex = null}
-                    class="px-2 py-1 text-xs rounded text-neutral-300 bg-neutral-800 hover:bg-neutral-700"
-                  >
-                    Show All
-                  </button>
-                </div>
-
-                {#if selectedAttemptIndex !== null}
-                  {@const sel = (attempts ?? []).find(x => x.attemptIndex === selectedAttemptIndex)}
-                  <div class="mt-2 text-sm text-neutral-400">
-                    Selected: Attempt {selectedAttemptIndex} — {sel ? `${new Date(sel.startedAtMs).toLocaleTimeString()} - ${sel.endedAtMs ? new Date(sel.endedAtMs).toLocaleTimeString() : 'running'} • ${sel.reason}` : ''}
-                  </div>
-                {/if}
-              </div>
-            {/if}
         </div>
 
         <!-- Tabs and Boss Only Toggle -->
@@ -347,21 +271,6 @@
             title={activeTab !== 'damage' ? "Boss Damage Only (Only for Damage tab)" : bossOnlyMode ? "Boss Damage Only (Active)" : "Boss Damage Only"}
           >
             <CrownIcon class="w-[16px] h-[16px] mb-0.25"/>
-          </button>
-
-          <!-- Phases (Attempts) toggle - fetched on demand -->
-          <button
-            onclick={loadAttempts}
-            class="px-3 py-1 text-xs rounded transition-colors flex items-center gap-2 {showAttempts ? 'bg-blue-600 text-white' : 'text-neutral-400 hover:text-neutral-200'}"
-            title="Show encounter phases (fetched on demand)"
-          >
-            Phases
-            {#if attemptsLoading}
-              <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" stroke-width="2" stroke-opacity="0.25"></circle>
-                <path d="M22 12a10 10 0 0 1-10 10" stroke-width="2"></path>
-              </svg>
-            {/if}
           </button>
         </div>
       </div>
