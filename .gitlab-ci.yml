@@ -108,7 +108,6 @@ pages:
   stage: pages
   image: alpine:3.18
   script:
-    - echo "Publishing GitLab Pages site: listing files in public/"
     - ls -la public || true
   artifacts:
     paths:
