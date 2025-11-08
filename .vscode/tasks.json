@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Tauri Dev",
+      "type": "shell",
+      "command": "npm run tauri dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "close": false
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}
