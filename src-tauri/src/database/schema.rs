@@ -48,66 +48,10 @@ diesel::table! {
 }
 
 /// Represents the `damage_events` table.
-diesel::table! {
-    damage_events (id) {
-        /// The unique ID of the damage event.
-        id -> Integer,
-        /// The ID of the encounter this event belongs to.
-        encounter_id -> Integer,
-        /// The timestamp of the event, in milliseconds since the Unix epoch.
-        timestamp_ms -> BigInt,
-        /// The ID of the attacker.
-        attacker_id -> BigInt,
-        /// The ID of the defender.
-        defender_id -> Nullable<BigInt>,
-        /// The name of the monster.
-        monster_name -> Nullable<Text>,
-        /// The ID of the skill used.
-        skill_id -> Nullable<Integer>,
-        /// The value of the damage.
-        value -> BigInt,
-        /// Whether the damage was a critical hit.
-        is_crit -> Integer,
-        /// Whether the damage was a lucky hit.
-        is_lucky -> Integer,
-        /// The amount of HP lost.
-        hp_loss -> BigInt,
-        /// The amount of shield lost.
-        shield_loss -> BigInt,
-        /// The maximum HP of the defender.
-        defender_max_hp -> Nullable<BigInt>,
-        /// Whether the target was a boss.
-        is_boss -> Integer,
-        /// The attempt index this event occurred in.
-        attempt_index -> Nullable<Integer>,
-    }
-}
-
-/// Represents the `heal_events` table.
-diesel::table! {
-    heal_events (id) {
-        /// The unique ID of the heal event.
-        id -> Integer,
-        /// The ID of the encounter this event belongs to.
-        encounter_id -> Integer,
-        /// The timestamp of the event, in milliseconds since the Unix epoch.
-        timestamp_ms -> BigInt,
-        /// The ID of the healer.
-        healer_id -> BigInt,
-        /// The ID of the target.
-        target_id -> Nullable<BigInt>,
-        /// The ID of the skill used.
-        skill_id -> Nullable<Integer>,
-        /// The value of the heal.
-        value -> BigInt,
-        /// Whether the heal was a critical hit.
-        is_crit -> Integer,
-        /// Whether the heal was a lucky hit.
-        is_lucky -> Integer,
-        /// The attempt index this event occurred in.
-        attempt_index -> Nullable<Integer>,
-    }
-}
+// Raw per-event tables `damage_events` and `heal_events` have been removed.
+// The codebase now stores only aggregated `_stats` tables (damage_skill_stats, heal_skill_stats,
+// actor_encounter_stats, encounter_bosses, etc.). The Diesel table macros for raw event
+// tables were intentionally removed as part of the irreversible schema change.
 
 /// Represents the `actor_encounter_stats` table.
 diesel::table! {
@@ -313,8 +257,7 @@ diesel::table! {
 
 // Joins
 
-diesel::joinable!(damage_events -> encounters (encounter_id));
-diesel::joinable!(heal_events -> encounters (encounter_id));
+// joinable entries for raw event tables removed
 diesel::joinable!(damage_skill_stats -> encounters (encounter_id));
 diesel::joinable!(heal_skill_stats -> encounters (encounter_id));
 diesel::joinable!(encounter_bosses -> encounters (encounter_id));
@@ -324,8 +267,6 @@ diesel::joinable!(attempts -> encounters (encounter_id));
 diesel::allow_tables_to_appear_in_same_query!(
     entities,
     encounters,
-    damage_events,
-    heal_events,
     actor_encounter_stats,
     damage_skill_stats,
     heal_skill_stats,

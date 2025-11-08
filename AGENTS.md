@@ -85,35 +85,6 @@
 
 #### Combat Events
 
-- **damage_events**: Detailed damage records
-  - `id`: Primary key (AUTOINCREMENT)
-  - `encounter_id`: Foreign key to encounters
-  - `timestamp_ms`: Event timestamp in milliseconds
-  - `attacker_id`: Attacker entity ID
-  - `defender_id`: Defender entity ID (nullable)
-  - `skill_id`: Skill/ability ID (nullable)
-  - `value`: Damage amount
-  - `is_crit`: Critical hit flag (default 0)
-  - `is_lucky`: Lucky hit flag (default 0)
-  - `hp_loss`: HP loss amount (default 0)
-  - `shield_loss`: Shield loss amount (default 0)
-  - `is_boss`: Boss damage flag (default 0)
-  - `monster_name`: Monster name (nullable)
-  - `defender_max_hp`: Defender max HP (nullable)
-  - `attempt_index`: Attempt index (default 1)
-
-- **heal_events**: Detailed healing records
-  - `id`: Primary key (AUTOINCREMENT)
-  - `encounter_id`: Foreign key to encounters
-  - `timestamp_ms`: Event timestamp in milliseconds
-  - `healer_id`: Healer entity ID
-  - `target_id`: Target entity ID (nullable)
-  - `skill_id`: Skill/ability ID (nullable)
-  - `value`: Healing amount
-  - `is_crit`: Critical heal flag (default 0)
-  - `is_lucky`: Lucky heal flag (default 0)
-  - `attempt_index`: Attempt index (default 1)
-
 - **death_events**: Player death tracking
   - `id`: Primary key (AUTOINCREMENT)
   - `encounter_id`: Foreign key to encounters
@@ -161,8 +132,8 @@
 ```
 encounters (1) → (N) attempts
 encounters (1) → (N) encounter_bosses
-encounters (1) → (N) damage_events
-encounters (1) → (N) heal_events
+encounters (1) → (N) damage_skill_stats
+encounters (1) → (N) heal_skill_stats
 encounters (1) → (N) death_events
 encounters (1) → (N) actor_encounter_stats
 encounters (1) → (N) damage_skill_stats
@@ -172,8 +143,6 @@ entities (1) → (N) actor_encounter_stats (via actor_id)
 
 attempts (N) → (1) encounters
 encounter_bosses (N) → (1) encounters
-damage_events (N) → (1) encounters
-heal_events (N) → (1) encounters
 death_events (N) → (1) encounters
 actor_encounter_stats (N) → (1) encounters
 damage_skill_stats (N) → (1) encounters

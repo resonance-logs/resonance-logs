@@ -531,28 +531,8 @@ fn handle_task(
             is_boss,
             attempt_index,
         } => {
+            // Raw per-event storage has been removed. We increment aggregate tables directly.
             if let Some(enc_id) = *current_encounter_id {
-                use sch::damage_events::dsl as d;
-                let ins = m::NewDamageEvent {
-                    encounter_id: enc_id,
-                    timestamp_ms,
-                    attacker_id,
-                    defender_id,
-                    monster_name,
-                    skill_id,
-                    value,
-                    is_crit: if is_crit { 1 } else { 0 },
-                    is_lucky: if is_lucky { 1 } else { 0 },
-                    hp_loss,
-                    shield_loss,
-                    defender_max_hp,
-                    is_boss: if is_boss { 1 } else { 0 },
-                    attempt_index,
-                };
-                diesel::insert_into(d::damage_events)
-                    .values(&ins)
-                    .execute(conn)
-                    .map_err(|e| e.to_string())?;
                 // increment encounter totals
                 diesel::sql_query(
                     "UPDATE encounters SET total_dmg = COALESCE(total_dmg,0) + ?1 WHERE id = ?2",
@@ -563,7 +543,6 @@ fn handle_task(
                 .ok();
 
                 // Materialize per-actor stats: attacker damage_dealt; defender damage_taken
-                // Attacker
                 upsert_stats_add_damage_dealt(
                     conn,
                     enc_id,
@@ -574,23 +553,66 @@ fn handle_task(
                     is_boss,
                 )?;
 
-                // Defender (damage taken). Follow live semantics: only count taken when attacker is not a player.
                 if let Some(def_id) = defender_id {
                     if let Some(attacker_type) = get_entity_type(conn, attacker_id)? {
-                        // EEntityType::EntChar == 1 (verify enum mapping). In our code we store entity_type as i32 from blueprotobuf.
                         if attacker_type
                             != (blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32)
                         {
-                            // Prefer hp_loss + shield_loss if provided; but 'value' has already been set to that when >0 in producer.
                             upsert_stats_add_damage_taken(
                                 conn, enc_id, def_id, value, is_crit, is_lucky,
                             )?;
                         }
                     } else {
-                        // If attacker type unknown, conservatively include as taken
                         upsert_stats_add_damage_taken(
                             conn, enc_id, def_id, value, is_crit, is_lucky,
                         )?;
+                    }
+                }
+
+                // Upsert per-skill aggregated stats into damage_skill_stats
+                let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
+                let crit_i: i32 = if is_crit { 1 } else { 0 };
+                let lucky_i: i32 = if is_lucky { 1 } else { 0 };
+                diesel::sql_query(
+                    "INSERT INTO damage_skill_stats (encounter_id, attacker_id, defender_id, skill_id, hits, total_value, crit_hits, lucky_hits, crit_total, lucky_total, hp_loss_total, shield_loss_total, hit_details, monster_name) \
+                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, ?10, ?11, '[]', ?12) \
+                     ON CONFLICT(encounter_id, attacker_id, defender_id, skill_id) DO UPDATE SET \
+                         hits = hits + 1, total_value = total_value + excluded.total_value, \
+                         crit_hits = crit_hits + excluded.crit_hits, lucky_hits = lucky_hits + excluded.lucky_hits, \
+                         crit_total = crit_total + excluded.crit_total, lucky_total = lucky_total + excluded.lucky_total, \
+                         hp_loss_total = hp_loss_total + excluded.hp_loss_total, shield_loss_total = shield_loss_total + excluded.shield_loss_total",
+                )
+                .bind::<diesel::sql_types::Integer, _>(enc_id)
+                .bind::<diesel::sql_types::BigInt, _>(attacker_id)
+                .bind::<diesel::sql_types::Nullable<diesel::sql_types::BigInt>, _>(defender_id)
+                .bind::<diesel::sql_types::Integer, _>(skill_id_val)
+                .bind::<diesel::sql_types::BigInt, _>(value)
+                .bind::<diesel::sql_types::Integer, _>(crit_i)
+                .bind::<diesel::sql_types::Integer, _>(lucky_i)
+                .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
+                .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+                .bind::<diesel::sql_types::BigInt, _>(hp_loss)
+                .bind::<diesel::sql_types::BigInt, _>(shield_loss)
+                .bind::<diesel::sql_types::Nullable<diesel::sql_types::Text>, _>(monster_name.clone())
+                .execute(conn)
+                .ok();
+
+                // Maintain encounter_bosses incrementally for boss hits
+                if is_boss {
+                    if let Some(monname) = monster_name.clone() {
+                        diesel::sql_query(
+                            "INSERT INTO encounter_bosses (encounter_id, monster_name, hits, total_damage, max_hp, is_defeated) \
+                             VALUES (?1, ?2, 1, ?3, ?4, 0) \
+                             ON CONFLICT(encounter_id, monster_name) DO UPDATE SET \
+                               hits = hits + 1, total_damage = total_damage + excluded.total_damage, \
+                               max_hp = COALESCE(excluded.max_hp, max_hp)"
+                        )
+                        .bind::<diesel::sql_types::Integer, _>(enc_id)
+                        .bind::<diesel::sql_types::Text, _>(&monname)
+                        .bind::<diesel::sql_types::BigInt, _>(value)
+                        .bind::<diesel::sql_types::Nullable<diesel::sql_types::BigInt>, _>(defender_max_hp)
+                        .execute(conn)
+                        .ok();
                     }
                 }
             }
@@ -605,24 +627,8 @@ fn handle_task(
             is_lucky,
             attempt_index,
         } => {
+            // Raw per-event storage removed — update aggregates directly.
             if let Some(enc_id) = *current_encounter_id {
-                use sch::heal_events::dsl as h;
-                let ins = m::NewHealEvent {
-                    encounter_id: enc_id,
-                    timestamp_ms,
-                    healer_id,
-                    target_id,
-                    skill_id,
-                    value,
-                    is_crit: if is_crit { 1 } else { 0 },
-                    is_lucky: if is_lucky { 1 } else { 0 },
-                    attempt_index,
-                };
-                diesel::insert_into(h::heal_events)
-                    .values(&ins)
-                    .execute(conn)
-                    .map_err(|e| e.to_string())?;
-                // increment encounter totals
                 diesel::sql_query(
                     "UPDATE encounters SET total_heal = COALESCE(total_heal,0) + ?1 WHERE id = ?2",
                 )
@@ -631,8 +637,32 @@ fn handle_task(
                 .execute(conn)
                 .ok();
 
-                // Materialize per-actor stats: healer heal_dealt
                 upsert_stats_add_heal_dealt(conn, enc_id, healer_id, value, is_crit, is_lucky)?;
+
+                // Upsert into heal_skill_stats
+                let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
+                let crit_i: i32 = if is_crit { 1 } else { 0 };
+                let lucky_i: i32 = if is_lucky { 1 } else { 0 };
+                diesel::sql_query(
+                    "INSERT INTO heal_skill_stats (encounter_id, healer_id, target_id, skill_id, hits, total_value, crit_hits, lucky_hits, crit_total, lucky_total, heal_details, monster_name) \
+                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, '[]', ?10) \
+                     ON CONFLICT(encounter_id, healer_id, target_id, skill_id) DO UPDATE SET \
+                         hits = hits + 1, total_value = total_value + excluded.total_value, \
+                         crit_hits = crit_hits + excluded.crit_hits, lucky_hits = lucky_hits + excluded.lucky_hits, \
+                         crit_total = crit_total + excluded.crit_total, lucky_total = lucky_total + excluded.lucky_total",
+                )
+                .bind::<diesel::sql_types::Integer, _>(enc_id)
+                .bind::<diesel::sql_types::BigInt, _>(healer_id)
+                .bind::<diesel::sql_types::Nullable<diesel::sql_types::BigInt>, _>(target_id)
+                .bind::<diesel::sql_types::Integer, _>(skill_id_val)
+                .bind::<diesel::sql_types::BigInt, _>(value)
+                .bind::<diesel::sql_types::Integer, _>(crit_i)
+                .bind::<diesel::sql_types::Integer, _>(lucky_i)
+                .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
+                .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+                .bind::<diesel::sql_types::Nullable<diesel::sql_types::Text>, _>(None::<String>)
+                .execute(conn)
+                .ok();
             }
         }
         DbTask::InsertDeathEvent {
@@ -1015,93 +1045,9 @@ fn materialize_damage_skill_stats(
     conn: &mut SqliteConnection,
     encounter_id: i32,
 ) -> Result<(), String> {
-    use sch::damage_events::dsl as de;
-
-    // Query all damage events for this encounter
-    let events: Vec<m::DamageEventRow> = de::damage_events
-        .filter(de::encounter_id.eq(encounter_id))
-        .order((
-            de::attacker_id,
-            de::defender_id,
-            de::skill_id,
-            de::timestamp_ms,
-        ))
-        .load::<m::DamageEventRow>(conn)
-        .map_err(|e| e.to_string())?;
-
-    // Group by (attacker_id, defender_id, skill_id)
-    let mut groups: std::collections::HashMap<(i64, Option<i64>, i32), Vec<m::DamageEventRow>> =
-        std::collections::HashMap::new();
-
-    for event in events {
-        let skill_id = event.skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
-        let key = (event.attacker_id, event.defender_id, skill_id);
-        groups.entry(key).or_default().push(event);
-    }
-
-    // Insert aggregated stats
-    use sch::damage_skill_stats::dsl as dss;
-    for ((attacker_id, defender_id, skill_id), events) in groups {
-        let hits = events.len() as i32;
-        let total_value: i64 = events.iter().map(|e| e.value).sum();
-        let crit_hits = events.iter().filter(|e| e.is_crit == 1).count() as i32;
-        let lucky_hits = events.iter().filter(|e| e.is_lucky == 1).count() as i32;
-        let crit_total: i64 = events
-            .iter()
-            .filter(|e| e.is_crit == 1)
-            .map(|e| e.value)
-            .sum();
-        let lucky_total: i64 = events
-            .iter()
-            .filter(|e| e.is_lucky == 1)
-            .map(|e| e.value)
-            .sum();
-        let hp_loss_total: i64 = events.iter().map(|e| e.hp_loss).sum();
-        let shield_loss_total: i64 = events.iter().map(|e| e.shield_loss).sum();
-
-        // Build JSON array of hit details
-        let hit_details: Vec<serde_json::Value> = events
-            .iter()
-            .map(|e| {
-                serde_json::json!({
-                    "t": e.timestamp_ms,
-                    "v": e.value,
-                    "c": e.is_crit,
-                    "l": e.is_lucky,
-                    "h": e.hp_loss,
-                    "s": e.shield_loss,
-                })
-            })
-            .collect();
-
-        let hit_details_json = serde_json::to_string(&hit_details).map_err(|e| e.to_string())?;
-
-        // Get monster_name from first event (all events in group have same defender)
-        let monster_name = events.first().and_then(|e| e.monster_name.clone());
-
-        let new_stat = m::NewDamageSkillStat {
-            encounter_id,
-            attacker_id,
-            defender_id,
-            skill_id,
-            hits,
-            total_value,
-            crit_hits,
-            lucky_hits,
-            crit_total,
-            lucky_total,
-            hp_loss_total,
-            shield_loss_total,
-            hit_details: hit_details_json,
-            monster_name,
-        };
-
-        diesel::insert_into(dss::damage_skill_stats)
-            .values(&new_stat)
-            .execute(conn)
-            .map_err(|e| e.to_string())?;
-    }
-
+    // No-op: raw per-event tables have been removed and aggregated stats are maintained
+    // incrementally at insert time. Materialization from raw events is not required.
+    let _ = (conn, encounter_id);
     Ok(())
 }
 
@@ -1119,57 +1065,8 @@ fn materialize_encounter_bosses(
     conn: &mut SqliteConnection,
     encounter_id: i32,
 ) -> Result<(), String> {
-    use sch::damage_events::dsl as de;
-
-    // Get unique boss names from damage_events where is_boss=1
-    let boss_names: Vec<String> = de::damage_events
-        .filter(de::encounter_id.eq(encounter_id).and(de::is_boss.eq(1)))
-        .select(de::monster_name)
-        .distinct()
-        .load::<Option<String>>(conn)
-        .map_err(|e| e.to_string())?
-        .into_iter()
-        .flatten()
-        .collect();
-
-    use sch::encounter_bosses::dsl as eb;
-    for boss_name in boss_names {
-        // Count hits and total damage for this boss
-        #[derive(diesel::QueryableByName)]
-        struct BossStats {
-            #[diesel(sql_type = diesel::sql_types::BigInt)]
-            hits: i64,
-            #[diesel(sql_type = diesel::sql_types::BigInt)]
-            total_damage: i64,
-            #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::BigInt>)]
-            max_hp: Option<i64>,
-        }
-
-        let stats: BossStats = diesel::sql_query(
-            "SELECT COUNT(*) as hits, COALESCE(SUM(value), 0) as total_damage, MAX(defender_max_hp) as max_hp
-             FROM damage_events
-             WHERE encounter_id = ?1 AND is_boss = 1 AND monster_name = ?2",
-        )
-        .bind::<diesel::sql_types::Integer, _>(encounter_id)
-        .bind::<diesel::sql_types::Text, _>(&boss_name)
-        .get_result::<BossStats>(conn)
-        .map_err(|e| e.to_string())?;
-
-        let new_boss = m::NewEncounterBoss {
-            encounter_id,
-            monster_name: boss_name,
-            hits: stats.hits as i32,
-            total_damage: stats.total_damage,
-            max_hp: stats.max_hp,
-            is_defeated: Some(0),
-        };
-
-        diesel::insert_into(eb::encounter_bosses)
-            .values(&new_boss)
-            .execute(conn)
-            .map_err(|e| e.to_string())?;
-    }
-
+    // No-op: encounter_bosses is maintained incrementally on damage inserts.
+    let _ = (conn, encounter_id);
     Ok(())
 }
 
@@ -1187,93 +1084,8 @@ fn materialize_heal_skill_stats(
     conn: &mut SqliteConnection,
     encounter_id: i32,
 ) -> Result<(), String> {
-    use sch::heal_events::dsl as he;
-
-    // Query all heal events for this encounter
-    let events: Vec<m::HealEventRow> = he::heal_events
-        .filter(he::encounter_id.eq(encounter_id))
-        .order((he::healer_id, he::target_id, he::skill_id, he::timestamp_ms))
-        .load::<m::HealEventRow>(conn)
-        .map_err(|e| e.to_string())?;
-
-    // Group by (healer_id, target_id, skill_id)
-    let mut groups: std::collections::HashMap<(i64, Option<i64>, i32), Vec<m::HealEventRow>> =
-        std::collections::HashMap::new();
-
-    for event in events {
-        let skill_id = event.skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
-        let key = (event.healer_id, event.target_id, skill_id);
-        groups.entry(key).or_default().push(event);
-    }
-
-    // Insert aggregated stats
-    use sch::heal_skill_stats::dsl as hss;
-    for ((healer_id, target_id, skill_id), events) in groups {
-        let hits = events.len() as i32;
-        let total_value: i64 = events.iter().map(|e| e.value).sum();
-        let crit_hits = events.iter().filter(|e| e.is_crit == 1).count() as i32;
-        let lucky_hits = events.iter().filter(|e| e.is_lucky == 1).count() as i32;
-        let crit_total: i64 = events
-            .iter()
-            .filter(|e| e.is_crit == 1)
-            .map(|e| e.value)
-            .sum();
-        let lucky_total: i64 = events
-            .iter()
-            .filter(|e| e.is_lucky == 1)
-            .map(|e| e.value)
-            .sum();
-
-        // Build JSON array of heal details
-        let heal_details: Vec<serde_json::Value> = events
-            .iter()
-            .map(|e| {
-                serde_json::json!({
-                    "t": e.timestamp_ms,
-                    "v": e.value,
-                    "c": e.is_crit,
-                    "l": e.is_lucky,
-                })
-            })
-            .collect();
-
-        let heal_details_json = serde_json::to_string(&heal_details).map_err(|e| e.to_string())?;
-
-        // Look up target name from entities table if target_id exists
-        let monster_name = if let Some(tid) = target_id {
-            use sch::entities::dsl as en;
-            en::entities
-                .select(en::name)
-                .filter(en::entity_id.eq(tid))
-                .first::<Option<String>>(conn)
-                .optional()
-                .map_err(|e| e.to_string())?
-                .flatten()
-        } else {
-            None
-        };
-
-        let new_stat = m::NewHealSkillStat {
-            encounter_id,
-            healer_id,
-            target_id,
-            skill_id,
-            hits,
-            total_value,
-            crit_hits,
-            lucky_hits,
-            crit_total,
-            lucky_total,
-            heal_details: heal_details_json,
-            monster_name,
-        };
-
-        diesel::insert_into(hss::heal_skill_stats)
-            .values(&new_stat)
-            .execute(conn)
-            .map_err(|e| e.to_string())?;
-    }
-
+    // No-op: heal_skill_stats is maintained incrementally on heal inserts.
+    let _ = (conn, encounter_id);
     Ok(())
 }
 
@@ -1288,19 +1100,8 @@ fn materialize_heal_skill_stats(
 ///
 /// * `Result<(), String>` - An empty result indicating success or failure.
 fn prune_encounter_events(conn: &mut SqliteConnection, encounter_id: i32) -> Result<(), String> {
-    use sch::damage_events::dsl as de;
-    use sch::heal_events::dsl as he;
-
-    // Delete all damage events for this encounter
-    diesel::delete(de::damage_events.filter(de::encounter_id.eq(encounter_id)))
-        .execute(conn)
-        .map_err(|e| e.to_string())?;
-
-    // Delete all heal events for this encounter
-    diesel::delete(he::heal_events.filter(he::encounter_id.eq(encounter_id)))
-        .execute(conn)
-        .map_err(|e| e.to_string())?;
-
+    // No-op: no raw events table exists to prune.
+    let _ = (conn, encounter_id);
     Ok(())
 }
 
@@ -1422,20 +1223,14 @@ mod tests {
         )
         .unwrap();
 
-        // Verify monster_name persisted
-        #[derive(diesel::QueryableByName)]
-        struct NameRow {
-            #[diesel(sql_type = diesel::sql_types::Nullable<diesel::sql_types::Text>)]
-            monster_name: Option<String>,
-        }
-        let row: NameRow = diesel::sql_query(
-            "SELECT monster_name FROM damage_events WHERE attacker_id = ?1 AND defender_id = ?2",
-        )
-        .bind::<diesel::sql_types::BigInt, _>(201_i64)
-        .bind::<diesel::sql_types::BigInt, _>(9999_i64)
-        .get_result::<NameRow>(&mut conn)
-        .unwrap();
-        assert_eq!(row.monster_name.as_deref(), Some("Test Monster"));
+        // Verify monster_name persisted to encounter_bosses (we no longer store raw events)
+        use sch::encounter_bosses::dsl as eb;
+        let boss_rows: Vec<m::EncounterBossRow> = eb::encounter_bosses
+            .filter(eb::encounter_id.eq(enc_id))
+            .load::<m::EncounterBossRow>(&mut conn)
+            .unwrap();
+        let found = boss_rows.iter().any(|b| b.monster_name == "Test Monster");
+        assert!(found, "encounter_bosses should contain Test Monster");
     }
 
     #[test]
@@ -1656,10 +1451,8 @@ mod tests {
         .unwrap();
         assert!(enc_opt.is_none());
 
-        use sch::damage_events::dsl as de;
         use sch::damage_skill_stats::dsl as dss;
         use sch::encounter_bosses::dsl as eb;
-        use sch::heal_events::dsl as he;
         use sch::heal_skill_stats::dsl as hss;
 
         let damage_rows = dss::damage_skill_stats
@@ -1699,18 +1492,6 @@ mod tests {
         assert_eq!(boss_rows[0].monster_name, "Ancient Construct");
         assert_eq!(boss_rows[0].hits, 1);
 
-        let remaining_damage: i64 = de::damage_events
-            .filter(de::encounter_id.eq(encounter_id))
-            .select(count_star())
-            .first(&mut conn)
-            .unwrap();
-        let remaining_heal: i64 = he::heal_events
-            .filter(he::encounter_id.eq(encounter_id))
-            .select(count_star())
-            .first(&mut conn)
-            .unwrap();
-
-        assert_eq!(remaining_damage, 0);
-        assert_eq!(remaining_heal, 0);
+        // Raw event tables no longer exist; aggregates are created incrementally.
     }
 }
