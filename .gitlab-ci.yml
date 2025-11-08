@@ -126,7 +126,7 @@ pages:
       artifacts: true
       optional: true
   before_script:
-    - apk add curl unzip
+    - apk add curl unzip coreutils
   script:
     # ... (your existing script for merging artifacts is correct) ...
     - mkdir deploy
@@ -190,6 +190,7 @@ pages:
         fi
         cd - >/dev/null || true
       fi
+    - sh scripts/generate_updater_json.sh deploy/downloads
     - mv deploy public
     - echo "Final contents of /public directory:"
     - ls -la public
