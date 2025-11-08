@@ -17,6 +17,7 @@ use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tauri_specta::{Builder, collect_commands};
 mod database;
+mod uploader; // stage 4 upload logic
 
 /// The label for the live window.
 pub const WINDOW_LIVE_LABEL: &str = "live";
@@ -55,6 +56,8 @@ pub fn run() {
             database::commands::delete_encounter,
             database::commands::get_recent_players_command,
             database::commands::get_player_name_command,
+            uploader::start_upload,
+            uploader::cancel_upload_cmd,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
