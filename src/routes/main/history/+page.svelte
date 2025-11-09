@@ -81,6 +81,7 @@
 			const filterPayload: EncounterFiltersDto = {
 				bossNames: selectedBosses.length > 0 ? selectedBosses : null,
 				playerName: null,
+				encounterNames: null,
 				playerNames: selectedPlayerNames.length > 0 ? selectedPlayerNames : null,
 				classIds: selectedClassIds.length > 0 ? selectedClassIds : null,
 				dateFromMs: null,
@@ -255,7 +256,7 @@
 	}
 </script>
 
-<div class="p-6">
+<div class="">
 	{#if errorMsg}
 		<div class="text-red-400 mb-3 text-sm">{errorMsg}</div>
 	{/if}
@@ -278,11 +279,11 @@
 
 			<!-- Class Filter Dropdown -->
 			<div class="relative">
-				<button
-					bind:this={classButtonRef}
-					onclick={() => showClassDropdown = !showClassDropdown}
-					class="flex items-center gap-2 px-3 py-1.5 rounded-md border border-neutral-700 bg-neutral-800 hover:bg-neutral-750 transition-colors text-sm text-neutral-300 hover:text-neutral-100"
-				>
+							<button
+								bind:this={classButtonRef}
+								onclick={() => showClassDropdown = !showClassDropdown}
+								class="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-popover hover:bg-muted/40 transition-colors text-sm text-muted-foreground hover:text-foreground"
+							>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
 					</svg>
@@ -296,10 +297,10 @@
 					>
 						<div class="p-3 space-y-1">
 							{#each classOptions as option}
-								<button
-									onclick={() => toggleClassFilter(option.id, !selectedClassIds.includes(option.id))}
-									class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors {selectedClassIds.includes(option.id) ? 'bg-blue-600/20 text-blue-400' : 'text-neutral-300 hover:bg-neutral-800'}"
-								>
+												<button
+													onclick={() => toggleClassFilter(option.id, !selectedClassIds.includes(option.id))}
+													class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors {selectedClassIds.includes(option.id) ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'}"
+												>
 									<span>{option.name}</span>
 									{#if selectedClassIds.includes(option.id)}
 										<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -310,10 +311,10 @@
 							{/each}
 
 							{#if selectedClassIds.length > 0}
-								<button
-									onclick={clearAllClassFilters}
-									class="w-full px-3 py-2 text-sm text-neutral-400 hover:text-red-400 transition-colors text-left"
-								>
+												<button
+													onclick={clearAllClassFilters}
+													class="w-full px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors text-left"
+												>
 									Clear class filters
 								</button>
 							{/if}
@@ -324,11 +325,11 @@
 
 			<!-- Clear All Filters Button -->
 			{#if hasActiveFilters}
-				<button
-					onclick={clearAllFilters}
-					class="px-3 py-1.5 rounded-md text-sm text-neutral-400 hover:text-red-400 transition-colors"
-					title="Clear all active filters"
-				>
+							<button
+								onclick={clearAllFilters}
+								class="px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-destructive transition-colors"
+								title="Clear all active filters"
+							>
 					Clear All
 				</button>
 			{/if}
@@ -338,12 +339,12 @@
 		{#if hasActiveFilters}
 			<div class="flex flex-wrap items-center gap-1.5">
 				{#each selectedBosses as boss}
-					<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 text-neutral-400 leading-tight">
-						<span class="text-neutral-500">B:</span>
+								<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60">
+									<span class="text-muted-foreground/70">B:</span>
 						{boss}
 						<button
 							onclick={() => removeBossFilter(boss)}
-							class="text-neutral-500 hover:text-red-400 transition-colors"
+							  class="text-muted-foreground/70 hover:text-destructive transition-colors"
 							aria-label={`Remove ${boss} filter`}
 						>
 							✕
@@ -351,12 +352,12 @@
 					</span>
 				{/each}
 				{#each selectedPlayerNames as player}
-					<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 text-neutral-400 leading-tight">
-						<span class="text-neutral-500">P:</span>
+								<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60">
+									<span class="text-muted-foreground/70">P:</span>
 						{player}
 						<button
 							onclick={() => removePlayerNameFilter(player)}
-							class="text-neutral-500 hover:text-red-400 transition-colors"
+							  class="text-muted-foreground/70 hover:text-destructive transition-colors"
 							aria-label={`Remove ${player} filter`}
 						>
 							✕
@@ -364,13 +365,26 @@
 					</span>
 				{/each}
 				{#each selectedClassIds as classId}
-					<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 text-neutral-400 leading-tight">
-						<span class="text-neutral-500">C:</span>
+								<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60">
+									<span class="text-muted-foreground/70">C:</span>
 						{CLASS_MAP[classId]}
 						<button
 							onclick={() => removeClassFilter(classId)}
-							class="text-neutral-500 hover:text-red-400 transition-colors"
+							  class="text-muted-foreground/70 hover:text-destructive transition-colors"
 							aria-label={`Remove ${CLASS_MAP[classId]} filter`}
+						>
+							✕
+						</button>
+					</span>
+				{/each}
+				{#each selectedEncounters as encounter}
+								<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60">
+									<span class="text-muted-foreground/70">E:</span>
+						{encounter}
+						<button
+							onclick={() => removeBossFilter(encounter)}
+							  class="text-muted-foreground/70 hover:text-destructive transition-colors"
+							aria-label={`Remove ${encounter} filter`}
 						>
 							✕
 						</button>
@@ -380,17 +394,17 @@
 		{/if}
 	</div>
 
-	<div class="overflow-x-auto rounded border border-neutral-700">
+	<div class="overflow-x-auto rounded border border-border/60 bg-card/30">
 		<table class="w-full border-collapse" style="min-width: 740px;">
 			<thead>
-				<tr class="bg-neutral-800">
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-10">ID</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-36">Encounter</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-48">Bosses</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-[400px]">Players</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-12">Duration</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 w-48">Date</th>
-					<th class="px-3 py-2.5 text-right w-12">
+				<tr class="bg-popover/60">
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-10">ID</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-36">Encounter</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Bosses</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-[400px]">Players</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-12">Duration</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Date</th>
+					<th class="px-3 py-2.5 text-right w-12 text-muted-foreground">
 						<button
 							onclick={() => loadEncounters(page)}
 							class="text-neutral-400 hover:text-neutral-200 transition-colors"
@@ -411,32 +425,32 @@
 					</th>
 				</tr>
 			</thead>
-			<tbody class="bg-neutral-900">
+			<tbody class="bg-background/40">
 				{#each encounters as enc (enc.id)}
 					<tr
-						class="border-t border-neutral-800 hover:bg-neutral-800 cursor-pointer transition-colors"
+						class="border-t border-border/40 hover:bg-muted/60 cursor-pointer transition-colors"
 						onclick={() => onView(enc)}
 					>
-						<td class="px-3 py-2 text-sm text-neutral-300">{enc.id}</td>
-						<td class="px-3 py-2 text-sm text-neutral-300">
+						<td class="px-3 py-2 text-sm text-muted-foreground">{enc.id}</td>
+						<td class="px-3 py-2 text-sm text-muted-foreground">
 							{#if enc.sceneName}
-								<span class="text-xs bg-neutral-800 px-1.5 py-0.5 rounded">{enc.sceneName}</span>
+								<span class="text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">{enc.sceneName}</span>
 							{:else}
-								<span class="text-neutral-500 text-xs">No scene</span>
+								<span class="text-muted-foreground text-xs opacity-70">No scene</span>
 							{/if}
 						</td>
-							<td class="px-3 py-2 text-sm text-neutral-300">
+							<td class="px-3 py-2 text-sm text-muted-foreground">
 								{#if enc.bosses.length > 0}
 									<div class="flex flex-wrap gap-1">
 										{#each enc.bosses as boss}
-											<span class="text-xs px-1.5 py-0.5 rounded {boss.isDefeated ? 'text-green-500 bg-neutral-800' : 'bg-neutral-800'}">{boss.monsterName}</span>
+											<span class="text-xs px-1.5 py-0.5 rounded {boss.isDefeated ? 'text-[oklch(0.65_0.1_145)] bg-muted' : 'bg-muted text-foreground'}">{boss.monsterName}</span>
 										{/each}
 									</div>
 								{:else}
-									<span class="text-neutral-500 text-xs">No bosses</span>
+									<span class="text-muted-foreground text-xs opacity-70">No bosses</span>
 								{/if}
 							</td>
-							<td class="px-3 py-2 text-sm text-neutral-300 max-w-[400px]">
+							<td class="px-3 py-2 text-sm text-muted-foreground max-w-[400px]">
 								{#if enc.players.length > 0}
 									{@const sortedPlayers = [...enc.players].sort((a, b) => {
 										const aHasClass = a.classId !== null && a.classId !== undefined && a.classId !== 0;
@@ -455,18 +469,18 @@
 											/>
 										{/each}
 										{#if enc.players.length > 8}
-											<span class="text-xs text-neutral-400 ml-1">+{enc.players.length - 8} more</span>
+											<span class="text-xs text-muted-foreground ml-1">+{enc.players.length - 8} more</span>
 										{/if}
 									</div>
 								{:else}
-									<span class="text-neutral-500 text-xs">No players</span>
+									<span class="text-muted-foreground text-xs opacity-70">No players</span>
 								{/if}
 							</td>
-							<td class="px-3 py-2 text-sm text-neutral-300">{fmtDuration(enc.startedAtMs, enc.endedAtMs)}</td>
-							<td class="px-3 py-2 text-sm text-neutral-300">
+							<td class="px-3 py-2 text-sm text-muted-foreground">{fmtDuration(enc.startedAtMs, enc.endedAtMs)}</td>
+							<td class="px-3 py-2 text-sm text-muted-foreground">
 								<div class="leading-snug">
 									<div>{fmtDate(enc.startedAtMs)}</div>
-									<div class="text-xs text-neutral-400">{fmtTime(enc.startedAtMs)}</div>
+									<div class="text-xs text-muted-foreground opacity-70">{fmtTime(enc.startedAtMs)}</div>
 								</div>
 							</td>
 						<td></td>
@@ -478,54 +492,54 @@
 
 	<!-- Pagination controls -->
 	<div class="flex items-center justify-between mt-4 gap-4">
-		<div class="flex items-center gap-3 text-sm text-neutral-400">
+		<div class="flex items-center gap-3 text-sm text-muted-foreground">
 			<span>Rows per page:</span>
-			<input
-				type="number"
-				bind:value={pageSize}
-				min="5"
-				max="100"
-				class="w-16 px-2 py-1 bg-neutral-800 border border-neutral-700 rounded text-neutral-300"
-				onchange={() => loadEncounters(0)}
-			/>
+					<input
+						type="number"
+						bind:value={pageSize}
+						min="5"
+						max="100"
+						class="w-16 px-2 py-1 bg-popover border border-border rounded text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+						onchange={() => loadEncounters(0)}
+					/>
 			<span>Showing {page * pageSize + 1} - {Math.min((page + 1) * pageSize, totalCount)} of {totalCount}</span>
 		</div>
 
 		<div class="flex items-center gap-1 ml-auto">
-			<button
-				onclick={() => loadEncounters(0)}
-				disabled={page === 0}
-				class="p-1.5 text-neutral-400 hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+					<button
+						onclick={() => loadEncounters(0)}
+						disabled={page === 0}
+						class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 				aria-label="First page"
 			>
 				<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
 				</svg>
 			</button>
-			<button
-				onclick={() => loadEncounters(page - 1)}
-				disabled={page === 0}
-				class="p-1.5 text-neutral-400 hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+					<button
+						onclick={() => loadEncounters(page - 1)}
+						disabled={page === 0}
+						class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 				aria-label="Previous page"
 			>
 				<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 				</svg>
 			</button>
-			<button
-				onclick={() => loadEncounters(page + 1)}
-				disabled={(page + 1) * pageSize >= totalCount}
-				class="p-1.5 text-neutral-400 hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+					<button
+						onclick={() => loadEncounters(page + 1)}
+						disabled={(page + 1) * pageSize >= totalCount}
+						class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 				aria-label="Next page"
 			>
 				<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 				</svg>
 			</button>
-			<button
-				onclick={() => loadEncounters(Math.floor((totalCount - 1) / pageSize))}
-				disabled={(page + 1) * pageSize >= totalCount}
-				class="p-1.5 text-neutral-400 hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+					<button
+						onclick={() => loadEncounters(Math.floor((totalCount - 1) / pageSize))}
+						disabled={(page + 1) * pageSize >= totalCount}
+						class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 				aria-label="Last page"
 			>
 				<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -10,5 +10,10 @@
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
-  <!-- <Button onclick={commands.copySyncContainerData}>Dump SyncContainerData to clipboard</Button> -->
+  <div class="space-y-3">
+    <div class="bg-neutral-800/40 rounded-lg border border-neutral-700/50 p-4">
+      <p class="text-sm text-neutral-400">No miscellaneous settings available at this time.</p>
+      <!-- <Button onclick={commands.copySyncContainerData}>Dump SyncContainerData to clipboard</Button> -->
+    </div>
+  </div>
 </Tabs.Content>

@@ -131,7 +131,321 @@
   * {
     @apply border-border outline-ring/50;
   }
-  /* body {
-    @apply bg-background text-foreground;
-  } */
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+}
+
+/* THEME VARIANTS -------------------------------------------------------- */
+/* Each theme overrides the core semantic tokens. Use data-theme attribute on <html>. */
+/* Settings components (settings-select / settings-switch) rely only on these
+  semantic tokens: --muted, --popover, --foreground, --muted-foreground,
+  --border, --primary. No hard-coded neutral-* colors remain. Adjust theme
+  variants above to influence dropdown + switch appearance globally. */
+
+/* Dark (default) */
+html[data-theme='dark'] {
+  --background: oklch(0.2178 0 0);
+  --foreground: oklch(0.8853 0 0);
+  --card: oklch(0.2435 0 0);
+  --card-foreground: oklch(0.8853 0 0);
+  --popover: oklch(0.2435 0 0);
+  --popover-foreground: oklch(0.8853 0 0);
+  --primary: oklch(0.7058 0 0);
+  --primary-foreground: oklch(0.2178 0 0);
+  --secondary: oklch(0.3092 0 0);
+  --secondary-foreground: oklch(0.8853 0 0);
+  --muted: oklch(0.2850 0 0);
+  --muted-foreground: oklch(0.5999 0 0);
+  --accent: oklch(0.3715 0 0);
+  --accent-foreground: oklch(0.8853 0 0);
+  --destructive: oklch(0.6591 0.1530 22.1703);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.3290 0 0);
+  --input: oklch(0.3092 0 0);
+  --ring: oklch(0.7058 0 0);
+  --chart-1: oklch(0.7058 0 0);
+  --chart-2: oklch(0.6714 0.0339 206.3482);
+  --chart-3: oklch(0.5452 0 0);
+  --chart-4: oklch(0.4604 0 0);
+  --chart-5: oklch(0.3715 0 0);
+  --sidebar: oklch(0.2393 0 0);
+  --sidebar-foreground: oklch(0.8853 0 0);
+  --sidebar-primary: oklch(0.7058 0 0);
+  --sidebar-primary-foreground: oklch(0.2178 0 0);
+  --sidebar-accent: oklch(0.3715 0 0);
+  --sidebar-accent-foreground: oklch(0.8853 0 0);
+  --sidebar-border: oklch(0.3290 0 0);
+  --sidebar-ring: oklch(0.7058 0 0);
+  /* Tooltip / overlay tokens (extend semantic surface) */
+  --tooltip-bg: oklch(0.275 0 0 / 0.92);
+  --tooltip-border: oklch(0.38 0 0 / 0.55);
+  --tooltip-fg: var(--foreground);
+  --toast-shadow: 0 4px 24px -4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+/* Light Mode */
+html[data-theme='light'] {
+  --background: oklch(0.985 0.01 95);
+  --foreground: oklch(0.19 0.02 250);
+  --card: oklch(0.97 0.01 95);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.97 0.01 95);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.65 0.12 250);
+  --primary-foreground: oklch(0.99 0.01 95);
+  --secondary: oklch(0.92 0.02 95);
+  --secondary-foreground: oklch(0.34 0.04 250);
+  --muted: oklch(0.9 0.015 95);
+  --muted-foreground: oklch(0.48 0.02 240);
+  --accent: oklch(0.78 0.14 60);
+  --accent-foreground: oklch(0.18 0.03 250);
+  --destructive: oklch(0.62 0.24 25);
+  --destructive-foreground: oklch(0.98 0.01 95);
+  --border: oklch(0.88 0.02 95);
+  --input: oklch(0.94 0.015 95);
+  --ring: oklch(0.65 0.12 250);
+  --chart-1: oklch(0.60 0.14 250);
+  --chart-2: oklch(0.62 0.18 140);
+  --chart-3: oklch(0.58 0.16 80);
+  --chart-4: oklch(0.55 0.15 30);
+  --chart-5: oklch(0.58 0.16 320);
+  --sidebar: oklch(0.95 0.015 95);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --tooltip-bg: oklch(0.86 0.01 95 / 0.96);
+  --tooltip-border: oklch(0.78 0.02 95 / 0.65);
+  --tooltip-fg: var(--foreground);
+  --toast-shadow: 0 4px 22px -6px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
+}
+
+/* Pink UwU Mode */
+html[data-theme='pink-uwu'] {
+  /* Pink theme using provided hex palette */
+  /* Main background */
+  --background: #F8E8EE;
+  /* Foreground text chosen for contrast (slightly deeper rose) */
+  --foreground: #582F3B;
+  /* Surfaces */
+  --card: #F9F5F6;
+  --card-foreground: var(--foreground);
+  --popover: #F9F5F6;
+  --popover-foreground: var(--foreground);
+  /* Semantic accents mapped to remaining swatches */
+  --primary: #F2BED1; /* strongest chroma for primary */
+  --primary-foreground: #402028;
+  --secondary: #FDCEDF; /* lighter, playful */
+  --secondary-foreground: #5A2F3D;
+  --muted: #F9F5F6;
+  --muted-foreground: #7A5461;
+  --accent: #F2BED1;
+  --accent-foreground: #402028;
+  --destructive: #D35D6E; /* custom desaturation for alerts */
+  --destructive-foreground: #FFF9FB;
+  --border: #F2BED1;
+  --input: #FDCEDF;
+  --ring: #F2BED1;
+  /* Charts: derive a simple ramp */
+  --chart-1: #F2BED1;
+  --chart-2: #FDCEDF;
+  --chart-3: #F9F5F6;
+  --chart-4: #F8E8EE;
+  --chart-5: #E7A7BC; /* interpolated tone between primary + bg */
+  /* Sidebar */
+  --sidebar: #F9F5F6;
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  /* Tooltip styling: translucent overlay based on primary */
+  --tooltip-bg: #F2BED1EE;
+  --tooltip-border: #F2BED1;
+  --tooltip-fg: var(--foreground);
+  --toast-shadow: 0 4px 28px -6px rgba(242,190,209,0.45), 0 0 0 1px rgba(225,150,180,0.30);
+}
+
+/* Green Pastel */
+html[data-theme='green-pastel'] {
+  --background: oklch(0.94 0.03 150);
+  --foreground: oklch(0.20 0.03 150);
+  --card: oklch(0.95 0.025 150);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.95 0.025 150);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.75 0.09 150);
+  --primary-foreground: oklch(0.98 0.015 95);
+  --secondary: oklch(0.90 0.02 145);
+  --secondary-foreground: oklch(0.34 0.04 160);
+  --muted: oklch(0.90 0.02 150);
+  --muted-foreground: oklch(0.42 0.03 140);
+  --accent: oklch(0.78 0.08 160);
+  --accent-foreground: oklch(0.22 0.03 160);
+  --destructive: oklch(0.62 0.24 25);
+  --destructive-foreground: oklch(0.99 0.01 95);
+  --border: oklch(0.86 0.02 150);
+  --input: oklch(0.92 0.015 150);
+  --ring: oklch(0.75 0.09 150);
+  --chart-1: oklch(0.75 0.09 150);
+  --chart-2: oklch(0.70 0.08 160);
+  --chart-3: oklch(0.72 0.07 140);
+  --chart-4: oklch(0.68 0.08 120);
+  --chart-5: oklch(0.66 0.07 170);
+  --sidebar: oklch(0.93 0.02 150);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --tooltip-bg: oklch(0.90 0.02 150 / 0.96);
+  --tooltip-border: oklch(0.80 0.02 150 / 0.55);
+  --tooltip-fg: var(--foreground);
+  --toast-shadow: 0 4px 24px -6px rgba(110,160,120,0.28), 0 0 0 1px rgba(80,120,90,0.18);
+}
+
+/* Green Tea Matcha */
+html[data-theme='matcha'] {
+  --background: oklch(0.90 0.03 125);
+  --foreground: oklch(0.24 0.04 125);
+  --card: oklch(0.92 0.03 125);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.92 0.03 125);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.70 0.11 125);
+  --primary-foreground: oklch(0.98 0.015 95);
+  --secondary: oklch(0.88 0.02 125);
+  --secondary-foreground: oklch(0.36 0.05 125);
+  --muted: oklch(0.87 0.02 125);
+  --muted-foreground: oklch(0.42 0.03 130);
+  --accent: oklch(0.74 0.10 135);
+  --accent-foreground: oklch(0.25 0.04 125);
+  --destructive: oklch(0.62 0.24 25);
+  --destructive-foreground: oklch(0.99 0.01 95);
+  --border: oklch(0.84 0.02 125);
+  --input: oklch(0.90 0.02 125);
+  --ring: oklch(0.70 0.11 125);
+  --chart-1: oklch(0.70 0.11 125);
+  --chart-2: oklch(0.72 0.10 115);
+  --chart-3: oklch(0.68 0.09 135);
+  --chart-4: oklch(0.66 0.08 105);
+  --chart-5: oklch(0.64 0.07 150);
+  --sidebar: oklch(0.89 0.02 125);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --tooltip-bg: oklch(0.88 0.02 125 / 0.96);
+  --tooltip-border: oklch(0.78 0.02 125 / 0.55);
+  --tooltip-fg: var(--foreground);
+  --toast-shadow: 0 4px 24px -6px rgba(80,120,90,0.28), 0 0 0 1px rgba(70,110,80,0.18);
+}
+
+/* Pastel Rainbow */
+html[data-theme='pastel-rainbow'] {
+  --background: linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5);
+  --foreground: oklch(0.25 0.03 250);
+  --card: oklch(0.97 0.02 95);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.97 0.02 95);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.72 0.14 300);
+  --primary-foreground: oklch(0.99 0.01 95);
+  --secondary: oklch(0.80 0.10 140);
+  --secondary-foreground: oklch(0.28 0.03 240);
+  --muted: oklch(0.90 0.02 95);
+  --muted-foreground: oklch(0.45 0.03 250);
+  --accent: oklch(0.78 0.13 40);
+  --accent-foreground: oklch(0.22 0.03 250);
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.99 0.01 95);
+  --border: oklch(0.88 0.02 95);
+  --input: oklch(0.94 0.02 95);
+  --ring: oklch(0.72 0.14 300);
+  --chart-1: oklch(0.70 0.14 300);
+  --chart-2: oklch(0.68 0.13 140);
+  --chart-3: oklch(0.66 0.12 40);
+  --chart-4: oklch(0.64 0.11 320);
+  --chart-5: oklch(0.62 0.10 200);
+  --sidebar: oklch(0.96 0.02 95);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --tooltip-bg: oklch(0.93 0.02 95 / 0.94);
+  --tooltip-border: oklch(0.83 0.02 95 / 0.5);
+  --tooltip-fg: var(--foreground);
+  --toast-shadow: 0 4px 30px -8px rgba(120,120,140,0.28), 0 0 0 1px rgba(140,140,160,0.18);
+}
+
+/* Fallback for gradient background tokens in pastel-rainbow - ensure background-color usage gets a solid color */
+html[data-theme='pastel-rainbow'] body {
+  background: #f7f5fb;
+}
+
+/* TOOLTIP BASE STYLE -------------------------------------------------- */
+[data-tooltip-content] {
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border: 1px solid var(--tooltip-border);
+  backdrop-filter: blur(6px) saturate(140%);
+  font-size: 11px;
+  line-height: 1.1;
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 16px -4px rgba(0,0,0,0.35), 0 0 0 1px var(--tooltip-border);
+  max-width: 240px;
+  pointer-events: none;
+  animation: tooltip-fade-in 120ms ease-out;
+}
+
+@keyframes tooltip-fade-in {
+  from { opacity: 0; transform: translateY(4px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Optional arrow styling if library renders an element with data-tooltip-arrow */
+[data-tooltip-arrow] {
+  background: var(--tooltip-bg);
+  border: 1px solid var(--tooltip-border);
+  box-shadow: 0 0 0 1px var(--tooltip-border);
+}
+
+/* Tippy.js theme: resonance (uses our CSS variables) ------------------ */
+.tippy-box[data-theme~='resonance'] {
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border: 1px solid var(--tooltip-border);
+  backdrop-filter: blur(6px) saturate(140%);
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 16px -4px rgba(0,0,0,0.35), 0 0 0 1px var(--tooltip-border);
+}
+.tippy-box[data-theme~='resonance'] .tippy-content {
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 1.1;
+}
+.tippy-box[data-theme~='resonance'] > .tippy-arrow::before {
+  color: var(--tooltip-bg);
+  box-shadow: 0 0 0 1px var(--tooltip-border);
+}
+
+/* TOAST GLOBAL OVERRIDES (semantic tokens already used in component) */
+.toast-root {
+  box-shadow: var(--toast-shadow);
 }

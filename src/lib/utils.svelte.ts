@@ -46,13 +46,23 @@ export function getClassIcon(class_name: string): string {
 // https://svelte.dev/docs/svelte/@attach#Attachment-factories
 export function tooltip(getContent: () => string): Attachment {
   return (element: Element) => {
-    const tooltip = tippy(element, {
-      content: "",
+    const instance = tippy(element, {
+      content: getContent(),
+      theme: 'resonance',
+      arrow: true,
+      delay: [200, 80],
+      duration: [120, 80],
+      animation: 'fade',
+      moveTransition: 'transform 120ms ease-out',
+      placement: 'top',
     });
+
+    // Keep content in sync with reactive source
     $effect(() => {
-      tooltip.setContent(getContent())
-    })
-    return tooltip.destroy;
+      instance.setContent(getContent());
+    });
+
+    return () => instance.destroy();
   };
 }
 

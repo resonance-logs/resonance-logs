@@ -20,8 +20,9 @@
     uid: number;
   } = $props();
 
-  let SETTINGS_YOUR_NAME = $derived(SETTINGS.general.state.showYourName);
-  let SETTINGS_OTHERS_NAME = $derived(SETTINGS.general.state.showOthersName);
+  // Use live context general settings (history pages should rely on their own components)
+  let SETTINGS_YOUR_NAME = $derived(SETTINGS.live.general.state.showYourName);
+  let SETTINGS_OTHERS_NAME = $derived(SETTINGS.live.general.state.showOthersName);
 
   // Derived helpers
   const isYou = $derived(name?.includes("You") ?? false);
@@ -67,10 +68,10 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <span class="ml-1 cursor-pointer truncate" onclick={(error) => copyToClipboard(error, `#${uid}`)} {@attach tooltip(() => `UID: #${uid}`)}>
     {#if abilityScore !== 0}
-      {#if SETTINGS.general.state.shortenAbilityScore}
-        {#if isYou && SETTINGS.general.state.showYourAbilityScore}
+      {#if SETTINGS.live.general.state.shortenAbilityScore}
+        {#if isYou && SETTINGS.live.general.state.showYourAbilityScore}
           <AbbreviatedNumber num={abilityScore} />
-        {:else if !isYou && SETTINGS.general.state.showOthersAbilityScore}
+  {:else if !isYou && SETTINGS.live.general.state.showOthersAbilityScore}
           <AbbreviatedNumber num={abilityScore} />
         {/if}
       {:else}

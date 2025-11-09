@@ -118,21 +118,23 @@
   });
 </script>
 
-<div class="space-y-6">
-  <h2 class="text-2xl font-semibold tracking-tight flex items-center gap-2">
-    <UploadIcon class="h-6 w-6" /> Uploading
-  </h2>
-  <p class="text-sm text-muted-foreground">
-    Paste your website API key here. Your key is stored locally on your device.
-  </p>
+<div class="space-y-4">
+  <div class="rounded-lg border border-border/60 bg-card/40 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+    <h2 class="text-2xl font-semibold tracking-tight flex items-center gap-2 text-foreground mb-2">
+      <UploadIcon class="h-6 w-6" /> Uploading
+    </h2>
+    <p class="text-sm text-muted-foreground">
+      Paste your website API key here. Your key is stored locally on your device.
+    </p>
+  </div>
 
-  <section class="rounded-lg border p-4 bg-card text-card-foreground space-y-4">
+  <section class="rounded-lg border border-border/60 bg-card/40 p-6 space-y-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
     <div class="flex flex-col gap-2">
-      <label for="apiKey" class="text-sm font-medium">API Key</label>
+      <label for="apiKey" class="text-sm font-medium text-foreground">API Key</label>
       <div class="flex gap-2 items-center">
         <input
           id="apiKey"
-          class="flex-1 min-w-0 rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
+          class="flex-1 min-w-0 rounded-md border border-border bg-popover px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground/80"
           type={type}
           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
           value={UPLOADING.apiKey.state.value}
@@ -141,7 +143,7 @@
           spellcheck={false}
         />
         <button
-          class="inline-flex items-center gap-1 rounded-md border px-3 py-2 hover:bg-accent"
+          class="inline-flex items-center gap-1 rounded-md border border-border bg-popover px-3 py-2 text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
           title={showKey ? "Hide API key" : "Show API key"}
           onclick={toggleMask}
         >
@@ -154,7 +156,7 @@
           {/if}
         </button>
         <button
-          class="inline-flex items-center gap-1 rounded-md border px-3 py-2 hover:bg-accent"
+          class="inline-flex items-center gap-1 rounded-md border border-border bg-popover px-3 py-2 text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
           title="Clear API key"
           onclick={clearKey}
         >
@@ -166,7 +168,7 @@
 
     <div class="flex items-center gap-2 pt-2">
       <button
-        class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 disabled:opacity-50"
+        class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         onclick={startUpload}
         disabled={busy || !getApiKey()}
       >
@@ -174,7 +176,7 @@
         <span>Start upload</span>
       </button>
       <button
-        class="inline-flex items-center gap-2 rounded-md border px-4 py-2 disabled:opacity-50"
+        class="inline-flex items-center gap-2 rounded-md border border-border bg-popover text-muted-foreground px-4 py-2 hover:bg-muted/40 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         onclick={cancelUpload}
         disabled={!busy}
       >
@@ -187,10 +189,10 @@
     </div>
   </section>
 
-  <section class="rounded-lg border p-4 bg-card text-card-foreground space-y-3">
-    <h3 class="text-sm font-medium">Progress</h3>
+  <section class="rounded-lg border border-border/60 bg-card/40 p-6 space-y-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+    <h3 class="text-base font-semibold text-foreground">Progress</h3>
     <div class="flex items-center justify-between text-sm">
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 text-muted-foreground">
         <span class="font-mono">{UPLOADING.progress.state.uploaded} / {UPLOADING.progress.state.total}</span>
         {#if UPLOADING.progress.state.inFlightBatch != null}
           <span class="text-muted-foreground">Batch {UPLOADING.progress.state.inFlightBatch}</span>
@@ -198,7 +200,7 @@
       </div>
       <span class="uppercase tracking-wide text-xs text-muted-foreground">{UPLOADING.progress.state.status}</span>
     </div>
-    <div class="h-2 w-full rounded bg-secondary/40 overflow-hidden">
+    <div class="h-2 w-full rounded bg-muted/50 overflow-hidden">
       <div class="h-2 bg-primary transition-all" style={`width: ${pct}%`}></div>
     </div>
     {#if UPLOADING.progress.state.lastError}

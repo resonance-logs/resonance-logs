@@ -153,7 +153,7 @@
 		<button
 			type="button"
 			onclick={toggleTypeDropdown}
-			class="h-full px-3 py-1.5 bg-neutral-800 border border-neutral-700 border-r-0 rounded-l text-neutral-300 hover:bg-neutral-750 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed min-w-[90px] flex items-center justify-between gap-2 text-sm"
+			class="h-full px-3 py-1.5 bg-popover border border-border border-r-0 rounded-l text-muted-foreground hover:bg-muted/40 hover:text-foreground focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed min-w-[90px] flex items-center justify-between gap-2 text-sm transition-colors"
 			{disabled}
 		>
 			<span class="capitalize">{searchType}</span>
@@ -169,26 +169,26 @@
 
 		{#if showTypeDropdown}
 			<div
-				class="absolute left-0 top-full mt-1 z-20 bg-neutral-900 border border-neutral-700 rounded-md shadow-xl overflow-hidden min-w-[120px]"
+				class="absolute left-0 top-full mt-1 z-20 bg-popover/95 backdrop-blur-md border border-border rounded-md shadow-lg overflow-hidden min-w-[120px] animate-in fade-in-0 zoom-in-95"
 			>
 				<button
 					type="button"
 					onclick={() => selectSearchType('boss')}
-					class="w-full px-3 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none transition-colors {searchType === 'boss' ? 'bg-neutral-800 text-neutral-100' : ''}"
+					class="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted/40 focus:bg-muted/50 focus:outline-none transition-colors {searchType === 'boss' ? 'bg-muted/60 text-foreground' : ''}"
 				>
 					Boss
 				</button>
 				<button
 					type="button"
 					onclick={() => selectSearchType('player')}
-					class="w-full px-3 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none transition-colors {searchType === 'player' ? 'bg-neutral-800 text-neutral-100' : ''}"
+					class="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted/40 focus:bg-muted/50 focus:outline-none transition-colors {searchType === 'player' ? 'bg-muted/60 text-foreground' : ''}"
 				>
 					Player
 				</button>
 				<button
 					type="button"
 					onclick={() => selectSearchType('encounter')}
-					class="w-full px-3 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none transition-colors {searchType === 'encounter' ? 'bg-neutral-800 text-neutral-100' : ''}"
+					class="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted/40 focus:bg-muted/50 focus:outline-none transition-colors {searchType === 'encounter' ? 'bg-muted/60 text-foreground' : ''}"
 				>
 					Encounter
 				</button>
@@ -209,24 +209,24 @@
 			{disabled}
 			{id}
 			autocomplete="off"
-			class="w-full px-3 py-1.5 text-sm bg-neutral-800 border border-neutral-700 rounded-r text-neutral-300 placeholder-neutral-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+			class="w-full px-3 py-1.5 text-sm bg-popover border border-border rounded-r text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 		/>
 
 		{#if isLoading}
 			<div
-				class="absolute z-10 w-full mt-1 bg-neutral-900 border border-neutral-700 rounded-md shadow-xl px-3 py-2"
+				class="absolute z-10 w-full mt-1 bg-popover/95 backdrop-blur-md border border-border rounded-md shadow-lg px-3 py-2 animate-in fade-in-0 zoom-in-95"
 			>
-				<div class="text-neutral-400 text-sm">Loading...</div>
+				<div class="text-muted-foreground text-sm">Loading...</div>
 			</div>
 		{:else if showDropdown && filteredNames.length > 0}
 			<div
-				class="absolute z-10 w-full mt-1 bg-neutral-900 border border-neutral-700 rounded-md shadow-xl max-h-48 overflow-y-auto"
+				class="absolute z-10 w-full mt-1 bg-popover/95 backdrop-blur-md border border-border rounded-md shadow-lg max-h-48 overflow-y-auto animate-in fade-in-0 zoom-in-95"
 			>
 				{#each filteredNames as name}
 					<button
 						type="button"
 						onclick={() => selectName(name)}
-						class="w-full px-3 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none transition-colors"
+						class="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted/40 focus:bg-muted/50 focus:outline-none transition-colors"
 					>
 						{name}
 					</button>
@@ -234,9 +234,9 @@
 			</div>
 		{:else if searchType === 'player' && value.trim().length >= 1 && !isLoading && filteredNames.length === 0}
 			<div
-				class="absolute z-10 w-full mt-1 bg-neutral-900 border border-neutral-700 rounded-md shadow-xl px-3 py-2"
+				class="absolute z-10 w-full mt-1 bg-popover/95 backdrop-blur-md border border-border rounded-md shadow-lg px-3 py-2 animate-in fade-in-0 zoom-in-95"
 			>
-				<div class="text-neutral-400 text-sm">No players found</div>
+				<div class="text-muted-foreground text-sm">No players found</div>
 			</div>
 		{/if}
 	</div>

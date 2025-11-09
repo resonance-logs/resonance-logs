@@ -1,11 +1,4 @@
 <script lang="ts">
-  import CheckIcon from "@lucide/svelte/icons/check";
-  import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
-  import * as Command from "$lib/components/ui/command/index.js";
-  import * as Popover from "$lib/components/ui/popover/index.js";
-  import { Button } from "$lib/components/ui/button/index.js";
-  import { cn } from "$lib/utils.js";
-
   let {
     label = "",
     description = "",
@@ -17,44 +10,30 @@
     selected: string;
     values: string[];
   } = $props();
-
-  let open = $state(false);
 </script>
 
-<label class="flex flex-row items-center">
-  <!-- https://shadcn-svelte.com/docs/components/combobox -->
-  <Popover.Root bind:open>
-    <Popover.Trigger>
-      <Button variant="outline" class="w-[200px] justify-between" role="combobox">
-        {selected}
-        <ChevronsUpDownIcon />
-      </Button>
-    </Popover.Trigger>
-    <Popover.Content class="w-[200px] p-0">
-      <Command.Root>
-        <Command.List>
-          <Command.Group>
-            {#each values as value (value)}
-              <Command.Item
-                {value}
-                onSelect={() => {
-                  selected = value;
-                  open = false;
-                }}
-              >
-                <CheckIcon class={cn(selected !== value && "text-transparent")} />
-                {value}
-              </Command.Item>
-            {/each}
-          </Command.Group>
-        </Command.List>
-      </Command.Root>
-    </Popover.Content>
-  </Popover.Root>
-  <div class="ml-4">
-    <div>{label}</div>
-    {#if description}
-      <div class="text-muted-foreground text-sm">{description}</div>
-    {/if}
+<div class="flex items-start gap-3 py-2.5 px-3">
+  <div class="flex-1 min-w-0 space-y-2">
+    <div>
+      <!-- Replaced hard-coded neutral colors with semantic theme variables -->
+      <div class="text-sm font-medium text-foreground">{label}</div>
+      {#if description}
+        <div class="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</div>
+      {/if}
+    </div>
+    <div class="flex flex-wrap gap-2">
+      {#each values as value (value)}
+        <button
+          type="button"
+          onclick={() => selected = value}
+          class="px-3 py-1.5 rounded-md text-xs font-medium transition-all {selected === value
+            ? 'bg-muted text-foreground shadow-sm border border-border'
+            : 'bg-popover/50 text-muted-foreground hover:bg-popover/70 hover:text-foreground border border-border/60'}"
+          style="background: {selected === value ? 'var(--muted)' : 'color-mix(in oklab, var(--popover) 50%, transparent)'}; color: {selected === value ? 'var(--foreground)' : 'var(--muted-foreground)'}; border-color: var(--border);"
+        >
+          {value}
+        </button>
+      {/each}
+    </div>
   </div>
-</label>
+</div>

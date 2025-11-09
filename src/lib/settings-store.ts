@@ -2,10 +2,7 @@
  * @file This file contains the settings store for the application.
  * It uses `@tauri-store/svelte` to create persistent stores for user settings.
  */
-import { version } from '@tauri-apps/plugin-os';
 import { RuneStore } from '@tauri-store/svelte';
-
-const IS_WIN_11 = parseInt(version().split(".")[2] || "0", 10) >= 22000;
 
 export const DEFAULT_STATS = {
   totalDmg: true,
@@ -60,10 +57,9 @@ const DEFAULT_GENERAL_SETTINGS = {
 };
 
 const DEFAULT_SETTINGS = {
-  general: { ...DEFAULT_GENERAL_SETTINGS },
   accessibility: {
-    blur: !IS_WIN_11,
-    transparency: false,
+    // New theme setting; fallback to 'dark' if missing in existing persisted store
+    theme: 'dark' as string,
     density: "comfortable" as "comfortable" | "medium" | "compact",
   },
   shortcuts: {
@@ -93,19 +89,11 @@ const DEFAULT_SETTINGS = {
     healPlayers: { ...DEFAULT_HISTORY_HEAL_STATS },
     healSkillBreakdown: { ...DEFAULT_HISTORY_STATS },
   },
-  misc: {
-    testingMode: false,
-  },
 };
 
 // We need flattened settings for every update to be able to auto-detect new changes
 const RUNE_STORE_OPTIONS = { autoStart: true, saveOnChange: true };
 export const SETTINGS = {
-  general: new RuneStore(
-    'general',
-    DEFAULT_SETTINGS.general,
-    RUNE_STORE_OPTIONS
-  ),
   accessibility: new RuneStore(
     'accessibility',
     DEFAULT_SETTINGS.accessibility,
@@ -190,17 +178,11 @@ export const SETTINGS = {
       ),
     },
   },
-  misc: new RuneStore(
-    'misc',
-    DEFAULT_SETTINGS.misc,
-    RUNE_STORE_OPTIONS
-  ),
 };
 
 // Create flattened settings object for backwards compatibility
 export const settings = {
   state: {
-    general: SETTINGS.general.state,
     accessibility: SETTINGS.accessibility.state,
     shortcuts: SETTINGS.shortcuts.state,
     live: {
@@ -229,7 +211,6 @@ export const settings = {
         skillBreakdown: SETTINGS.history.heal.skillBreakdown.state,
       },
     },
-    misc: SETTINGS.misc.state,
   },
 };
 
@@ -237,7 +218,7 @@ export const settings = {
 export type DensityMode = "comfortable" | "medium" | "compact";
 
 export function getAccessibilityDensity(): DensityMode {
-  const state = SETTINGS.accessibility.state as { blur: boolean; transparency: boolean; density?: DensityMode; compactMode?: boolean };
+  const state = SETTINGS.accessibility.state as { density?: DensityMode; compactMode?: boolean };
 
   // If legacy compactMode exists in stored state, map it: true -> compact, false -> comfortable
   if (typeof state.compactMode === "boolean") {
@@ -246,3 +227,13 @@ export function getAccessibilityDensity(): DensityMode {
   const density = state.density;
   return density === "medium" || density === "compact" ? density : "comfortable";
 }
+
+// Available theme names (keep in sync with CSS classes defined in app.css)
+export const AVAILABLE_THEMES = [
+  'dark',
+  'light',
+  'pink-uwu',
+  'green-pastel',
+  'matcha',
+  'pastel-rainbow'
+];

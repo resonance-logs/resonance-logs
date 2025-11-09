@@ -24,8 +24,8 @@
 
   // Optimize derived calculations to avoid recalculation on every render
   let maxSkillValue = $state(0);
-  let SETTINGS_YOUR_NAME = $state(settings.state["general"]["showYourName"]);
-  let SETTINGS_OTHERS_NAME = $state(settings.state["general"]["showOthersName"]);
+  let SETTINGS_YOUR_NAME = $state(settings.state.live.general.showYourName);
+  let SETTINGS_OTHERS_NAME = $state(settings.state.live.general.showOthersName);
 
   // Update maxSkillValue when data changes
   $effect(() => {
@@ -34,8 +34,8 @@
 
   // Update settings references when settings change
   $effect(() => {
-    SETTINGS_YOUR_NAME = settings.state["general"]["showYourName"];
-    SETTINGS_OTHERS_NAME = settings.state["general"]["showOthersName"];
+    SETTINGS_YOUR_NAME = settings.state.live.general.showYourName;
+    SETTINGS_OTHERS_NAME = settings.state.live.general.showOthersName;
   });
 
   // Get visible columns based on settings

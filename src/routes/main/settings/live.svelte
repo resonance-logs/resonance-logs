@@ -5,6 +5,7 @@
   import { dpsPlayersColumnDefs, dpsSkillsColumnDefs, healPlayersColumnDefs, healSkillsColumnDefs } from "$lib/table-info";
   import { SETTINGS } from "$lib/settings-store";
   import { setBossOnlyDps } from "$lib/api";
+  import ChevronDown from "virtual:icons/lucide/chevron-down";
 
   const SETTINGS_CATEGORY = "live";
 
@@ -24,39 +25,124 @@
       void setBossOnlyDps(SETTINGS.live.general.state.bossOnlyDps);
     }
   });
+
+  // Collapsible section state - all collapsed by default
+  let expandedSections = $state({
+    general: false,
+    dpsPlayers: false,
+    dpsSkills: false,
+    healPlayers: false,
+    healSkills: false,
+  });
+
+  function toggleSection(section: keyof typeof expandedSections) {
+    expandedSections[section] = !expandedSections[section];
+  }
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
-  <h2 class="my-4 text-lg font-medium">General</h2>
-  <SettingsSelect bind:selected={SETTINGS.live.general.state.showYourName} values={["Show Your Name", "Show Your Class", "Hide Your Name"]} label="Show Your Name" description="Show Your Class = replace your name with your class" />
-  <SettingsSelect bind:selected={SETTINGS.live.general.state.showOthersName} values={["Show Others' Name", "Show Others' Class", "Hide Others' Name"]} label="Show Others' Name" description="Show Others' Class = replace others' name with their class" />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.showYourAbilityScore} label="Your Ability Score" description="Show your ability score" />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.showOthersAbilityScore} label="Others' Ability Score" description="Show others' ability score" />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopDPSPlayer} label="Relative to Top DPS - Player" description="Color bars are relative to top DPS player instead of all players. Useful for 20 man or World Bosses." />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopDPSSkill} label="Relative to Top DPS - Skill" description="Color bars are relative to top DPS skill instead of all skills. Useful for 20 man or World Bosses." />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopHealPlayer} label="Relative to Top Heal - Player" description="Color bars are relative to top healing player instead of all players. Useful for 20 man or World Bosses." />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopHealSkill} label="Relative to Top - Skill" description="Color bars are relative to top healing skill instead of all skills. Useful for 20 man or World Bosses." />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
-  <SettingsSwitch bind:checked={SETTINGS.live.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
+  <div class="space-y-3">
+    <!-- General Settings -->
+  <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+      <button
+        type="button"
+  class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onclick={() => toggleSection('general')}
+      >
+  <h2 class="text-base font-semibold text-foreground">General Settings</h2>
+  <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.general ? 'rotate-180' : ''}" />
+      </button>
+      {#if expandedSections.general}
+  <div class="px-4 pb-3 space-y-1">
+          <SettingsSelect bind:selected={SETTINGS.live.general.state.showYourName} values={["Show Your Name", "Show Your Class", "Hide Your Name"]} label="Show Your Name" description="Show Your Class = replace your name with your class" />
+          <SettingsSelect bind:selected={SETTINGS.live.general.state.showOthersName} values={["Show Others' Name", "Show Others' Class", "Hide Others' Name"]} label="Show Others' Name" description="Show Others' Class = replace others' name with their class" />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.showYourAbilityScore} label="Your Ability Score" description="Show your ability score" />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.showOthersAbilityScore} label="Others' Ability Score" description="Show others' ability score" />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopDPSPlayer} label="Relative to Top DPS - Player" description="Color bars are relative to top DPS player instead of all players. Useful for 20 man or World Bosses." />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopDPSSkill} label="Relative to Top DPS - Skill" description="Color bars are relative to top DPS skill instead of all skills. Useful for 20 man or World Bosses." />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopHealPlayer} label="Relative to Top Heal - Player" description="Color bars are relative to top healing player instead of all players. Useful for 20 man or World Bosses." />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopHealSkill} label="Relative to Top - Skill" description="Color bars are relative to top healing skill instead of all skills. Useful for 20 man or World Bosses." />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
+        </div>
+      {/if}
+    </div>
 
-  <h2 class="my-4 text-lg font-medium">DPS - Player</h2>
-  {#each dpsPlayersColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-    <SettingsSwitch bind:checked={SETTINGS.live.dps.players.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
-  {/each}
+    <!-- DPS - Player Settings -->
+  <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+      <button
+        type="button"
+  class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onclick={() => toggleSection('dpsPlayers')}
+      >
+  <h2 class="text-base font-semibold text-foreground">DPS - Player Columns</h2>
+  <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.dpsPlayers ? 'rotate-180' : ''}" />
+      </button>
+      {#if expandedSections.dpsPlayers}
+        <div class="px-4 pb-3 space-y-1">
+          {#each dpsPlayersColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.dps.players.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {/each}
+        </div>
+      {/if}
+    </div>
 
-  <h2 class="my-4 text-lg font-medium">DPS - Skill Breakdown</h2>
-  {#each dpsSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-    <SettingsSwitch bind:checked={SETTINGS.live.dps.skillBreakdown.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
-  {/each}
+    <!-- DPS - Skill Breakdown Settings -->
+  <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+      <button
+        type="button"
+  class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onclick={() => toggleSection('dpsSkills')}
+      >
+  <h2 class="text-base font-semibold text-foreground">DPS - Skill Breakdown Columns</h2>
+  <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.dpsSkills ? 'rotate-180' : ''}" />
+      </button>
+      {#if expandedSections.dpsSkills}
+        <div class="px-4 pb-3 space-y-1">
+          {#each dpsSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.dps.skillBreakdown.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {/each}
+        </div>
+      {/if}
+    </div>
 
-  <h2 class="my-4 text-lg font-medium">Heal - Player</h2>
-  {#each healPlayersColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-    <SettingsSwitch bind:checked={SETTINGS.live.heal.players.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
-  {/each}
+    <!-- Heal - Player Settings -->
+  <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+      <button
+        type="button"
+  class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onclick={() => toggleSection('healPlayers')}
+      >
+  <h2 class="text-base font-semibold text-foreground">Heal - Player Columns</h2>
+  <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.healPlayers ? 'rotate-180' : ''}" />
+      </button>
+      {#if expandedSections.healPlayers}
+        <div class="px-4 pb-3 space-y-1">
+          {#each healPlayersColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.heal.players.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {/each}
+        </div>
+      {/if}
+    </div>
 
-  <h2 class="my-4 text-lg font-medium">Heal - Skill Breakdown</h2>
-  {#each healSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-    <SettingsSwitch bind:checked={SETTINGS.live.heal.skillBreakdown.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
-  {/each}
+    <!-- Heal - Skill Breakdown Settings -->
+  <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+      <button
+        type="button"
+  class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onclick={() => toggleSection('healSkills')}
+      >
+  <h2 class="text-base font-semibold text-foreground">Heal - Skill Breakdown Columns</h2>
+  <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.healSkills ? 'rotate-180' : ''}" />
+      </button>
+      {#if expandedSections.healSkills}
+        <div class="px-4 pb-3 space-y-1">
+          {#each healSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.heal.skillBreakdown.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </div>
 </Tabs.Content>

@@ -218,22 +218,16 @@
     };
   });
 
-  $effect(() => {
-    if (SETTINGS.accessibility.state.blur) {
-      commands.enableBlur();
-    } else {
-      commands.disableBlur();
-    }
-  });
+  // Blur feature removed; effect removed.
 </script>
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-<div class="flex h-screen flex-col bg-neutral-900 text-[13px] text-neutral-100 p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]">
+<div class="flex h-screen flex-col bg-background text-[13px] text-foreground p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]">
   <Header />
     <main
     bind:this={mainElement}
-    class="flex-1 overflow-y-auto gap-4 rounded-lg"
+    class="flex-1 overflow-y-auto gap-4 rounded-lg bg-card/20 border border-border/40"
     >
     {@render children()}
   </main>

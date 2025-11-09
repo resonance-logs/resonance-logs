@@ -152,27 +152,31 @@
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
-  <Alert.Root variant="destructive" class="mb-4">
-    <AlertCircleIcon />
-    <Alert.Description>TBD: Make it so that having the same shortcut for Show/Hide is Toggle. For now, a separate Toggle shortcut is available.</Alert.Description>
-  </Alert.Root>
-  <Alert.Root>
-    <Alert.Title>Right click to clear shortcuts</Alert.Title>
-  </Alert.Root>
-  {#each inputs as input (input.id)}
-    <Item.Root>
-      <Item.Content>
-        <Item.Title>{input.label}</Item.Title>
-      </Item.Content>
-      <Item.Actions>
-        <Button variant="outline" class="uppercase" onclick={() => startEdit(input)} oncontextmenu={(e: MouseEvent) => clearShortcut(input, e)}>
-          {#if editingId === input.id}
-            {currentShortcutString() || "Press keys"}...
-          {:else}
-            {SETTINGS.shortcuts.state[input.id] || "Unbound"}
-          {/if}
-        </Button>
-      </Item.Actions>
-    </Item.Root>
-  {/each}
+  <div class="space-y-3">
+  <Alert.Root variant="destructive" class="shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      <AlertCircleIcon />
+      <Alert.Description>TBD: Make it so that having the same shortcut for Show/Hide is Toggle. For now, a separate Toggle shortcut is available.</Alert.Description>
+    </Alert.Root>
+  <Alert.Root class="shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      <Alert.Title>Right click to clear shortcuts</Alert.Title>
+    </Alert.Root>
+  <div class="rounded-lg border bg-card/40 border-border/60 p-4 space-y-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+      {#each inputs as input (input.id)}
+        <Item.Root>
+          <Item.Content>
+            <Item.Title>{input.label}</Item.Title>
+          </Item.Content>
+          <Item.Actions>
+            <Button variant="outline" class="uppercase" onclick={() => startEdit(input)} oncontextmenu={(e: MouseEvent) => clearShortcut(input, e)}>
+              {#if editingId === input.id}
+                {currentShortcutString() || "Press keys"}...
+              {:else}
+                {SETTINGS.shortcuts.state[input.id] || "Unbound"}
+              {/if}
+            </Button>
+          </Item.Actions>
+        </Item.Root>
+      {/each}
+    </div>
+  </div>
 </Tabs.Content>

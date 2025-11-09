@@ -214,9 +214,9 @@
     <div class="mb-4">
       <div class="flex items-center justify-between gap-3 mb-3">
         <div class="flex items-center gap-3">
-          <button
-            onclick={backToHistory}
-            class="p-1.5 text-neutral-400 hover:text-neutral-200 transition-colors rounded hover:bg-neutral-800"
+      <button
+        onclick={backToHistory}
+        class="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40"
             aria-label="Back to history"
           >
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,18 +224,18 @@
             </svg>
           </button>
           <div>
-            <h2 class="text-xl font-semibold text-neutral-200">
+            <h2 class="text-xl font-semibold text-foreground">
               Encounter #{encounter.id}
               {#if encounter.bosses.length > 0}
-                <span class="text-neutral-400">—</span>
+                <span class="text-muted-foreground">—</span>
                 <span>
                   {#each encounter.bosses as b, i}
-                    <span class="{b.isDefeated ? 'text-red-400 line-through' : 'text-blue-400'}">{b.monsterName}{i < encounter.bosses.length - 1 ? ', ' : ''}</span>
+                    <span class="{b.isDefeated ? 'text-destructive line-through' : 'text-primary'}">{b.monsterName}{i < encounter.bosses.length - 1 ? ', ' : ''}</span>
                   {/each}
                 </span>
               {/if}
             </h2>
-            <div class="text-sm text-neutral-400">
+            <div class="text-sm text-muted-foreground">
               {new Date(encounter.startedAtMs).toLocaleString()} — Duration: {Math.floor(Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000) / 60)}m
             </div>
             </div>
@@ -243,22 +243,22 @@
 
         <!-- Tabs and Boss Only Toggle -->
         <div class="flex items-end gap-2 h-[48px]">
-          <div class="flex rounded border border-neutral-700 bg-neutral-900">
+          <div class="flex rounded border border-border bg-popover">
             <button
               onclick={() => activeTab = 'damage'}
-              class="px-2 py-1 text-xs rounded transition-colors {activeTab === 'damage' ? 'bg-neutral-800 text-neutral-200' : 'text-neutral-400 hover:text-neutral-200'}"
+              class="px-2 py-1 text-xs rounded transition-colors {activeTab === 'damage' ? 'bg-muted/40 text-foreground' : 'text-muted-foreground hover:text-foreground'}"
             >
               Damage
             </button>
             <button
               onclick={() => activeTab = 'tanked'}
-              class="px-2 py-1 text-xs rounded transition-colors {activeTab === 'tanked' ? 'bg-neutral-800 text-neutral-200' : 'text-neutral-400 hover:text-neutral-200'}"
+              class="px-2 py-1 text-xs rounded transition-colors {activeTab === 'tanked' ? 'bg-muted/40 text-foreground' : 'text-muted-foreground hover:text-foreground'}"
             >
               Tanked
             </button>
             <button
               onclick={() => activeTab = 'healing'}
-              class="px-2 py-1 text-xs rounded transition-colors {activeTab === 'healing' ? 'bg-neutral-800 text-neutral-200' : 'text-neutral-400 hover:text-neutral-200'}"
+              class="px-2 py-1 text-xs rounded transition-colors {activeTab === 'healing' ? 'bg-muted/40 text-foreground' : 'text-muted-foreground hover:text-foreground'}"
             >
               Healing
             </button>
@@ -266,7 +266,7 @@
 
           <button
             onclick={() => {if (activeTab === 'damage') bossOnlyMode = !bossOnlyMode}}
-            class="boss-only-toggle transition-colors p-1 {activeTab !== 'damage' ? 'opacity-30 cursor-not-allowed' : ''}"
+            class="boss-only-toggle transition-colors p-1 {activeTab !== 'damage' ? 'opacity-30 cursor-not-allowed' : 'hover:bg-muted/40 rounded'}"
             class:boss-only-active={bossOnlyMode && activeTab === 'damage'}
             title={activeTab !== 'damage' ? "Boss Damage Only (Only for Damage tab)" : bossOnlyMode ? "Boss Damage Only (Active)" : "Boss Damage Only"}
           >
@@ -276,23 +276,23 @@
       </div>
     </div>
 
-    <div class="overflow-x-auto rounded border border-neutral-700">
+    <div class="overflow-x-auto rounded border border-border/60 bg-card/30">
       <table class="w-full border-collapse">
         <thead>
-          <tr class="bg-neutral-800">
-            <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-400">Player</th>
+          <tr class="bg-popover/60">
+            <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Player</th>
             {#each visiblePlayerColumns as col (col.key)}
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">{col.header}</th>
+              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">{col.header}</th>
             {/each}
           </tr>
         </thead>
-        <tbody class="bg-neutral-900">
+        <tbody class="bg-background/40">
           {#each displayedPlayers as p (p.uid)}
             <tr
-              class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors cursor-pointer"
+              class="relative border-t border-border/40 hover:bg-muted/60 transition-colors cursor-pointer"
               onclick={() => viewPlayerSkills(p.uid, activeTab === 'healing' ? 'heal' : 'dps')}
             >
-              <td class="px-3 py-3 text-sm text-neutral-300 relative z-10">
+              <td class="px-3 py-3 text-sm text-muted-foreground relative z-10">
                 <div class="flex items-center gap-2 h-full">
                   <img
                     class="size-5 object-contain"
@@ -306,9 +306,9 @@
                   >
                     {#if p.abilityScore > 0}
                       {#if SETTINGS.history.general.state.shortenAbilityScore}
-                        <span class="text-neutral-400"><AbbreviatedNumber num={p.abilityScore} /></span>
+                        <span class="text-muted-foreground"><AbbreviatedNumber num={p.abilityScore} /></span>
                       {:else}
-                        <span class="text-neutral-400">{p.abilityScore}</span>
+                        <span class="text-muted-foreground">{p.abilityScore}</span>
                       {/if}
                     {/if}
                     {getDisplayName({
@@ -318,13 +318,13 @@
                       isLocalPlayer: p.isLocalPlayer
                     })}
                     {#if p.isLocalPlayer}
-                      <span class="text-blue-400 ml-1">(You)</span>
+                      <span class="ml-1 text-[oklch(0.65_0.1_250)]">(You)</span>
                     {/if}
                   </span>
                 </div>
               </td>
               {#each visiblePlayerColumns as col (col.key)}
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">
+                <td class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10">
                   {#if (col.key === 'totalDmg' || col.key === 'dps') && (
                     (activeTab === 'damage' && settings.state.history.general.shortenDps) ||
                     (activeTab === 'healing' && settings.state.history.general.shortenDps) ||
@@ -369,7 +369,7 @@
           </svg>
         </button>
         <div>
-          <h2 class="text-xl font-semibold text-neutral-200">Skill Breakdown</h2>
+          <h2 class="text-xl font-semibold text-foreground">Skill Breakdown</h2>
           <div class="text-sm text-neutral-400">
             Player: {getDisplayName({
               player: { uid: selectedPlayer.uid, name: selectedPlayer.name, className: selectedPlayer.className },
@@ -382,22 +382,22 @@
       </div>
     </div>
 
-    <div class="overflow-x-auto rounded border border-neutral-700">
+    <div class="overflow-x-auto rounded border border-border/60 bg-card/30">
       <table class="w-full border-collapse">
         <thead>
-          <tr class="bg-neutral-800">
-            <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-400">Skill</th>
+          <tr class="bg-popover/60">
+            <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Skill</th>
             {#each visibleSkillColumns as col (col.key)}
-              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-400">{col.header}</th>
+              <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">{col.header}</th>
             {/each}
           </tr>
         </thead>
-        <tbody class="bg-neutral-900">
+        <tbody class="bg-background/40">
           {#each skillsWindow.skillRows as s (s.name)}
-            <tr class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors">
-              <td class="px-3 py-3 text-sm text-neutral-300 relative z-10">{s.name}</td>
+            <tr class="relative border-t border-border/40 hover:bg-muted/60 transition-colors">
+              <td class="px-3 py-3 text-sm text-muted-foreground relative z-10">{s.name}</td>
               {#each visibleSkillColumns as col (col.key)}
-                <td class="px-3 py-3 text-right text-sm text-neutral-300 relative z-10">
+                <td class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10">
                   {#if (col.key === 'totalDmg' || col.key === 'dps') && SETTINGS.history.general.state.shortenDps}
                     <AbbreviatedNumber num={s[col.key] ?? 0} />
                   {:else}

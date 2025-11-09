@@ -85,19 +85,11 @@ export async function registerShortcut(cmdId: string, shortcutKey: string) {
         });
         break;
 
-      case "hardReset":
-        await register(shortcutKey, async (event) => {
-          if (event.state === "Pressed") {
-            commands.hardReset();
-          }
-        });
-        break;
-
       case "toggleBossHp":
         await register(shortcutKey, async (event) => {
           if (event.state === "Pressed") {
-            const nextValue = !SETTINGS.general.state.bossOnlyDps;
-            SETTINGS.general.state.bossOnlyDps = nextValue;
+            const nextValue = !SETTINGS.live.general.state.bossOnlyDps;
+            SETTINGS.live.general.state.bossOnlyDps = nextValue;
             await setBossOnlyDps(nextValue);
           }
         });
