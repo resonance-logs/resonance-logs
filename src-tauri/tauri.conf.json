@@ -50,6 +50,15 @@
             "icons/icon.ico"
         ],
         "resources": ["./WinDivert.dll", "./WinDivert64.sys", "./meter-data/"],
-        "createUpdaterArtifacts": false
+        "createUpdaterArtifacts": true
+    },
+    "plugins": {
+        "updater": {
+            "active": true,
+            "endpoints": [
+                "https://resonance-logs.gitlab.io/resonance-logs/updater.json"
+            ],
+            "dialog": false
+        }
     }
 }

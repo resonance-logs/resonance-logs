@@ -126,7 +126,7 @@ pages:
       artifacts: true
       optional: true
   before_script:
-    - apk add curl unzip
+    - apk add curl unzip coreutils
   script:
     # ... (your existing script for merging artifacts is correct) ...
     - mkdir deploy
@@ -150,14 +150,47 @@ pages:
       fi
     - |
       if [ -d "src-tauri/target/release/bundle" ]; then
-        echo "Copying new release bundles..."
-        cp -r src-tauri/target/release/bundle/* deploy/
+        echo "Copying new release bundles into /downloads..."
+        mkdir -p deploy/downloads
+        # Copy only Windows installer executables into downloads
+        find src-tauri/target/release/bundle -type f -iname '*.exe' -exec cp {} deploy/downloads/ \; || true
       fi
     - |
       if [ -d "src-tauri/target/debug/bundle" ]; then
-        echo "Copying new debug bundles..."
-        cp -r src-tauri/target/debug/bundle/* deploy/
+        echo "Copying new debug bundles into /downloads..."
+        mkdir -p deploy/downloads
+        find src-tauri/target/debug/bundle -type f -iname '*.exe' -exec cp {} deploy/downloads/ \; || true
       fi
+    - |
+      # Generate a lightweight manifest.json for downloads so the public pages can discover installers
+      if [ -d deploy/downloads ]; then
+        echo "Generating downloads/manifest.json"
+        cd deploy/downloads
+        # Collect .exe files ordered by modification time (newest first)
+        set -- *.exe
+        if [ -e "$1" ]; then
+          echo '{' > manifest.json
+          echo '  "versions": [' >> manifest.json
+          first=1
+          for f in "$@"; do
+            if [ $first -eq 1 ]; then
+              first=0
+            else
+              echo ',' >> manifest.json
+            fi
+            printf '    { "filename": "%s" }' "$f" >> manifest.json
+          done
+          echo '' >> manifest.json
+          echo '  ],' >> manifest.json
+          latest=$(ls -1t -- *.exe | head -n1)
+          echo "  \"latest\": \"$latest\"" >> manifest.json
+          echo '}' >> manifest.json
+        else
+          echo "No .exe files found in deploy/downloads; skipping manifest generation."
+        fi
+        cd - >/dev/null || true
+      fi
+    - sh scripts/generate_updater_json.sh deploy/downloads
     - mv deploy public
     - echo "Final contents of /public directory:"
     - ls -la public

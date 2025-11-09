@@ -77,17 +77,21 @@ pub fn run() {
             stop_windivert();
             remove_windivert();
 
-            // // Check app updates
-            // // https://v2.tauri.app/plugin/updater/#checking-for-updates
-            // #[cfg(not(debug_assertions))] // <- Only check for updates on release builds
-            // {
-            //     unload_and_remove_windivert();
+            // Check app updates
+            // https://v2.tauri.app/plugin/updater/#checking-for-updates
+            // Only run updater checks on Windows release builds (automatic apply)
+            #[cfg(all(windows, not(debug_assertions)))]
+            {
+                // Unload driver to avoid file handle conflicts during update
+                unload_and_remove_windivert();
 
-            //     let handle = app.handle().clone();
-            //     tauri::async_runtime::spawn(async move {
-            //         crate::update(handle).await.unwrap();
-            //     });
-            // }
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(e) = crate::check_for_updates(handle).await {
+                        warn!("Updater error: {}", e);
+                    }
+                });
+            }
 
             let app_handle = app.handle().clone();
 
@@ -197,26 +201,33 @@ fn run_command_silently(cmd: &mut Command) -> std::io::Result<std::process::Exit
     }
 }
 
-// async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
-//     if let Some(update) = app.updater()?.check().await? {
-//         let mut downloaded = 0;
-//         update
-//             .download_and_install(
-//                 |chunk_length, content_length| {
-//                     downloaded += chunk_length;
-//                     info!("downloaded {downloaded} from {content_length:?}");
-//                 },
-//                 || {
-//                     info!("download finished");
-//                 },
-//             )
-//             .await?;
+// Updater helper: checks for updates and downloads+installs them automatically.
+// This runs only on Windows release builds (guarded where it is invoked).
+#[cfg(all(windows, not(debug_assertions)))]
+async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    // If an update is available, download and install it, then restart the app.
+    if let Some(update) = app.updater()?.check().await? {
+        info!("Update available, starting download and install...");
+        // Provide a simple logging progress callback. Use the provided
+        // download_and_install helper from the updater plugin which applies the update.
+        update
+            .download_and_install(
+                |chunk_length, content_length| {
+                    info!("downloaded {} bytes (total: {:?})", chunk_length, content_length);
+                },
+                || {
+                    info!("download finished");
+                },
+            )
+            .await?;
 
-//         info!("update installed");
-//         app.restart();
-//     }
-//     Ok(())
-// }
+        info!("Update installed successfully, restarting application...");
+        app.restart();
+    } else {
+        info!("No update available");
+    }
+    Ok(())
+}
 
 /// Sets up the logging for the application.
 ///

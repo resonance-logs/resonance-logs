@@ -5,20 +5,135 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Resonance Logs</title>
     <style>
-      body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:#0f172a; color:#e6eef8; display:flex; align-items:center; justify-content:center; height:100vh; margin:0 }
-      .card { max-width:720px; padding:28px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); box-shadow:0 6px 30px rgba(2,6,23,0.6); }
+      :root{--bg:#0f172a;--card-top:rgba(255,255,255,0.03);--card-bot:rgba(255,255,255,0.01);--muted:#94a3b8;--accent:#2b6cb0}
+      html,body{height:100%}
+      body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg); color:#e6eef8; display:flex; align-items:center; justify-content:center; height:100vh; margin:0 }
+      .card { width:min(920px,94%); padding:28px; border-radius:12px; background:linear-gradient(180deg, var(--card-top), var(--card-bot)); box-shadow:0 6px 30px rgba(2,6,23,0.6); }
       h1 { margin:0 0 8px 0; font-size:28px }
       p { margin:0 0 16px 0; color:#bcd3ee }
-      a.button { display:inline-block; padding:10px 14px; background:#2b6cb0; color:white; border-radius:8px; text-decoration:none }
-      footer { margin-top:18px; font-size:13px; color:#94a3b8 }
+      .actions { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0 }
+      a.button { display:inline-block; padding:10px 14px; background:var(--accent); color:white; border-radius:8px; text-decoration:none; font-weight:600 }
+      a.button.secondary { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.04) }
+      a.button.disabled{ opacity:0.55; pointer-events:none }
+      #latest-info{color:var(--muted); margin-top:8px }
+      footer { margin-top:18px; font-size:13px; color:var(--muted) }
+      code{background:rgba(255,255,255,0.02); padding:2px 6px; border-radius:6px}
     </style>
   </head>
   <body>
-    <div class="card">
-      <h1>Resonance Logs</h1>
-      <p>Welcome — this is the GitLab Pages landing page for the <strong>resonance-logs</strong> project. Place your static site files in this <code>/public</code> directory to publish here.</p>
-      <p><a class="button" href="https://gitlab.com/Resonance-Logs/resonance-logs">Project on GitLab</a></p>
-      <footer>Built with ❤️ — update <code>/public/index.html</code> to change this page.</footer>
-    </div>
+    <main class="wrap">
+      <div class="card header-card">
+        <div>
+          <h1>Resonance Logs</h1>
+          <p>Welcome — this is the GitLab Pages landing page for the <strong>resonance-logs</strong> project. Below you can download the latest installer and read the changelog of previous releases.</p>
+        </div>
+
+        <div class="actions">
+          <!-- The download link is populated by JS from /downloads/manifest.json if present -->
+          <a id="download-latest" class="button" href="/downloads/latest-setup.exe" download>Download Latest</a>
+          <a class="button secondary" href="#changelog">Changelog</a>
+          <a class="button secondary" href="https://gitlab.com/Resonance-Logs/resonance-logs">Project on GitLab</a>
+        </div>
+
+        <div id="latest-info">Checking for latest installer…</div>
+
+        <footer>Built with ❤️ — update <code>/public</code> to change this page.</footer>
+      </div>
+
+      <section id="changelog" class="card">
+        <div class="changelog-header">
+          <h2>Changelog</h2>
+          <div>
+            <a class="button secondary" href="#" style="text-decoration:none">Back to top</a>
+          </div>
+        </div>
+        <p class="changelog-summary">The changelog below is populated from <code>/downloads/manifest.json</code>. To publish installers, add files to <code>/public/downloads/</code> or let the CI copy built artifacts on tagged releases.</p>
+
+        <div id="changelog-loading">Loading releases…</div>
+        <ul id="changelog-list" class="releases" hidden></ul>
+      </section>
+    </main>
+
+    <script>
+      (async function(){
+        const infoEl = document.getElementById('latest-info');
+        const dl = document.getElementById('download-latest');
+        const loading = document.getElementById('changelog-loading');
+        const list = document.getElementById('changelog-list');
+        try{
+          const manifestUrls = ['/downloads/manifest.json', '/manifest.json'];
+          let manifest = null;
+          for (const url of manifestUrls) {
+            try{
+              const resp = await fetch(url, {cache: 'no-store'});
+              if(!resp.ok) continue;
+              manifest = await resp.json();
+              break;
+            }catch(e){
+              // try next
+            }
+          }
+          if(!manifest) throw new Error('manifest not found');
+
+          // Wire latest download
+          let latestName = manifest.latest;
+          if(!latestName && Array.isArray(manifest.versions) && manifest.versions.length){
+            latestName = manifest.versions[0].filename;
+          }
+          if(latestName){
+            const isAbsolute = /^https?:\/\//i.test(latestName) || latestName.startsWith('/');
+            dl.href = isAbsolute ? latestName : '/downloads/' + latestName;
+            dl.setAttribute('download', '');
+            const v = (manifest.versions && manifest.versions.find(v=>v.filename===latestName)) || null;
+            infoEl.textContent = v ? `Latest: ${v.version || ''} — released ${v.date || 'unknown'}` : `Latest file: ${latestName}`;
+            dl.textContent = v ? `Download Latest (${v.version || latestName})` : 'Download Latest';
+          } else {
+            infoEl.textContent = 'No installers published yet. Place installer files in /downloads/ and update manifest.json.';
+            dl.classList.add('disabled');
+          }
+
+          // Populate changelog
+          const versions = manifest.versions || [];
+          if(versions.length === 0){
+            loading.textContent = 'No releases found in manifest.json.';
+          } else {
+            loading.hidden = true;
+            list.hidden = false;
+            versions.forEach(entry => {
+              const li = document.createElement('li');
+              li.className = 'release';
+
+              const left = document.createElement('div');
+              const title = document.createElement('div');
+              title.innerHTML = `<strong>${entry.version || entry.filename}</strong> <span class="meta">${entry.date || ''}</span>`;
+              const notes = document.createElement('div');
+              notes.className = 'meta';
+              notes.textContent = entry.notes || '';
+              left.appendChild(title);
+              left.appendChild(notes);
+
+              const right = document.createElement('div');
+              const dlk = document.createElement('a');
+              dlk.className = 'button';
+              const fn = entry.filename || '';
+              const isAbsolute = /^https?:\/\//i.test(fn) || fn.startsWith('/');
+              dlk.href = isAbsolute ? fn : '/downloads/' + fn;
+              dlk.textContent = 'Download';
+              dlk.setAttribute('download', '');
+              right.appendChild(dlk);
+
+              li.appendChild(left);
+              li.appendChild(right);
+              list.appendChild(li);
+            });
+          }
+
+        }catch(err){
+          console.warn('Could not load downloads manifest', err);
+          infoEl.textContent = 'No downloads manifest found — to enable one, add /public/downloads/manifest.json or let CI generate it on tagged builds.';
+          loading.textContent = 'Could not load releases manifest.';
+        }
+      })();
+    </script>
   </body>
 </html>
