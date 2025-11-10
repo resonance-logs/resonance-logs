@@ -544,7 +544,9 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         let mut last_error = String::new();
 
         while current_url_index < base_urls.len() && !upload_success {
-            let url = format!("{}/upload/encounters", base_urls[current_url_index].trim_end_matches('/'));
+            // Use trailing slash to match server route registration (/api/v1/upload/)
+            // Avoids a 307 redirect which can drop custom headers like X-Api-Key.
+            let url = format!("{}/upload/", base_urls[current_url_index].trim_end_matches('/'));
             match client.post(&url)
                 .header("X-Api-Key", api_key.clone())
                 .json(&body)
@@ -662,13 +664,13 @@ mod tests {
         ];
 
         let expected_endpoints = vec![
-            "http://localhost:8080/api/v1/upload/encounters",
-            "https://api.i7s.me/upload/encounters",
-            "https://custom.example.com/api/upload/encounters",
+            "http://localhost:8080/api/v1/upload/",
+            "https://api.i7s.me/upload/",
+            "https://custom.example.com/api/upload/",
         ];
 
         for (i, base_url) in base_urls.iter().enumerate() {
-            let formatted_url = format!("{}/upload/encounters", base_url.trim_end_matches('/'));
+            let formatted_url = format!("{}/upload/", base_url.trim_end_matches('/'));
             assert_eq!(formatted_url, expected_endpoints[i]);
         }
     }
