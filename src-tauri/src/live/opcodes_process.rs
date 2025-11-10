@@ -232,8 +232,9 @@ pub fn process_sync_container_data(
         .entity_uid_to_entity
         .entry(player_uid)
         .or_default();
-    let char_base = v_data.char_base?;
-    target_entity.name = char_base.name?;
+    let char_base = v_data.char_base.as_ref()?;
+    let name = char_base.name.clone()?;
+    target_entity.name = name;
     target_entity.set_attr(
         AttrType::Name,
         AttrValue::String(target_entity.name.clone()),
@@ -242,7 +243,9 @@ pub fn process_sync_container_data(
     // Player names are automatically stored in the database via UpsertEntity tasks
     // No need to maintain a separate cache anymore
     target_entity.entity_type = EEntityType::EntChar;
-    target_entity.class_id = v_data.profession_list?.cur_profession_id?;
+    let profession_list = v_data.profession_list.as_ref()?;
+    let class_id = profession_list.cur_profession_id?;
+    target_entity.class_id = class_id;
     target_entity.set_attr(
         AttrType::ProfessionId,
         AttrValue::Int(target_entity.class_id as i64),
@@ -254,7 +257,8 @@ pub fn process_sync_container_data(
         AttrValue::Int(target_entity.ability_score as i64),
     );
 
-    target_entity.level = v_data.role_level?.level?;
+    let role_level = v_data.role_level.as_ref()?;
+    target_entity.level = role_level.level?;
     target_entity.set_attr(AttrType::Level, AttrValue::Int(target_entity.level as i64));
 
     // Note: HP data comes from attribute packets (ATTR_CURRENT_HP, ATTR_MAX_HP)
@@ -277,6 +281,42 @@ pub fn process_sync_container_data(
             level: Some(target_entity.level),
             seen_at_ms: now_ms(),
             attributes: serialize_attributes(target_entity),
+        });
+
+        // Persist detailed player data for the local player.
+        let now = now_ms();
+
+        // Serialize the full CharSerialize payload (including nested structures).
+        let char_serialize_json = serde_json::to_string(&v_data)
+            .unwrap_or_else(|e| {
+                log::warn!("Failed to serialize CharSerialize payload: {}", e);
+                "{}".to_string()
+            });
+
+        // Extract profession_list for easier access / smaller payloads downstream.
+        let profession_list_json = serde_json::to_string(profession_list).ok();
+
+        // Extract talent node ids from each ProfessionTalentInfo entry.
+        let talent_node_ids_json = {
+            let talent_map: std::collections::HashMap<i32, Vec<u32>> = profession_list
+                .talent_list
+                .iter()
+                .map(|(profession_id, talent_info)| {
+                    (
+                        *profession_id,
+                        talent_info.talent_node_ids.clone(),
+                    )
+                })
+                .collect();
+            serde_json::to_string(&talent_map).ok()
+        };
+
+        enqueue(DbTask::UpsertDetailedPlayerData {
+            player_id: player_uid,
+            last_seen_ms: now,
+            char_serialize_json,
+            profession_list_json,
+            talent_node_ids_json,
         });
     }
 
