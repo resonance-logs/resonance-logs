@@ -777,32 +777,58 @@ pub fn process_aoi_sync_delta(
 
     if encounter.time_fight_start_ms == Default::default() {
         encounter.time_fight_start_ms = timestamp_ms;
-        enqueue(DbTask::BeginEncounter {
-            started_at_ms: timestamp_ms as i64,
-            local_player_id: Some(encounter.local_player_uid),
-            scene_id: encounter.current_scene_id,
-            scene_name: encounter.current_scene_name.clone(),
-        });
-        // Determine current boss HP (if a boss entity is present) and begin first attempt
-        let initial_boss_hp = encounter
-            .entity_uid_to_entity
-            .values()
-            .find(|e| e.is_boss())
-            .and_then(|e| e.hp());
 
-        // Begin first attempt with boss HP if available
-        enqueue(DbTask::BeginAttempt {
-            attempt_index: 1,
-            started_at_ms: timestamp_ms as i64,
-            reason: "initial".to_string(),
-            boss_hp_start: initial_boss_hp,
-        });
+        // Only persist encounters to the database for non-overworld scenes.
+        // Scene ID 8 is the overworld; we still track and display the encounter
+        // in-memory, but avoid creating DB rows for overworld so the DB stays
+        // free of non-dungeon activity.
+        let persist_to_db = match encounter.current_scene_id {
+            Some(id) if id == 8 => false,
+            _ => true,
+        };
 
-        // Initialize encounter tracking for attempts
-        encounter.boss_hp_at_attempt_start = initial_boss_hp;
-        if let Some(bhp) = initial_boss_hp {
-            // Initialize lowest boss HP percentage tracking
-            update_boss_hp_tracking(encounter, bhp);
+        if persist_to_db {
+            enqueue(DbTask::BeginEncounter {
+                started_at_ms: timestamp_ms as i64,
+                local_player_id: Some(encounter.local_player_uid),
+                scene_id: encounter.current_scene_id,
+                scene_name: encounter.current_scene_name.clone(),
+            });
+
+            // Determine current boss HP (if a boss entity is present) and begin first attempt
+            let initial_boss_hp = encounter
+                .entity_uid_to_entity
+                .values()
+                .find(|e| e.is_boss())
+                .and_then(|e| e.hp());
+
+            // Begin first attempt with boss HP if available
+            enqueue(DbTask::BeginAttempt {
+                attempt_index: 1,
+                started_at_ms: timestamp_ms as i64,
+                reason: "initial".to_string(),
+                boss_hp_start: initial_boss_hp,
+            });
+
+            // Initialize encounter tracking for attempts
+            encounter.boss_hp_at_attempt_start = initial_boss_hp;
+            if let Some(bhp) = initial_boss_hp {
+                // Initialize lowest boss HP percentage tracking
+                update_boss_hp_tracking(encounter, bhp);
+            }
+        } else {
+            // When not persisting to DB (overworld), still initialize attempt tracking
+            // in-memory so the live meter shows correct data. We do NOT enqueue any
+            // DB tasks in this branch.
+            let initial_boss_hp = encounter
+                .entity_uid_to_entity
+                .values()
+                .find(|e| e.is_boss())
+                .and_then(|e| e.hp());
+            encounter.boss_hp_at_attempt_start = initial_boss_hp;
+            if let Some(bhp) = initial_boss_hp {
+                update_boss_hp_tracking(encounter, bhp);
+            }
         }
     }
     encounter.time_last_combat_packet_ms = timestamp_ms;

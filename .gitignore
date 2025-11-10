@@ -23,3 +23,4 @@ handoff.md
 # will have schema files for capabilities auto-completion
 /gen/schemas
 .aider.tags.cache.v4/
+.aider*

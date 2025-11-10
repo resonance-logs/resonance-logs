@@ -1,0 +1,203 @@
+workflow:
+  rules:
+    # Run automatically for created tags (recommended for releases)
+    - if: $CI_COMMIT_TAG
+      when: always
+    # Allow manual runs from the GitLab UI
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
+    # Allow API and trigger-based runs (useful for CI triggers)
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "api"
+      when: always
+    # Default: don't run for other pipeline sources (push to branches, merge requests, etc.)
+    - when: never
+
+stages:
+  - build
+  - release
+  - pages
+
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  npm_config_cache: $CI_PROJECT_DIR/.npm
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .cargo/
+    - .npm/
+    - src-tauri/target/
+
+build-tauri:
+  stage: build
+  # --- ADD THIS RULE ---
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+    - if: $CI_PIPELINE_SOURCE == "api"
+    # Add this rule to make the job exist, but not run, on web pipelines
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: never
+  # ---
+  tags:
+    - saas-windows-medium-amd64
+  before_script:
+    # Install Node.js LTS
+    - choco install nodejs-lts -y
+    - $env:PATH = "C:\Program Files\nodejs;$env:PATH"
+
+    # Install Rust using rustup
+    - |
+      Invoke-WebRequest -Uri https://win.rustup.rs/x86_64 -OutFile rustup-init.exe
+      .\rustup-init.exe -y --default-toolchain stable --profile minimal
+      Remove-Item rustup-init.exe
+    - $env:PATH = "$CI_PROJECT_DIR\.cargo\bin;$env:PATH"
+
+    # Verify installations
+    - node --version
+    - npm --version
+    - rustc --version
+    - cargo --version
+
+  script:
+    # Install frontend dependencies
+    - npm install
+
+    # Read changelog for release body
+    - |
+      $RELEASE_BODY = @(
+        '# Changelog'
+        (git log -1 --pretty=%B | Select-Object -Skip 1)
+        ''
+        if (Test-Path .github/workflows/RELEASE.md) {
+          Get-Content .github/workflows/RELEASE.md
+        }
+      ) -join "`n"
+      $RELEASE_BODY | Out-File -FilePath release_body.txt -Encoding utf8
+
+    # Build Tauri app
+    - |
+      if ($CI_COMMIT_REF_NAME -eq 'release') {
+        $env:TAURI_SIGNING_PRIVATE_KEY = $env:TAURI_SIGNING_PRIVATE_KEY
+        npm run tauri build
+      } else {
+        npm run tauri build -- --debug
+      }
+
+  artifacts:
+    name: "resonance-logs-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - src-tauri/target/release/bundle/
+      - src-tauri/target/debug/bundle/
+      - release_body.txt
+    # Make artifacts last long enough for pages job
+    expire_in: 1 week
+
+release-job:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  needs:
+    - job: build-tauri
+      artifacts: true
+  script:
+    - echo "Creating release $CI_COMMIT_TAG"
+  release:
+    name: 'Release $CI_COMMIT_TAG'
+    description: './release_body.txt'
+    tag_name: '$CI_COMMIT_TAG'
+    assets:
+      links:
+        - name: 'Download All Artifacts'
+          url: '$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=build-tauri'
+          link_type: 'package'
+
+# --- Pages JOB ---
+
+pages:
+  stage: pages
+  image: alpine:3.18
+  needs:
+    # This 'optional: true' is the key that works with the fix above
+    - job: build-tauri
+      artifacts: true
+      optional: true
+  before_script:
+    - apk add curl unzip coreutils
+  script:
+    # ... (your existing script for merging artifacts is correct) ...
+    - mkdir deploy
+    - echo "Downloading previous Pages artifacts..."
+    - |
+      curl --location --output artifacts.zip --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_DEFAULT_BRANCH/download?job=pages" || true
+    - |
+      if [ -f artifacts.zip ]; then
+        echo "Unzipping previous artifacts into staging directory."
+        unzip artifacts.zip -d deploy
+      else
+        echo "No previous artifacts found. Starting fresh."
+      fi
+    - |
+      if [ -d "public" ]; then
+        echo "Copying files from repo's /public directory..."
+        cp -r public/* deploy/
+      else
+        echo "No /public directory found in repo. Skipping."
+      fi
+    - |
+      if [ -d "src-tauri/target/release/bundle" ]; then
+        echo "Copying new release bundles into /downloads..."
+        mkdir -p deploy/downloads
+        # Copy only Windows installer executables into downloads
+        find src-tauri/target/release/bundle -type f -iname '*.exe' -exec cp {} deploy/downloads/ \; || true
+      fi
+    - |
+      if [ -d "src-tauri/target/debug/bundle" ]; then
+        echo "Copying new debug bundles into /downloads..."
+        mkdir -p deploy/downloads
+        find src-tauri/target/debug/bundle -type f -iname '*.exe' -exec cp {} deploy/downloads/ \; || true
+      fi
+    - |
+      # Generate a lightweight manifest.json for downloads so the public pages can discover installers
+      if [ -d deploy/downloads ]; then
+        echo "Generating downloads/manifest.json"
+        cd deploy/downloads
+        # Collect .exe files ordered by modification time (newest first)
+        set -- *.exe
+        if [ -e "$1" ]; then
+          echo '{' > manifest.json
+          echo '  "versions": [' >> manifest.json
+          first=1
+          for f in "$@"; do
+            if [ $first -eq 1 ]; then
+              first=0
+            else
+              echo ',' >> manifest.json
+            fi
+            printf '    { "filename": "%s" }' "$f" >> manifest.json
+          done
+          echo '' >> manifest.json
+          echo '  ],' >> manifest.json
+          latest=$(ls -1t -- *.exe | head -n1)
+          echo "  \"latest\": \"$latest\"" >> manifest.json
+          echo '}' >> manifest.json
+        else
+          echo "No .exe files found in deploy/downloads; skipping manifest generation."
+        fi
+        cd - >/dev/null || true
+      fi
+    - sh scripts/generate_updater_json.sh deploy/downloads
+    - mv deploy public
+    - echo "Final contents of /public directory:"
+    - ls -la public
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"

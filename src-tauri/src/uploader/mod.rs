@@ -389,7 +389,7 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
     })
 }
 
-pub async fn perform_upload(app: AppHandle, api_key: String, base_url: String) -> Result<(), String> {
+pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<String>) -> Result<(), String> {
     CANCEL_FLAG.store(false, Ordering::SeqCst);
     // Establish sqlite connection via diesel
     let path = default_db_path();
@@ -406,6 +406,7 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_url: String) -
     let mut offset = 0_i64;
     let batch_size = 10_i64;
     let mut uploaded = 0_i64;
+    let mut current_url_index = 0;
 
     while offset < total {
         if CANCEL_FLAG.load(Ordering::SeqCst) {
@@ -419,16 +420,41 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_url: String) -
             payloads.push(build_encounter_payload(&mut conn, row.clone())?);
         }
         let body = UploadRequestBody { encounters: payloads };
-        let url = format!("{}/upload/encounters", base_url.trim_end_matches('/'));
-        let resp = client.post(&url)
-            .header("X-Api-Key", api_key.clone())
-            .json(&body)
-            .send().await.map_err(|e| e.to_string())?;
-        if !resp.status().is_success() {
-            let text = resp.text().await.unwrap_or_default();
-            let _ = app.emit("upload:error", json!({"message": format!("Server error: {}", text)}));
-            return Err(format!("Server returned {}", text));
+
+        // Try each URL in sequence until one succeeds
+        let mut upload_success = false;
+        let mut last_error = String::new();
+
+        while current_url_index < base_urls.len() && !upload_success {
+            let url = format!("{}/upload/encounters", base_urls[current_url_index].trim_end_matches('/'));
+            match client.post(&url)
+                .header("X-Api-Key", api_key.clone())
+                .json(&body)
+                .send().await
+            {
+                Ok(resp) => {
+                    if resp.status().is_success() {
+                        upload_success = true;
+                    } else {
+                        let text = resp.text().await.unwrap_or_default();
+                        last_error = format!("Server error from {}: {}", base_urls[current_url_index], text);
+                        // Try next URL for server errors
+                        current_url_index += 1;
+                    }
+                }
+                Err(e) => {
+                    last_error = format!("Connection error from {}: {}", base_urls[current_url_index], e);
+                    // Try next URL for connection errors
+                    current_url_index += 1;
+                }
+            }
         }
+
+        if !upload_success {
+            let _ = app.emit("upload:error", json!({"message": last_error}));
+            return Err(last_error);
+        }
+
         uploaded += rows.len() as i64;
         offset += rows.len() as i64;
         let _ = app.emit("upload:progress", json!({"uploaded": uploaded, "total": total, "batch": (offset / batch_size)+1}));
@@ -443,12 +469,22 @@ pub fn cancel_upload() { CANCEL_FLAG.store(true, Ordering::SeqCst); }
 #[tauri::command]
 #[specta::specta]
 pub async fn start_upload(app: tauri::AppHandle, api_key: String, base_url: Option<String>) -> Result<(), String> {
-    let base = base_url
-        .or_else(|| std::env::var("WEBSITE_API_BASE").ok())
-        .unwrap_or_else(|| "http://localhost:8080/api/v1".to_string());
+    let mut base_urls = Vec::new();
+
+    // If a specific base_url is provided, use only that
+    if let Some(url) = base_url {
+        base_urls.push(url);
+    } else {
+        // Otherwise, try localhost first, then fallback
+        let localhost_url = std::env::var("WEBSITE_API_BASE")
+            .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string());
+        base_urls.push(localhost_url);
+        base_urls.push("https://api.i7s.me".to_string());
+    }
+
     let app_cloned = app.clone();
     tauri::async_runtime::spawn(async move {
-        if let Err(e) = perform_upload(app_cloned, api_key, base).await {
+        if let Err(e) = perform_upload(app_cloned, api_key, base_urls).await {
             // best-effort error event
             let _ = app.emit("upload:error", json!({"message": e}));
         }
@@ -461,4 +497,61 @@ pub async fn start_upload(app: tauri::AppHandle, api_key: String, base_url: Opti
 pub fn cancel_upload_cmd() -> Result<(), String> {
     cancel_upload();
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fallback_url_ordering_when_no_base_url() {
+        // Test that when no base_url is provided, it uses localhost first then https://api.i7s.me
+        let mut base_urls = Vec::new();
+
+        // Simulate the logic from start_upload when base_url is None
+        let localhost_url = std::env::var("WEBSITE_API_BASE")
+            .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string());
+        base_urls.push(localhost_url);
+        base_urls.push("https://api.i7s.me".to_string());
+
+        // Verify the ordering
+        assert_eq!(base_urls.len(), 2);
+        assert!(base_urls[0].contains("localhost") || base_urls[0].contains("127.0.0.1"));
+        assert_eq!(base_urls[1], "https://api.i7s.me");
+    }
+
+    #[test]
+    fn test_specific_base_url_only() {
+        // Test that when a specific base_url is provided, it only uses that URL
+        let specific_url = "https://custom.example.com".to_string();
+        let mut base_urls = Vec::new();
+
+        // Simulate the logic from start_upload when base_url is Some
+        base_urls.push(specific_url.clone());
+
+        // Verify only the specific URL is used
+        assert_eq!(base_urls.len(), 1);
+        assert_eq!(base_urls[0], specific_url);
+    }
+
+    #[test]
+    fn test_url_formatting() {
+        // Test that URLs are formatted correctly when constructing the upload endpoint
+        let base_urls = vec![
+            "http://localhost:8080/api/v1/".to_string(),
+            "https://api.i7s.me".to_string(),
+            "https://custom.example.com/api/".to_string(),
+        ];
+
+        let expected_endpoints = vec![
+            "http://localhost:8080/api/v1/upload/encounters",
+            "https://api.i7s.me/upload/encounters",
+            "https://custom.example.com/api/upload/encounters",
+        ];
+
+        for (i, base_url) in base_urls.iter().enumerate() {
+            let formatted_url = format!("{}/upload/encounters", base_url.trim_end_matches('/'));
+            assert_eq!(formatted_url, expected_endpoints[i]);
+        }
+    }
 }

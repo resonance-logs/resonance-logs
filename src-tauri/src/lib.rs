@@ -15,6 +15,9 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, WindowEvent};
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+// NOTE: the updater extension trait is imported next to the helper that uses it
+// and is cfg-gated to avoid unused-import warnings on builds that don't enable
+// the updater plugin.
 use tauri_specta::{Builder, collect_commands};
 mod database;
 mod uploader; // stage 4 upload logic
@@ -178,6 +181,24 @@ fn remove_windivert() {
     }
 }
 
+/// Helper to unload and remove the WinDivert driver.
+///
+/// On Windows this attempts to stop and delete the service. On other
+/// platforms this is a no-op.
+fn unload_and_remove_windivert() {
+    #[cfg(windows)]
+    {
+        // Try to stop and remove the driver; these helpers already log
+        // warnings on failure so we don't need to handle the results here.
+        stop_windivert();
+        remove_windivert();
+    }
+    #[cfg(not(windows))]
+    {
+        // no-op on non-windows platforms
+    }
+}
+
 /// Helper to run a prepared Command with stdio redirected to null and (on Windows)
 /// with the CREATE_NO_WINDOW flag so no console window appears.
 fn run_command_silently(cmd: &mut Command) -> std::io::Result<std::process::ExitStatus> {
@@ -204,6 +225,9 @@ fn run_command_silently(cmd: &mut Command) -> std::io::Result<std::process::Exit
 // Updater helper: checks for updates and downloads+installs them automatically.
 // This runs only on Windows release builds (guarded where it is invoked).
 #[cfg(all(windows, not(debug_assertions)))]
+use tauri_plugin_updater::UpdaterExt;
+
+#[cfg(all(windows, not(debug_assertions)))]
 async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     // If an update is available, download and install it, then restart the app.
     if let Some(update) = app.updater()?.check().await? {
@@ -211,8 +235,8 @@ async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Resul
         // Provide a simple logging progress callback. Use the provided
         // download_and_install helper from the updater plugin which applies the update.
         update
-            .download_and_install(
-                |chunk_length, content_length| {
+            .download_and_install::<_, _>(
+                |chunk_length: usize, content_length: Option<u64>| {
                     info!("downloaded {} bytes (total: {:?})", chunk_length, content_length);
                 },
                 || {
@@ -281,10 +305,11 @@ fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()> {
 ///
 /// * `tauri::Result<()>` - An empty result indicating success or failure.
 fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
-    fn show_window(window: &tauri::WebviewWindow) {
+    fn show_window_and_disable_clickthrough(window: &tauri::WebviewWindow) {
         window.show().unwrap();
         window.unminimize().unwrap();
         window.set_focus().unwrap();
+        // Always disable clickthrough when showing window from tray
         if window.label() == WINDOW_LIVE_LABEL {
             window.set_ignore_cursor_events(false).unwrap();
         }
@@ -311,7 +336,7 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                 else {
                     return;
                 };
-                show_window(&main_meter_window);
+                show_window_and_disable_clickthrough(&main_meter_window);
             }
             "show-live" => {
                 let tray_app_handle = tray_app.app_handle();
@@ -319,7 +344,7 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                 else {
                     return;
                 };
-                show_window(&live_meter_window);
+                show_window_and_disable_clickthrough(&live_meter_window);
             }
             "reset" => {
                 let Some(live_meter_window) = tray_app.get_webview_window(WINDOW_LIVE_LABEL) else {
@@ -359,11 +384,12 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
             } = event
             {
                 // Show and focus the live meter window when the tray is clicked
+                // Also disable clickthrough mode to make it interactable
                 let app = tray.app_handle();
                 let Some(live_meter_window) = app.get_webview_window(WINDOW_LIVE_LABEL) else {
                     return;
                 };
-                show_window(&live_meter_window);
+                show_window_and_disable_clickthrough(&live_meter_window);
             }
         })
         .build(app)?;

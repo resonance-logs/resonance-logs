@@ -5,11 +5,14 @@
     label = "",
     description = "",
     value = $bindable(60),
+    unit = "%",
     ...restProps
   }: {
     label: string;
     description?: string | undefined;
     value: number;
+    unit?: string;
+    [key: string]: any;
   } = $props();
 </script>
 
@@ -23,7 +26,7 @@
   <div class="flex flex-row">
     <Slider type="single" bind:value {...restProps} min={0} max={120} step={5} class="max-w-[70%]" />
     <div class="ml-4">
-      <span>{value}s</span>
+      <span>{value}{unit}</span>
     </div>
   </div>
 </label>

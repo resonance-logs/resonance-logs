@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import SettingsSelect from "./settings-select.svelte";
+  import SettingsSlider from "./settings-slider.svelte";
   import { SETTINGS, AVAILABLE_THEMES } from "$lib/settings-store";
 
   const SETTINGS_CATEGORY = "themes";
@@ -19,6 +20,9 @@
         bind:selected={SETTINGS.accessibility.state["theme"]}
         values={AVAILABLE_THEMES}
       />
+      <div class="mt-3">
+        <SettingsSlider bind:value={SETTINGS.accessibility.state["transparentOpacityPercent"]} min={0} max={100} step={1} label="Transparency Opacity" description="Lower values make the meter more see-through. 0% is fully transparent." unit="%" />
+      </div>
     </div>
 
     <!-- Live Preview Card (avoid primary/accent text as requested) -->

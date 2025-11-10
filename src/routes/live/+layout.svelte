@@ -9,7 +9,6 @@
    * @packageDocumentation
    */
   import { onMount } from "svelte";
-  import { commands } from "$lib/bindings";
   import { SETTINGS } from "$lib/settings-store";
   import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter } from "$lib/api";
   import { writable } from "svelte/store";
@@ -28,6 +27,9 @@
 
   let { children } = $props();
   // let screenshotDiv: HTMLDivElement | undefined = $state();
+
+  // transparency handled via polling effect below
+  let transparencyInterval: number | null = null;
 
   let notificationToast: NotificationToast;
   let mainElement: HTMLElement | undefined = undefined;
@@ -209,8 +211,29 @@
       if (document.visibilityState === "visible") onFocus();
     });
 
+    // Poll settings for transparency changes and apply CSS variables / body background
+    transparencyInterval = window.setInterval(() => {
+      try {
+        const enabled = !!SETTINGS.accessibility.state.transparency;
+        const percent = Number(SETTINGS.accessibility.state.transparentOpacityPercent ?? 2) || 2;
+        const opacity = String(percent / 100);
+        if (enabled) {
+          // Add root-level class so our CSS rules apply
+          document.documentElement.classList.add('transparent-mode');
+          document.documentElement.style.setProperty('--bg-opacity', opacity);
+          // Make the page background fully transparent so the window shows through
+          document.body.style.background = 'transparent';
+        } else {
+          document.documentElement.classList.remove('transparent-mode');
+          document.body.style.background = '';
+        }
+      } catch (e) {
+        // ignore
+      }
+    }, 200);
     return () => {
       if (reconnectInterval) clearInterval(reconnectInterval);
+      if (transparencyInterval) clearInterval(transparencyInterval);
       if (unlisten) unlisten();
       window.removeEventListener("focus", onFocus);
       // visibilitychange listener is anonymous; it's fine to leave or we can no-op
@@ -223,7 +246,7 @@
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-<div class="flex h-screen flex-col bg-background text-[13px] text-foreground p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]">
+  <div class="flex h-screen flex-col bg-background text-[13px] text-foreground p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]">
   <Header />
     <main
     bind:this={mainElement}
