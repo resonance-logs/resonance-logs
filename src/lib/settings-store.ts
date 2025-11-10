@@ -61,6 +61,12 @@ const DEFAULT_SETTINGS = {
     // New theme setting; fallback to 'dark' if missing in existing persisted store
     theme: 'dark' as string,
     density: "comfortable" as "comfortable" | "medium" | "compact",
+    // legacy/ux: 'transparency' toggle (used by settings UI) and opacity percent
+    blur: false,
+    transparency: false,
+    transparentOpacityPercent: 2,
+    // backward compatibility flag used in some places
+    transparentMode: false,
   },
   shortcuts: {
     showLiveMeter: "",

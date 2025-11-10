@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@layer base { 
+@layer base {
   /* https://ux.stackexchange.com/questions/105024/why-dont-button-html-elements-have-a-css-cursor-pointer-by-default */
   button:not([disabled]),
   [role="button"]:not([disabled]) {
@@ -448,4 +448,51 @@ html[data-theme='pastel-rainbow'] body {
 /* TOAST GLOBAL OVERRIDES (semantic tokens already used in component) */
 .toast-root {
   box-shadow: var(--toast-shadow);
+}
+
+/* TRANSPARENT MODE ---------------------------------------------------- */
+/* Apply transparency to backgrounds while keeping text fully visible */
+.transparent-mode {
+  /* Main container transparency */
+  /* Make the root container fully transparent so the underlying desktop/window shows through */
+  background-color: transparent !important;
+  /* Keep a small opacity value for inner surfaces (cards/popovers) */
+  --bg-opacity: 0.02;
+}
+
+.transparent-mode .bg-background {
+  background-color: color-mix(in srgb, var(--background) calc(var(--bg-opacity) * 100%), transparent) !important;
+}
+
+.transparent-mode .bg-card,
+.transparent-mode .bg-card\/20 {
+  background-color: color-mix(in srgb, var(--card) calc(var(--bg-opacity) * 100%), transparent) !important;
+}
+
+.transparent-mode .bg-popover,
+.transparent-mode .bg-popover\/30,
+.transparent-mode .bg-popover\/60 {
+  background-color: color-mix(in srgb, var(--popover) calc(var(--bg-opacity) * 100%), transparent) !important;
+}
+
+.transparent-mode .bg-muted {
+  background-color: color-mix(in srgb, var(--muted) calc(var(--bg-opacity) * 100%), transparent) !important;
+}
+
+.transparent-mode .bg-accent {
+  background-color: color-mix(in srgb, var(--accent) calc(var(--bg-opacity) * 100%), transparent) !important;
+}
+
+/* Keep text, icons, and borders at full opacity */
+.transparent-mode [class*="text-"],
+.transparent-mode svg,
+.transparent-mode [class*="border-"] {
+  opacity: 1 !important;
+}
+
+/* If any child has .transparent-mode, make the page background transparent too so
+   the whole window becomes see-through (uses :has, supported in modern engines).
+   This avoids needing to mutate document.body from JS. */
+body:has(.transparent-mode), html:has(.transparent-mode) {
+  background: transparent !important;
 }

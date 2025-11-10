@@ -15,6 +15,8 @@
 {(() => {
   // Derive theme with fallback
   const theme = $derived(SETTINGS.accessibility.state.theme ?? 'dark');
+  // Derive transparent mode and mirror into body class so window background becomes transparent
+  const transparentMode = $derived(SETTINGS.accessibility.state.transparentMode ?? false);
   $effect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-theme', theme);
@@ -25,6 +27,13 @@
         parsed.theme = theme;
         localStorage.setItem('accessibility', JSON.stringify(parsed));
       } catch {}
+
+      // Mirror transparent mode into body class so window background becomes transparent
+      if (transparentMode) {
+        document.body.classList.add('transparent-mode');
+      } else {
+        document.body.classList.remove('transparent-mode');
+      }
     }
   });
 })()}

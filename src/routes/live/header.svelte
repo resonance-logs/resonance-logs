@@ -10,11 +10,12 @@
   import PauseIcon from "virtual:icons/lucide/pause";
   import PlayIcon from "virtual:icons/lucide/play";
   import MinusIcon from "virtual:icons/lucide/minus";
-  // Removed unused PointerIcon import.
+  import MousePointerClickIcon from "virtual:icons/lucide/mouse-pointer-click";
   import SettingsIcon from "virtual:icons/lucide/settings";
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
   import CrownIcon from "virtual:icons/lucide/crown";
   import MinimizeIcon from "virtual:icons/lucide/minimize-2";
+  import EyeOffIcon from "virtual:icons/lucide/eye-off";
 
   import { onMount } from "svelte";
   import { page } from "$app/stores";
@@ -23,7 +24,7 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { onEncounterUpdate, onResetEncounter, resetEncounter, togglePauseEncounter, setBossOnlyDps, type HeaderInfo } from "$lib/api";
   // import { takeScreenshot, tooltip } from "$lib/utils.svelte";
-  import { tooltip } from "$lib/utils.svelte";
+  import { tooltip, toggleClickthrough } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
   import { SETTINGS } from "$lib/settings-store";
@@ -121,6 +122,7 @@
   // Use live.general for bossOnlyDps; keep density from accessibility store
   let bossOnlyDpsEnabled = $derived(SETTINGS.live.general.state.bossOnlyDps);
   let density = $derived(SETTINGS.accessibility.state.density ?? "comfortable");
+  let transparentMode = $derived(SETTINGS.accessibility.state.transparency ?? false);
   // const {
   //   screenshotDiv,
   // }: {
@@ -163,6 +165,15 @@
     SETTINGS.accessibility.state.density = next;
     triggerDensityAnimation(next);
   }
+
+  function toggleTransparentMode() {
+    SETTINGS.accessibility.state.transparency = !SETTINGS.accessibility.state.transparency;
+  }
+
+  async function handleClickthroughToggle() {
+    await toggleClickthrough();
+  }
+
     // When reset encounter button is pressed -> reset boss hp bar info
   function handleResetEncounter() {
     resetTimer();
@@ -224,6 +235,14 @@
       <CrownIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
     </button>
     <button
+      class="rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200 {transparentMode ? 'text-[oklch(0.65_0.12_280)] bg-[oklch(0.9_0.03_280)]/30 hover:bg-[oklch(0.9_0.03_280)]/50' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+      aria-pressed={transparentMode}
+      onclick={toggleTransparentMode}
+      {@attach tooltip(() => (transparentMode ? 'Transparent Mode Enabled' : 'Enable Transparent Mode'))}
+    >
+      <EyeOffIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+    </button>
+    <button
       class="rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200 {densityAnimating ? 'scale-90' : ''} {density !== 'comfortable' ? 'text-[oklch(0.6_0.1_220)] bg-[oklch(0.9_0.02_220)]/30 hover:bg-[oklch(0.9_0.02_220)]/50' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
       class:compact-mode-active={density !== 'comfortable'}
       class:density-animating={densityAnimating}
@@ -232,6 +251,13 @@
       {@attach tooltip(() => density === 'comfortable' ? 'Density: Comfortable' : density === 'medium' ? 'Density: Medium' : 'Density: Compact')}
     >
       <MinimizeIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+    </button>
+    <button
+      class="rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-popover/60"
+      onclick={handleClickthroughToggle}
+      {@attach tooltip(() => 'Toggle Clickthrough Mode')}
+    >
+      <MousePointerClickIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
     </button>
     <div class="h-5 w-px bg-neutral-700/60"></div>
     <!-- <button

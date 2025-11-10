@@ -315,7 +315,7 @@ impl AppStateManager {
                                 // length-prefixed string and decoding it as a varint can yield
                                 // the string length (false positive scene id).
                                 if attr_id == crate::live::opcodes_models::attr_type::ATTR_ID {
-                                    let mut buf = &raw[..];
+                                    let mut buf = raw.as_slice();
                                     if let Ok(v) = prost::encoding::decode_varint(&mut buf) {
                                         let cand = v as i32;
                                         if scene_names::contains(cand) {
@@ -857,20 +857,11 @@ impl AppStateManager {
                 }
             }
 
-            // Emit boss death events (need to update dead_bosses tracking after)
-            let boss_death_uids: Vec<i64> = boss_deaths.iter().map(|(uid, _)| *uid).collect();
-            for (_boss_uid, boss_name) in boss_deaths {
-                let payload = crate::live::event_manager::BossDeathPayload { boss_name };
-                if let Err(e) = app_handle.emit("boss-death", payload) {
-                    error!("Failed to emit boss-death event: {}", e);
-                }
-            }
-
-            // Update dead_bosses tracking with brief write lock AFTER emitting
-            if !boss_death_uids.is_empty() {
+            // Emit boss death events using EventManager for deduplication
+            if !boss_deaths.is_empty() {
                 let mut state = self.state.write().await;
-                for uid in boss_death_uids {
-                    state.event_manager.mark_boss_dead(uid);
+                for (boss_uid, boss_name) in boss_deaths {
+                    state.event_manager.emit_boss_death(boss_name, boss_uid);
                 }
             }
 

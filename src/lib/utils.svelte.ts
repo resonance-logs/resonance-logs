@@ -93,6 +93,10 @@ export async function copyToClipboard(error: MouseEvent & { currentTarget: Event
 
 let isClickthrough = false;
 
+export function getClickthroughState(): boolean {
+  return isClickthrough;
+}
+
 export async function setClickthrough(bool: boolean) {
   const liveWindow = await WebviewWindow.getByLabel("live");
   await liveWindow?.setIgnoreCursorEvents(bool);
