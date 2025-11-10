@@ -503,6 +503,14 @@ bossCritTotalDealt: number;
  */
 bossLuckyTotalDealt: number; 
 /**
+ * The average DPS snapshot for the actor during the encounter.
+ */
+dps: number; 
+/**
+ * The encounter duration in seconds used for the DPS snapshot.
+ */
+duration: number; 
+/**
  * Whether the actor is the local player.
  */
 isLocalPlayer: boolean }
@@ -594,6 +602,10 @@ sceneId: number | null;
  * The name of the scene where the encounter took place.
  */
 sceneName: string | null; 
+/**
+ * The duration of the encounter in seconds.
+ */
+duration: number; 
 /**
  * A list of bosses in the encounter.
  */
