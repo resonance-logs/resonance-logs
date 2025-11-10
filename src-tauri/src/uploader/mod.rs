@@ -3,7 +3,7 @@ use serde_json::json;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use reqwest::Client;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::database::{default_db_path};
 use diesel::prelude::*;
@@ -514,7 +514,15 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
     let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
         .map_err(|e| e.to_string())?;
     let total = count_ended_encounters(&mut conn)?;
-    let _ = app.emit("upload:started", json!({"total": total}));
+    // Emit to known windows (main + live) when available, fall back to app.emit
+    let started_payload: serde_json::Value = json!({"total": total});
+    if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+        let _ = w.emit("upload:started", started_payload.clone());
+    }
+    if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+        let _ = w.emit("upload:started", started_payload.clone());
+    }
+    let _ = app.emit("upload:started", started_payload);
     if total == 0 {
         let _ = app.emit("upload:completed", json!({"uploaded": 0, "total": 0}));
         return Ok(());
@@ -528,7 +536,14 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
 
     while offset < total {
         if CANCEL_FLAG.load(Ordering::SeqCst) {
-            let _ = app.emit("upload:error", json!({"message": "Upload cancelled"}));
+            let err_payload: serde_json::Value = json!({"message": "Upload cancelled"});
+            if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+                let _ = w.emit("upload:error", err_payload.clone());
+            }
+            if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+                let _ = w.emit("upload:error", err_payload.clone());
+            }
+            let _ = app.emit("upload:error", err_payload);
             return Ok(());
         }
         let rows = load_encounters_slice(&mut conn, offset, batch_size)?;
@@ -571,16 +586,38 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         }
 
         if !upload_success {
-            let _ = app.emit("upload:error", json!({"message": last_error}));
+            let err_payload: serde_json::Value = json!({"message": last_error});
+            if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+                let _ = w.emit("upload:error", err_payload.clone());
+            }
+            if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+                let _ = w.emit("upload:error", err_payload.clone());
+            }
+            let _ = app.emit("upload:error", err_payload);
             return Err(last_error);
         }
 
         uploaded += rows.len() as i64;
         offset += rows.len() as i64;
-        let _ = app.emit("upload:progress", json!({"uploaded": uploaded, "total": total, "batch": (offset / batch_size)+1}));
+        // Emit progress for UI to known windows and as a fallback via app.emit
+        let progress_payload: serde_json::Value = json!({"uploaded": uploaded, "total": total, "batch": (offset / batch_size)+1});
+        if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+            let _ = w.emit("upload:progress", progress_payload.clone());
+        }
+        if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+            let _ = w.emit("upload:progress", progress_payload.clone());
+        }
+        let _ = app.emit("upload:progress", progress_payload);
     }
 
-    let _ = app.emit("upload:completed", json!({"uploaded": uploaded, "total": total}));
+    let completed_payload: serde_json::Value = json!({"uploaded": uploaded, "total": total});
+    if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+        let _ = w.emit("upload:completed", completed_payload.clone());
+    }
+    if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+        let _ = w.emit("upload:completed", completed_payload.clone());
+    }
+    let _ = app.emit("upload:completed", completed_payload);
     Ok(())
 }
 
