@@ -25,3 +25,13 @@ SET
         ELSE 0
     }
 WHERE is_player = 1;
+
+-- Add encounter duration snapshot at the encounter level
+ALTER TABLE encounters ADD COLUMN duration REAL NOT NULL DEFAULT 0;
+
+-- Backfill encounter duration for completed encounters
+UPDATE encounters
+SET duration = CASE
+    WHEN ended_at_ms IS NOT NULL AND ended_at_ms > started_at_ms THEN (ended_at_ms - started_at_ms) / 1000.0
+    ELSE duration
+END;

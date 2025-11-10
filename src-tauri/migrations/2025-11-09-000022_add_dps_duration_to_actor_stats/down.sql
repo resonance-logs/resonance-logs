@@ -48,7 +48,6 @@ CREATE TABLE actor_encounter_stats (
     class_spec INTEGER,
     ability_score INTEGER,
     level INTEGER,
-    level INTEGER,
     damage_dealt BIGINT NOT NULL,
     heal_dealt BIGINT NOT NULL,
     damage_taken BIGINT NOT NULL,
@@ -120,3 +119,43 @@ SELECT
 FROM actor_encounter_stats_backup;
 
 DROP TABLE actor_encounter_stats_backup;
+
+-- Remove duration column from encounters table
+CREATE TABLE encounters_backup AS
+SELECT
+    id,
+    started_at_ms,
+    ended_at_ms,
+    local_player_id,
+    total_dmg,
+    total_heal,
+    scene_id,
+    scene_name
+FROM encounters;
+
+DROP TABLE encounters;
+
+CREATE TABLE encounters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    started_at_ms BIGINT NOT NULL,
+    ended_at_ms BIGINT,
+    local_player_id BIGINT,
+    total_dmg BIGINT,
+    total_heal BIGINT,
+    scene_id INTEGER,
+    scene_name TEXT
+);
+
+INSERT INTO encounters
+SELECT
+    id,
+    started_at_ms,
+    ended_at_ms,
+    local_player_id,
+    total_dmg,
+    total_heal,
+    scene_id,
+    scene_name
+FROM encounters_backup;
+
+DROP TABLE encounters_backup;

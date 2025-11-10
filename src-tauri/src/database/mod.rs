@@ -392,6 +392,7 @@ fn handle_task(
                 total_heal: Some(0),
                 scene_id,
                 scene_name,
+                duration: 0.0,
             };
             diesel::insert_into(e::encounters)
                 .values(&new_enc)
@@ -439,6 +440,14 @@ fn handle_task(
                 .bind::<diesel::sql_types::Double, _>(duration_secs)
                 .execute(conn)
                 .map_err(|er| er.to_string())?;
+
+                diesel::update(e::encounters.filter(e::id.eq(id)))
+                    .set((
+                        e::duration.eq(duration_secs),
+                        e::ended_at_ms.eq(ended_at_ms),
+                    ))
+                    .execute(conn)
+                    .map_err(|er| er.to_string())?;
 
                 // Update snapshot fields from entities table for any NULL values
                 // This ensures we capture the final state at encounter end

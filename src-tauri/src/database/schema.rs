@@ -54,6 +54,8 @@ diesel::table! {
         scene_id -> Nullable<Integer>,
         /// The name of the scene where the encounter took place.
         scene_name -> Nullable<Text>,
+        /// The duration of the encounter in seconds.
+        duration -> Double,
     }
 }
 

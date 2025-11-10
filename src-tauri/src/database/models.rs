@@ -137,6 +137,8 @@ pub struct EncounterRow {
     pub scene_id: Option<i32>,
     /// The name of the scene where the encounter took place.
     pub scene_name: Option<String>,
+    /// The duration of the encounter in seconds.
+    pub duration: f64,
 }
 
 /// Represents a new encounter to be inserted into the `encounters` table.
@@ -157,6 +159,8 @@ pub struct NewEncounter {
     pub scene_id: Option<i32>,
     /// The name of the scene where the encounter took place.
     pub scene_name: Option<String>,
+    /// The duration of the encounter in seconds.
+    pub duration: f64,
 }
 
 /// Represents a row in the `damage_events` table.

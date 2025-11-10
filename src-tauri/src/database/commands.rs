@@ -25,6 +25,8 @@ pub struct EncounterSummaryDto {
     pub scene_id: Option<i32>,
     /// The name of the scene where the encounter took place.
     pub scene_name: Option<String>,
+    /// The duration of the encounter in seconds.
+    pub duration: f64,
     /// A list of bosses in the encounter.
     pub bosses: Vec<BossSummaryDto>,
     /// A list of players in the encounter.
@@ -668,6 +670,7 @@ pub fn get_recent_encounters_filtered(
         Option<i64>,
         Option<i32>,
         Option<String>,
+        f64,
     )> = encounter_query
         .order(e::started_at_ms.desc())
         .select((
@@ -678,6 +681,7 @@ pub fn get_recent_encounters_filtered(
             e::total_heal,
             e::scene_id,
             e::scene_name,
+            e::duration,
         ))
         .limit(limit as i64)
         .offset(offset as i64)
@@ -693,7 +697,7 @@ pub fn get_recent_encounters_filtered(
     // Collect boss and player data for each encounter
     let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
 
-    for (id, started, ended, td, th, scene_id, scene_name) in rows {
+    for (id, started, ended, td, th, scene_id, scene_name, duration) in rows {
         // Get unique boss entries (name + max_hp) from the materialized encounter_bosses
         let boss_rows: Vec<(String, Option<i64>, i32)> = eb::encounter_bosses
             .filter(eb::encounter_id.eq(id))
@@ -740,6 +744,7 @@ pub fn get_recent_encounters_filtered(
             total_heal: th.unwrap_or(0),
             scene_id,
             scene_name,
+            duration,
             bosses: boss_entries,
             players: player_data,
             actors: Vec::new(),
@@ -775,6 +780,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
         Option<i64>,
         Option<i32>,
         Option<String>,
+        f64,
     )> = e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .order(e::started_at_ms.desc())
@@ -786,6 +792,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             e::total_heal,
             e::scene_id,
             e::scene_name,
+            e::duration,
         ))
         .limit(limit as i64)
         .offset(offset as i64)
@@ -801,7 +808,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
     // Collect boss and player data for each encounter
     let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
 
-    for (id, started, ended, td, th, scene_id, scene_name) in rows {
+    for (id, started, ended, td, th, scene_id, scene_name, duration) in rows {
         use sch::actor_encounter_stats::dsl as s;
         use sch::encounter_bosses::dsl as eb;
         use std::collections::HashSet;
@@ -852,6 +859,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             total_heal: th.unwrap_or(0),
             scene_id,
             scene_name,
+            duration,
             bosses: boss_entries,
             players: player_data,
             actors: Vec::new(),
@@ -985,6 +993,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         Option<i64>,
         Option<i32>,
         Option<String>,
+        f64,
     ) = e::encounters
         .filter(e::id.eq(encounter_id))
         .select((
@@ -995,6 +1004,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
             e::total_heal,
             e::scene_id,
             e::scene_name,
+            e::duration,
         ))
         .first(&mut conn)
         .map_err(|er| er.to_string())?;
@@ -1039,6 +1049,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         total_heal: row.4.unwrap_or(0),
         scene_id: row.5,
         scene_name: row.6.clone(),
+        duration: row.7,
         bosses: boss_names,
         players,
         actors,
