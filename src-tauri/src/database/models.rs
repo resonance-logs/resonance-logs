@@ -275,6 +275,10 @@ pub struct ActorEncounterStatRow {
     pub boss_lucky_total_dealt: i64,
     /// The number of revives for the actor during the encounter.
     pub revives: i64,
+    /// The average DPS snapshot for the actor during the encounter.
+    pub dps: f64,
+    /// The encounter duration in seconds used for the DPS snapshot.
+    pub duration: f64,
     /// Whether the actor is a player.
     pub is_player: i32,
     /// Whether the actor is the local player.
@@ -351,11 +355,16 @@ pub struct NewActorEncounterStat {
     pub boss_lucky_total_dealt: i64,
     /// The number of revives for the actor during the encounter.
     pub revives: i64,
+    /// The average DPS snapshot for the actor during the encounter.
+    pub dps: f64,
+    /// The encounter duration in seconds used for the DPS snapshot.
+    pub duration: f64,
 }
-
-/// Represents a row in the `damage_skill_stats` table.
 #[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
-#[diesel(table_name = sch::damage_skill_stats, primary_key(encounter_id, attacker_id, defender_id, skill_id))]
+#[diesel(
+    table_name = sch::damage_skill_stats,
+    primary_key(encounter_id, attacker_id, defender_id, skill_id)
+)]
 #[diesel(belongs_to(EncounterRow, foreign_key = encounter_id))]
 pub struct DamageSkillStatRow {
     /// The ID of the encounter.

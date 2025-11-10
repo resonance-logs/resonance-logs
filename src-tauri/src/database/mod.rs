@@ -415,6 +415,31 @@ fn handle_task(
                     .execute(conn)
                     .map_err(|er| er.to_string())?;
 
+                let started_at_ms: i64 = e::encounters
+                    .filter(e::id.eq(id))
+                    .select(e::started_at_ms)
+                    .first::<i64>(conn)
+                    .map_err(|er| er.to_string())?;
+
+                let mut duration_secs = 1.0_f64;
+                if ended_at_ms > started_at_ms {
+                    let computed = ((ended_at_ms - started_at_ms) as f64) / 1000.0;
+                    if computed > 1.0 {
+                        duration_secs = computed;
+                    }
+                }
+
+                diesel::sql_query(
+                    "UPDATE actor_encounter_stats
+                     SET duration = ?2,
+                         dps = CASE WHEN ?2 > 0 THEN damage_dealt * 1.0 / ?2 ELSE 0 END
+                     WHERE encounter_id = ?1 AND is_player = 1",
+                )
+                .bind::<diesel::sql_types::Integer, _>(id)
+                .bind::<diesel::sql_types::Double, _>(duration_secs)
+                .execute(conn)
+                .map_err(|er| er.to_string())?;
+
                 // Update snapshot fields from entities table for any NULL values
                 // This ensures we capture the final state at encounter end
                 diesel::sql_query(

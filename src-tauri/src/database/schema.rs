@@ -130,6 +130,10 @@ diesel::table! {
         boss_lucky_total_dealt -> BigInt,
         /// The number of revives for the actor during the encounter.
         revives -> BigInt,
+        /// The average DPS snapshot for the actor during the encounter.
+        dps -> Double,
+        /// The encounter duration in seconds used for the DPS snapshot.
+        duration -> Double,
         /// Whether the actor is a player.
         is_player -> Integer,
         /// Whether the actor is the local player.

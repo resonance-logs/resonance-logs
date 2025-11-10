@@ -219,6 +219,10 @@ pub struct ActorEncounterStatDto {
     pub boss_crit_total_dealt: i64,
     /// The total lucky damage dealt to bosses by the actor.
     pub boss_lucky_total_dealt: i64,
+    /// The average DPS snapshot for the actor during the encounter.
+    pub dps: f64,
+    /// The encounter duration in seconds used for the DPS snapshot.
+    pub duration: f64,
     /// Whether the actor is the local player.
     pub is_local_player: bool,
 }
@@ -272,6 +276,8 @@ fn load_actor_stats(
             s::boss_lucky_hits_dealt,
             s::boss_crit_total_dealt,
             s::boss_lucky_total_dealt,
+            s::dps,
+            s::duration,
             s::is_local_player,
         ))
         .order((
@@ -309,6 +315,8 @@ fn load_actor_stats(
             i64,
             i64,
             i64,
+            f64,
+            f64,
             i32,
         )>(conn)
         .map_err(|e| e.to_string())?;
@@ -346,6 +354,8 @@ fn load_actor_stats(
                 boss_lucky_hits_dealt,
                 boss_crit_total_dealt,
                 boss_lucky_total_dealt,
+                dps,
+                duration,
                 is_local_player,
             )| ActorEncounterStatDto {
                 encounter_id,
@@ -377,6 +387,8 @@ fn load_actor_stats(
                 boss_lucky_hits_dealt,
                 boss_crit_total_dealt,
                 boss_lucky_total_dealt,
+                dps,
+                duration,
                 is_local_player: is_local_player == 1,
             },
         )
@@ -1118,7 +1130,7 @@ pub fn get_encounter_attempt_actor_stats(
 
     // NOTE: attempt_index is ignored because raw per-event tables are removed.
     // Return per-encounter aggregated stats from materialized tables.
-    let player_rows: Vec<(i64, Option<String>, Option<i32>, Option<i32>, i32)> =
+    let player_rows: Vec<(i64, Option<String>, Option<i32>, Option<i32>, i32, f64, f64)> =
         a::actor_encounter_stats
             .filter(a::encounter_id.eq(encounter_id))
             .filter(a::is_player.eq(1))
@@ -1128,13 +1140,24 @@ pub fn get_encounter_attempt_actor_stats(
                 a::class_id,
                 a::ability_score,
                 a::is_local_player,
+                a::duration,
+                a::dps,
             ))
-            .load::<(i64, Option<String>, Option<i32>, Option<i32>, i32)>(&mut conn)
+            .load::<(i64, Option<String>, Option<i32>, Option<i32>, i32, f64, f64)>(&mut conn)
             .map_err(|e| e.to_string())?;
 
     let mut results: Vec<ActorEncounterStatDto> = Vec::new();
 
-    for (actor_id, name_opt, class_id_opt, ability_score_opt, is_local) in player_rows {
+    for (
+        actor_id,
+        name_opt,
+        class_id_opt,
+        ability_score_opt,
+        is_local,
+        duration_val,
+        persisted_dps,
+    ) in player_rows
+    {
         // Damage dealt by this actor (aggregate)
         let dmg_stats = dss::damage_skill_stats
             .filter(dss::encounter_id.eq(encounter_id))
@@ -1218,6 +1241,18 @@ pub fn get_encounter_attempt_actor_stats(
             lucky_total_heal += s.lucky_total;
         }
 
+        let duration = duration_val;
+        let computed_dps = if duration > 0.0 {
+            dmg_total as f64 / duration
+        } else {
+            0.0
+        };
+        let dps_value = if persisted_dps > 0.0 {
+            persisted_dps
+        } else {
+            computed_dps
+        };
+
         results.push(ActorEncounterStatDto {
             encounter_id,
             actor_id,
@@ -1248,6 +1283,8 @@ pub fn get_encounter_attempt_actor_stats(
             boss_lucky_hits_dealt: boss_lucky_hits,
             boss_crit_total_dealt: boss_crit_total,
             boss_lucky_total_dealt: boss_lucky_total,
+            dps: dps_value,
+            duration,
             is_local_player: is_local != 0,
         });
     }
