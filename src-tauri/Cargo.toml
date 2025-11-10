@@ -53,6 +53,8 @@ uuid = { version = "1.11.0", features = ["v4", "fast-rng"] }
 libsqlite3-sys = { version = "0.30.1", features = ["bundled"] }
 dirs = "6.0.0"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+sha2 = "0.10"
+hex = "0.4"
 
 [dependencies.blueprotobuf-lib]
 path = "./src/blueprotobuf-lib"

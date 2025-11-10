@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::atomic::{AtomicBool, Ordering};
+use sha2::{Sha256, Digest};
 
 use reqwest::Client;
 use tauri::{AppHandle, Emitter, Manager};
@@ -21,6 +22,7 @@ pub struct UploadEncounterIn {
     pub total_heal: Option<i64>,
     pub scene_id: Option<i32>,
     pub scene_name: Option<String>,
+    pub source_hash: Option<String>,
     pub attempts: Vec<UploadAttemptIn>,
     pub death_events: Vec<UploadDeathEventIn>,
     pub actor_encounter_stats: Vec<UploadActorEncounterStatIn>,
@@ -161,6 +163,66 @@ pub struct UploadEncounterBossIn {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UploadRequestBody {
     pub encounters: Vec<UploadEncounterIn>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CheckDuplicatesRequest {
+    pub hashes: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DuplicateInfo {
+    pub hash: String,
+    pub encounter_id: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDuplicatesResponse {
+    pub duplicates: Vec<DuplicateInfo>,
+    pub missing: Vec<String>,
+}
+
+/// Compute a deterministic SHA-256 hash for an encounter
+/// Uses a canonical subset of fields to ensure consistency
+fn compute_encounter_hash(encounter: &UploadEncounterIn) -> String {
+    // Build a canonical representation using selected stable fields
+    // Sort attempts by attempt_index to ensure determinism
+    let mut sorted_attempts = encounter.attempts.clone();
+    sorted_attempts.sort_by_key(|a| a.attempt_index);
+
+    let attempt_values: Vec<serde_json::Value> = sorted_attempts.iter().map(|a| json!({
+        "attemptIndex": a.attempt_index,
+        "startedAtMs": a.started_at_ms,
+        "endedAtMs": a.ended_at_ms,
+    })).collect();
+
+    // Include actor IDs to differentiate encounters with same timing but different participants
+    let mut actor_ids: Vec<i64> = encounter.actor_encounter_stats.iter().map(|s| s.actor_id).collect();
+    actor_ids.sort();
+
+    // Create a canonical JSON structure with only the fields we want to hash
+    let canonical = json!({
+        "startedAtMs": encounter.started_at_ms,
+        "endedAtMs": encounter.ended_at_ms,
+        "localPlayerId": encounter.local_player_id,
+        "sceneId": encounter.scene_id,
+        "sceneName": encounter.scene_name,
+        "attempts": attempt_values,
+        "actorIds": actor_ids,
+    });
+
+    // Serialize to deterministic JSON string (serde_json maintains key order)
+    let canonical_str = serde_json::to_string(&canonical).unwrap_or_default();
+
+    // Compute SHA-256 hash
+    let mut hasher = Sha256::new();
+    hasher.update(canonical_str.as_bytes());
+    let result = hasher.finalize();
+
+    // Return hex-encoded hash
+    hex::encode(result)
 }
 
 /// Counts ended encounters eligible for upload.
@@ -488,7 +550,7 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         entities.push(UploadEntityIn { entity_id, name, class_id, class_spec, ability_score, level });
     }
 
-    Ok(UploadEncounterIn {
+    let mut encounter = UploadEncounterIn {
         started_at_ms,
         ended_at_ms,
         local_player_id,
@@ -496,6 +558,7 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         total_heal,
         scene_id,
         scene_name,
+        source_hash: None, // Will be computed below
         attempts,
         death_events,
         actor_encounter_stats: actor_stats,
@@ -504,7 +567,12 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         entities,
         encounter_bosses,
         detailed_playerdata,
-    })
+    };
+
+    // Compute and set the source hash
+    encounter.source_hash = Some(compute_encounter_hash(&encounter));
+
+    Ok(encounter)
 }
 
 pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<String>) -> Result<(), String> {
@@ -552,7 +620,74 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         for row in &rows {
             payloads.push(build_encounter_payload(&mut conn, row.clone())?);
         }
-        let body = UploadRequestBody { encounters: payloads };
+
+        // Preflight check: ask server which encounters are duplicates
+        let hashes: Vec<String> = payloads.iter()
+            .filter_map(|e| e.source_hash.clone())
+            .collect();
+
+        let mut filtered_payloads = payloads.clone();
+
+        if !hashes.is_empty() {
+            // Perform preflight duplicate check
+            let check_url = format!("{}/upload/check", base_urls[current_url_index].trim_end_matches('/'));
+            let check_body = CheckDuplicatesRequest { hashes };
+
+            match client.post(&check_url)
+                .header("X-Api-Key", api_key.clone())
+                .json(&check_body)
+                .send().await
+            {
+                Ok(resp) if resp.status().is_success() => {
+                    if let Ok(check_result) = resp.json::<CheckDuplicatesResponse>().await {
+                        // Filter out duplicates from the batch
+                        let duplicate_hashes: std::collections::HashSet<String> = check_result.duplicates.iter()
+                            .map(|d| d.hash.clone())
+                            .collect();
+
+                        filtered_payloads = payloads.into_iter()
+                            .filter(|e| {
+                                if let Some(ref hash) = e.source_hash {
+                                    !duplicate_hashes.contains(hash)
+                                } else {
+                                    true // Keep encounters without hash
+                                }
+                            })
+                            .collect();
+
+                        let skipped = rows.len() - filtered_payloads.len();
+                        if skipped > 0 {
+                            // Emit progress for skipped duplicates
+                            uploaded += skipped as i64;
+                            let progress_payload: serde_json::Value = json!({
+                                "uploaded": uploaded,
+                                "total": total,
+                                "skipped": skipped,
+                                "message": format!("Skipped {} duplicate(s)", skipped)
+                            });
+                            if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+                                let _ = w.emit("upload:progress", progress_payload.clone());
+                            }
+                            if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+                                let _ = w.emit("upload:progress", progress_payload.clone());
+                            }
+                            let _ = app.emit("upload:progress", progress_payload);
+                        }
+                    }
+                }
+                _ => {
+                    // Preflight check failed; proceed with full batch upload (server will dedupe)
+                }
+            }
+        }
+
+        // If all encounters were duplicates, skip upload and continue to next batch
+        if filtered_payloads.is_empty() {
+            offset += rows.len() as i64;
+            continue;
+        }
+
+        let body = UploadRequestBody { encounters: filtered_payloads };
 
         // Try each URL in sequence until one succeeds
         let mut upload_success = false;
