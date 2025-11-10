@@ -140,6 +140,8 @@ diesel::table! {
         is_player -> Integer,
         /// Whether the actor is the local player.
         is_local_player -> Integer,
+        /// The attributes of the actor.
+        attributes -> Nullable<Text>,
     }
 }
 

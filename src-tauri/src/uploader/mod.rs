@@ -28,6 +28,7 @@ pub struct UploadEncounterIn {
     pub heal_skill_stats: Vec<UploadHealSkillStatIn>,
     pub entities: Vec<UploadEntityIn>,
     pub encounter_bosses: Vec<UploadEncounterBossIn>,
+    pub detailed_playerdata: Vec<UploadDetailedPlayerDataIn>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -57,19 +58,41 @@ pub struct UploadDeathEventIn {
 #[serde(rename_all = "camelCase")]
 pub struct UploadActorEncounterStatIn {
     pub actor_id: i64,
+    pub name: Option<String>,
+    pub class_id: Option<i32>,
     pub class_spec: Option<i32>,
+    pub ability_score: Option<i32>,
+    pub level: Option<i32>,
     pub damage_dealt: i64,
     pub heal_dealt: i64,
     pub damage_taken: i64,
     pub hits_dealt: i64,
     pub hits_heal: i64,
     pub hits_taken: i64,
-    pub name: Option<String>,
-    pub class_id: Option<i32>,
-    pub ability_score: Option<i32>,
-    pub level: Option<i32>,
+    pub crit_hits_dealt: i64,
+    pub crit_hits_heal: i64,
+    pub crit_hits_taken: i64,
+    pub lucky_hits_dealt: i64,
+    pub lucky_hits_heal: i64,
+    pub lucky_hits_taken: i64,
+    pub crit_total_dealt: i64,
+    pub crit_total_heal: i64,
+    pub crit_total_taken: i64,
+    pub lucky_total_dealt: i64,
+    pub lucky_total_heal: i64,
+    pub lucky_total_taken: i64,
+    pub boss_damage_dealt: i64,
+    pub boss_hits_dealt: i64,
+    pub boss_crit_hits_dealt: i64,
+    pub boss_lucky_hits_dealt: i64,
+    pub boss_crit_total_dealt: i64,
+    pub boss_lucky_total_dealt: i64,
+    pub revives: i64,
+    pub dps: f64,
+    pub duration: f64,
     pub is_player: bool,
     pub is_local_player: bool,
+    pub attributes: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -113,6 +136,16 @@ pub struct UploadEntityIn {
     pub class_spec: Option<i32>,
     pub ability_score: Option<i32>,
     pub level: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UploadDetailedPlayerDataIn {
+    pub player_id: i64,
+    pub last_seen_ms: i64,
+    pub char_serialize_json: String,
+    pub profession_list_json: Option<String>,
+    pub talent_node_ids_json: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -171,6 +204,7 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
     use sch::heal_skill_stats::dsl as hss;
     use sch::encounter_bosses::dsl as eb;
     use sch::entities::dsl as en;
+    use sch::detailed_playerdata::dsl as dpd;
 
     // Attempts
     let attempts_rows = a::attempts
@@ -231,39 +265,100 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         .filter(s::encounter_id.eq(id))
         .select((
             s::actor_id,
+            s::name,
+            s::class_id,
             s::class_spec,
+            s::ability_score,
+            s::level,
             s::damage_dealt,
             s::heal_dealt,
             s::damage_taken,
             s::hits_dealt,
             s::hits_heal,
             s::hits_taken,
-            s::name,
-            s::class_id,
-            s::ability_score,
-            s::level,
+            s::crit_hits_dealt,
+            s::crit_hits_heal,
+            s::crit_hits_taken,
+            s::lucky_hits_dealt,
+            s::lucky_hits_heal,
+            s::lucky_hits_taken,
+            s::crit_total_dealt,
+            s::crit_total_heal,
+            s::crit_total_taken,
+            s::lucky_total_dealt,
+            s::lucky_total_heal,
+            s::lucky_total_taken,
+            s::boss_damage_dealt,
+            s::boss_hits_dealt,
+            s::boss_crit_hits_dealt,
+            s::boss_lucky_hits_dealt,
+            s::boss_crit_total_dealt,
+            s::boss_lucky_total_dealt,
+            s::revives,
+            s::dps,
+            s::duration,
             s::is_player,
             s::is_local_player,
+            s::attributes,
         ))
-        .load::<(i64, Option<i32>, i64, i64, i64, i64, i64, i64, Option<String>, Option<i32>, Option<i32>, Option<i32>, i32, i32)>(conn)
+        .load::<(
+            i64, Option<String>, Option<i32>, Option<i32>, Option<i32>, Option<i32>,
+            i64, i64, i64, i64, i64, i64,
+            i64, i64, i64, i64, i64, i64,
+            i64, i64, i64, i64, i64, i64,
+            i64, i64, i64, i64, i64, i64,
+            i64, f64, f64, i32, i32, Option<String>
+        )>(conn)
         .map_err(|e| e.to_string())?;
     let actor_stats = stats_rows
         .into_iter()
-        .map(|(actor_id, class_spec, damage_dealt, heal_dealt, damage_taken, hits_dealt, hits_heal, hits_taken, name, class_id, ability_score, level, is_player, is_local_player)| UploadActorEncounterStatIn {
+        .map(|(
+            actor_id, name, class_id, class_spec, ability_score, level,
+            damage_dealt, heal_dealt, damage_taken, hits_dealt, hits_heal, hits_taken,
+            crit_hits_dealt, crit_hits_heal, crit_hits_taken,
+            lucky_hits_dealt, lucky_hits_heal, lucky_hits_taken,
+            crit_total_dealt, crit_total_heal, crit_total_taken,
+            lucky_total_dealt, lucky_total_heal, lucky_total_taken,
+            boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt,
+            boss_crit_total_dealt, boss_lucky_total_dealt,
+            revives, dps, duration, is_player, is_local_player, attributes
+        )| UploadActorEncounterStatIn {
             actor_id,
+            name,
+            class_id,
             class_spec,
+            ability_score,
+            level,
             damage_dealt,
             heal_dealt,
             damage_taken,
             hits_dealt,
             hits_heal,
             hits_taken,
-            name,
-            class_id,
-            ability_score,
-            level,
+            crit_hits_dealt,
+            crit_hits_heal,
+            crit_hits_taken,
+            lucky_hits_dealt,
+            lucky_hits_heal,
+            lucky_hits_taken,
+            crit_total_dealt,
+            crit_total_heal,
+            crit_total_taken,
+            lucky_total_dealt,
+            lucky_total_heal,
+            lucky_total_taken,
+            boss_damage_dealt,
+            boss_hits_dealt,
+            boss_crit_hits_dealt,
+            boss_lucky_hits_dealt,
+            boss_crit_total_dealt,
+            boss_lucky_total_dealt,
+            revives,
+            dps,
+            duration,
             is_player: is_player != 0,
             is_local_player: is_local_player != 0,
+            attributes,
         })
         .collect::<Vec<_>>();
 
@@ -354,6 +449,28 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         })
         .collect::<Vec<_>>();
 
+    // Detailed player data
+    let dpd_rows = dpd::detailed_playerdata
+        .select((
+            dpd::player_id,
+            dpd::last_seen_ms,
+            dpd::char_serialize_json,
+            dpd::profession_list_json,
+            dpd::talent_node_ids_json,
+        ))
+        .load::<(i64, i64, String, Option<String>, Option<String>)>(conn)
+        .map_err(|e| e.to_string())?;
+    let detailed_playerdata = dpd_rows
+        .into_iter()
+        .map(|(player_id, last_seen_ms, char_serialize_json, profession_list_json, talent_node_ids_json)| UploadDetailedPlayerDataIn {
+            player_id,
+            last_seen_ms,
+            char_serialize_json,
+            profession_list_json,
+            talent_node_ids_json,
+        })
+        .collect::<Vec<_>>();
+
     // Entities snapshot (players only where is_player=1 or referenced actors)
     let entity_rows = en::entities
         .select((
@@ -386,6 +503,7 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         heal_skill_stats,
         entities,
         encounter_bosses,
+        detailed_playerdata,
     })
 }
 
