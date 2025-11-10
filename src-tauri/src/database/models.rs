@@ -3,6 +3,52 @@ use serde::{Deserialize, Serialize};
 
 use crate::database::schema as sch;
 
+/// Represents a row in the `detailed_playerdata` table.
+#[derive(Debug, Clone, Queryable, Identifiable, Serialize, Deserialize)]
+#[diesel(table_name = sch::detailed_playerdata, primary_key(player_id))]
+pub struct DetailedPlayerDataRow {
+    /// The unique ID of the player.
+    pub player_id: i64,
+    /// The timestamp of when the player data was last seen.
+    pub last_seen_ms: i64,
+    /// The serialized `CharSerialize` payload for the player.
+    pub char_serialize_json: String,
+    /// The serialized profession list associated with the player.
+    pub profession_list_json: Option<String>,
+    /// The serialized talent node identifiers for the player.
+    pub talent_node_ids_json: Option<String>,
+}
+
+/// Represents a new row to insert into the `detailed_playerdata` table.
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::detailed_playerdata)]
+pub struct NewDetailedPlayerData<'a> {
+    /// The unique ID of the player.
+    pub player_id: i64,
+    /// The timestamp of when the player data was last seen.
+    pub last_seen_ms: i64,
+    /// The serialized `CharSerialize` payload for the player.
+    pub char_serialize_json: &'a str,
+    /// The serialized profession list associated with the player.
+    pub profession_list_json: Option<&'a str>,
+    /// The serialized talent node identifiers for the player.
+    pub talent_node_ids_json: Option<&'a str>,
+}
+
+/// Represents an update to an existing row in the `detailed_playerdata` table.
+#[derive(Debug, Clone, AsChangeset)]
+#[diesel(table_name = sch::detailed_playerdata)]
+pub struct UpdateDetailedPlayerData<'a> {
+    /// The timestamp of when the player data was last seen.
+    pub last_seen_ms: i64,
+    /// The serialized `CharSerialize` payload for the player.
+    pub char_serialize_json: &'a str,
+    /// The serialized profession list associated with the player.
+    pub profession_list_json: Option<&'a str>,
+    /// The serialized talent node identifiers for the player.
+    pub talent_node_ids_json: Option<&'a str>,
+}
+
 /// Represents a row in the `entities` table.
 #[derive(Debug, Clone, Queryable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = sch::entities, primary_key(entity_id))]

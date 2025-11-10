@@ -25,6 +25,16 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    detailed_playerdata (player_id) {
+        player_id -> BigInt,
+        last_seen_ms -> BigInt,
+        char_serialize_json -> Text,
+        profession_list_json -> Nullable<Text>,
+        talent_node_ids_json -> Nullable<Text>,
+    }
+}
+
 /// Represents the `encounters` table.
 diesel::table! {
     encounters (id) {
@@ -268,6 +278,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     entities,
     encounters,
     actor_encounter_stats,
+    detailed_playerdata,
     damage_skill_stats,
     heal_skill_stats,
     encounter_bosses,

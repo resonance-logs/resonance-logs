@@ -270,6 +270,15 @@ pub enum DbTask {
         attributes: Option<String>,
     },
 
+    /// A task to insert or update detailed local player data.
+    UpsertDetailedPlayerData {
+        player_id: i64,
+        last_seen_ms: i64,
+        char_serialize_json: String,
+        profession_list_json: Option<String>,
+        talent_node_ids_json: Option<String>,
+    },
+
     /// A task to insert a damage event.
     InsertDamageEvent {
         timestamp_ms: i64,
@@ -511,6 +520,51 @@ fn handle_task(
                     attributes: attributes.as_deref(),
                 };
                 diesel::insert_into(en::entities)
+                    .values(&insert)
+                    .execute(conn)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        DbTask::UpsertDetailedPlayerData {
+            player_id,
+            last_seen_ms,
+            char_serialize_json,
+            profession_list_json,
+            talent_node_ids_json,
+        } => {
+            use sch::detailed_playerdata::dsl as dp;
+
+            let exists: Option<i64> = dp::detailed_playerdata
+                .select(dp::player_id)
+                .filter(dp::player_id.eq(player_id))
+                .first::<i64>(conn)
+                .optional()
+                .map_err(|e| e.to_string())?;
+
+            let char_serialize_str = char_serialize_json.as_str();
+            let profession_list_str = profession_list_json.as_deref();
+            let talent_node_ids_str = talent_node_ids_json.as_deref();
+
+            if exists.is_some() {
+                let update = m::UpdateDetailedPlayerData {
+                    last_seen_ms,
+                    char_serialize_json: char_serialize_str,
+                    profession_list_json: profession_list_str,
+                    talent_node_ids_json: talent_node_ids_str,
+                };
+                diesel::update(dp::detailed_playerdata.filter(dp::player_id.eq(player_id)))
+                    .set(&update)
+                    .execute(conn)
+                    .map_err(|e| e.to_string())?;
+            } else {
+                let insert = m::NewDetailedPlayerData {
+                    player_id,
+                    last_seen_ms,
+                    char_serialize_json: char_serialize_str,
+                    profession_list_json: profession_list_str,
+                    talent_node_ids_json: talent_node_ids_str,
+                };
+                diesel::insert_into(dp::detailed_playerdata)
                     .values(&insert)
                     .execute(conn)
                     .map_err(|e| e.to_string())?;
