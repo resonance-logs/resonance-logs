@@ -24,3 +24,5 @@ handoff.md
 /gen/schemas
 .aider.tags.cache.v4/
 .aider*
+.github/
+.specify/
