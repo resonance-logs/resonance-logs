@@ -1,6 +1,7 @@
 mod build_app;
 mod live;
 mod packets;
+mod module_extractor;
 
 use crate::build_app::build_and_run;
 use log::{info, warn};
@@ -61,6 +62,12 @@ pub fn run() {
             database::commands::get_player_name_command,
             uploader::start_upload,
             uploader::cancel_upload_cmd,
+            module_extractor::commands::set_module_sync_config,
+            module_extractor::commands::get_module_sync_status,
+            module_extractor::commands::trigger_module_sync,
+            module_extractor::commands::retry_failed_uploads,
+            module_extractor::commands::get_unknown_attributes,
+            module_extractor::commands::clear_unknown_attributes,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -112,6 +119,15 @@ pub fn run() {
             // Create and manage the state manager
             let state_manager = crate::live::state::AppStateManager::new(app_handle.clone());
             app.manage(state_manager.clone());
+
+            // Create and manage the module sync state
+            let module_sync_state = crate::module_extractor::commands::ModuleSyncState::default();
+            app.manage(module_sync_state.clone());
+
+            // Start auto-sync timer
+            tauri::async_runtime::spawn(
+                crate::module_extractor::commands::start_auto_sync_timer(module_sync_state)
+            );
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks

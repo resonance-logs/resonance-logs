@@ -79,6 +79,12 @@ const DEFAULT_SETTINGS = {
     hardReset: "",
     toggleBossHp: "",
   },
+  moduleSync: {
+    enabled: false,
+    apiKey: "",
+    baseUrl: "http://localhost:8080/api/v1",
+    autoSyncIntervalMinutes: 0,
+  },
   live: {
     general: { ...DEFAULT_GENERAL_SETTINGS },
     dpsPlayers: { ...DEFAULT_STATS },
@@ -108,6 +114,11 @@ export const SETTINGS = {
   shortcuts: new RuneStore(
     'shortcuts',
     DEFAULT_SETTINGS.shortcuts,
+    RUNE_STORE_OPTIONS
+  ),
+  moduleSync: new RuneStore(
+    'moduleSync',
+    DEFAULT_SETTINGS.moduleSync,
     RUNE_STORE_OPTIONS
   ),
   live: {
@@ -191,6 +202,7 @@ export const settings = {
   state: {
     accessibility: SETTINGS.accessibility.state,
     shortcuts: SETTINGS.shortcuts.state,
+    moduleSync: SETTINGS.moduleSync.state,
     live: {
       general: SETTINGS.live.general.state,
       dps: {
