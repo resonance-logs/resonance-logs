@@ -3,6 +3,7 @@
  * Uses @tauri-store/svelte RuneStore for simple, typed persistence.
  */
 import { RuneStore } from "@tauri-store/svelte";
+import { SETTINGS } from "$lib/settings-store";
 
 export type UploadStatus = "idle" | "in-progress" | "done" | "error";
 
@@ -16,12 +17,26 @@ export interface UploadProgressState extends Record<string, unknown> {
 
 const RUNE_STORE_OPTIONS = { autoStart: true, saveOnChange: true } as const;
 
+const LEGACY_API_KEY_STORE = new RuneStore<{ value: string }>(
+  "uploadApiKey",
+  { value: "" },
+  { autoStart: true, saveOnChange: false }
+);
+
+let legacyMigrated = false;
+function ensureLegacyApiKeyMigrated() {
+  if (legacyMigrated) return;
+  legacyMigrated = true;
+
+  const legacyKey = (LEGACY_API_KEY_STORE.state.value || "").trim();
+  const currentKey = (SETTINGS.moduleSync.state.apiKey || "").trim();
+
+  if (legacyKey && !currentKey) {
+    SETTINGS.moduleSync.state.apiKey = legacyKey;
+  }
+}
+
 export const UPLOADING = {
-  apiKey: new RuneStore<{ value: string }>(
-    "uploadApiKey",
-    { value: "" },
-    RUNE_STORE_OPTIONS
-  ),
   progress: new RuneStore<UploadProgressState>(
     "uploadProgress",
     { uploaded: 0, total: 0, status: "idle" },
@@ -30,11 +45,18 @@ export const UPLOADING = {
 };
 
 export function setApiKey(key: string) {
-  UPLOADING.apiKey.state.value = key.trim();
+  ensureLegacyApiKeyMigrated();
+  SETTINGS.moduleSync.state.apiKey = key.trim();
 }
 
 export function getApiKey(): string {
-  return (UPLOADING.apiKey.state.value || "").trim();
+  ensureLegacyApiKeyMigrated();
+  return (SETTINGS.moduleSync.state.apiKey || "").trim();
+}
+
+export function getModuleApiBaseUrl(): string | null {
+  const base = (SETTINGS.moduleSync.state.baseUrl || "").trim();
+  return base || null;
 }
 
 export function resetProgress() {

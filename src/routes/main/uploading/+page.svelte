@@ -20,11 +20,13 @@
     UPLOADING,
     setApiKey,
     getApiKey,
+    getModuleApiBaseUrl,
     resetProgress,
     setUploading,
     setProgress,
     setError,
   } from "$lib/stores/uploading";
+  import { SETTINGS } from "$lib/settings-store";
 
   let showKey = $state(false);
   let busy = $state(false);
@@ -53,7 +55,8 @@
     resetProgress();
     try {
       // Will be implemented in Stage 4 on the Rust side
-      await invoke("start_upload", { apiKey: key });
+      const baseUrl = getModuleApiBaseUrl();
+      await invoke("start_upload", { apiKey: key, baseUrl });
       infoMsg = "Starting upload…";
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -137,7 +140,7 @@
           class="flex-1 min-w-0 rounded-md border border-border bg-popover px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground/80"
           type={type}
           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          value={UPLOADING.apiKey.state.value}
+          value={SETTINGS.moduleSync.state.apiKey}
           oninput={(e) => setApiKey((e.target as HTMLInputElement).value)}
           autocomplete="off"
           spellcheck={false}
