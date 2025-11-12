@@ -771,7 +771,7 @@ pub async fn start_upload(app: tauri::AppHandle, api_key: String, base_url: Opti
         let localhost_url = std::env::var("WEBSITE_API_BASE")
             .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string());
         base_urls.push(localhost_url);
-        base_urls.push("https://api.bpsr.app".to_string());
+        base_urls.push("https://api.bpsr.app/api/v1".to_string());
     }
 
     let app_cloned = app.clone();
@@ -804,12 +804,12 @@ mod tests {
         let localhost_url = std::env::var("WEBSITE_API_BASE")
             .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string());
         base_urls.push(localhost_url);
-        base_urls.push("https://api.bpsr.app".to_string());
+        base_urls.push("https://api.bpsr.app/api/v1".to_string());
 
         // Verify the ordering
         assert_eq!(base_urls.len(), 2);
         assert!(base_urls[0].contains("localhost") || base_urls[0].contains("127.0.0.1"));
-        assert_eq!(base_urls[1], "https://api.bpsr.app");
+        assert_eq!(base_urls[1], "https://api.bpsr.app/api/v1");
     }
 
     #[test]
@@ -831,13 +831,13 @@ mod tests {
         // Test that URLs are formatted correctly when constructing the upload endpoint
         let base_urls = vec![
             "http://localhost:8080/api/v1/".to_string(),
-            "https://api.bpsr.app".to_string(),
+            "https://api.bpsr.app/api/v1".to_string(),
             "https://custom.example.com/api/".to_string(),
         ];
 
         let expected_endpoints = vec![
             "http://localhost:8080/api/v1/upload/",
-            "https://api.bpsr.app/upload/",
+            "https://api.bpsr.app/api/v1/upload/",
             "https://custom.example.com/api/upload/",
         ];
 
