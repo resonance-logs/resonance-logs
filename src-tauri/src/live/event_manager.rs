@@ -173,6 +173,11 @@ impl EventManager {
         }
     }
 
+    /// Peek at dead boss names without consuming them.
+    pub fn peek_dead_bosses(&self) -> Vec<String> {
+        self.dead_boss_names.values().cloned().collect()
+    }
+
     /// Drain and return any dead boss names that have been recorded by the event manager.
     /// This consumes the stored names and uids so they won't be double-persisted.
     pub fn take_dead_bosses(&mut self) -> Vec<String> {

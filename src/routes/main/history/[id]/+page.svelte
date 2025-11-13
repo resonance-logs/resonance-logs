@@ -238,6 +238,21 @@
             <div class="text-sm text-muted-foreground">
               {new Date(encounter.startedAtMs).toLocaleString()} — Duration: {Math.floor(Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000) / 60)}m
             </div>
+
+            <!-- Phases info -->
+            {#if encounter.phases && encounter.phases.length > 0}
+              <div class="text-xs text-muted-foreground mt-1 flex gap-2">
+                {#each encounter.phases as phase}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border {phase.phaseType === 'mob' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-purple-500/30 bg-purple-500/10 text-purple-400'}">
+                    <span class="font-semibold">{phase.phaseType === 'mob' ? 'Mob Phase' : 'Boss Phase'}</span>
+                    <span class="text-muted-foreground">•</span>
+                    <span class="{phase.outcome === 'success' ? 'text-green-400' : phase.outcome === 'wipe' ? 'text-red-400' : 'text-yellow-400'}">{phase.outcome}</span>
+                    <span class="text-muted-foreground">•</span>
+                    <span>{Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s</span>
+                  </span>
+                {/each}
+              </div>
+            {/if}
             </div>
         </div>
 

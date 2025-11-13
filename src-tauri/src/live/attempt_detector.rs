@@ -102,6 +102,7 @@ pub fn check_hp_rollback_condition(
 /// - Increments attempt index
 /// - Starts a new attempt
 /// - Updates encounter state
+/// - Handles phase outcomes for wipes
 pub fn split_attempt(
     encounter: &mut Encounter,
     reason: &str,
@@ -141,6 +142,12 @@ pub fn split_attempt(
         boss_hp_end: resolved_boss_hp,
         total_deaths: deaths_in_attempt,
     });
+
+    // Handle phase outcomes for wipes
+    if reason == "wipe" {
+        use crate::live::phase_detector::handle_wipe;
+        handle_wipe(encounter, timestamp_ms);
+    }
 
     // Increment attempt index
     encounter.current_attempt_index += 1;

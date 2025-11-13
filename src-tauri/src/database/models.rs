@@ -580,3 +580,37 @@ pub struct NewAttempt {
     /// The total number of deaths in this attempt.
     pub total_deaths: i32,
 }
+
+/// Represents a row in the `encounter_phases` table.
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::encounter_phases, belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct EncounterPhaseRow {
+    /// The unique ID of the encounter phase.
+    pub id: i32,
+    /// The ID of the encounter this phase belongs to.
+    pub encounter_id: i32,
+    /// The type of phase ('mob' or 'boss').
+    pub phase_type: String,
+    /// The timestamp of when the phase started, in milliseconds since the Unix epoch.
+    pub start_time_ms: i64,
+    /// The timestamp of when the phase ended, in milliseconds since the Unix epoch.
+    pub end_time_ms: Option<i64>,
+    /// The outcome of the phase ('success', 'wipe', 'unknown').
+    pub outcome: String,
+}
+
+/// Represents a new encounter phase to be inserted into the `encounter_phases` table.
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::encounter_phases)]
+pub struct NewEncounterPhase {
+    /// The ID of the encounter this phase belongs to.
+    pub encounter_id: i32,
+    /// The type of phase ('mob' or 'boss').
+    pub phase_type: String,
+    /// The timestamp of when the phase started, in milliseconds since the Unix epoch.
+    pub start_time_ms: i64,
+    /// The timestamp of when the phase ended, in milliseconds since the Unix epoch.
+    pub end_time_ms: Option<i64>,
+    /// The outcome of the phase ('success', 'wipe', 'unknown').
+    pub outcome: String,
+}

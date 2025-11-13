@@ -35,6 +35,17 @@ pub struct Encounter {
     pub lowest_boss_hp: Option<f64>,
     pub party_member_uids: HashSet<i64>, // Track party members for wipe detection
     pub last_attempt_split_ms: u128,     // Cooldown to avoid rapid splits
+    // Phase tracking for mob/boss splitting
+    pub current_phase: Option<PhaseType>,
+    pub phase_start_ms: u128,
+    pub boss_detected: bool, // Whether a boss entity has been seen this encounter
+}
+
+/// Represents the type of encounter phase
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PhaseType {
+    Mob,
+    Boss,
 }
 
 // Use an async-aware RwLock so readers don't block the tokio runtime threads.
@@ -452,6 +463,9 @@ impl Encounter {
         self.lowest_boss_hp = None;
         self.party_member_uids.clear();
         self.last_attempt_split_ms = 0;
+        self.current_phase = None;
+        self.phase_start_ms = 0;
+        self.boss_detected = false;
     }
 }
 

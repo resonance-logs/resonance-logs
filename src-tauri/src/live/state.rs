@@ -180,6 +180,21 @@ impl AppStateManager {
 
     async fn on_server_change(&self, state: &mut AppState) {
         use crate::live::opcodes_process::on_server_change;
+        use crate::live::phase_detector::end_phase;
+
+        // End any active phase before ending the encounter
+        let timestamp_ms = now_ms() as u128;
+        if state.encounter.current_phase.is_some() {
+            // Determine outcome based on whether bosses were defeated
+            let defeated = state.event_manager.peek_dead_bosses();
+            let outcome = if !defeated.is_empty() {
+                "success"
+            } else {
+                "unknown"
+            };
+            end_phase(&mut state.encounter, outcome, timestamp_ms);
+        }
+
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
         let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
@@ -583,6 +598,21 @@ impl AppStateManager {
     }
 
     async fn reset_encounter(&self, state: &mut AppState) {
+        use crate::live::phase_detector::end_phase;
+
+        // End any active phase before ending the encounter
+        let timestamp_ms = now_ms() as u128;
+        if state.encounter.current_phase.is_some() {
+            // Determine outcome based on whether bosses were defeated
+            let defeated = state.event_manager.peek_dead_bosses();
+            let outcome = if !defeated.is_empty() {
+                "success"
+            } else {
+                "unknown"
+            };
+            end_phase(&mut state.encounter, outcome, timestamp_ms);
+        }
+
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
         let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {

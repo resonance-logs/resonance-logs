@@ -339,6 +339,19 @@ pub enum DbTask {
         boss_hp_end: Option<i64>,
         total_deaths: i32,
     },
+
+    /// A task to begin a new encounter phase.
+    BeginPhase {
+        phase_type: String,
+        start_time_ms: i64,
+    },
+
+    /// A task to end the current encounter phase.
+    EndPhase {
+        phase_type: String,
+        end_time_ms: i64,
+        outcome: String,
+    },
 }
 
 /// Enqueues a database task to be processed by the background writer thread.
@@ -835,6 +848,51 @@ fn handle_task(
                 .map_err(|e| e.to_string())?;
             }
         }
+        DbTask::BeginPhase {
+            phase_type,
+            start_time_ms,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                use sch::encounter_phases::dsl as ep;
+                let new_phase = m::NewEncounterPhase {
+                    encounter_id: enc_id,
+                    phase_type,
+                    start_time_ms,
+                    end_time_ms: None,
+                    outcome: "unknown".to_string(),
+                };
+                diesel::insert_into(ep::encounter_phases)
+                    .values(&new_phase)
+                    .execute(conn)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        DbTask::EndPhase {
+            phase_type,
+            end_time_ms,
+            outcome,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                // Update the most recent unclosed phase of this type for this encounter
+                // We use raw SQL because Diesel doesn't support ORDER BY in UPDATE queries
+                diesel::sql_query(
+                    "UPDATE encounter_phases
+                     SET end_time_ms = ?1, outcome = ?2
+                     WHERE id = (
+                       SELECT id FROM encounter_phases
+                       WHERE encounter_id = ?3 AND phase_type = ?4 AND end_time_ms IS NULL
+                       ORDER BY start_time_ms DESC
+                       LIMIT 1
+                     )",
+                )
+                .bind::<diesel::sql_types::BigInt, _>(end_time_ms)
+                .bind::<diesel::sql_types::Text, _>(&outcome)
+                .bind::<diesel::sql_types::Integer, _>(enc_id)
+                .bind::<diesel::sql_types::Text, _>(&phase_type)
+                .execute(conn)
+                .map_err(|e| e.to_string())?;
+            }
+        }
     }
     Ok(())
 }
@@ -1197,7 +1255,6 @@ fn prune_encounter_events(conn: &mut SqliteConnection, encounter_id: i32) -> Res
 mod tests {
     use super::*;
     use crate::database::models::{DamageSkillStatRow, EncounterBossRow, HealSkillStatRow};
-    use diesel::dsl::count_star;
     // diesel prelude not needed in this scope; use fully-qualified paths where required
 
     fn setup_conn() -> SqliteConnection {

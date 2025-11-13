@@ -637,6 +637,30 @@ dateFromMs: number | null;
  */
 dateToMs: number | null }
 /**
+ * A DTO representing a phase (mob or boss) within an encounter.
+ */
+export type EncounterPhaseDto = { 
+/**
+ * The unique ID of the encounter phase.
+ */
+id: number; 
+/**
+ * The type of phase ('mob' or 'boss').
+ */
+phaseType: string; 
+/**
+ * Timestamp when phase started (ms since epoch).
+ */
+startTimeMs: number; 
+/**
+ * Timestamp when phase ended (ms since epoch) or null if still running.
+ */
+endTimeMs: number | null; 
+/**
+ * The outcome of the phase ('success', 'wipe', 'unknown').
+ */
+outcome: string }
+/**
  * A summary of an encounter.
  */
 export type EncounterSummaryDto = { 
@@ -683,7 +707,11 @@ players: PlayerInfoDto[];
 /**
  * A list of actor encounter stats.
  */
-actors: ActorEncounterStatDto[] }
+actors: ActorEncounterStatDto[]; 
+/**
+ * A list of phases in the encounter (mob and boss phases).
+ */
+phases: EncounterPhaseDto[] }
 /**
  * Error for a specific module during import
  */

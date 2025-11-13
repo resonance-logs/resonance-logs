@@ -275,6 +275,24 @@ diesel::table! {
     }
 }
 
+/// Represents the `encounter_phases` table.
+diesel::table! {
+    encounter_phases (id) {
+        /// The unique ID of the encounter phase.
+        id -> Integer,
+        /// The ID of the encounter this phase belongs to.
+        encounter_id -> Integer,
+        /// The type of phase ('mob' or 'boss').
+        phase_type -> Text,
+        /// The timestamp of when the phase started, in milliseconds since the Unix epoch.
+        start_time_ms -> BigInt,
+        /// The timestamp of when the phase ended, in milliseconds since the Unix epoch.
+        end_time_ms -> Nullable<BigInt>,
+        /// The outcome of the phase ('success', 'wipe', 'unknown').
+        outcome -> Text,
+    }
+}
+
 // Joins
 
 // joinable entries for raw event tables removed
@@ -283,6 +301,7 @@ diesel::joinable!(heal_skill_stats -> encounters (encounter_id));
 diesel::joinable!(encounter_bosses -> encounters (encounter_id));
 diesel::joinable!(death_events -> encounters (encounter_id));
 diesel::joinable!(attempts -> encounters (encounter_id));
+diesel::joinable!(encounter_phases -> encounters (encounter_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     entities,
@@ -294,4 +313,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     encounter_bosses,
     death_events,
     attempts,
+    encounter_phases,
 );

@@ -33,6 +33,24 @@ pub struct EncounterSummaryDto {
     pub players: Vec<PlayerInfoDto>,
     /// A list of actor encounter stats.
     pub actors: Vec<ActorEncounterStatDto>,
+    /// A list of phases in the encounter (mob and boss phases).
+    pub phases: Vec<EncounterPhaseDto>,
+}
+
+/// A DTO representing a phase (mob or boss) within an encounter.
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EncounterPhaseDto {
+    /// The unique ID of the encounter phase.
+    pub id: i32,
+    /// The type of phase ('mob' or 'boss').
+    pub phase_type: String,
+    /// Timestamp when phase started (ms since epoch).
+    pub start_time_ms: i64,
+    /// Timestamp when phase ended (ms since epoch) or null if still running.
+    pub end_time_ms: Option<i64>,
+    /// The outcome of the phase ('success', 'wipe', 'unknown').
+    pub outcome: String,
 }
 
 /// A DTO representing an attempt (phase) within an encounter.
@@ -748,6 +766,7 @@ pub fn get_recent_encounters_filtered(
             bosses: boss_entries,
             players: player_data,
             actors: Vec::new(),
+            phases: Vec::new(),
         });
     }
 
@@ -863,6 +882,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             bosses: boss_entries,
             players: player_data,
             actors: Vec::new(),
+            phases: Vec::new(),
         });
     }
 
@@ -1041,6 +1061,25 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         .into_iter()
         .collect();
 
+    // Fetch encounter phases
+    use sch::encounter_phases::dsl as ep;
+    let phase_rows: Vec<m::EncounterPhaseRow> = ep::encounter_phases
+        .filter(ep::encounter_id.eq(encounter_id))
+        .order_by(ep::start_time_ms.asc())
+        .load::<m::EncounterPhaseRow>(&mut conn)
+        .map_err(|er| er.to_string())?;
+
+    let phases: Vec<EncounterPhaseDto> = phase_rows
+        .into_iter()
+        .map(|phase| EncounterPhaseDto {
+            id: phase.id,
+            phase_type: phase.phase_type,
+            start_time_ms: phase.start_time_ms,
+            end_time_ms: phase.end_time_ms,
+            outcome: phase.outcome,
+        })
+        .collect();
+
     Ok(EncounterSummaryDto {
         id: row.0,
         started_at_ms: row.1,
@@ -1053,6 +1092,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         bosses: boss_names,
         players,
         actors,
+        phases,
     })
 }
 
