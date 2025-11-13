@@ -17,7 +17,7 @@ const RETRY_DELAY_MS: u64 = 1000;
 /// # Arguments
 /// * `modules` - List of modules to upload
 /// * `api_key` - API key for authentication
-/// * `base_url` - Base URL of the API (e.g., "http://localhost:8080/api/v1")
+/// * `base_url` - Base URL of the API (e.g., "https://api.bpsr.app/api/v1")
 ///
 /// # Returns
 /// Result with ImportModulesResponse or error message
@@ -121,7 +121,7 @@ mod tests {
     fn test_upload_empty_modules() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let result = upload_modules(vec![], "test-key", "http://localhost:8080/api/v1").await;
+            let result = upload_modules(vec![], "test-key", "https://api.bpsr.app/api/v1").await;
             assert!(result.is_ok());
             let response = result.unwrap();
             assert_eq!(response.summary.added, 0);

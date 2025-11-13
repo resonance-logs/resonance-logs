@@ -21,6 +21,13 @@ pub struct FailedUpload {
     pub last_error: String,
 }
 
+const LEGACY_LOCAL_BASE_URL: &str = "http://localhost:8080/api/v1";
+
+fn default_api_base_url() -> String {
+    std::env::var("WEBSITE_API_BASE")
+        .unwrap_or_else(|_| "https://api.bpsr.app/api/v1".to_string())
+}
+
 /// Module sync state shared across commands
 #[derive(Clone)]
 pub struct ModuleSyncState {
@@ -50,10 +57,7 @@ impl Default for ModuleSyncState {
             last_modules: Arc::new(RwLock::new(Vec::new())),
             sync_enabled: Arc::new(RwLock::new(false)),
             api_key: Arc::new(RwLock::new(None)),
-            base_url: Arc::new(RwLock::new(
-                std::env::var("WEBSITE_API_BASE")
-                    .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string())
-            )),
+            base_url: Arc::new(RwLock::new(default_api_base_url())),
             last_upload_hash: Arc::new(RwLock::new(None)),
             last_sync_uuids: Arc::new(RwLock::new(HashSet::new())),
             auto_sync_interval_minutes: Arc::new(RwLock::new(0)),
@@ -122,13 +126,12 @@ pub async fn set_module_sync_config(
 
     if let Some(url) = base_url {
         let trimmed = url.trim().to_string();
-        if trimmed.is_empty() {
-            let default = std::env::var("WEBSITE_API_BASE")
-                .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string());
-            *state.base_url.write().await = default;
+        let resolved = if trimmed.is_empty() || trimmed == LEGACY_LOCAL_BASE_URL {
+            default_api_base_url()
         } else {
-            *state.base_url.write().await = trimmed;
-        }
+            trimmed
+        };
+        *state.base_url.write().await = resolved;
     }
 
     if let Some(interval) = auto_sync_interval_minutes {
