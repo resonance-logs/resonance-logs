@@ -5,6 +5,7 @@
    */
   import "../app.css";
   import { SETTINGS } from "$lib/settings-store";
+  import { commands } from "$lib/bindings";
 
   let { children } = $props();
 </script>
@@ -35,6 +36,20 @@
         document.body.classList.remove('transparent-mode');
       }
     }
+  });
+})()}
+
+{(() => {
+  $effect(() => {
+    if (typeof window === "undefined") return;
+    const enabled = SETTINGS.moduleSync.state.enabled;
+    const apiKey = (SETTINGS.moduleSync.state.apiKey || "").trim();
+    const baseUrl = (SETTINGS.moduleSync.state.baseUrl || "").trim();
+    const interval = SETTINGS.moduleSync.state.autoSyncIntervalMinutes || 0;
+
+    commands
+      .setModuleSyncConfig(enabled, apiKey || null, baseUrl || null, interval)
+      .catch(() => {});
   });
 })()}
 

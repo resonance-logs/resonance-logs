@@ -124,10 +124,15 @@ pub fn run() {
             let module_sync_state = crate::module_extractor::commands::ModuleSyncState::default();
             app.manage(module_sync_state.clone());
 
+            // Auto-upload state (combat log uploader)
+            let auto_upload_state = crate::uploader::AutoUploadState::default();
+            app.manage(auto_upload_state.clone());
+
             // Start auto-sync timer
             tauri::async_runtime::spawn(
                 crate::module_extractor::commands::start_auto_sync_timer(module_sync_state)
             );
+            crate::uploader::start_auto_upload_task(app_handle.clone(), auto_upload_state);
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks

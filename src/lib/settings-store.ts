@@ -82,7 +82,7 @@ const DEFAULT_SETTINGS = {
   moduleSync: {
     enabled: false,
     apiKey: "",
-    baseUrl: "http://localhost:8080/api/v1",
+    baseUrl: "https://api.bpsr.app/api/v1",
     autoSyncIntervalMinutes: 0,
   },
   live: {

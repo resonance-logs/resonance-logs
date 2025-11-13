@@ -3,6 +3,7 @@
 
 use crate::module_extractor::{extract_modules, upload_modules};
 use crate::module_extractor::types::{ImportModulesResponse, UnknownAttribute};
+use crate::uploader::AutoUploadState;
 use blueprotobuf_lib::blueprotobuf::SyncContainerData;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
@@ -94,6 +95,7 @@ pub struct ModuleSyncStatus {
 #[specta::specta]
 pub async fn set_module_sync_config(
     state: tauri::State<'_, ModuleSyncState>,
+    auto_upload_state: tauri::State<'_, AutoUploadState>,
     enabled: bool,
     api_key: Option<String>,
     base_url: Option<String>,
@@ -101,17 +103,43 @@ pub async fn set_module_sync_config(
 ) -> Result<(), String> {
     *state.sync_enabled.write().await = enabled;
 
-    if let Some(key) = api_key {
-        *state.api_key.write().await = Some(key);
+    {
+        let mut api_key_guard = state.api_key.write().await;
+        match api_key {
+            Some(key) => {
+                let trimmed = key.trim().to_string();
+                if trimmed.is_empty() {
+                    *api_key_guard = None;
+                } else {
+                    *api_key_guard = Some(trimmed);
+                }
+            }
+            None => {
+                *api_key_guard = None;
+            }
+        }
     }
 
     if let Some(url) = base_url {
-        *state.base_url.write().await = url;
+        let trimmed = url.trim().to_string();
+        if trimmed.is_empty() {
+            let default = std::env::var("WEBSITE_API_BASE")
+                .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string());
+            *state.base_url.write().await = default;
+        } else {
+            *state.base_url.write().await = trimmed;
+        }
     }
 
     if let Some(interval) = auto_sync_interval_minutes {
         *state.auto_sync_interval_minutes.write().await = interval;
     }
+
+    let current_key = state.api_key.read().await.clone();
+    let current_base = state.base_url.read().await.clone();
+    auto_upload_state
+        .sync_from_settings(current_key, Some(current_base))
+        .await;
 
     info!("Module sync config updated: enabled={}", enabled);
     Ok(())

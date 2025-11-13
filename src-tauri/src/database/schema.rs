@@ -56,6 +56,8 @@ diesel::table! {
         scene_name -> Nullable<Text>,
         /// The duration of the encounter in seconds.
         duration -> Double,
+        /// Timestamp (ms) when this encounter was successfully uploaded to the website.
+        uploaded_at_ms -> Nullable<BigInt>,
     }
 }
 

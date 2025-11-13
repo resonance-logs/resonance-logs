@@ -139,6 +139,8 @@ pub struct EncounterRow {
     pub scene_name: Option<String>,
     /// The duration of the encounter in seconds.
     pub duration: f64,
+    /// When this encounter was uploaded to the website (ms since epoch).
+    pub uploaded_at_ms: Option<i64>,
 }
 
 /// Represents a new encounter to be inserted into the `encounters` table.
