@@ -36,3 +36,4 @@ CLAUDE.md
 openspec/
 .chunkhound.json
 .chunkhound/
+.vscode/mcp.json
