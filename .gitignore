@@ -34,3 +34,5 @@ handoff.md
 CLAUDE.md
 .kilocode/
 openspec/
+.chunkhound.json
+.chunkhound/
