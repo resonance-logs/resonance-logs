@@ -11,6 +11,8 @@
   import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns } from '$lib/history-columns';
   import { settings, SETTINGS } from '$lib/settings-store';
   import getDisplayName from '$lib/name-display.ts';
+  import { getModuleApiBaseUrl } from '$lib/stores/uploading';
+  import { openUrl } from '@tauri-apps/plugin-opener';
 
   // Get encounter ID from URL params
   let encounterId = $derived($page.params.id ? parseInt($page.params.id) : null);
@@ -84,6 +86,25 @@
       return historyHealSkillColumns.filter(col => settings.state.history.heal.skillBreakdown[col.key]);
     }
     return historyDpsSkillColumns.filter(col => settings.state.history.dps.skillBreakdown[col.key]);
+  });
+
+  const websiteBaseUrl = $derived.by(() => {
+    const apiBase = getModuleApiBaseUrl();
+    if (!apiBase) {
+      return 'https://bpsr.app';
+    }
+
+    try {
+      const url = new URL(apiBase);
+      if (url.hostname.startsWith('api.')) {
+        url.hostname = url.hostname.replace(/^api\./, '');
+      }
+      url.pathname = '';
+      return url.toString().replace(/\/$/, '');
+    } catch (err) {
+      console.error('Failed to parse website URL from API base:', apiBase, err);
+      return 'https://bpsr.app';
+    }
   });
 
   async function loadEncounter() {
@@ -181,6 +202,17 @@
     goto('/main/history');
   }
 
+  async function openEncounterOnWebsite() {
+    if (!encounter || !encounter.remoteEncounterId) return;
+
+    const url = `${websiteBaseUrl}/encounter/${encounter.remoteEncounterId}`;
+    try {
+      await openUrl(url);
+    } catch (err) {
+      console.error('Failed to open URL:', url, err);
+    }
+  }
+
   $effect(() => {
     loadEncounter();
   });
@@ -213,10 +245,10 @@
     <!-- Encounter Overview -->
     <div class="mb-4">
       <div class="flex items-center justify-between gap-3 mb-3">
-        <div class="flex items-center gap-3">
-      <button
-        onclick={backToHistory}
-        class="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40"
+        <div class="flex items-center gap-3 flex-wrap">
+          <button
+            onclick={backToHistory}
+            class="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40"
             aria-label="Back to history"
           >
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -253,7 +285,19 @@
                 {/each}
               </div>
             {/if}
-            </div>
+          </div>
+          {#if encounter.remoteEncounterId}
+            <button
+              onclick={openEncounterOnWebsite}
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              title="Open this encounter on resonance-logs.com"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Open on website
+            </button>
+          {/if}
         </div>
 
         <!-- Tabs and Boss Only Toggle -->

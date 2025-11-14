@@ -711,7 +711,11 @@ actors: ActorEncounterStatDto[];
 /**
  * A list of phases in the encounter (mob and boss phases).
  */
-phases: EncounterPhaseDto[] }
+phases: EncounterPhaseDto[]; 
+/**
+ * The encounter ID on the remote website/server (if uploaded).
+ */
+remoteEncounterId: number | null }
 /**
  * Error for a specific module during import
  */

@@ -35,6 +35,8 @@ pub struct EncounterSummaryDto {
     pub actors: Vec<ActorEncounterStatDto>,
     /// A list of phases in the encounter (mob and boss phases).
     pub phases: Vec<EncounterPhaseDto>,
+    /// The encounter ID on the remote website/server (if uploaded).
+    pub remote_encounter_id: Option<i64>,
 }
 
 /// A DTO representing a phase (mob or boss) within an encounter.
@@ -689,6 +691,7 @@ pub fn get_recent_encounters_filtered(
         Option<i32>,
         Option<String>,
         f64,
+        Option<i64>,
     )> = encounter_query
         .order(e::started_at_ms.desc())
         .select((
@@ -700,6 +703,7 @@ pub fn get_recent_encounters_filtered(
             e::scene_id,
             e::scene_name,
             e::duration,
+            e::remote_encounter_id,
         ))
         .limit(limit as i64)
         .offset(offset as i64)
@@ -715,7 +719,7 @@ pub fn get_recent_encounters_filtered(
     // Collect boss and player data for each encounter
     let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
 
-    for (id, started, ended, td, th, scene_id, scene_name, duration) in rows {
+    for (id, started, ended, td, th, scene_id, scene_name, duration, remote_id) in rows {
         // Get unique boss entries (name + max_hp) from the materialized encounter_bosses
         let boss_rows: Vec<(String, Option<i64>, i32)> = eb::encounter_bosses
             .filter(eb::encounter_id.eq(id))
@@ -767,6 +771,7 @@ pub fn get_recent_encounters_filtered(
             players: player_data,
             actors: Vec::new(),
             phases: Vec::new(),
+            remote_encounter_id: remote_id,
         });
     }
 
@@ -800,6 +805,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
         Option<i32>,
         Option<String>,
         f64,
+        Option<i64>,
     )> = e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .order(e::started_at_ms.desc())
@@ -812,6 +818,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             e::scene_id,
             e::scene_name,
             e::duration,
+            e::remote_encounter_id,
         ))
         .limit(limit as i64)
         .offset(offset as i64)
@@ -827,7 +834,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
     // Collect boss and player data for each encounter
     let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
 
-    for (id, started, ended, td, th, scene_id, scene_name, duration) in rows {
+    for (id, started, ended, td, th, scene_id, scene_name, duration, remote_id) in rows {
         use sch::actor_encounter_stats::dsl as s;
         use sch::encounter_bosses::dsl as eb;
         use std::collections::HashSet;
@@ -883,6 +890,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             players: player_data,
             actors: Vec::new(),
             phases: Vec::new(),
+            remote_encounter_id: remote_id,
         });
     }
 
@@ -1014,6 +1022,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         Option<i32>,
         Option<String>,
         f64,
+        Option<i64>,
     ) = e::encounters
         .filter(e::id.eq(encounter_id))
         .select((
@@ -1025,6 +1034,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
             e::scene_id,
             e::scene_name,
             e::duration,
+            e::remote_encounter_id,
         ))
         .first(&mut conn)
         .map_err(|er| er.to_string())?;
@@ -1093,6 +1103,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         players,
         actors,
         phases,
+        remote_encounter_id: row.8,
     })
 }
 

@@ -250,6 +250,12 @@ pub struct UploadRequestBody {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct UploadEncountersResponse {
+    pub ingested: i32,
+    pub ids: Vec<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CheckDuplicatesRequest {
     pub hashes: Vec<String>,
 }
@@ -838,9 +844,9 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
             {
                 Ok(resp) if resp.status().is_success() => {
                     if let Ok(check_result) = resp.json::<CheckDuplicatesResponse>().await {
-                        // Filter out duplicates from the batch
-                        let duplicate_hashes: std::collections::HashSet<String> = check_result.duplicates.iter()
-                            .map(|d| d.hash.clone())
+                        // Map hash -> remote_encounter_id for duplicates
+                        let duplicate_map: std::collections::HashMap<String, i64> = check_result.duplicates.iter()
+                            .map(|d| (d.hash.clone(), d.encounter_id))
                             .collect();
 
                         filtered_payloads = payloads
@@ -848,12 +854,20 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
                             .cloned()
                             .filter(|entry| {
                                 if let Some(ref hash) = entry.payload.source_hash {
-                                    if duplicate_hashes.contains(hash) {
+                                    if let Some(&remote_id) = duplicate_map.get(hash) {
                                         duplicate_ids.push(entry.id);
+                                        // Update local encounter with remote_encounter_id for this duplicate
+                                        use sch::encounters::dsl as e;
+                                        let _ = diesel::update(e::encounters.filter(e::id.eq(entry.id)))
+                                            .set((
+                                                e::remote_encounter_id.eq(remote_id),
+                                                e::uploaded_at_ms.eq(now_ms())
+                                            ))
+                                            .execute(&mut conn);
                                         return false;
                                     }
                                 }
-                                true // Keep encounters without hash
+                                true // Keep encounters without hash or not duplicates
                             })
                             .collect();
 
@@ -898,6 +912,7 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         let mut upload_success = false;
         let mut last_error = String::new();
 
+        let mut returned_ids: Vec<i64> = Vec::new();
         while current_url_index < base_urls.len() && !upload_success {
             // Use trailing slash to match server route registration (/api/v1/upload/)
             // Avoids a 307 redirect which can drop custom headers like X-Api-Key.
@@ -909,7 +924,17 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
             {
                 Ok(resp) => {
                     if resp.status().is_success() {
-                        upload_success = true;
+                        // Parse response to get created encounter IDs
+                        match resp.json::<UploadEncountersResponse>().await {
+                            Ok(upload_resp) => {
+                                returned_ids = upload_resp.ids;
+                                upload_success = true;
+                            }
+                            Err(e) => {
+                                last_error = format!("Failed to parse upload response from {}: {}", base_urls[current_url_index], e);
+                                current_url_index += 1;
+                            }
+                        }
                     } else {
                         let text = resp.text().await.unwrap_or_default();
                         last_error = format!("Server error from {}: {}", base_urls[current_url_index], text);
@@ -935,6 +960,26 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
             }
             let _ = app.emit("upload:error", err_payload);
             return Err(last_error);
+        }
+
+        // Map returned remote IDs to local encounter IDs
+        // The server returns IDs in the same order as the uploaded encounters
+        if returned_ids.len() == filtered_payloads.len() {
+            use sch::encounters::dsl as e;
+            for (local_entry, &remote_id) in filtered_payloads.iter().zip(returned_ids.iter()) {
+                let _ = diesel::update(e::encounters.filter(e::id.eq(local_entry.id)))
+                    .set((
+                        e::remote_encounter_id.eq(remote_id),
+                        e::uploaded_at_ms.eq(now_ms())
+                    ))
+                    .execute(&mut conn);
+            }
+        } else {
+            log::warn!(
+                "Mismatch between uploaded ({}) and returned ({}) encounter IDs. Remote IDs will not be persisted.",
+                filtered_payloads.len(),
+                returned_ids.len()
+            );
         }
 
         processed_ids.extend(filtered_payloads.iter().map(|entry| entry.id));

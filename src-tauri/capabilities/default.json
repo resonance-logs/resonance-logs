@@ -9,6 +9,8 @@
         "core:default",
         "core:event:default",
         "svelte:default",
-        "global-shortcut:default"
+        "global-shortcut:default",
+        "opener:default",
+        "opener:allow-open-url"
     ]
 }

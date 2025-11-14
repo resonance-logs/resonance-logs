@@ -58,6 +58,8 @@ diesel::table! {
         duration -> Double,
         /// Timestamp (ms) when this encounter was successfully uploaded to the website.
         uploaded_at_ms -> Nullable<BigInt>,
+        /// The encounter ID on the remote website/server after successful upload.
+        remote_encounter_id -> Nullable<BigInt>,
     }
 }
 
