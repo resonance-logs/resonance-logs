@@ -425,6 +425,7 @@ fn extract_modules_with_tracking(
 /// Start background auto-sync timer (called on app startup)
 pub async fn start_auto_sync_timer(state: ModuleSyncState) {
     tokio::spawn(async move {
+        let mut minutes_since_last_sync = 0u32;
         loop {
             tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
 
@@ -439,37 +440,34 @@ pub async fn start_auto_sync_timer(state: ModuleSyncState) {
             }
 
             // Check if it's time to sync
-            static mut LAST_SYNC_MINUTE: u32 = 0;
-            unsafe {
-                LAST_SYNC_MINUTE += 1;
-                if LAST_SYNC_MINUTE >= interval {
-                    LAST_SYNC_MINUTE = 0;
+            minutes_since_last_sync += 1;
+            if minutes_since_last_sync >= interval {
+                minutes_since_last_sync = 0;
 
-                    // Trigger sync
-                    info!("Auto-sync timer triggered (interval: {} minutes)", interval);
+                // Trigger sync
+                info!("Auto-sync timer triggered (interval: {} minutes)", interval);
 
-                    let api_key = match state.api_key.read().await.clone() {
-                        Some(key) => key,
-                        None => continue,
-                    };
+                let api_key = match state.api_key.read().await.clone() {
+                    Some(key) => key,
+                    None => continue,
+                };
 
-                    let base_url = state.base_url.read().await.clone();
-                    let modules = state.last_modules.read().await.clone();
+                let base_url = state.base_url.read().await.clone();
+                let modules = state.last_modules.read().await.clone();
 
-                    if !modules.is_empty() {
-                        let state_clone = state.clone();
-                        tokio::spawn(async move {
-                            match upload_modules(modules, &api_key, &base_url).await {
-                                Ok(response) => {
-                                    info!("Scheduled auto-sync succeeded: added={}, updated={}",
-                                        response.summary.added, response.summary.updated);
-                                }
-                                Err(e) => {
-                                    error!("Scheduled auto-sync failed: {}", e);
-                                }
+                if !modules.is_empty() {
+                    let state_clone = state.clone();
+                    tokio::spawn(async move {
+                        match upload_modules(modules, &api_key, &base_url).await {
+                            Ok(response) => {
+                                info!("Scheduled auto-sync succeeded: added={}, updated={}",
+                                    response.summary.added, response.summary.updated);
                             }
-                        });
-                    }
+                            Err(e) => {
+                                error!("Scheduled auto-sync failed: {}", e);
+                            }
+                        }
+                    });
                 }
             }
         }
