@@ -8,7 +8,7 @@
   import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from '$lib/components/table-row-glow.svelte';
   import AbbreviatedNumber from '$lib/components/abbreviated-number.svelte';
-  import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns } from '$lib/history-columns';
+  import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns, historyTankedPlayerColumns, historyTankedSkillColumns } from '$lib/history-columns';
   import { settings, SETTINGS } from '$lib/settings-store';
   import getDisplayName from '$lib/name-display.ts';
   import { getModuleApiBaseUrl } from '$lib/stores/uploading';
@@ -77,6 +77,8 @@
   let visiblePlayerColumns = $derived.by(() => {
     if (activeTab === 'healing') {
       return historyHealPlayerColumns.filter(col => settings.state.history.heal.players[col.key]);
+    } else if (activeTab === 'tanked') {
+      return historyTankedPlayerColumns.filter(col => settings.state.history.tanked.players[col.key]);
     }
     return historyDpsPlayerColumns.filter(col => settings.state.history.dps.players[col.key]);
   });
@@ -84,8 +86,18 @@
   let visibleSkillColumns = $derived.by(() => {
     if (skillType === 'heal') {
       return historyHealSkillColumns.filter(col => settings.state.history.heal.skillBreakdown[col.key]);
+    } else if (skillType === 'tanked') {
+      return historyTankedSkillColumns.filter(col => settings.state.history.tanked.skillBreakdown[col.key]);
     }
     return historyDpsSkillColumns.filter(col => settings.state.history.dps.skillBreakdown[col.key]);
+  });
+
+  let maxTankedPlayer = $derived.by(() => {
+    return displayedPlayers.reduce((max, p) => Math.max(max, p.damageTaken || 0), 0);
+  });
+  let maxTankedSkill = $derived.by(() => {
+    if (!skillsWindow) return 0;
+    return skillsWindow.skillRows.reduce((max, s) => Math.max(max, s.totalDmg || 0), 0);
   });
 
   const websiteBaseUrl = $derived.by(() => {
@@ -384,12 +396,8 @@
               </td>
               {#each visiblePlayerColumns as col (col.key)}
                 <td class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10">
-                  {#if (col.key === 'totalDmg' || col.key === 'dps') && (
-                    (activeTab === 'damage' && settings.state.history.general.shortenDps) ||
-                    (activeTab === 'healing' && settings.state.history.general.shortenDps) ||
-                    (activeTab === 'tanked' && settings.state.history.general.shortenDps)
-                  )}
-                    {#if SETTINGS.history.general.state.shortenDps}
+                  {#if ( (activeTab !== 'tanked' && (col.key === 'totalDmg' || col.key === 'dps') && SETTINGS.history.general.state.shortenDps) || (activeTab === 'tanked' && (col.key === 'damageTaken' || col.key === 'tankedPS') && SETTINGS.history.general.state.shortenTps) )}
+                    {#if (activeTab !== 'tanked' ? SETTINGS.history.general.state.shortenDps : SETTINGS.history.general.state.shortenTps)}
                       <AbbreviatedNumber num={p[col.key] ?? 0} />
                     {:else}
                       {col.format(p[col.key] ?? 0)}
@@ -405,7 +413,7 @@
                   activeTab === 'healing'
                     ? (SETTINGS.history.general.state.relativeToTopHealPlayer && maxHealPlayer > 0 ? (p.healDealt / maxHealPlayer) * 100 : p.healPct)
                     : (activeTab === 'tanked'
-                      ? p.tankedPct
+                      ? (SETTINGS.history.general.state.relativeToTopTankedPlayer && maxTankedPlayer > 0 ? (p.damageTaken / maxTankedPlayer) * 100 : p.tankedPct)
                       : (SETTINGS.history.general.state.relativeToTopDPSPlayer && maxDpsPlayer > 0 ? (p.totalDmg / maxDpsPlayer) * 100 : p.dmgPct))
                 }
               />
@@ -457,7 +465,7 @@
               <td class="px-3 py-3 text-sm text-muted-foreground relative z-10">{s.name}</td>
               {#each visibleSkillColumns as col (col.key)}
                 <td class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10">
-                  {#if (col.key === 'totalDmg' || col.key === 'dps') && SETTINGS.history.general.state.shortenDps}
+                  {#if (col.key === 'totalDmg' || col.key === 'dps') && (skillType === 'tanked' ? SETTINGS.history.general.state.shortenTps : SETTINGS.history.general.state.shortenDps)}
                     <AbbreviatedNumber num={s[col.key] ?? 0} />
                   {:else}
                     {col.format(s[col.key] ?? 0)}
@@ -469,7 +477,9 @@
                 percentage={
                   skillType === 'heal'
                     ? (SETTINGS.history.general.state.relativeToTopHealSkill && maxHealSkill > 0 ? (s.totalDmg / maxHealSkill) * 100 : s.dmgPct)
-                    : (SETTINGS.history.general.state.relativeToTopDPSSkill && maxDpsSkill > 0 ? (s.totalDmg / maxDpsSkill) * 100 : s.dmgPct)
+                    : (skillType === 'tanked'
+                      ? (SETTINGS.history.general.state.relativeToTopTankedSkill && maxTankedSkill > 0 ? (s.totalDmg / maxTankedSkill) * 100 : s.dmgPct)
+                      : (SETTINGS.history.general.state.relativeToTopDPSSkill && maxDpsSkill > 0 ? (s.totalDmg / maxDpsSkill) * 100 : s.dmgPct))
                 }
               />
             </tr>

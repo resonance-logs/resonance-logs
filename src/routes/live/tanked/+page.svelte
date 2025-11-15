@@ -21,6 +21,8 @@
   let maxTaken = $state(0);
   let SETTINGS_YOUR_NAME = $state(settings.state.live.general.showYourName);
   let SETTINGS_OTHERS_NAME = $state(settings.state.live.general.showOthersName);
+  let SETTINGS_SHORTEN_TPS = $state(settings.state.live.general.shortenTps);
+  let SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER = $state(settings.state.live.general.relativeToTopTankedPlayer);
 
   // Update maxTaken when data changes
   $effect(() => {
@@ -32,6 +34,8 @@
  $effect(() => {
     SETTINGS_YOUR_NAME = settings.state.live.general.showYourName;
     SETTINGS_OTHERS_NAME = settings.state.live.general.showOthersName;
+   SETTINGS_SHORTEN_TPS = settings.state.live.general.shortenTps;
+   SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER = settings.state.live.general.relativeToTopTankedPlayer;
   });
 
   // Get visible columns based on settings
@@ -97,7 +101,17 @@
           {#each visiblePlayerColumns as col (col.key)}
             <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} text-right relative z-10 tabular-nums font-medium text-muted-foreground">
               {#if col.key === 'totalDmg'}
-                <AbbreviatedNumber num={player.totalDmg} />
+                {#if SETTINGS_SHORTEN_TPS}
+                  <AbbreviatedNumber num={player.totalDmg} />
+                {:else}
+                  {player.totalDmg.toLocaleString()}
+                {/if}
+              {:else if col.key === 'dps'}
+                {#if SETTINGS_SHORTEN_TPS}
+                  <AbbreviatedNumber num={player.dps} />
+                {:else}
+                  {player.dps.toFixed(1)}
+                {/if}
               {:else if col.key === 'dmgPct'}
                 <PercentFormat val={player.dmgPct} fractionDigits={0} />
               {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
@@ -107,7 +121,7 @@
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={SETTINGS.live.general.state.relativeToTopDPSPlayer ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
+          <TableRowGlow className={className} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
         </tr>
       {/each}
     </tbody>

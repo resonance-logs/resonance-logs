@@ -28,6 +28,18 @@ export const DEFAULT_HISTORY_STATS = {
   hitsPerMinute: false,
 };
 
+export const DEFAULT_HISTORY_TANKED_STATS = {
+  damageTaken: true,
+  tankedPS: true,
+  tankedPct: true,
+  critTakenRate: false,
+  critDmgRate: false,
+  luckyRate: false,
+  luckyDmgRate: false,
+  hitsTaken: false,
+  hitsPerMinute: false,
+};
+
 export const DEFAULT_HISTORY_HEAL_STATS = {
   healDealt: true,
   hps: true,
@@ -51,8 +63,12 @@ const DEFAULT_GENERAL_SETTINGS = {
   relativeToTopDPSSkill: false,
   relativeToTopHealPlayer: false,
   relativeToTopHealSkill: false,
+  // Tanked specific relative-to-top toggles
+  relativeToTopTankedPlayer: false,
+  relativeToTopTankedSkill: false,
   shortenAbilityScore: true,
   shortenDps: false,
+  shortenTps: false,
   bossOnlyDps: false,
 };
 
@@ -100,6 +116,8 @@ const DEFAULT_SETTINGS = {
     dpsSkillBreakdown: { ...DEFAULT_HISTORY_STATS },
     healPlayers: { ...DEFAULT_HISTORY_HEAL_STATS },
     healSkillBreakdown: { ...DEFAULT_HISTORY_STATS },
+    tankedPlayers: { ...DEFAULT_HISTORY_TANKED_STATS },
+    tankedSkillBreakdown: { ...DEFAULT_HISTORY_STATS },
   },
 };
 
@@ -194,6 +212,18 @@ export const SETTINGS = {
         RUNE_STORE_OPTIONS
       ),
     },
+    tanked: {
+      players: new RuneStore(
+        'historyTankedPlayers',
+        DEFAULT_SETTINGS.history.tankedPlayers,
+        RUNE_STORE_OPTIONS
+      ),
+      skillBreakdown: new RuneStore(
+        'historyTankedSkillBreakdown',
+        DEFAULT_SETTINGS.history.tankedSkillBreakdown,
+        RUNE_STORE_OPTIONS
+      ),
+    },
   },
 };
 
@@ -227,6 +257,10 @@ export const settings = {
       heal: {
         players: SETTINGS.history.heal.players.state,
         skillBreakdown: SETTINGS.history.heal.skillBreakdown.state,
+      },
+      tanked: {
+        players: SETTINGS.history.tanked.players.state,
+        skillBreakdown: SETTINGS.history.tanked.skillBreakdown.state,
       },
     },
   },
