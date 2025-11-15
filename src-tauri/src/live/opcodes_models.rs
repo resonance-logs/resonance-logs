@@ -37,6 +37,7 @@ pub struct Encounter {
     pub last_attempt_split_ms: u128,     // Cooldown to avoid rapid splits
     // Phase tracking for mob/boss splitting
     pub current_phase: Option<PhaseType>,
+    pub current_phase_id: Option<i32>, // Database ID of the current phase
     pub phase_start_ms: u128,
     pub boss_detected: bool, // Whether a boss entity has been seen this encounter
 }

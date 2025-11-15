@@ -23,6 +23,7 @@ export type HeaderInfo = {
   bosses: BossHealth[];
   sceneId: number | null;
   sceneName: string | null;
+  currentPhase: string | null;
 };
 
 export type PlayerRow = {

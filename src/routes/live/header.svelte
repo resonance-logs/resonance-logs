@@ -52,6 +52,7 @@
       bosses: [],
       sceneId: null,
       sceneName: null,
+      currentPhase: null,
     };
   }
 
@@ -117,6 +118,7 @@
     bosses: [],
     sceneId: null,
     sceneName: null,
+    currentPhase: null,
   });
   let isEncounterPaused = $state(false);
   // Use live.general for bossOnlyDps; keep density from accessibility store
@@ -198,6 +200,12 @@
   {#if headerInfo.sceneName}
     <div class="hidden min-[48rem]:block h-4 w-px bg-border shrink-0 opacity-60"></div>
     <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-sm' : 'text-xs'} text-muted-foreground font-medium shrink-0 leading-none" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName}</span>
+  {/if}
+  {#if headerInfo.currentPhase}
+    <div class="hidden min-[48rem]:block h-4 w-px bg-border shrink-0 opacity-60"></div>
+    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {headerInfo.currentPhase === 'mob' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-purple-500/30 bg-purple-500/10 text-purple-400'} {density === 'comfortable' ? 'text-xs' : 'text-[11px]'}">
+      <span class="font-semibold uppercase tracking-wide">{headerInfo.currentPhase === 'mob' ? 'Mob Phase' : 'Boss Phase'}</span>
+    </span>
   {/if}
   <div class="hidden min-[48rem]:block h-4 w-px bg-border shrink-0 opacity-60"></div>
     <div class="flex items-center gap-2 shrink-0">

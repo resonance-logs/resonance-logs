@@ -3,14 +3,13 @@
   import { goto } from '$app/navigation';
   import { commands } from '$lib/bindings';
   import type { ActorEncounterStatDto, EncounterSummaryDto, SkillsWindow } from '$lib/bindings';
-  import type { MetricType } from '$lib/api';
   import { getClassIcon, tooltip, CLASS_MAP } from '$lib/utils.svelte';
   import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from '$lib/components/table-row-glow.svelte';
   import AbbreviatedNumber from '$lib/components/abbreviated-number.svelte';
   import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns, historyTankedPlayerColumns, historyTankedSkillColumns } from '$lib/history-columns';
   import { settings, SETTINGS } from '$lib/settings-store';
-  import getDisplayName from '$lib/name-display.ts';
+  import getDisplayName from '$lib/name-display';
   import { getModuleApiBaseUrl } from '$lib/stores/uploading';
   import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -30,9 +29,58 @@
   let players = $state<any[]>([]);
   let error = $state<string | null>(null);
 
+  // Current phase data for display
+  let currentPhaseActors = $derived.by(() => {
+    if (!selectedPhaseId || !encounter) return actors;
+
+    const phase = encounter.phases.find(p => p.id === selectedPhaseId);
+    if (!phase || !encounter) return actors;
+
+    // Calculate phase duration for DPS
+    const phaseDurationSecs = Math.max(1, ((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000);
+
+    return phase.actorStats.map(stat => ({
+      encounterId: encounter!.id,
+      actorId: stat.actorId,
+      name: stat.name,
+      classId: stat.classId,
+      abilityScore: stat.abilityScore,
+      damageDealt: stat.damageDealt,
+      healDealt: stat.healDealt,
+      damageTaken: stat.damageTaken,
+      hitsDealt: stat.hitsDealt,
+      hitsHeal: stat.hitsHeal,
+      hitsTaken: stat.hitsTaken,
+      critHitsDealt: stat.critHitsDealt,
+      critHitsHeal: stat.critHitsHeal,
+      critHitsTaken: stat.critHitsTaken,
+      luckyHitsDealt: stat.luckyHitsDealt,
+      luckyHitsHeal: stat.luckyHitsHeal,
+      luckyHitsTaken: stat.luckyHitsTaken,
+      critTotalDealt: stat.critTotalDealt,
+      critTotalHeal: stat.critTotalHeal,
+      critTotalTaken: stat.critTotalTaken,
+      luckyTotalDealt: stat.luckyTotalDealt,
+      luckyTotalHeal: stat.luckyTotalHeal,
+      luckyTotalTaken: stat.luckyTotalTaken,
+      bossDamageDealt: stat.bossDamageDealt,
+      bossHitsDealt: stat.bossHitsDealt,
+      bossCritHitsDealt: stat.bossCritHitsDealt,
+      bossLuckyHitsDealt: stat.bossLuckyHitsDealt,
+      bossCritTotalDealt: stat.bossCritTotalDealt,
+      bossLuckyTotalDealt: stat.bossLuckyTotalDealt,
+      dps: stat.damageDealt / phaseDurationSecs,
+      duration: phaseDurationSecs,
+      isLocalPlayer: stat.isLocalPlayer,
+    })) as ActorEncounterStatDto[];
+  });
+
   // Tab state for encounter view
   let activeTab = $state<'damage' | 'tanked' | 'healing'>('damage');
   let bossOnlyMode = $state(false);
+
+  // Phase selection state
+  let selectedPhaseId = $state<number | null>(null); // null = overall encounter stats
 
   // Skills view state
   let skillsWindow = $state<SkillsWindow | null>(null);
@@ -133,13 +181,25 @@
       return;
     }
 
-    const totalDmg = actors.reduce((sum, a) => sum + (a.damageDealt ?? 0), 0);
-    const totalBossDmg = actors.reduce((sum, a) => sum + (a.bossDamageDealt ?? 0), 0);
-    const totalDamageTaken = actors.reduce((sum, a) => sum + (a.damageTaken ?? 0), 0);
-    const totalHealing = actors.reduce((sum, a) => sum + (a.healDealt ?? 0), 0);
-    const durationSecs = Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000);
+    // Use phase actors if a phase is selected, otherwise use overall encounter actors
+    const displayActors = currentPhaseActors;
 
-    players = actors.map(a => {
+    const totalDmg = displayActors.reduce((sum, a) => sum + (a.damageDealt ?? 0), 0);
+    const totalBossDmg = displayActors.reduce((sum, a) => sum + (a.bossDamageDealt ?? 0), 0);
+    const totalDamageTaken = displayActors.reduce((sum, a) => sum + (a.damageTaken ?? 0), 0);
+    const totalHealing = displayActors.reduce((sum, a) => sum + (a.healDealt ?? 0), 0);
+
+    // Calculate duration based on selected phase or overall encounter
+    let durationSecs: number;
+    if (selectedPhaseId && encounter.phases.length > 0) {
+      const phase = encounter.phases.find(p => p.id === selectedPhaseId);
+      durationSecs = phase ? Math.max(1, ((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000) :
+                             Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000);
+    } else {
+      durationSecs = Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000);
+    }
+
+    players = displayActors.map(a => {
       const hits = a.hitsDealt || 0;
       const hitsTaken = a.hitsTaken || 0;
       const hitsHeal = a.hitsHeal || 0;
@@ -246,6 +306,13 @@
       loadEncounter();
     }
   });
+
+  $effect(() => {
+    // Reload encounter when selectedPhaseId changes
+    if (selectedPhaseId !== undefined) {
+      loadEncounter();
+    }
+  });
 </script>
 
 <div class="p-6">
@@ -312,8 +379,24 @@
           {/if}
         </div>
 
-        <!-- Tabs and Boss Only Toggle -->
+        <!-- Tabs, Phase Selector, and Boss Only Toggle -->
         <div class="flex items-end gap-2 h-[48px]">
+          <!-- Phase Selector -->
+          {#if encounter.phases && encounter.phases.length > 0}
+            <select
+              bind:value={selectedPhaseId}
+              class="px-2 py-1 text-xs rounded border border-border bg-popover text-foreground transition-colors hover:bg-muted/40 cursor-pointer"
+            >
+              <option value={null}>Overall Encounter</option>
+              {#each encounter.phases as phase}
+                <option value={phase.id}>
+                  {phase.phaseType === 'mob' ? 'Mob Phase' : 'Boss Phase'}
+                  ({Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s)
+                </option>
+              {/each}
+            </select>
+          {/if}
+
           <div class="flex rounded border border-border bg-popover">
             <button
               onclick={() => activeTab = 'damage'}

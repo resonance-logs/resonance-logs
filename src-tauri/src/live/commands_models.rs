@@ -34,6 +34,8 @@ pub struct HeaderInfo {
     pub scene_id: Option<i32>,
     /// The name of the scene where the encounter took place.
     pub scene_name: Option<String>,
+    /// The current phase type ('mob', 'boss', or null if no phase active).
+    pub current_phase: Option<String>,
 }
 
 /// Represents the players window.

@@ -53,6 +53,76 @@ pub struct EncounterPhaseDto {
     pub end_time_ms: Option<i64>,
     /// The outcome of the phase ('success', 'wipe', 'unknown').
     pub outcome: String,
+    /// Actor stats for this specific phase.
+    pub actor_stats: Vec<ActorPhaseStatDto>,
+}
+
+/// Statistics for an actor in a specific phase.
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ActorPhaseStatDto {
+    /// The ID of the phase.
+    pub phase_id: i32,
+    /// The ID of the actor.
+    pub actor_id: i64,
+    /// The name of the actor.
+    pub name: Option<String>,
+    /// The class ID of the actor.
+    pub class_id: Option<i32>,
+    /// The ability score of the actor.
+    pub ability_score: Option<i32>,
+    /// The total damage dealt by the actor in this phase.
+    pub damage_dealt: i64,
+    /// The total healing done by the actor in this phase.
+    pub heal_dealt: i64,
+    /// The total damage taken by the actor in this phase.
+    pub damage_taken: i64,
+    /// The number of hits dealt by the actor in this phase.
+    pub hits_dealt: i64,
+    /// The number of hits healed by the actor in this phase.
+    pub hits_heal: i64,
+    /// The number of hits taken by the actor in this phase.
+    pub hits_taken: i64,
+    /// The number of critical hits dealt by the actor in this phase.
+    pub crit_hits_dealt: i64,
+    /// The number of critical hits healed by the actor in this phase.
+    pub crit_hits_heal: i64,
+    /// The number of critical hits taken by the actor in this phase.
+    pub crit_hits_taken: i64,
+    /// The number of lucky hits dealt by the actor in this phase.
+    pub lucky_hits_dealt: i64,
+    /// The number of lucky hits healed by the actor in this phase.
+    pub lucky_hits_heal: i64,
+    /// The number of lucky hits taken by the actor in this phase.
+    pub lucky_hits_taken: i64,
+    /// The total critical damage dealt by the actor in this phase.
+    pub crit_total_dealt: i64,
+    /// The total critical healing done by the actor in this phase.
+    pub crit_total_heal: i64,
+    /// The total critical damage taken by the actor in this phase.
+    pub crit_total_taken: i64,
+    /// The total lucky damage dealt by the actor in this phase.
+    pub lucky_total_dealt: i64,
+    /// The total lucky healing done by the actor in this phase.
+    pub lucky_total_heal: i64,
+    /// The total lucky damage taken by the actor in this phase.
+    pub lucky_total_taken: i64,
+    /// The total damage dealt to bosses by the actor in this phase.
+    pub boss_damage_dealt: i64,
+    /// The number of hits dealt to bosses by the actor in this phase.
+    pub boss_hits_dealt: i64,
+    /// The number of critical hits dealt to bosses by the actor in this phase.
+    pub boss_crit_hits_dealt: i64,
+    /// The number of lucky hits dealt to bosses by the actor in this phase.
+    pub boss_lucky_hits_dealt: i64,
+    /// The total critical damage dealt to bosses by the actor in this phase.
+    pub boss_crit_total_dealt: i64,
+    /// The total lucky damage dealt to bosses by the actor in this phase.
+    pub boss_lucky_total_dealt: i64,
+    /// The number of revives for the actor during this phase.
+    pub revives: i64,
+    /// Whether the actor is the local player.
+    pub is_local_player: bool,
 }
 
 /// A DTO representing an attempt (phase) within an encounter.
@@ -1079,14 +1149,74 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         .load::<m::EncounterPhaseRow>(&mut conn)
         .map_err(|er| er.to_string())?;
 
+    // Fetch actor phase stats for all phases
+    use sch::actor_phase_stats::dsl as aps;
+    let phase_ids: Vec<i32> = phase_rows.iter().map(|p| p.id).collect();
+    let phase_stat_rows: Vec<m::ActorPhaseStatRow> = if !phase_ids.is_empty() {
+        aps::actor_phase_stats
+            .filter(aps::phase_id.eq_any(&phase_ids))
+            .filter(aps::is_player.eq(1))
+            .load::<m::ActorPhaseStatRow>(&mut conn)
+            .map_err(|er| er.to_string())?
+    } else {
+        Vec::new()
+    };
+
+    // Group phase stats by phase_id
+    let mut phase_stats_map: std::collections::HashMap<i32, Vec<ActorPhaseStatDto>> =
+        std::collections::HashMap::new();
+    for stat_row in phase_stat_rows {
+        let dto = ActorPhaseStatDto {
+            phase_id: stat_row.phase_id,
+            actor_id: stat_row.actor_id,
+            name: stat_row.name,
+            class_id: stat_row.class_id,
+            ability_score: stat_row.ability_score,
+            damage_dealt: stat_row.damage_dealt,
+            heal_dealt: stat_row.heal_dealt,
+            damage_taken: stat_row.damage_taken,
+            hits_dealt: stat_row.hits_dealt,
+            hits_heal: stat_row.hits_heal,
+            hits_taken: stat_row.hits_taken,
+            crit_hits_dealt: stat_row.crit_hits_dealt,
+            crit_hits_heal: stat_row.crit_hits_heal,
+            crit_hits_taken: stat_row.crit_hits_taken,
+            lucky_hits_dealt: stat_row.lucky_hits_dealt,
+            lucky_hits_heal: stat_row.lucky_hits_heal,
+            lucky_hits_taken: stat_row.lucky_hits_taken,
+            crit_total_dealt: stat_row.crit_total_dealt,
+            crit_total_heal: stat_row.crit_total_heal,
+            crit_total_taken: stat_row.crit_total_taken,
+            lucky_total_dealt: stat_row.lucky_total_dealt,
+            lucky_total_heal: stat_row.lucky_total_heal,
+            lucky_total_taken: stat_row.lucky_total_taken,
+            boss_damage_dealt: stat_row.boss_damage_dealt,
+            boss_hits_dealt: stat_row.boss_hits_dealt,
+            boss_crit_hits_dealt: stat_row.boss_crit_hits_dealt,
+            boss_lucky_hits_dealt: stat_row.boss_lucky_hits_dealt,
+            boss_crit_total_dealt: stat_row.boss_crit_total_dealt,
+            boss_lucky_total_dealt: stat_row.boss_lucky_total_dealt,
+            revives: stat_row.revives,
+            is_local_player: stat_row.is_local_player != 0,
+        };
+        phase_stats_map
+            .entry(stat_row.phase_id)
+            .or_insert_with(Vec::new)
+            .push(dto);
+    }
+
     let phases: Vec<EncounterPhaseDto> = phase_rows
         .into_iter()
-        .map(|phase| EncounterPhaseDto {
-            id: phase.id,
-            phase_type: phase.phase_type,
-            start_time_ms: phase.start_time_ms,
-            end_time_ms: phase.end_time_ms,
-            outcome: phase.outcome,
+        .map(|phase| {
+            let actor_stats = phase_stats_map.remove(&phase.id).unwrap_or_default();
+            EncounterPhaseDto {
+                id: phase.id,
+                phase_type: phase.phase_type,
+                start_time_ms: phase.start_time_ms,
+                end_time_ms: phase.end_time_ms,
+                outcome: phase.outcome,
+                actor_stats,
+            }
         })
         .collect();
 

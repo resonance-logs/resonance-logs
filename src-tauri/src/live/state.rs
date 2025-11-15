@@ -641,6 +641,7 @@ impl AppStateManager {
                 bosses: vec![],
                 scene_id: state.encounter.current_scene_id,
                 scene_name: state.encounter.current_scene_name.clone(),
+                current_phase: None,
             };
             state
                 .event_manager
