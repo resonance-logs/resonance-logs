@@ -1,3 +1,4 @@
+<!-- Deprecated: moved to the Uploading UI in src/routes/main/uploading/+page.svelte -->
 <script lang="ts">
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import SettingsSwitch from "./settings-switch.svelte";
@@ -163,13 +164,6 @@
             description="Automatically upload module data to the resonance-website optimizer when you open your inventory in-game"
           />
 
-          <SettingsInput
-            bind:value={SETTINGS.moduleSync.state.apiKey}
-            type="password"
-            label="API Key"
-            description="Your API key from resonance-website. Get it from your account settings."
-            placeholder="Enter your API key"
-          />
 
           {#if syncStatus}
             <div class="py-2.5 px-3 rounded-md bg-popover/30">

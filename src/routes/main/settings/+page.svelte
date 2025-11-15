@@ -4,14 +4,13 @@
   import History from "./history.svelte";
   import Shortcuts from "./shortcuts.svelte";
   import Themes from "./themes.svelte";
-  import ModuleSync from "./module-sync.svelte";
 
   const settingsTabs = [
     { id: "themes", label: "Themes" },
     { id: "live", label: "Live" },
     { id: "history", label: "Past Encounters" },
     { id: "shortcuts", label: "Shortcuts" },
-    { id: "moduleSync", label: "Module Sync" },
+    // Module sync moved to Uploading UI
   ];
   // Track the active tab so we can lazy-mount tab content. The Tabs implementation
   // used here will keep all children mounted by default which causes every
@@ -36,7 +35,6 @@
     <History />
   {:else if activeTab === 'shortcuts'}
     <Shortcuts />
-  {:else if activeTab === 'moduleSync'}
-    <ModuleSync />
+  <!-- Module sync moved to uploading UI; removed from settings tabs -->
   {/if}
 </Tabs.Root>
