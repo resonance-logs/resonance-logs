@@ -443,8 +443,8 @@
         <tbody class="bg-background/40">
           {#each displayedPlayers as p (p.uid)}
             <tr
-              class="relative border-t border-border/40 hover:bg-muted/60 transition-colors cursor-pointer"
-              onclick={() => viewPlayerSkills(p.uid, activeTab === 'healing' ? 'heal' : 'dps')}
+              class="relative border-t border-border/40 hover:bg-muted/60 transition-colors {activeTab === 'tanked' ? 'cursor-default' : 'cursor-pointer'}"
+              onclick={() => activeTab !== 'tanked' && viewPlayerSkills(p.uid, activeTab === 'healing' ? 'heal' : 'dps')}
             >
               <td class="px-3 py-3 text-sm text-muted-foreground relative z-10">
                 <div class="flex items-center gap-2 h-full">
@@ -479,8 +479,12 @@
               </td>
               {#each visiblePlayerColumns as col (col.key)}
                 <td class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10">
-                  {#if ( (activeTab !== 'tanked' && (col.key === 'totalDmg' || col.key === 'dps') && SETTINGS.history.general.state.shortenDps) || (activeTab === 'tanked' && (col.key === 'damageTaken' || col.key === 'tankedPS') && SETTINGS.history.general.state.shortenTps) )}
-                    {#if (activeTab !== 'tanked' ? SETTINGS.history.general.state.shortenDps : SETTINGS.history.general.state.shortenTps)}
+                  {#if (
+                      (activeTab === 'damage' && (col.key === 'totalDmg' || col.key === 'dps') && SETTINGS.history.general.state.shortenDps) ||
+                      (activeTab === 'healing' && (col.key === 'healDealt' || col.key === 'hps') && SETTINGS.history.general.state.shortenDps) ||
+                      (activeTab === 'tanked' && (col.key === 'damageTaken' || col.key === 'tankedPS') && SETTINGS.history.general.state.shortenTps)
+                    )}
+                    {#if (activeTab === 'tanked' ? SETTINGS.history.general.state.shortenTps : SETTINGS.history.general.state.shortenDps)}
                       <AbbreviatedNumber num={p[col.key] ?? 0} />
                     {:else}
                       {col.format(p[col.key] ?? 0)}

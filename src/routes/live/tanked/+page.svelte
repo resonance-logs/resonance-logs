@@ -1,6 +1,5 @@
 <script lang="ts">
   import { getClassIcon, tooltip } from "$lib/utils.svelte";
-  import { goto } from "$app/navigation";
   import { settings, SETTINGS } from "$lib/settings-store";
   import { getTankedPlayers } from "$lib/stores/live-meter-store.svelte";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
@@ -77,8 +76,7 @@
         })}
         {@const className = isLocalPlayer ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
         <tr
-          class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-pointer {isCompact ? 'h-7' : isMedium ? 'h-10' : 'h-14'} {isCompact ? 'text-[11px]' : isMedium ? 'text-[12px]' : 'text-[13px]'} group"
-          onclick={() => goto(`/live/tanked/skills?playerUid=${player.uid}`)}
+          class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-default {isCompact ? 'h-7' : isMedium ? 'h-10' : 'h-14'} {isCompact ? 'text-[11px]' : isMedium ? 'text-[12px]' : 'text-[13px]'} group"
         >
           <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} relative z-10">
             <div class="flex items-center h-full {isCompact ? 'gap-1' : isMedium ? 'gap-1.5' : 'gap-2'}">
