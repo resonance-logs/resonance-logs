@@ -24,7 +24,8 @@ handoff.md
 /gen/schemas
 .aider.tags.cache.v4/
 .aider*
-.github/
+.github/chatmodes
+.github/prompts
 .specify/
 .gemini/
 .bmad/
