@@ -1,24 +1,26 @@
 # Resonance Logs
 
-Resonance Logs is a real-time combat log analyzer for the game Blue Protocol: Star Resonance. It provides live feedback on your performance, including DPS, healing, and damage taken.
+Resonance Logs is a friendly desktop app for Blue Protocol: Star Resonance players who want live, actionable feedback during play.
 
-## Features
+- See live DPS/HPS and receive moment-to-moment performance insight while you play.
+- Save and review past encounters so you can spot trends and improve.
+- Upload selected encounters to the Resonance Website to compare and share with the community.
 
--   **Live Meter**: Get real-time feedback on your performance during combat.
--   **History**: Review past encounters to analyze your performance.
--   **Settings**: Customize the application to your liking.
+Visit the releases page to download the app:
+https://github.com/resonance-logs/resonance-logs/releases
 
-## Setup
+How it works with the website
 
-1.  **Install dependencies**:
-    ```bash
-    npm install
-    ```
-2.  **Run the application**:
-    ```bash
-    npm run tauri dev
-    ```
+Resonance Logs can upload encounters to the [Resonance Log Website](https://github.com/resonance-logs/resonance-website) so you can view rich analytics, leaderboards, and class statistics online.
 
-## Usage
+For Developers
+![Tech stack](image.png)
 
-Once the application is running, it will automatically detect when you are in combat and start logging. You can view the live meter by opening the application window. To view your history, open the main application window and navigate to the "History" tab.
+Credits
+- Built from: https://github.com/winjwinj/bpsr-logs
+- References:
+	- https://github.com/PotRooms/StarResonanceData
+	- https://github.com/snoww/loa-logs
+    - http://uwuowo.mathi.moe/
+
+
