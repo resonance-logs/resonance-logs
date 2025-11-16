@@ -39,6 +39,13 @@ Resonance Logs is a friendly, cross-platform desktop application designed for **
 
 ---
 
+## FAQ
+
+### Is it a virus?
+No, feel free to look at our codebase.
+
+---
+
 ## Tech Stack
 
 **Core Technologies:**
