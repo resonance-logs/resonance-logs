@@ -20,6 +20,7 @@
   let maxSkillValue = $state(0);
   let SETTINGS_YOUR_NAME = $state(settings.state.live.general.showYourName);
   let SETTINGS_OTHERS_NAME = $state(settings.state.live.general.showOthersName);
+  let SETTINGS_SHORTEN_DPS = $state(settings.state.live.general.shortenDps);
 
   // Update maxSkillValue when data changes
   $effect(() => {
@@ -30,6 +31,7 @@
   $effect(() => {
     SETTINGS_YOUR_NAME = settings.state.live.general.showYourName;
     SETTINGS_OTHERS_NAME = settings.state.live.general.showOthersName;
+    SETTINGS_SHORTEN_DPS = settings.state.live.general.shortenDps;
   });
 
   // Get visible columns based on settings - use same structure as DPS but for healing data
@@ -100,8 +102,8 @@
         {@const currPlayer = healSkillBreakdownWindow.currPlayer[0]}
         {#if currPlayer}
           {@const className = currPlayer.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? currPlayer.className : ""}
-          <tr 
-            class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors h-6 text-xs" 
+          <tr
+            class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors h-6 text-xs"
           >
             <td class="px-2 py-1 text-xs text-neutral-300 relative z-10">
               <div class="flex items-center gap-1 h-full">
@@ -111,7 +113,11 @@
             {#each visibleSkillColumns as col (col.key)}
               <td class="px-2 py-1 text-right text-xs text-neutral-300 relative z-10">
                 {#if col.key === 'totalDmg'}
-                  <AbbreviatedNumber num={skill.totalDmg} />
+                  {#if SETTINGS_SHORTEN_DPS}
+                    <AbbreviatedNumber num={skill.totalDmg} />
+                  {:else}
+                    {col.format(skill[col.key] ?? 0)}
+                  {/if}
                 {:else if col.key === 'dmgPct'}
                   <PercentFormat val={skill.dmgPct} fractionDigits={0} />
                 {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}

@@ -173,6 +173,11 @@ impl EventManager {
         }
     }
 
+    /// Peek at dead boss names without consuming them.
+    pub fn peek_dead_bosses(&self) -> Vec<String> {
+        self.dead_boss_names.values().cloned().collect()
+    }
+
     /// Drain and return any dead boss names that have been recorded by the event manager.
     /// This consumes the stored names and uids so they won't be double-persisted.
     pub fn take_dead_bosses(&mut self) -> Vec<String> {
@@ -1020,6 +1025,13 @@ pub fn generate_header_info(
 
     bosses.sort_by_key(|boss| boss.uid);
 
+    let current_phase = encounter.current_phase.map(|phase_type| {
+        match phase_type {
+            crate::live::opcodes_models::PhaseType::Mob => "mob".to_string(),
+            crate::live::opcodes_models::PhaseType::Boss => "boss".to_string(),
+        }
+    });
+
     #[allow(clippy::cast_precision_loss)]
     Some((
         HeaderInfo {
@@ -1030,6 +1042,7 @@ pub fn generate_header_info(
             bosses,
             scene_id: encounter.current_scene_id,
             scene_name: encounter.current_scene_name.clone(),
+            current_phase,
         },
         dead_bosses,
     ))

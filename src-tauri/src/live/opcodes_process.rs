@@ -816,6 +816,20 @@ pub fn process_aoi_sync_delta(
                 // Initialize lowest boss HP percentage tracking
                 update_boss_hp_tracking(encounter, bhp);
             }
+
+            // Begin initial phase: start with mob phase by default
+            use crate::live::phase_detector::{begin_phase, check_boss_phase_transition};
+            use crate::live::opcodes_models::PhaseType;
+
+            // Check if a boss is already present at encounter start
+            if check_boss_phase_transition(encounter) {
+                // Boss already present: start directly with boss phase
+                begin_phase(encounter, PhaseType::Boss, timestamp_ms);
+                encounter.boss_detected = true;
+            } else {
+                // No boss yet: start with mob phase
+                begin_phase(encounter, PhaseType::Mob, timestamp_ms);
+            }
         } else {
             // When not persisting to DB (overworld), still initialize attempt tracking
             // in-memory so the live meter shows correct data. We do NOT enqueue any
@@ -830,6 +844,12 @@ pub fn process_aoi_sync_delta(
                 update_boss_hp_tracking(encounter, bhp);
             }
         }
+    }
+
+    // Check for boss phase transition during combat
+    use crate::live::phase_detector::{check_boss_phase_transition, transition_to_boss_phase};
+    if check_boss_phase_transition(encounter) && !encounter.boss_detected {
+        transition_to_boss_phase(encounter, timestamp_ms);
     }
     encounter.time_last_combat_packet_ms = timestamp_ms;
     Some(())

@@ -139,6 +139,10 @@ pub struct EncounterRow {
     pub scene_name: Option<String>,
     /// The duration of the encounter in seconds.
     pub duration: f64,
+    /// When this encounter was uploaded to the website (ms since epoch).
+    pub uploaded_at_ms: Option<i64>,
+    /// The encounter ID on the remote website/server after successful upload.
+    pub remote_encounter_id: Option<i64>,
 }
 
 /// Represents a new encounter to be inserted into the `encounters` table.
@@ -577,4 +581,185 @@ pub struct NewAttempt {
     pub boss_hp_end: Option<i64>,
     /// The total number of deaths in this attempt.
     pub total_deaths: i32,
+}
+
+/// Represents a row in the `encounter_phases` table.
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::encounter_phases, belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct EncounterPhaseRow {
+    /// The unique ID of the encounter phase.
+    pub id: i32,
+    /// The ID of the encounter this phase belongs to.
+    pub encounter_id: i32,
+    /// The type of phase ('mob' or 'boss').
+    pub phase_type: String,
+    /// The timestamp of when the phase started, in milliseconds since the Unix epoch.
+    pub start_time_ms: i64,
+    /// The timestamp of when the phase ended, in milliseconds since the Unix epoch.
+    pub end_time_ms: Option<i64>,
+    /// The outcome of the phase ('success', 'wipe', 'unknown').
+    pub outcome: String,
+}
+
+/// Represents a new encounter phase to be inserted into the `encounter_phases` table.
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::encounter_phases)]
+pub struct NewEncounterPhase {
+    /// The ID of the encounter this phase belongs to.
+    pub encounter_id: i32,
+    /// The type of phase ('mob' or 'boss').
+    pub phase_type: String,
+    /// The timestamp of when the phase started, in milliseconds since the Unix epoch.
+    pub start_time_ms: i64,
+    /// The timestamp of when the phase ended, in milliseconds since the Unix epoch.
+    pub end_time_ms: Option<i64>,
+    /// The outcome of the phase ('success', 'wipe', 'unknown').
+    pub outcome: String,
+}
+
+/// Represents a row in the `actor_phase_stats` table.
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::actor_phase_stats, primary_key(phase_id, actor_id))]
+#[diesel(belongs_to(EncounterPhaseRow, foreign_key = phase_id))]
+pub struct ActorPhaseStatRow {
+    /// The ID of the phase.
+    pub phase_id: i32,
+    /// The ID of the actor.
+    pub actor_id: i64,
+    /// The name of the actor.
+    pub name: Option<String>,
+    /// The class ID of the actor.
+    pub class_id: Option<i32>,
+    /// The class spec of the actor.
+    pub class_spec: Option<i32>,
+    /// The ability score of the actor.
+    pub ability_score: Option<i32>,
+    /// The level of the actor.
+    pub level: Option<i32>,
+    /// The total damage dealt by the actor.
+    pub damage_dealt: i64,
+    /// The total healing done by the actor.
+    pub heal_dealt: i64,
+    /// The total damage taken by the actor.
+    pub damage_taken: i64,
+    /// The number of hits dealt by the actor.
+    pub hits_dealt: i64,
+    /// The number of hits healed by the actor.
+    pub hits_heal: i64,
+    /// The number of hits taken by the actor.
+    pub hits_taken: i64,
+    /// The number of critical hits dealt by the actor.
+    pub crit_hits_dealt: i64,
+    /// The number of critical hits healed by the actor.
+    pub crit_hits_heal: i64,
+    /// The number of critical hits taken by the actor.
+    pub crit_hits_taken: i64,
+    /// The number of lucky hits dealt by the actor.
+    pub lucky_hits_dealt: i64,
+    /// The number of lucky hits healed by the actor.
+    pub lucky_hits_heal: i64,
+    /// The number of lucky hits taken by the actor.
+    pub lucky_hits_taken: i64,
+    /// The total critical damage dealt by the actor.
+    pub crit_total_dealt: i64,
+    /// The total critical healing done by the actor.
+    pub crit_total_heal: i64,
+    /// The total critical damage taken by the actor.
+    pub crit_total_taken: i64,
+    /// The total lucky damage dealt by the actor.
+    pub lucky_total_dealt: i64,
+    /// The total lucky healing done by the actor.
+    pub lucky_total_heal: i64,
+    /// The total lucky damage taken by the actor.
+    pub lucky_total_taken: i64,
+    /// The total damage dealt to bosses by the actor.
+    pub boss_damage_dealt: i64,
+    /// The number of hits dealt to bosses by the actor.
+    pub boss_hits_dealt: i64,
+    /// The number of critical hits dealt to bosses by the actor.
+    pub boss_crit_hits_dealt: i64,
+    /// The number of lucky hits dealt to bosses by the actor.
+    pub boss_lucky_hits_dealt: i64,
+    /// The total critical damage dealt to bosses by the actor.
+    pub boss_crit_total_dealt: i64,
+    /// The total lucky damage dealt to bosses by the actor.
+    pub boss_lucky_total_dealt: i64,
+    /// The number of revives for the actor during the phase.
+    pub revives: i64,
+    /// Whether the actor is a player.
+    pub is_player: i32,
+    /// Whether the actor is the local player.
+    pub is_local_player: i32,
+    /// The attributes of the actor.
+    pub attributes: Option<String>,
+}
+
+/// Represents a new actor phase stat to be inserted into the `actor_phase_stats` table.
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::actor_phase_stats)]
+pub struct NewActorPhaseStat {
+    /// The ID of the phase.
+    pub phase_id: i32,
+    /// The ID of the actor.
+    pub actor_id: i64,
+    /// The name of the actor.
+    pub name: Option<String>,
+    /// The class ID of the actor.
+    pub class_id: Option<i32>,
+    /// The class spec of the actor.
+    pub class_spec: Option<i32>,
+    /// The ability score of the actor.
+    pub ability_score: Option<i32>,
+    /// The level of the actor.
+    pub level: Option<i32>,
+    /// The total damage dealt by the actor.
+    pub damage_dealt: i64,
+    /// The total healing done by the actor.
+    pub heal_dealt: i64,
+    /// The total damage taken by the actor.
+    pub damage_taken: i64,
+    /// The number of hits dealt by the actor.
+    pub hits_dealt: i64,
+    /// The number of hits healed by the actor.
+    pub hits_heal: i64,
+    /// The number of hits taken by the actor.
+    pub hits_taken: i64,
+    /// The number of critical hits dealt by the actor.
+    pub crit_hits_dealt: i64,
+    /// The number of critical hits healed by the actor.
+    pub crit_hits_heal: i64,
+    /// The number of critical hits taken by the actor.
+    pub crit_hits_taken: i64,
+    /// The number of lucky hits dealt by the actor.
+    pub lucky_hits_dealt: i64,
+    /// The number of lucky hits healed by the actor.
+    pub lucky_hits_heal: i64,
+    /// The number of lucky hits taken by the actor.
+    pub lucky_hits_taken: i64,
+    /// The total critical damage dealt by the actor.
+    pub crit_total_dealt: i64,
+    /// The total critical healing done by the actor.
+    pub crit_total_heal: i64,
+    /// The total critical damage taken by the actor.
+    pub crit_total_taken: i64,
+    /// The total lucky damage dealt by the actor.
+    pub lucky_total_dealt: i64,
+    /// The total lucky healing done by the actor.
+    pub lucky_total_heal: i64,
+    /// The total lucky damage taken by the actor.
+    pub lucky_total_taken: i64,
+    /// The total damage dealt to bosses by the actor.
+    pub boss_damage_dealt: i64,
+    /// The number of hits dealt to bosses by the actor.
+    pub boss_hits_dealt: i64,
+    /// The number of critical hits dealt to bosses by the actor.
+    pub boss_crit_hits_dealt: i64,
+    /// The number of lucky hits dealt to bosses by the actor.
+    pub boss_lucky_hits_dealt: i64,
+    /// The total critical damage dealt to bosses by the actor.
+    pub boss_crit_total_dealt: i64,
+    /// The total lucky damage dealt to bosses by the actor.
+    pub boss_lucky_total_dealt: i64,
+    /// The number of revives for the actor during the phase.
+    pub revives: i64,
 }

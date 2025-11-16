@@ -1,6 +1,5 @@
 <script lang="ts">
   import { getClassIcon, tooltip } from "$lib/utils.svelte";
-  import { goto } from "$app/navigation";
   import { settings, SETTINGS } from "$lib/settings-store";
   import { getTankedPlayers } from "$lib/stores/live-meter-store.svelte";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
@@ -21,6 +20,8 @@
   let maxTaken = $state(0);
   let SETTINGS_YOUR_NAME = $state(settings.state.live.general.showYourName);
   let SETTINGS_OTHERS_NAME = $state(settings.state.live.general.showOthersName);
+  let SETTINGS_SHORTEN_TPS = $state(settings.state.live.general.shortenTps);
+  let SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER = $state(settings.state.live.general.relativeToTopTankedPlayer);
 
   // Update maxTaken when data changes
   $effect(() => {
@@ -32,6 +33,8 @@
  $effect(() => {
     SETTINGS_YOUR_NAME = settings.state.live.general.showYourName;
     SETTINGS_OTHERS_NAME = settings.state.live.general.showOthersName;
+   SETTINGS_SHORTEN_TPS = settings.state.live.general.shortenTps;
+   SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER = settings.state.live.general.relativeToTopTankedPlayer;
   });
 
   // Get visible columns based on settings
@@ -73,8 +76,7 @@
         })}
         {@const className = isLocalPlayer ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
         <tr
-          class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-pointer {isCompact ? 'h-7' : isMedium ? 'h-10' : 'h-14'} {isCompact ? 'text-[11px]' : isMedium ? 'text-[12px]' : 'text-[13px]'} group"
-          onclick={() => goto(`/live/tanked/skills?playerUid=${player.uid}`)}
+          class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-default {isCompact ? 'h-7' : isMedium ? 'h-10' : 'h-14'} {isCompact ? 'text-[11px]' : isMedium ? 'text-[12px]' : 'text-[13px]'} group"
         >
           <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} relative z-10">
             <div class="flex items-center h-full {isCompact ? 'gap-1' : isMedium ? 'gap-1.5' : 'gap-2'}">
@@ -97,7 +99,17 @@
           {#each visiblePlayerColumns as col (col.key)}
             <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} text-right relative z-10 tabular-nums font-medium text-muted-foreground">
               {#if col.key === 'totalDmg'}
-                <AbbreviatedNumber num={player.totalDmg} />
+                {#if SETTINGS_SHORTEN_TPS}
+                  <AbbreviatedNumber num={player.totalDmg} />
+                {:else}
+                  {player.totalDmg.toLocaleString()}
+                {/if}
+              {:else if col.key === 'dps'}
+                {#if SETTINGS_SHORTEN_TPS}
+                  <AbbreviatedNumber num={player.dps} />
+                {:else}
+                  {player.dps.toFixed(1)}
+                {/if}
               {:else if col.key === 'dmgPct'}
                 <PercentFormat val={player.dmgPct} fractionDigits={0} />
               {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
@@ -107,7 +119,7 @@
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={SETTINGS.live.general.state.relativeToTopDPSPlayer ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
+          <TableRowGlow className={className} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
         </tr>
       {/each}
     </tbody>

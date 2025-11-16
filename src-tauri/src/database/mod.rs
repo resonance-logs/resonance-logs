@@ -339,6 +339,19 @@ pub enum DbTask {
         boss_hp_end: Option<i64>,
         total_deaths: i32,
     },
+
+    /// A task to begin a new encounter phase.
+    BeginPhase {
+        phase_type: String,
+        start_time_ms: i64,
+    },
+
+    /// A task to end the current encounter phase.
+    EndPhase {
+        phase_type: String,
+        end_time_ms: i64,
+        outcome: String,
+    },
 }
 
 /// Enqueues a database task to be processed by the background writer thread.
@@ -657,6 +670,29 @@ fn handle_task(
                     }
                 }
 
+                // Also update phase stats if a phase is active
+                if let Some(phase_id) = get_current_phase_id(conn, enc_id)? {
+                    upsert_phase_stats_add_damage_dealt(
+                        conn, phase_id, attacker_id, value, is_crit, is_lucky, is_boss,
+                    )?;
+
+                    if let Some(def_id) = defender_id {
+                        if let Some(attacker_type) = get_entity_type(conn, attacker_id)? {
+                            if attacker_type
+                                != (blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32)
+                            {
+                                upsert_phase_stats_add_damage_taken(
+                                    conn, phase_id, def_id, value, is_crit, is_lucky,
+                                )?;
+                            }
+                        } else {
+                            upsert_phase_stats_add_damage_taken(
+                                conn, phase_id, def_id, value, is_crit, is_lucky,
+                            )?;
+                        }
+                    }
+                }
+
                 // Upsert per-skill aggregated stats into damage_skill_stats
                 let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
                 let crit_i: i32 = if is_crit { 1 } else { 0 };
@@ -726,6 +762,13 @@ fn handle_task(
                 .ok();
 
                 upsert_stats_add_heal_dealt(conn, enc_id, healer_id, value, is_crit, is_lucky)?;
+
+                // Also update phase stats if a phase is active
+                if let Some(phase_id) = get_current_phase_id(conn, enc_id)? {
+                    upsert_phase_stats_add_heal_dealt(
+                        conn, phase_id, healer_id, value, is_crit, is_lucky,
+                    )?;
+                }
 
                 // Upsert into heal_skill_stats
                 let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
@@ -835,8 +878,79 @@ fn handle_task(
                 .map_err(|e| e.to_string())?;
             }
         }
+        DbTask::BeginPhase {
+            phase_type,
+            start_time_ms,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                use sch::encounter_phases::dsl as ep;
+                let new_phase = m::NewEncounterPhase {
+                    encounter_id: enc_id,
+                    phase_type,
+                    start_time_ms,
+                    end_time_ms: None,
+                    outcome: "unknown".to_string(),
+                };
+                diesel::insert_into(ep::encounter_phases)
+                    .values(&new_phase)
+                    .execute(conn)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        DbTask::EndPhase {
+            phase_type,
+            end_time_ms,
+            outcome,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                // Update the most recent unclosed phase of this type for this encounter
+                // We use raw SQL because Diesel doesn't support ORDER BY in UPDATE queries
+                diesel::sql_query(
+                    "UPDATE encounter_phases
+                     SET end_time_ms = ?1, outcome = ?2
+                     WHERE id = (
+                       SELECT id FROM encounter_phases
+                       WHERE encounter_id = ?3 AND phase_type = ?4 AND end_time_ms IS NULL
+                       ORDER BY start_time_ms DESC
+                       LIMIT 1
+                     )",
+                )
+                .bind::<diesel::sql_types::BigInt, _>(end_time_ms)
+                .bind::<diesel::sql_types::Text, _>(&outcome)
+                .bind::<diesel::sql_types::Integer, _>(enc_id)
+                .bind::<diesel::sql_types::Text, _>(&phase_type)
+                .execute(conn)
+                .map_err(|e| e.to_string())?;
+            }
+        }
     }
     Ok(())
+}
+
+/// Gets the current active phase ID for an encounter.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<Option<i32>, String>` - The phase ID, or `None` if no active phase.
+fn get_current_phase_id(
+    conn: &mut SqliteConnection,
+    encounter_id: i32,
+) -> Result<Option<i32>, String> {
+    use sch::encounter_phases::dsl as ep;
+    let phase_id: Option<i32> = ep::encounter_phases
+        .select(ep::id)
+        .filter(ep::encounter_id.eq(encounter_id))
+        .filter(ep::end_time_ms.is_null())
+        .order_by(ep::start_time_ms.desc())
+        .first::<i32>(conn)
+        .optional()
+        .map_err(|e| e.to_string())?;
+    Ok(phase_id)
 }
 
 /// Gets the entity type of a given entity ID.
@@ -1119,6 +1233,232 @@ fn upsert_stats_add_damage_taken(
     .map_err(|e| e.to_string())
 }
 
+/// Upserts actor phase stats for damage dealt.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `phase_id` - The ID of the phase.
+/// * `actor_id` - The ID of the actor.
+/// * `value` - The amount of damage dealt.
+/// * `is_crit` - Whether the damage was a critical hit.
+/// * `is_lucky` - Whether the damage was a lucky hit.
+/// * `is_boss` - Whether the target was a boss.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
+fn upsert_phase_stats_add_damage_dealt(
+    conn: &mut SqliteConnection,
+    phase_id: i32,
+    actor_id: i64,
+    value: i64,
+    is_crit: bool,
+    is_lucky: bool,
+    is_boss: bool,
+) -> Result<(), String> {
+    let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
+    let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
+    let boss_hit = if is_boss { 1_i64 } else { 0_i64 };
+    diesel::sql_query(
+        "INSERT INTO actor_phase_stats (
+             phase_id, actor_id, name, class_id, ability_score, level, is_player,
+             class_spec, is_local_player, attributes,
+             damage_dealt, hits_dealt, crit_hits_dealt, lucky_hits_dealt, crit_total_dealt, lucky_total_dealt,
+             boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt, boss_crit_total_dealt, boss_lucky_total_dealt,
+             revives
+         ) SELECT
+             ?1, ?2,
+             (SELECT name FROM entities WHERE entity_id = ?2),
+             NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
+             NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
+             NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
+             CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+             NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
+             CASE WHEN ?2 = (SELECT local_player_id FROM encounters WHERE id = (SELECT encounter_id FROM encounter_phases WHERE id = ?1)) THEN 1 ELSE 0 END,
+             (SELECT attributes FROM entities WHERE entity_id = ?2),
+             ?3, 1, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14
+         WHERE EXISTS(SELECT 1 FROM encounter_phases WHERE id = ?1)
+         ON CONFLICT(phase_id, actor_id) DO UPDATE SET
+             name = COALESCE(NULLIF(actor_phase_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
+             class_id = COALESCE(NULLIF(actor_phase_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             class_spec = COALESCE(NULLIF(actor_phase_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             ability_score = COALESCE(NULLIF(actor_phase_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             level = COALESCE(NULLIF(actor_phase_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             attributes = COALESCE(NULLIF(actor_phase_stats.attributes, ''), (SELECT attributes FROM entities WHERE entity_id = excluded.actor_id)),
+             damage_dealt = damage_dealt + excluded.damage_dealt,
+             hits_dealt = hits_dealt + excluded.hits_dealt,
+             crit_hits_dealt = crit_hits_dealt + excluded.crit_hits_dealt,
+             lucky_hits_dealt = lucky_hits_dealt + excluded.lucky_hits_dealt,
+             crit_total_dealt = crit_total_dealt + excluded.crit_total_dealt,
+             lucky_total_dealt = lucky_total_dealt + excluded.lucky_total_dealt,
+             boss_damage_dealt = boss_damage_dealt + excluded.boss_damage_dealt,
+             boss_hits_dealt = boss_hits_dealt + excluded.boss_hits_dealt,
+             boss_crit_hits_dealt = boss_crit_hits_dealt + excluded.boss_crit_hits_dealt,
+             boss_lucky_hits_dealt = boss_lucky_hits_dealt + excluded.boss_lucky_hits_dealt,
+             boss_crit_total_dealt = boss_crit_total_dealt + excluded.boss_crit_total_dealt,
+             boss_lucky_total_dealt = boss_lucky_total_dealt + excluded.boss_lucky_total_dealt,
+             revives = revives + excluded.revives"
+    )
+    .bind::<diesel::sql_types::Integer, _>(phase_id)
+    .bind::<diesel::sql_types::BigInt, _>(actor_id)
+    .bind::<diesel::sql_types::BigInt, _>(value)
+    .bind::<diesel::sql_types::BigInt, _>(crit_hit)
+    .bind::<diesel::sql_types::BigInt, _>(lucky_hit)
+    .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(boss_hit)
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_crit { 1 } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_lucky { 1 } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_crit { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_boss && is_lucky { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(0_i64)
+    .execute(conn)
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
+/// Upserts actor phase stats for heal dealt.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `phase_id` - The ID of the phase.
+/// * `actor_id` - The ID of the actor.
+/// * `value` - The amount of heal dealt.
+/// * `is_crit` - Whether the heal was a critical hit.
+/// * `is_lucky` - Whether the heal was a lucky hit.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
+fn upsert_phase_stats_add_heal_dealt(
+    conn: &mut SqliteConnection,
+    phase_id: i32,
+    actor_id: i64,
+    value: i64,
+    is_crit: bool,
+    is_lucky: bool,
+) -> Result<(), String> {
+    let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
+    let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
+    diesel::sql_query(
+        "INSERT INTO actor_phase_stats (
+             phase_id, actor_id, name, class_id, ability_score, level, is_player,
+             class_spec, is_local_player, attributes,
+             heal_dealt, hits_heal, crit_hits_heal, lucky_hits_heal, crit_total_heal, lucky_total_heal,
+             revives
+         ) SELECT
+             ?1, ?2,
+             (SELECT name FROM entities WHERE entity_id = ?2),
+             NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
+             NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
+             NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
+             CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+             NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
+             CASE WHEN ?2 = (SELECT local_player_id FROM encounters WHERE id = (SELECT encounter_id FROM encounter_phases WHERE id = ?1)) THEN 1 ELSE 0 END,
+             (SELECT attributes FROM entities WHERE entity_id = ?2),
+             ?3, 1, ?4, ?5, ?6, ?7, ?8
+         WHERE EXISTS(SELECT 1 FROM encounter_phases WHERE id = ?1)
+         ON CONFLICT(phase_id, actor_id) DO UPDATE SET
+             name = COALESCE(NULLIF(actor_phase_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
+             class_id = COALESCE(NULLIF(actor_phase_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             class_spec = COALESCE(NULLIF(actor_phase_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             ability_score = COALESCE(NULLIF(actor_phase_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             level = COALESCE(NULLIF(actor_phase_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             attributes = COALESCE(NULLIF(actor_phase_stats.attributes, ''), (SELECT attributes FROM entities WHERE entity_id = excluded.actor_id)),
+             heal_dealt = heal_dealt + excluded.heal_dealt,
+             hits_heal = hits_heal + excluded.hits_heal,
+             crit_hits_heal = crit_hits_heal + excluded.crit_hits_heal,
+             lucky_hits_heal = lucky_hits_heal + excluded.lucky_hits_heal,
+             crit_total_heal = crit_total_heal + excluded.crit_total_heal,
+             lucky_total_heal = lucky_total_heal + excluded.lucky_total_heal,
+             revives = revives + excluded.revives"
+    )
+    .bind::<diesel::sql_types::Integer, _>(phase_id)
+    .bind::<diesel::sql_types::BigInt, _>(actor_id)
+    .bind::<diesel::sql_types::BigInt, _>(value)
+    .bind::<diesel::sql_types::BigInt, _>(crit_hit)
+    .bind::<diesel::sql_types::BigInt, _>(lucky_hit)
+    .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(0_i64)
+    .execute(conn)
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
+/// Upserts actor phase stats for damage taken.
+///
+/// # Arguments
+///
+/// * `conn` - A mutable reference to a `SqliteConnection`.
+/// * `phase_id` - The ID of the phase.
+/// * `actor_id` - The ID of the actor.
+/// * `value` - The amount of damage taken.
+/// * `is_crit` - Whether the damage was a critical hit.
+/// * `is_lucky` - Whether the damage was a lucky hit.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
+fn upsert_phase_stats_add_damage_taken(
+    conn: &mut SqliteConnection,
+    phase_id: i32,
+    actor_id: i64,
+    value: i64,
+    is_crit: bool,
+    is_lucky: bool,
+) -> Result<(), String> {
+    let crit_hit = if is_crit { 1_i64 } else { 0_i64 };
+    let lucky_hit = if is_lucky { 1_i64 } else { 0_i64 };
+    diesel::sql_query(
+        "INSERT INTO actor_phase_stats (
+             phase_id, actor_id, name, class_id, ability_score, level, is_player,
+             class_spec, is_local_player, attributes,
+             damage_taken, hits_taken, crit_hits_taken, lucky_hits_taken, crit_total_taken, lucky_total_taken,
+             revives
+         ) SELECT
+             ?1, ?2,
+             (SELECT name FROM entities WHERE entity_id = ?2),
+             NULLIF((SELECT class_id FROM entities WHERE entity_id = ?2), 0),
+             NULLIF((SELECT ability_score FROM entities WHERE entity_id = ?2), 0),
+             NULLIF((SELECT level FROM entities WHERE entity_id = ?2), 0),
+             CASE WHEN EXISTS(SELECT 1 FROM entities WHERE entity_id = ?2) THEN 1 ELSE 0 END,
+             NULLIF((SELECT class_spec FROM entities WHERE entity_id = ?2), 0),
+             CASE WHEN ?2 = (SELECT local_player_id FROM encounters WHERE id = (SELECT encounter_id FROM encounter_phases WHERE id = ?1)) THEN 1 ELSE 0 END,
+             (SELECT attributes FROM entities WHERE entity_id = ?2),
+             ?3, 1, ?4, ?5, ?6, ?7, ?8
+         WHERE EXISTS(SELECT 1 FROM encounter_phases WHERE id = ?1)
+         ON CONFLICT(phase_id, actor_id) DO UPDATE SET
+             name = COALESCE(NULLIF(actor_phase_stats.name, ''), (SELECT name FROM entities WHERE entity_id = excluded.actor_id)),
+             class_id = COALESCE(NULLIF(actor_phase_stats.class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             class_spec = COALESCE(NULLIF(actor_phase_stats.class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             ability_score = COALESCE(NULLIF(actor_phase_stats.ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             level = COALESCE(NULLIF(actor_phase_stats.level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = excluded.actor_id), 0)),
+             attributes = COALESCE(NULLIF(actor_phase_stats.attributes, ''), (SELECT attributes FROM entities WHERE entity_id = excluded.actor_id)),
+             damage_taken = damage_taken + excluded.damage_taken,
+             hits_taken = hits_taken + excluded.hits_taken,
+             crit_hits_taken = crit_hits_taken + excluded.crit_hits_taken,
+             lucky_hits_taken = lucky_hits_taken + excluded.lucky_hits_taken,
+             crit_total_taken = crit_total_taken + excluded.crit_total_taken,
+             lucky_total_taken = lucky_total_taken + excluded.lucky_total_taken,
+             revives = revives + excluded.revives"
+    )
+    .bind::<diesel::sql_types::Integer, _>(phase_id)
+    .bind::<diesel::sql_types::BigInt, _>(actor_id)
+    .bind::<diesel::sql_types::BigInt, _>(value)
+    .bind::<diesel::sql_types::BigInt, _>(crit_hit)
+    .bind::<diesel::sql_types::BigInt, _>(lucky_hit)
+    .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
+    .bind::<diesel::sql_types::BigInt, _>(0_i64)
+    .execute(conn)
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
 /// Materializes damage skill stats for an encounter.
 ///
 /// # Arguments
@@ -1197,7 +1537,6 @@ fn prune_encounter_events(conn: &mut SqliteConnection, encounter_id: i32) -> Res
 mod tests {
     use super::*;
     use crate::database::models::{DamageSkillStatRow, EncounterBossRow, HealSkillStatRow};
-    use diesel::dsl::count_star;
     // diesel prelude not needed in this scope; use fully-qualified paths where required
 
     fn setup_conn() -> SqliteConnection {

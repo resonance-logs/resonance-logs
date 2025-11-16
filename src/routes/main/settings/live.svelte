@@ -2,7 +2,7 @@
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import SettingsSwitch from "./settings-switch.svelte";
   import SettingsSelect from "./settings-select.svelte";
-  import { dpsPlayersColumnDefs, dpsSkillsColumnDefs, healPlayersColumnDefs, healSkillsColumnDefs } from "$lib/table-info";
+  import { dpsPlayersColumnDefs, dpsSkillsColumnDefs, healPlayersColumnDefs, healSkillsColumnDefs, tankedPlayersColumnDefs, tankedSkillsColumnDefs } from "$lib/table-info";
   import { SETTINGS } from "$lib/settings-store";
   import { setBossOnlyDps } from "$lib/api";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
@@ -33,6 +33,8 @@
     dpsSkills: false,
     healPlayers: false,
     healSkills: false,
+    tankedPlayers: false,
+    tankedSkills: false,
   });
 
   function toggleSection(section: keyof typeof expandedSections) {
@@ -62,6 +64,9 @@
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopDPSSkill} label="Relative to Top DPS - Skill" description="Color bars are relative to top DPS skill instead of all skills. Useful for 20 man or World Bosses." />
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopHealPlayer} label="Relative to Top Heal - Player" description="Color bars are relative to top healing player instead of all players. Useful for 20 man or World Bosses." />
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopHealSkill} label="Relative to Top - Skill" description="Color bars are relative to top healing skill instead of all skills. Useful for 20 man or World Bosses." />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopTankedPlayer} label="Relative to Top Tanked - Player" description="Color bars are relative to top tanked player instead of all players. Useful for 20 man or World Bosses." />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopTankedSkill} label="Relative to Top Tanked - Skill" description="Color bars are relative to top tanked skill instead of all skills. Useful for 20 man or World Bosses." />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenTps} label="Shorten TPS Metrics" description="Show TPS values as 5k, 50k, etc." />
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
@@ -140,6 +145,44 @@
         <div class="px-4 pb-3 space-y-1">
           {#each healSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
             <SettingsSwitch bind:checked={SETTINGS.live.heal.skillBreakdown.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {/each}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Tanked - Player Settings -->
+  <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+      <button
+        type="button"
+  class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onclick={() => toggleSection('tankedPlayers')}
+      >
+  <h2 class="text-base font-semibold text-foreground">Tanked - Player Columns</h2>
+  <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.tankedPlayers ? 'rotate-180' : ''}" />
+      </button>
+      {#if expandedSections.tankedPlayers}
+        <div class="px-4 pb-3 space-y-1">
+          {#each tankedPlayersColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.tanked.players.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {/each}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Tanked - Skill Breakdown Settings -->
+  <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+      <button
+        type="button"
+  class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onclick={() => toggleSection('tankedSkills')}
+      >
+  <h2 class="text-base font-semibold text-foreground">Tanked - Skill Breakdown Columns</h2>
+  <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.tankedSkills ? 'rotate-180' : ''}" />
+      </button>
+      {#if expandedSections.tankedSkills}
+        <div class="px-4 pb-3 space-y-1">
+          {#each tankedSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.tanked.skills.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
           {/each}
         </div>
       {/if}

@@ -254,6 +254,7 @@
 	async function onView(enc: EncounterSummaryDto) {
 		goto(`/main/history/${enc.id}`);
 	}
+
 </script>
 
 <div class="">
@@ -403,7 +404,7 @@
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Bosses</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-[400px]">Players</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-12">Duration</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Date</th>
+						<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Date</th>
 					<th class="px-3 py-2.5 text-right w-12 text-muted-foreground">
 						<button
 							onclick={() => loadEncounters(page)}
@@ -428,18 +429,17 @@
 			<tbody class="bg-background/40">
 				{#each encounters as enc (enc.id)}
 					<tr
-						class="border-t border-border/40 hover:bg-muted/60 cursor-pointer transition-colors"
-						onclick={() => onView(enc)}
+						class="border-t border-border/40 hover:bg-muted/60 transition-colors"
 					>
-						<td class="px-3 py-2 text-sm text-muted-foreground">{enc.id}</td>
-						<td class="px-3 py-2 text-sm text-muted-foreground">
+						<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>{enc.id}</td>
+						<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>
 							{#if enc.sceneName}
 								<span class="text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">{enc.sceneName}</span>
 							{:else}
 								<span class="text-muted-foreground text-xs opacity-70">No scene</span>
 							{/if}
 						</td>
-							<td class="px-3 py-2 text-sm text-muted-foreground">
+							<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>
 								{#if enc.bosses.length > 0}
 									<div class="flex flex-wrap gap-1">
 										{#each enc.bosses as boss}
@@ -450,7 +450,7 @@
 									<span class="text-muted-foreground text-xs opacity-70">No bosses</span>
 								{/if}
 							</td>
-							<td class="px-3 py-2 text-sm text-muted-foreground max-w-[400px]">
+							<td class="px-3 py-2 text-sm text-muted-foreground max-w-[400px] cursor-pointer" onclick={() => onView(enc)}>
 								{#if enc.players.length > 0}
 									{@const sortedPlayers = [...enc.players].sort((a, b) => {
 										const aHasClass = a.classId !== null && a.classId !== undefined && a.classId !== 0;
@@ -476,14 +476,14 @@
 									<span class="text-muted-foreground text-xs opacity-70">No players</span>
 								{/if}
 							</td>
-							<td class="px-3 py-2 text-sm text-muted-foreground">{fmtDuration(enc.startedAtMs, enc.endedAtMs)}</td>
-							<td class="px-3 py-2 text-sm text-muted-foreground">
+							<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>{fmtDuration(enc.startedAtMs, enc.endedAtMs)}</td>
+							<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>
 								<div class="leading-snug">
 									<div>{fmtDate(enc.startedAtMs)}</div>
 									<div class="text-xs text-muted-foreground opacity-70">{fmtTime(enc.startedAtMs)}</div>
 								</div>
 							</td>
-						<td></td>
+							<td></td>
 					</tr>
 				{/each}
 			</tbody>

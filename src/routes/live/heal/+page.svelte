@@ -21,6 +21,7 @@
   let maxHeal = $state(0);
   let SETTINGS_YOUR_NAME = $state(settings.state.live.general.showYourName);
   let SETTINGS_OTHERS_NAME = $state(settings.state.live.general.showOthersName);
+  let SETTINGS_SHORTEN_DPS = $state(settings.state.live.general.shortenDps);
 
   // Update maxHeal when data changes
   $effect(() => {
@@ -32,7 +33,8 @@
   $effect(() => {
     SETTINGS_YOUR_NAME = settings.state.live.general.showYourName;
     SETTINGS_OTHERS_NAME = settings.state.live.general.showOthersName;
- });
+    SETTINGS_SHORTEN_DPS = settings.state.live.general.shortenDps;
+  });
 
   // Get visible columns based on settings
   let visiblePlayerColumns = $derived.by(() => {
@@ -97,7 +99,11 @@
           {#each visiblePlayerColumns as col (col.key)}
             <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} text-right relative z-10 tabular-nums font-medium text-muted-foreground">
               {#if col.key === 'totalDmg'}
-                <AbbreviatedNumber num={player.totalDmg} />
+                    {#if SETTINGS_SHORTEN_DPS}
+                      <AbbreviatedNumber num={player.totalDmg} />
+                    {:else}
+                      {player.totalDmg.toLocaleString()}
+                    {/if}
               {:else if col.key === 'dmgPct'}
                 <PercentFormat val={player.dmgPct} fractionDigits={0} />
               {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}

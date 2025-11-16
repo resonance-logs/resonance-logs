@@ -9,7 +9,7 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
-  import { historyDpsSkillColumns } from "$lib/history-columns"; // Use same structure as DPS for consistency
+  import { historyDpsSkillColumns, liveTankedSkillColumns } from "$lib/history-columns"; // Use tanked structure for consistency
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import PercentFormat from "$lib/components/percent-format.svelte";
 
@@ -23,6 +23,8 @@
   let maxTakenSkill = $state(0);
   let SETTINGS_YOUR_NAME = $state(settings.state.live.general.showYourName);
   let SETTINGS_OTHERS_NAME = $state(settings.state.live.general.showOthersName);
+  let SETTINGS_SHORTEN_TPS = $state(settings.state.live.general.shortenTps);
+  let SETTINGS_RELATIVE_TO_TOP_TANKED_SKILL = $state(settings.state.live.general.relativeToTopTankedSkill);
 
   // Update maxTakenSkill when data changes
   $effect(() => {
@@ -33,11 +35,13 @@
   $effect(() => {
     SETTINGS_YOUR_NAME = settings.state.live.general.showYourName;
     SETTINGS_OTHERS_NAME = settings.state.live.general.showOthersName;
+    SETTINGS_SHORTEN_TPS = settings.state.live.general.shortenTps;
+    SETTINGS_RELATIVE_TO_TOP_TANKED_SKILL = settings.state.live.general.relativeToTopTankedSkill;
   });
 
   // Get visible columns based on settings - use same structure as DPS but for tanked data
   let visibleSkillColumns = $derived.by(() => {
-    return historyDpsSkillColumns.filter(col => settings.state.live.tanked.skills[col.key]);
+    return liveTankedSkillColumns.filter(col => settings.state.live.tanked.skills[col.key]);
   });
 
   onMount(() => {
@@ -89,9 +93,13 @@
     <button class="underline" onclick={() => goto("/live/tanked")}>Back</button>
     <span class="font-bold">{currentPlayer.name}</span>
     <span>{currentPlayer.classSpecName}</span>
-    <span class="ml-auto">
+      <span class="ml-auto">
       <span class="text-xs">Total: </span>
-      <AbbreviatedNumber num={currentPlayer.totalDmg} />
+      {#if SETTINGS_SHORTEN_TPS}
+        <AbbreviatedNumber num={currentPlayer.totalDmg} />
+      {:else}
+        {currentPlayer.totalDmg.toLocaleString()}
+      {/if}
     </span>
   </div>
 {/if}
@@ -109,8 +117,8 @@
     <tbody class="bg-neutral-900">
       {#each skillsWindow?.skillRows as skill (skill.name)}
         {@const className = currentPlayer?.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currentPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" && currentPlayer ? currentPlayer.className : ""}
-        <tr 
-          class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors h-6 text-xs" 
+        <tr
+          class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors h-6 text-xs"
         >
           <td class="px-2 py-1 text-xs text-neutral-300 relative z-10">
             <div class="flex items-center gap-1 h-full">
@@ -120,7 +128,17 @@
           {#each visibleSkillColumns as col (col.key)}
             <td class="px-2 py-1 text-right text-xs text-neutral-300 relative z-10">
               {#if col.key === 'totalDmg'}
-                <AbbreviatedNumber num={skill.totalDmg} />
+                {#if SETTINGS_SHORTEN_TPS}
+                  <AbbreviatedNumber num={skill.totalDmg} />
+                {:else}
+                  {skill.totalDmg.toLocaleString()}
+                {/if}
+              {:else if col.key === 'dps'}
+                {#if SETTINGS_SHORTEN_TPS}
+                  <AbbreviatedNumber num={skill.dps} />
+                {:else}
+                  {skill.dps.toFixed(1)}
+                {/if}
               {:else if col.key === 'dmgPct'}
                 <PercentFormat val={skill.dmgPct} fractionDigits={0} />
               {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
@@ -130,7 +148,7 @@
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={SETTINGS.live.general.state.relativeToTopDPSPlayer ? maxTakenSkill > 0 ? (skill.totalDmg / maxTakenSkill) * 100 : 0 : skill.dmgPct} />
+          <TableRowGlow className={className} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_SKILL ? (maxTakenSkill > 0 ? (skill.totalDmg / maxTakenSkill) * 100 : 0) : skill.dmgPct} />
         </tr>
       {/each}
     </tbody>

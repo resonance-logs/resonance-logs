@@ -3,6 +3,7 @@
 
 use crate::module_extractor::{extract_modules, upload_modules};
 use crate::module_extractor::types::{ImportModulesResponse, UnknownAttribute};
+use crate::uploader::AutoUploadState;
 use blueprotobuf_lib::blueprotobuf::SyncContainerData;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
@@ -18,6 +19,13 @@ pub struct FailedUpload {
     pub timestamp: String,
     pub retry_count: u32,
     pub last_error: String,
+}
+
+const LEGACY_LOCAL_BASE_URL: &str = "http://localhost:8080/api/v1";
+
+fn default_api_base_url() -> String {
+    std::env::var("WEBSITE_API_BASE")
+        .unwrap_or_else(|_| "https://api.bpsr.app/api/v1".to_string())
 }
 
 /// Module sync state shared across commands
@@ -49,10 +57,7 @@ impl Default for ModuleSyncState {
             last_modules: Arc::new(RwLock::new(Vec::new())),
             sync_enabled: Arc::new(RwLock::new(false)),
             api_key: Arc::new(RwLock::new(None)),
-            base_url: Arc::new(RwLock::new(
-                std::env::var("WEBSITE_API_BASE")
-                    .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string())
-            )),
+            base_url: Arc::new(RwLock::new(default_api_base_url())),
             last_upload_hash: Arc::new(RwLock::new(None)),
             last_sync_uuids: Arc::new(RwLock::new(HashSet::new())),
             auto_sync_interval_minutes: Arc::new(RwLock::new(0)),
@@ -94,6 +99,7 @@ pub struct ModuleSyncStatus {
 #[specta::specta]
 pub async fn set_module_sync_config(
     state: tauri::State<'_, ModuleSyncState>,
+    auto_upload_state: tauri::State<'_, AutoUploadState>,
     enabled: bool,
     api_key: Option<String>,
     base_url: Option<String>,
@@ -101,17 +107,42 @@ pub async fn set_module_sync_config(
 ) -> Result<(), String> {
     *state.sync_enabled.write().await = enabled;
 
-    if let Some(key) = api_key {
-        *state.api_key.write().await = Some(key);
+    {
+        let mut api_key_guard = state.api_key.write().await;
+        match api_key {
+            Some(key) => {
+                let trimmed = key.trim().to_string();
+                if trimmed.is_empty() {
+                    *api_key_guard = None;
+                } else {
+                    *api_key_guard = Some(trimmed);
+                }
+            }
+            None => {
+                *api_key_guard = None;
+            }
+        }
     }
 
     if let Some(url) = base_url {
-        *state.base_url.write().await = url;
+        let trimmed = url.trim().to_string();
+        let resolved = if trimmed.is_empty() || trimmed == LEGACY_LOCAL_BASE_URL {
+            default_api_base_url()
+        } else {
+            trimmed
+        };
+        *state.base_url.write().await = resolved;
     }
 
     if let Some(interval) = auto_sync_interval_minutes {
         *state.auto_sync_interval_minutes.write().await = interval;
     }
+
+    let current_key = state.api_key.read().await.clone();
+    let current_base = state.base_url.read().await.clone();
+    auto_upload_state
+        .sync_from_settings(current_key, Some(current_base))
+        .await;
 
     info!("Module sync config updated: enabled={}", enabled);
     Ok(())
@@ -394,6 +425,7 @@ fn extract_modules_with_tracking(
 /// Start background auto-sync timer (called on app startup)
 pub async fn start_auto_sync_timer(state: ModuleSyncState) {
     tokio::spawn(async move {
+        let mut minutes_since_last_sync = 0u32;
         loop {
             tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
 
@@ -408,37 +440,34 @@ pub async fn start_auto_sync_timer(state: ModuleSyncState) {
             }
 
             // Check if it's time to sync
-            static mut LAST_SYNC_MINUTE: u32 = 0;
-            unsafe {
-                LAST_SYNC_MINUTE += 1;
-                if LAST_SYNC_MINUTE >= interval {
-                    LAST_SYNC_MINUTE = 0;
+            minutes_since_last_sync += 1;
+            if minutes_since_last_sync >= interval {
+                minutes_since_last_sync = 0;
 
-                    // Trigger sync
-                    info!("Auto-sync timer triggered (interval: {} minutes)", interval);
+                // Trigger sync
+                info!("Auto-sync timer triggered (interval: {} minutes)", interval);
 
-                    let api_key = match state.api_key.read().await.clone() {
-                        Some(key) => key,
-                        None => continue,
-                    };
+                let api_key = match state.api_key.read().await.clone() {
+                    Some(key) => key,
+                    None => continue,
+                };
 
-                    let base_url = state.base_url.read().await.clone();
-                    let modules = state.last_modules.read().await.clone();
+                let base_url = state.base_url.read().await.clone();
+                let modules = state.last_modules.read().await.clone();
 
-                    if !modules.is_empty() {
-                        let state_clone = state.clone();
-                        tokio::spawn(async move {
-                            match upload_modules(modules, &api_key, &base_url).await {
-                                Ok(response) => {
-                                    info!("Scheduled auto-sync succeeded: added={}, updated={}",
-                                        response.summary.added, response.summary.updated);
-                                }
-                                Err(e) => {
-                                    error!("Scheduled auto-sync failed: {}", e);
-                                }
+                if !modules.is_empty() {
+                    let state_clone = state.clone();
+                    tokio::spawn(async move {
+                        match upload_modules(modules, &api_key, &base_url).await {
+                            Ok(response) => {
+                                info!("Scheduled auto-sync succeeded: added={}, updated={}",
+                                    response.summary.added, response.summary.updated);
                             }
-                        });
-                    }
+                            Err(e) => {
+                                error!("Scheduled auto-sync failed: {}", e);
+                            }
+                        }
+                    });
                 }
             }
         }

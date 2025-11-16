@@ -1,16 +1,90 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::atomic::{AtomicBool, Ordering};
-use sha2::{Sha256, Digest};
+use std::sync::Arc;
+use sha2::{Digest, Sha256};
 
 use reqwest::Client;
 use tauri::{AppHandle, Emitter, Manager};
+use tokio::sync::{Notify, RwLock};
+use tokio::time::{interval, Duration};
 
-use crate::database::{default_db_path};
+use crate::database::{default_db_path, now_ms};
 use diesel::prelude::*;
 use crate::database::schema as sch;
 
 static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
+static UPLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
+const AUTO_UPLOAD_INTERVAL_SECS: u64 = 30;
+
+#[derive(Clone, Default)]
+pub struct AutoUploadState {
+    api_key: Arc<RwLock<Option<String>>>,
+    base_url: Arc<RwLock<Option<String>>>,
+    notifier: Arc<Notify>,
+}
+
+impl AutoUploadState {
+    pub async fn sync_from_settings(
+        &self,
+        api_key: Option<String>,
+        base_url: Option<String>,
+    ) {
+        let sanitized_key = api_key.and_then(|k| {
+            let trimmed = k.trim().to_string();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed)
+            }
+        });
+        let sanitized_base = base_url.and_then(|url| {
+            let trimmed = url.trim().to_string();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed)
+            }
+        });
+
+        *self.api_key.write().await = sanitized_key;
+        *self.base_url.write().await = sanitized_base;
+        self.notifier.notify_one();
+    }
+
+    pub async fn current_api_key(&self) -> Option<String> {
+        self.api_key.read().await.clone()
+    }
+
+    pub async fn current_base_url(&self) -> Option<String> {
+        self.base_url.read().await.clone()
+    }
+
+    pub fn notifier(&self) -> Arc<Notify> {
+        self.notifier.clone()
+    }
+}
+
+struct UploadRunGuard;
+
+impl UploadRunGuard {
+    fn try_acquire() -> Option<Self> {
+        if UPLOAD_IN_PROGRESS
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+        {
+            Some(Self)
+        } else {
+            None
+        }
+    }
+}
+
+impl Drop for UploadRunGuard {
+    fn drop(&mut self) {
+        UPLOAD_IN_PROGRESS.store(false, Ordering::SeqCst);
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -24,6 +98,7 @@ pub struct UploadEncounterIn {
     pub scene_name: Option<String>,
     pub source_hash: Option<String>,
     pub attempts: Vec<UploadAttemptIn>,
+    pub phases: Vec<UploadEncounterPhaseIn>,
     pub death_events: Vec<UploadDeathEventIn>,
     pub actor_encounter_stats: Vec<UploadActorEncounterStatIn>,
     pub damage_skill_stats: Vec<UploadDamageSkillStatIn>,
@@ -43,6 +118,15 @@ pub struct UploadAttemptIn {
     pub boss_hp_start: Option<i64>,
     pub boss_hp_end: Option<i64>,
     pub total_deaths: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UploadEncounterPhaseIn {
+    pub phase_type: String,
+    pub start_time_ms: i64,
+    pub end_time_ms: Option<i64>,
+    pub outcome: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -166,6 +250,12 @@ pub struct UploadRequestBody {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct UploadEncountersResponse {
+    pub ingested: i32,
+    pub ids: Vec<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CheckDuplicatesRequest {
     pub hashes: Vec<String>,
 }
@@ -182,6 +272,84 @@ pub struct DuplicateInfo {
 pub struct CheckDuplicatesResponse {
     pub duplicates: Vec<DuplicateInfo>,
     pub missing: Vec<String>,
+}
+
+fn resolve_base_urls(base_url: Option<String>) -> Vec<String> {
+    // Ignore any user-provided base_url from settings. Always try the
+    // public API first and fall back to the local development server.
+    // This removes the user-configurable module sync URL from advanced
+    // settings and enforces a fixed primary+fallback ordering.
+    vec![
+        "https://api.bpsr.app/api/v1".to_string(),
+        "http://localhost:8080/api/v1".to_string(),
+    ]
+}
+
+fn mark_encounters_uploaded(
+    conn: &mut diesel::sqlite::SqliteConnection,
+    ids: &[i32],
+) -> Result<(), String> {
+    if ids.is_empty() {
+        return Ok(());
+    }
+    use sch::encounters::dsl as e;
+    diesel::update(e::encounters.filter(e::id.eq_any(ids)))
+        .set(e::uploaded_at_ms.eq(now_ms()))
+        .execute(conn)
+        .map(|_| ())
+        .map_err(|er| er.to_string())
+}
+
+fn pending_encounter_count() -> Result<i64, String> {
+    let path = default_db_path();
+    let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
+        .map_err(|e| e.to_string())?;
+    count_ended_encounters(&mut conn)
+}
+
+pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
+    tauri::async_runtime::spawn(async move {
+        let mut ticker = interval(Duration::from_secs(AUTO_UPLOAD_INTERVAL_SECS));
+        let notifier = state.notifier();
+        loop {
+            tokio::select! {
+                _ = ticker.tick() => {},
+                _ = notifier.notified() => {},
+            }
+
+            if let Err(err) = maybe_trigger_auto_upload(app.clone(), state.clone()).await {
+                log::warn!("auto upload check failed: {}", err);
+            }
+        }
+    });
+}
+
+async fn maybe_trigger_auto_upload(app: AppHandle, state: AutoUploadState) -> Result<(), String> {
+    let api_key = match state.current_api_key().await {
+        Some(key) => key,
+        None => return Ok(()),
+    };
+
+    let pending = tauri::async_runtime::spawn_blocking(|| pending_encounter_count())
+        .await
+        .map_err(|e| e.to_string())??;
+
+    if pending == 0 {
+        return Ok(());
+    }
+
+    if let Some(guard) = UploadRunGuard::try_acquire() {
+        let base_urls = resolve_base_urls(state.current_base_url().await);
+        let app_clone = app.clone();
+        tauri::async_runtime::spawn(async move {
+            let _guard = guard;
+            if let Err(e) = perform_upload(app_clone.clone(), api_key, base_urls).await {
+                let _ = app_clone.emit("upload:error", json!({"message": e}));
+            }
+        });
+    }
+
+    Ok(())
 }
 
 /// Compute a deterministic SHA-256 hash for an encounter
@@ -230,6 +398,7 @@ fn count_ended_encounters(conn: &mut diesel::sqlite::SqliteConnection) -> Result
     use sch::encounters::dsl as e;
     e::encounters
         .filter(e::ended_at_ms.is_not_null())
+        .filter(e::uploaded_at_ms.is_null())
         .count()
         .get_result(conn)
         .map_err(|er| er.to_string())
@@ -240,6 +409,7 @@ fn load_encounters_slice(conn: &mut diesel::sqlite::SqliteConnection, offset: i6
     use sch::encounters::dsl as e;
     e::encounters
         .filter(e::ended_at_ms.is_not_null())
+        .filter(e::uploaded_at_ms.is_null())
         .order(e::started_at_ms.asc())
         .select((
             e::id,
@@ -294,6 +464,29 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
             boss_hp_start,
             boss_hp_end,
             total_deaths,
+        })
+        .collect::<Vec<_>>();
+
+    // Phases
+    use sch::encounter_phases::dsl as ep;
+    let phase_rows = ep::encounter_phases
+        .filter(ep::encounter_id.eq(id))
+        .order(ep::start_time_ms.asc())
+        .select((
+            ep::phase_type,
+            ep::start_time_ms,
+            ep::end_time_ms,
+            ep::outcome,
+        ))
+        .load::<(String, i64, Option<i64>, String)>(conn)
+        .map_err(|e| e.to_string())?;
+    let phases = phase_rows
+        .into_iter()
+        .map(|(phase_type, start_time_ms, end_time_ms, outcome)| UploadEncounterPhaseIn {
+            phase_type,
+            start_time_ms,
+            end_time_ms,
+            outcome,
         })
         .collect::<Vec<_>>();
 
@@ -560,6 +753,7 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         scene_name,
         source_hash: None, // Will be computed below
         attempts,
+        phases,
         death_events,
         actor_encounter_stats: actor_stats,
         damage_skill_stats,
@@ -573,6 +767,12 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
     encounter.source_hash = Some(compute_encounter_hash(&encounter));
 
     Ok(encounter)
+}
+
+#[derive(Clone)]
+struct PendingEncounter {
+    id: i32,
+    payload: UploadEncounterIn,
 }
 
 pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<String>) -> Result<(), String> {
@@ -618,15 +818,19 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         if rows.is_empty() { break; }
         let mut payloads = Vec::with_capacity(rows.len());
         for row in &rows {
-            payloads.push(build_encounter_payload(&mut conn, row.clone())?);
+            payloads.push(PendingEncounter {
+                id: row.0,
+                payload: build_encounter_payload(&mut conn, row.clone())?,
+            });
         }
 
         // Preflight check: ask server which encounters are duplicates
         let hashes: Vec<String> = payloads.iter()
-            .filter_map(|e| e.source_hash.clone())
+            .filter_map(|e| e.payload.source_hash.clone())
             .collect();
 
         let mut filtered_payloads = payloads.clone();
+        let mut duplicate_ids: Vec<i32> = Vec::new();
 
         if !hashes.is_empty() {
             // Perform preflight duplicate check
@@ -640,27 +844,38 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
             {
                 Ok(resp) if resp.status().is_success() => {
                     if let Ok(check_result) = resp.json::<CheckDuplicatesResponse>().await {
-                        // Filter out duplicates from the batch
-                        let duplicate_hashes: std::collections::HashSet<String> = check_result.duplicates.iter()
-                            .map(|d| d.hash.clone())
+                        // Map hash -> remote_encounter_id for duplicates
+                        let duplicate_map: std::collections::HashMap<String, i64> = check_result.duplicates.iter()
+                            .map(|d| (d.hash.clone(), d.encounter_id))
                             .collect();
 
-                        filtered_payloads = payloads.into_iter()
-                            .filter(|e| {
-                                if let Some(ref hash) = e.source_hash {
-                                    !duplicate_hashes.contains(hash)
-                                } else {
-                                    true // Keep encounters without hash
+                        filtered_payloads = payloads
+                            .iter()
+                            .cloned()
+                            .filter(|entry| {
+                                if let Some(ref hash) = entry.payload.source_hash {
+                                    if let Some(&remote_id) = duplicate_map.get(hash) {
+                                        duplicate_ids.push(entry.id);
+                                        // Update local encounter with remote_encounter_id for this duplicate
+                                        use sch::encounters::dsl as e;
+                                        let _ = diesel::update(e::encounters.filter(e::id.eq(entry.id)))
+                                            .set((
+                                                e::remote_encounter_id.eq(remote_id),
+                                                e::uploaded_at_ms.eq(now_ms())
+                                            ))
+                                            .execute(&mut conn);
+                                        return false;
+                                    }
                                 }
+                                true // Keep encounters without hash or not duplicates
                             })
                             .collect();
 
-                        let skipped = rows.len() - filtered_payloads.len();
+                        let skipped = duplicate_ids.len();
                         if skipped > 0 {
                             // Emit progress for skipped duplicates
-                            uploaded += skipped as i64;
                             let progress_payload: serde_json::Value = json!({
-                                "uploaded": uploaded,
+                                "uploaded": uploaded + skipped as i64,
                                 "total": total,
                                 "skipped": skipped,
                                 "message": format!("Skipped {} duplicate(s)", skipped)
@@ -683,16 +898,21 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
 
         // If all encounters were duplicates, skip upload and continue to next batch
         if filtered_payloads.is_empty() {
+            let ids: Vec<i32> = payloads.iter().map(|p| p.id).collect();
+            mark_encounters_uploaded(&mut conn, &ids)?;
+            uploaded += rows.len() as i64;
             offset += rows.len() as i64;
             continue;
         }
 
-        let body = UploadRequestBody { encounters: filtered_payloads };
+        let body = UploadRequestBody { encounters: filtered_payloads.iter().map(|entry| entry.payload.clone()).collect() };
+        let mut processed_ids = duplicate_ids.clone();
 
         // Try each URL in sequence until one succeeds
         let mut upload_success = false;
         let mut last_error = String::new();
 
+        let mut returned_ids: Vec<i64> = Vec::new();
         while current_url_index < base_urls.len() && !upload_success {
             // Use trailing slash to match server route registration (/api/v1/upload/)
             // Avoids a 307 redirect which can drop custom headers like X-Api-Key.
@@ -704,7 +924,17 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
             {
                 Ok(resp) => {
                     if resp.status().is_success() {
-                        upload_success = true;
+                        // Parse response to get created encounter IDs
+                        match resp.json::<UploadEncountersResponse>().await {
+                            Ok(upload_resp) => {
+                                returned_ids = upload_resp.ids;
+                                upload_success = true;
+                            }
+                            Err(e) => {
+                                last_error = format!("Failed to parse upload response from {}: {}", base_urls[current_url_index], e);
+                                current_url_index += 1;
+                            }
+                        }
                     } else {
                         let text = resp.text().await.unwrap_or_default();
                         last_error = format!("Server error from {}: {}", base_urls[current_url_index], text);
@@ -731,6 +961,29 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
             let _ = app.emit("upload:error", err_payload);
             return Err(last_error);
         }
+
+        // Map returned remote IDs to local encounter IDs
+        // The server returns IDs in the same order as the uploaded encounters
+        if returned_ids.len() == filtered_payloads.len() {
+            use sch::encounters::dsl as e;
+            for (local_entry, &remote_id) in filtered_payloads.iter().zip(returned_ids.iter()) {
+                let _ = diesel::update(e::encounters.filter(e::id.eq(local_entry.id)))
+                    .set((
+                        e::remote_encounter_id.eq(remote_id),
+                        e::uploaded_at_ms.eq(now_ms())
+                    ))
+                    .execute(&mut conn);
+            }
+        } else {
+            log::warn!(
+                "Mismatch between uploaded ({}) and returned ({}) encounter IDs. Remote IDs will not be persisted.",
+                filtered_payloads.len(),
+                returned_ids.len()
+            );
+        }
+
+        processed_ids.extend(filtered_payloads.iter().map(|entry| entry.id));
+        mark_encounters_uploaded(&mut conn, &processed_ids)?;
 
         uploaded += rows.len() as i64;
         offset += rows.len() as i64;
@@ -761,24 +1014,21 @@ pub fn cancel_upload() { CANCEL_FLAG.store(true, Ordering::SeqCst); }
 #[tauri::command]
 #[specta::specta]
 pub async fn start_upload(app: tauri::AppHandle, api_key: String, base_url: Option<String>) -> Result<(), String> {
-    let mut base_urls = Vec::new();
-
-    // If a specific base_url is provided, use only that
-    if let Some(url) = base_url {
-        base_urls.push(url);
-    } else {
-        // Otherwise, try localhost first, then fallback
-        let localhost_url = std::env::var("WEBSITE_API_BASE")
-            .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string());
-        base_urls.push(localhost_url);
-        base_urls.push("https://api.bpsr.app/api/v1".to_string());
+    let key = api_key.trim().to_string();
+    if key.is_empty() {
+        return Err("API key is required".to_string());
     }
+
+    let base_urls = resolve_base_urls(base_url);
+    let guard = UploadRunGuard::try_acquire()
+        .ok_or_else(|| "An upload is already in progress".to_string())?;
 
     let app_cloned = app.clone();
     tauri::async_runtime::spawn(async move {
-        if let Err(e) = perform_upload(app_cloned, api_key, base_urls).await {
+        let _guard = guard;
+        if let Err(e) = perform_upload(app_cloned.clone(), key, base_urls).await {
             // best-effort error event
-            let _ = app.emit("upload:error", json!({"message": e}));
+            let _ = app_cloned.emit("upload:error", json!({"message": e}));
         }
     });
     Ok(())
@@ -797,33 +1047,25 @@ mod tests {
 
     #[test]
     fn test_fallback_url_ordering_when_no_base_url() {
-        // Test that when no base_url is provided, it uses localhost first then https://api.bpsr.app
-        let mut base_urls = Vec::new();
-
-        // Simulate the logic from start_upload when base_url is None
-        let localhost_url = std::env::var("WEBSITE_API_BASE")
-            .unwrap_or_else(|_| "http://localhost:8080/api/v1".to_string());
-        base_urls.push(localhost_url);
-        base_urls.push("https://api.bpsr.app/api/v1".to_string());
+        // Test that when no base_url is provided, it uses the public API first
+        // and then falls back to the local development server.
+        let base_urls = resolve_base_urls(None);
 
         // Verify the ordering
         assert_eq!(base_urls.len(), 2);
-        assert!(base_urls[0].contains("localhost") || base_urls[0].contains("127.0.0.1"));
-        assert_eq!(base_urls[1], "https://api.bpsr.app/api/v1");
+        assert_eq!(base_urls[0], "https://api.bpsr.app/api/v1");
+        assert!(base_urls[1].contains("localhost") || base_urls[1].contains("127.0.0.1"));
     }
 
     #[test]
     fn test_specific_base_url_only() {
-        // Test that when a specific base_url is provided, it only uses that URL
+        // Test that when a specific base_url is provided, it is ignored and the
+        // fixed ordering (public API then localhost) is still used.
         let specific_url = "https://custom.example.com".to_string();
-        let mut base_urls = Vec::new();
+        let base_urls = resolve_base_urls(Some(specific_url));
 
-        // Simulate the logic from start_upload when base_url is Some
-        base_urls.push(specific_url.clone());
-
-        // Verify only the specific URL is used
-        assert_eq!(base_urls.len(), 1);
-        assert_eq!(base_urls[0], specific_url);
+        assert_eq!(base_urls.len(), 2);
+        assert_eq!(base_urls[0], "https://api.bpsr.app/api/v1");
     }
 
     #[test]

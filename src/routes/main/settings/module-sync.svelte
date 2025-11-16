@@ -1,3 +1,4 @@
+<!-- Deprecated: moved to the Uploading UI in src/routes/main/uploading/+page.svelte -->
 <script lang="ts">
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import SettingsSwitch from "./settings-switch.svelte";
@@ -59,19 +60,14 @@
     }
   }
 
-  // Sync settings to backend when they change
+  // Refresh module sync status when settings change
   $effect(() => {
-    if (mounted) {
-      const enabled = SETTINGS.moduleSync.state.enabled;
-      const apiKey = SETTINGS.moduleSync.state.apiKey;
-      const baseUrl = SETTINGS.moduleSync.state.baseUrl;
-      const autoSyncInterval = SETTINGS.moduleSync.state.autoSyncIntervalMinutes || 0;
-
-      // Update backend config
-      commands.setModuleSyncConfig(enabled, apiKey || null, baseUrl || null, autoSyncInterval)
-        .then(() => refreshStatus())
-        .catch(e => console.error("Failed to update module sync config:", e));
-    }
+    if (!mounted) return;
+    SETTINGS.moduleSync.state.enabled;
+    SETTINGS.moduleSync.state.apiKey;
+    SETTINGS.moduleSync.state.baseUrl;
+    SETTINGS.moduleSync.state.autoSyncIntervalMinutes;
+    refreshStatus().catch((e) => console.error("Failed to refresh module sync status:", e));
   });
 
   async function triggerSync() {
@@ -168,13 +164,6 @@
             description="Automatically upload module data to the resonance-website optimizer when you open your inventory in-game"
           />
 
-          <SettingsInput
-            bind:value={SETTINGS.moduleSync.state.apiKey}
-            type="password"
-            label="API Key"
-            description="Your API key from resonance-website. Get it from your account settings."
-            placeholder="Enter your API key"
-          />
 
           {#if syncStatus}
             <div class="py-2.5 px-3 rounded-md bg-popover/30">
@@ -289,27 +278,15 @@
       {#if expandedSections.advanced}
         <div class="px-4 pb-3 space-y-1">
           <SettingsInput
-            bind:value={SETTINGS.moduleSync.state.baseUrl}
-            type="url"
-            label="API Base URL"
-            description="The base URL for the resonance-website API. Only change if you're using a custom deployment."
-            placeholder="http://localhost:8080/api/v1"
-          />
-
-          <SettingsInput
             bind:value={SETTINGS.moduleSync.state.autoSyncIntervalMinutes}
             type="number"
             label="Auto-Sync Interval (minutes)"
             description="Automatically sync modules every N minutes. Set to 0 to disable scheduled sync."
             placeholder="0"
           />
-
-          <div class="px-3 py-2 rounded-md bg-yellow-500/10 border border-yellow-500/20">
-            <div class="text-xs text-yellow-300">
-              <p class="font-medium mb-1">⚠️ Warning:</p>
-              <p class="text-yellow-200/80">Only modify the API Base URL if you know what you're doing. Incorrect values will prevent module sync from working.</p>
-            </div>
-          </div>
+          <!-- The API Base URL setting has been removed: uploader now uses the
+               public API (https://api.bpsr.app/api/v1) and falls back to
+               http://localhost:8080/api/v1. -->
         </div>
       {/if}
     </div>

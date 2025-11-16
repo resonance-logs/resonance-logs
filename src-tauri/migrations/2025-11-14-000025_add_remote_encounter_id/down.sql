@@ -1,0 +1,8 @@
+-- SQLite does not support DROP COLUMN directly in older versions.
+-- This migration is designed to be forward-only.
+-- To rollback, the database would need to be recreated without this column.
+-- Documenting rollback steps:
+-- 1. Export data from encounters table
+-- 2. DROP TABLE encounters
+-- 3. Recreate encounters without remote_encounter_id
+-- 4. Re-import data

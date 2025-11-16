@@ -581,6 +581,134 @@ duration: number;
  */
 isLocalPlayer: boolean }
 /**
+ * Statistics for an actor in a specific phase.
+ */
+export type ActorPhaseStatDto = { 
+/**
+ * The ID of the phase.
+ */
+phaseId: number; 
+/**
+ * The ID of the actor.
+ */
+actorId: number; 
+/**
+ * The name of the actor.
+ */
+name: string | null; 
+/**
+ * The class ID of the actor.
+ */
+classId: number | null; 
+/**
+ * The ability score of the actor.
+ */
+abilityScore: number | null; 
+/**
+ * The total damage dealt by the actor in this phase.
+ */
+damageDealt: number; 
+/**
+ * The total healing done by the actor in this phase.
+ */
+healDealt: number; 
+/**
+ * The total damage taken by the actor in this phase.
+ */
+damageTaken: number; 
+/**
+ * The number of hits dealt by the actor in this phase.
+ */
+hitsDealt: number; 
+/**
+ * The number of hits healed by the actor in this phase.
+ */
+hitsHeal: number; 
+/**
+ * The number of hits taken by the actor in this phase.
+ */
+hitsTaken: number; 
+/**
+ * The number of critical hits dealt by the actor in this phase.
+ */
+critHitsDealt: number; 
+/**
+ * The number of critical hits healed by the actor in this phase.
+ */
+critHitsHeal: number; 
+/**
+ * The number of critical hits taken by the actor in this phase.
+ */
+critHitsTaken: number; 
+/**
+ * The number of lucky hits dealt by the actor in this phase.
+ */
+luckyHitsDealt: number; 
+/**
+ * The number of lucky hits healed by the actor in this phase.
+ */
+luckyHitsHeal: number; 
+/**
+ * The number of lucky hits taken by the actor in this phase.
+ */
+luckyHitsTaken: number; 
+/**
+ * The total critical damage dealt by the actor in this phase.
+ */
+critTotalDealt: number; 
+/**
+ * The total critical healing done by the actor in this phase.
+ */
+critTotalHeal: number; 
+/**
+ * The total critical damage taken by the actor in this phase.
+ */
+critTotalTaken: number; 
+/**
+ * The total lucky damage dealt by the actor in this phase.
+ */
+luckyTotalDealt: number; 
+/**
+ * The total lucky healing done by the actor in this phase.
+ */
+luckyTotalHeal: number; 
+/**
+ * The total lucky damage taken by the actor in this phase.
+ */
+luckyTotalTaken: number; 
+/**
+ * The total damage dealt to bosses by the actor in this phase.
+ */
+bossDamageDealt: number; 
+/**
+ * The number of hits dealt to bosses by the actor in this phase.
+ */
+bossHitsDealt: number; 
+/**
+ * The number of critical hits dealt to bosses by the actor in this phase.
+ */
+bossCritHitsDealt: number; 
+/**
+ * The number of lucky hits dealt to bosses by the actor in this phase.
+ */
+bossLuckyHitsDealt: number; 
+/**
+ * The total critical damage dealt to bosses by the actor in this phase.
+ */
+bossCritTotalDealt: number; 
+/**
+ * The total lucky damage dealt to bosses by the actor in this phase.
+ */
+bossLuckyTotalDealt: number; 
+/**
+ * The number of revives for the actor during this phase.
+ */
+revives: number; 
+/**
+ * Whether the actor is the local player.
+ */
+isLocalPlayer: boolean }
+/**
  * The result of a query for boss names.
  */
 export type BossNamesResult = { 
@@ -637,6 +765,34 @@ dateFromMs: number | null;
  */
 dateToMs: number | null }
 /**
+ * A DTO representing a phase (mob or boss) within an encounter.
+ */
+export type EncounterPhaseDto = { 
+/**
+ * The unique ID of the encounter phase.
+ */
+id: number; 
+/**
+ * The type of phase ('mob' or 'boss').
+ */
+phaseType: string; 
+/**
+ * Timestamp when phase started (ms since epoch).
+ */
+startTimeMs: number; 
+/**
+ * Timestamp when phase ended (ms since epoch) or null if still running.
+ */
+endTimeMs: number | null; 
+/**
+ * The outcome of the phase ('success', 'wipe', 'unknown').
+ */
+outcome: string; 
+/**
+ * Actor stats for this specific phase.
+ */
+actorStats: ActorPhaseStatDto[] }
+/**
  * A summary of an encounter.
  */
 export type EncounterSummaryDto = { 
@@ -683,7 +839,15 @@ players: PlayerInfoDto[];
 /**
  * A list of actor encounter stats.
  */
-actors: ActorEncounterStatDto[] }
+actors: ActorEncounterStatDto[]; 
+/**
+ * A list of phases in the encounter (mob and boss phases).
+ */
+phases: EncounterPhaseDto[]; 
+/**
+ * The encounter ID on the remote website/server (if uploaded).
+ */
+remoteEncounterId: number | null }
 /**
  * Error for a specific module during import
  */

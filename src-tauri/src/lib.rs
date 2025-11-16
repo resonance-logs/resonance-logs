@@ -124,10 +124,15 @@ pub fn run() {
             let module_sync_state = crate::module_extractor::commands::ModuleSyncState::default();
             app.manage(module_sync_state.clone());
 
+            // Auto-upload state (combat log uploader)
+            let auto_upload_state = crate::uploader::AutoUploadState::default();
+            app.manage(auto_upload_state.clone());
+
             // Start auto-sync timer
             tauri::async_runtime::spawn(
                 crate::module_extractor::commands::start_auto_sync_timer(module_sync_state)
             );
+            crate::uploader::start_auto_upload_task(app_handle.clone(), auto_upload_state);
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks
@@ -140,6 +145,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init()) // used to read/write to the clipboard
         .plugin(tauri_plugin_window_state::Builder::default().build()) // used to remember window size/position https://v2.tauri.app/plugin/window-state/
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {})) // used to enforce only 1 instance of the app https://v2.tauri.app/plugin/single-instance/
+        .plugin(tauri_plugin_opener::init()) // used to open URLs in the default browser
         .plugin(tauri_plugin_svelte::init()); // used for settings file
     build_and_run(tauri_builder);
 }

@@ -3,14 +3,15 @@
   import { goto } from '$app/navigation';
   import { commands } from '$lib/bindings';
   import type { ActorEncounterStatDto, EncounterSummaryDto, SkillsWindow } from '$lib/bindings';
-  import type { MetricType } from '$lib/api';
   import { getClassIcon, tooltip, CLASS_MAP } from '$lib/utils.svelte';
   import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from '$lib/components/table-row-glow.svelte';
   import AbbreviatedNumber from '$lib/components/abbreviated-number.svelte';
-  import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns } from '$lib/history-columns';
+  import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns, historyTankedPlayerColumns, historyTankedSkillColumns } from '$lib/history-columns';
   import { settings, SETTINGS } from '$lib/settings-store';
-  import getDisplayName from '$lib/name-display.ts';
+  import getDisplayName from '$lib/name-display';
+  import { getModuleApiBaseUrl } from '$lib/stores/uploading';
+  import { openUrl } from '@tauri-apps/plugin-opener';
 
   // Get encounter ID from URL params
   let encounterId = $derived($page.params.id ? parseInt($page.params.id) : null);
@@ -28,9 +29,58 @@
   let players = $state<any[]>([]);
   let error = $state<string | null>(null);
 
+  // Current phase data for display
+  let currentPhaseActors = $derived.by(() => {
+    if (!selectedPhaseId || !encounter) return actors;
+
+    const phase = encounter.phases.find(p => p.id === selectedPhaseId);
+    if (!phase || !encounter) return actors;
+
+    // Calculate phase duration for DPS
+    const phaseDurationSecs = Math.max(1, ((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000);
+
+    return phase.actorStats.map(stat => ({
+      encounterId: encounter!.id,
+      actorId: stat.actorId,
+      name: stat.name,
+      classId: stat.classId,
+      abilityScore: stat.abilityScore,
+      damageDealt: stat.damageDealt,
+      healDealt: stat.healDealt,
+      damageTaken: stat.damageTaken,
+      hitsDealt: stat.hitsDealt,
+      hitsHeal: stat.hitsHeal,
+      hitsTaken: stat.hitsTaken,
+      critHitsDealt: stat.critHitsDealt,
+      critHitsHeal: stat.critHitsHeal,
+      critHitsTaken: stat.critHitsTaken,
+      luckyHitsDealt: stat.luckyHitsDealt,
+      luckyHitsHeal: stat.luckyHitsHeal,
+      luckyHitsTaken: stat.luckyHitsTaken,
+      critTotalDealt: stat.critTotalDealt,
+      critTotalHeal: stat.critTotalHeal,
+      critTotalTaken: stat.critTotalTaken,
+      luckyTotalDealt: stat.luckyTotalDealt,
+      luckyTotalHeal: stat.luckyTotalHeal,
+      luckyTotalTaken: stat.luckyTotalTaken,
+      bossDamageDealt: stat.bossDamageDealt,
+      bossHitsDealt: stat.bossHitsDealt,
+      bossCritHitsDealt: stat.bossCritHitsDealt,
+      bossLuckyHitsDealt: stat.bossLuckyHitsDealt,
+      bossCritTotalDealt: stat.bossCritTotalDealt,
+      bossLuckyTotalDealt: stat.bossLuckyTotalDealt,
+      dps: stat.damageDealt / phaseDurationSecs,
+      duration: phaseDurationSecs,
+      isLocalPlayer: stat.isLocalPlayer,
+    })) as ActorEncounterStatDto[];
+  });
+
   // Tab state for encounter view
   let activeTab = $state<'damage' | 'tanked' | 'healing'>('damage');
   let bossOnlyMode = $state(false);
+
+  // Phase selection state
+  let selectedPhaseId = $state<number | null>(null); // null = overall encounter stats
 
   // Skills view state
   let skillsWindow = $state<SkillsWindow | null>(null);
@@ -75,6 +125,8 @@
   let visiblePlayerColumns = $derived.by(() => {
     if (activeTab === 'healing') {
       return historyHealPlayerColumns.filter(col => settings.state.history.heal.players[col.key]);
+    } else if (activeTab === 'tanked') {
+      return historyTankedPlayerColumns.filter(col => settings.state.history.tanked.players[col.key]);
     }
     return historyDpsPlayerColumns.filter(col => settings.state.history.dps.players[col.key]);
   });
@@ -82,8 +134,37 @@
   let visibleSkillColumns = $derived.by(() => {
     if (skillType === 'heal') {
       return historyHealSkillColumns.filter(col => settings.state.history.heal.skillBreakdown[col.key]);
+    } else if (skillType === 'tanked') {
+      return historyTankedSkillColumns.filter(col => settings.state.history.tanked.skillBreakdown[col.key]);
     }
     return historyDpsSkillColumns.filter(col => settings.state.history.dps.skillBreakdown[col.key]);
+  });
+
+  let maxTankedPlayer = $derived.by(() => {
+    return displayedPlayers.reduce((max, p) => Math.max(max, p.damageTaken || 0), 0);
+  });
+  let maxTankedSkill = $derived.by(() => {
+    if (!skillsWindow) return 0;
+    return skillsWindow.skillRows.reduce((max, s) => Math.max(max, s.totalDmg || 0), 0);
+  });
+
+  const websiteBaseUrl = $derived.by(() => {
+    const apiBase = getModuleApiBaseUrl();
+    if (!apiBase) {
+      return 'https://bpsr.app';
+    }
+
+    try {
+      const url = new URL(apiBase);
+      if (url.hostname.startsWith('api.')) {
+        url.hostname = url.hostname.replace(/^api\./, '');
+      }
+      url.pathname = '';
+      return url.toString().replace(/\/$/, '');
+    } catch (err) {
+      console.error('Failed to parse website URL from API base:', apiBase, err);
+      return 'https://bpsr.app';
+    }
   });
 
   async function loadEncounter() {
@@ -100,13 +181,25 @@
       return;
     }
 
-    const totalDmg = actors.reduce((sum, a) => sum + (a.damageDealt ?? 0), 0);
-    const totalBossDmg = actors.reduce((sum, a) => sum + (a.bossDamageDealt ?? 0), 0);
-    const totalDamageTaken = actors.reduce((sum, a) => sum + (a.damageTaken ?? 0), 0);
-    const totalHealing = actors.reduce((sum, a) => sum + (a.healDealt ?? 0), 0);
-    const durationSecs = Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000);
+    // Use phase actors if a phase is selected, otherwise use overall encounter actors
+    const displayActors = currentPhaseActors;
 
-    players = actors.map(a => {
+    const totalDmg = displayActors.reduce((sum, a) => sum + (a.damageDealt ?? 0), 0);
+    const totalBossDmg = displayActors.reduce((sum, a) => sum + (a.bossDamageDealt ?? 0), 0);
+    const totalDamageTaken = displayActors.reduce((sum, a) => sum + (a.damageTaken ?? 0), 0);
+    const totalHealing = displayActors.reduce((sum, a) => sum + (a.healDealt ?? 0), 0);
+
+    // Calculate duration based on selected phase or overall encounter
+    let durationSecs: number;
+    if (selectedPhaseId && encounter.phases.length > 0) {
+      const phase = encounter.phases.find(p => p.id === selectedPhaseId);
+      durationSecs = phase ? Math.max(1, ((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000) :
+                             Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000);
+    } else {
+      durationSecs = Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000);
+    }
+
+    players = displayActors.map(a => {
       const hits = a.hitsDealt || 0;
       const hitsTaken = a.hitsTaken || 0;
       const hitsHeal = a.hitsHeal || 0;
@@ -181,6 +274,17 @@
     goto('/main/history');
   }
 
+  async function openEncounterOnWebsite() {
+    if (!encounter || !encounter.remoteEncounterId) return;
+
+    const url = `${websiteBaseUrl}/encounter/${encounter.remoteEncounterId}`;
+    try {
+      await openUrl(url);
+    } catch (err) {
+      console.error('Failed to open URL:', url, err);
+    }
+  }
+
   $effect(() => {
     loadEncounter();
   });
@@ -202,6 +306,13 @@
       loadEncounter();
     }
   });
+
+  $effect(() => {
+    // Reload encounter when selectedPhaseId changes
+    if (selectedPhaseId !== undefined) {
+      loadEncounter();
+    }
+  });
 </script>
 
 <div class="p-6">
@@ -213,10 +324,10 @@
     <!-- Encounter Overview -->
     <div class="mb-4">
       <div class="flex items-center justify-between gap-3 mb-3">
-        <div class="flex items-center gap-3">
-      <button
-        onclick={backToHistory}
-        class="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40"
+        <div class="flex items-center gap-3 flex-wrap">
+          <button
+            onclick={backToHistory}
+            class="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40"
             aria-label="Back to history"
           >
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -238,11 +349,54 @@
             <div class="text-sm text-muted-foreground">
               {new Date(encounter.startedAtMs).toLocaleString()} — Duration: {Math.floor(Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000) / 60)}m
             </div>
-            </div>
+
+            <!-- Phases info -->
+            {#if encounter.phases && encounter.phases.length > 0}
+              <div class="text-xs text-muted-foreground mt-1 flex gap-2">
+                {#each encounter.phases as phase}
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border {phase.phaseType === 'mob' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-purple-500/30 bg-purple-500/10 text-purple-400'}">
+                    <span class="font-semibold">{phase.phaseType === 'mob' ? 'Mob Phase' : 'Boss Phase'}</span>
+                    <span class="text-muted-foreground">•</span>
+                    <span class="{phase.outcome === 'success' ? 'text-green-400' : phase.outcome === 'wipe' ? 'text-red-400' : 'text-yellow-400'}">{phase.outcome}</span>
+                    <span class="text-muted-foreground">•</span>
+                    <span>{Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s</span>
+                  </span>
+                {/each}
+              </div>
+            {/if}
+          </div>
+          {#if encounter.remoteEncounterId}
+            <button
+              onclick={openEncounterOnWebsite}
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              title="Open this encounter on resonance-logs.com"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Open on website
+            </button>
+          {/if}
         </div>
 
-        <!-- Tabs and Boss Only Toggle -->
+        <!-- Tabs, Phase Selector, and Boss Only Toggle -->
         <div class="flex items-end gap-2 h-[48px]">
+          <!-- Phase Selector -->
+          {#if encounter.phases && encounter.phases.length > 0}
+            <select
+              bind:value={selectedPhaseId}
+              class="px-2 py-1 text-xs rounded border border-border bg-popover text-foreground transition-colors hover:bg-muted/40 cursor-pointer"
+            >
+              <option value={null}>Overall Encounter</option>
+              {#each encounter.phases as phase}
+                <option value={phase.id}>
+                  {phase.phaseType === 'mob' ? 'Mob Phase' : 'Boss Phase'}
+                  ({Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s)
+                </option>
+              {/each}
+            </select>
+          {/if}
+
           <div class="flex rounded border border-border bg-popover">
             <button
               onclick={() => activeTab = 'damage'}
@@ -289,8 +443,8 @@
         <tbody class="bg-background/40">
           {#each displayedPlayers as p (p.uid)}
             <tr
-              class="relative border-t border-border/40 hover:bg-muted/60 transition-colors cursor-pointer"
-              onclick={() => viewPlayerSkills(p.uid, activeTab === 'healing' ? 'heal' : 'dps')}
+              class="relative border-t border-border/40 hover:bg-muted/60 transition-colors {activeTab === 'tanked' ? 'cursor-default' : 'cursor-pointer'}"
+              onclick={() => activeTab !== 'tanked' && viewPlayerSkills(p.uid, activeTab === 'healing' ? 'heal' : 'dps')}
             >
               <td class="px-3 py-3 text-sm text-muted-foreground relative z-10">
                 <div class="flex items-center gap-2 h-full">
@@ -325,12 +479,12 @@
               </td>
               {#each visiblePlayerColumns as col (col.key)}
                 <td class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10">
-                  {#if (col.key === 'totalDmg' || col.key === 'dps') && (
-                    (activeTab === 'damage' && settings.state.history.general.shortenDps) ||
-                    (activeTab === 'healing' && settings.state.history.general.shortenDps) ||
-                    (activeTab === 'tanked' && settings.state.history.general.shortenDps)
-                  )}
-                    {#if SETTINGS.history.general.state.shortenDps}
+                  {#if (
+                      (activeTab === 'damage' && (col.key === 'totalDmg' || col.key === 'dps') && SETTINGS.history.general.state.shortenDps) ||
+                      (activeTab === 'healing' && (col.key === 'healDealt' || col.key === 'hps') && SETTINGS.history.general.state.shortenDps) ||
+                      (activeTab === 'tanked' && (col.key === 'damageTaken' || col.key === 'tankedPS') && SETTINGS.history.general.state.shortenTps)
+                    )}
+                    {#if (activeTab === 'tanked' ? SETTINGS.history.general.state.shortenTps : SETTINGS.history.general.state.shortenDps)}
                       <AbbreviatedNumber num={p[col.key] ?? 0} />
                     {:else}
                       {col.format(p[col.key] ?? 0)}
@@ -346,7 +500,7 @@
                   activeTab === 'healing'
                     ? (SETTINGS.history.general.state.relativeToTopHealPlayer && maxHealPlayer > 0 ? (p.healDealt / maxHealPlayer) * 100 : p.healPct)
                     : (activeTab === 'tanked'
-                      ? p.tankedPct
+                      ? (SETTINGS.history.general.state.relativeToTopTankedPlayer && maxTankedPlayer > 0 ? (p.damageTaken / maxTankedPlayer) * 100 : p.tankedPct)
                       : (SETTINGS.history.general.state.relativeToTopDPSPlayer && maxDpsPlayer > 0 ? (p.totalDmg / maxDpsPlayer) * 100 : p.dmgPct))
                 }
               />
@@ -398,7 +552,7 @@
               <td class="px-3 py-3 text-sm text-muted-foreground relative z-10">{s.name}</td>
               {#each visibleSkillColumns as col (col.key)}
                 <td class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10">
-                  {#if (col.key === 'totalDmg' || col.key === 'dps') && SETTINGS.history.general.state.shortenDps}
+                  {#if (col.key === 'totalDmg' || col.key === 'dps') && (skillType === 'tanked' ? SETTINGS.history.general.state.shortenTps : SETTINGS.history.general.state.shortenDps)}
                     <AbbreviatedNumber num={s[col.key] ?? 0} />
                   {:else}
                     {col.format(s[col.key] ?? 0)}
@@ -410,7 +564,9 @@
                 percentage={
                   skillType === 'heal'
                     ? (SETTINGS.history.general.state.relativeToTopHealSkill && maxHealSkill > 0 ? (s.totalDmg / maxHealSkill) * 100 : s.dmgPct)
-                    : (SETTINGS.history.general.state.relativeToTopDPSSkill && maxDpsSkill > 0 ? (s.totalDmg / maxDpsSkill) * 100 : s.dmgPct)
+                    : (skillType === 'tanked'
+                      ? (SETTINGS.history.general.state.relativeToTopTankedSkill && maxTankedSkill > 0 ? (s.totalDmg / maxTankedSkill) * 100 : s.dmgPct)
+                      : (SETTINGS.history.general.state.relativeToTopDPSSkill && maxDpsSkill > 0 ? (s.totalDmg / maxDpsSkill) * 100 : s.dmgPct))
                 }
               />
             </tr>

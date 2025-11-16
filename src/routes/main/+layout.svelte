@@ -7,6 +7,7 @@
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
+  import { openUrl } from "@tauri-apps/plugin-opener";
   import { SIDEBAR_ROUTES } from "./routes.svelte";
   import { getVersion } from "@tauri-apps/api/app";
 
@@ -24,6 +25,17 @@
     goto(route);
   });
 
+  async function openExternalUrl(url: string) {
+    try {
+      await openUrl(url);
+    } catch (err) {
+      console.error("Failed to open external URL:", url, err);
+      if (typeof window !== "undefined") {
+        window.open(url, "_blank");
+      }
+    }
+  }
+
   let currentPath = $derived(() => {
     const pathname = page.url.pathname;
     // Check for dynamic routes
@@ -40,15 +52,32 @@
     <div class="flex items-center justify-between px-4 py-2.5">
       <div class="flex items-center gap-1">
         {#each Object.entries(SIDEBAR_ROUTES) as [href, route] (route.label)}
-          <a
-            {href}
-            class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 h-9 {currentPath() === href
-              ? 'bg-muted text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-popover/50'}"
-          >
-            <route.icon class="w-4 h-4 shrink-0" />
-            <span class="whitespace-nowrap">{route.label}</span>
-          </a>
+          {#if route.externalUrl}
+            <button
+              type="button"
+              class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 h-9 text-muted-foreground hover:text-foreground hover:bg-popover/50"
+              title={`Open ${route.label} in browser`}
+              on:click={() => openExternalUrl(route.externalUrl)}
+            >
+              <route.icon class="w-4 h-4 shrink-0" />
+              <span class="whitespace-nowrap flex items-center gap-1">
+                {route.label}
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </span>
+            </button>
+          {:else}
+            <a
+              {href}
+              class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 h-9 {currentPath() === href
+                ? 'bg-muted text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-popover/50'}"
+            >
+              <route.icon class="w-4 h-4 shrink-0" />
+              <span class="whitespace-nowrap">{route.label}</span>
+            </a>
+          {/if}
         {/each}
       </div>
       <div class="text-xs text-muted-foreground shrink-0">
