@@ -1,9 +1,8 @@
 # Resonance Logs - Desktop Application
 
-[![GitHub Downloads](https://img.shields.io/github/downloads/resonance-logs/resonance-logs/total?style=for-the-badge&color=%23ff9800)](https://github.com/resonance-logs/resonance-logs/releases) [![Discord](https://img.shields.io/discord/1417447600608510015?color=%235865F2&label=Discord&style=for-the-badge)](https://discord.gg/aPPHe8Uq8Q)
+[![GitHub Downloads](https://img.shields.io/github/downloads/resonance-logs/resonance-logs/total?style=for-the-badge&color=%23ff9800)](https://github.com/resonance-logs/resonance-logs/releases) [![Discord](https://img.shields.io/discord/1439352907961995410?color=%235865F2&label=Discord&style=for-the-badge)](https://discord.gg/aPPHe8Uq8Q)
 
-[![GitHub Release](https://img.shields.io/github/v/release/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/releases) [![GitHub License](https://img.shields.io/github/license/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/blob/main/LICENSE) [![GitHub Issues](https://img.shields.io/github/issues/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/issues) [![GitHub Stars](https://img.shields.io/github/stars/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/stargazers) [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)]()
-
+[![GitHub Release](https://img.shields.io/github/v/release/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/releases) [![GitHub License](https://img.shields.io/github/license/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/blob/main/LICENSE) [![GitHub Stars](https://img.shields.io/github/stars/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/stargazers)
 > **Live combat logging for Blue Protocol: Star Resonance**  
 > **Website:** [bpsr.app](https://bpsr.app/) • **Web Platform:** [resonance-website](https://github.com/resonance-logs/resonance-website)
 
@@ -52,22 +51,24 @@ Resonance Logs is a friendly, cross-platform desktop application designed for **
   - Rich analytics and visualizations
   - Leaderboard competition
   - Class and build comparisons
-  - Community discussions
 
 ---
 
-## 🛠 Tech Stack
+## Images
+![alt text](image-1.png)
+![alt text](image-2.png)
+![alt text](image-4.png)
+![alt text](image-3.png)
+
+---
+
+## Tech Stack
 
 **Core Technologies:**
 [![Svelte](https://img.shields.io/badge/Svelte-4-FF3E00?logo=svelte&style=flat-square)](https://svelte.dev/) [![Tauri](https://img.shields.io/badge/Tauri-2-24C8D8?logo=tauri&style=flat-square)](https://tauri.app/) [![Rust](https://img.shields.io/badge/Rust-1.70+-000000?logo=rust&style=flat-square)](https://www.rust-lang.org/)
 
 ![Tech Stack](image.png)
 
----
-
-## Integration with Resonance Website
-
-Resonance Logs seamlessly integrates with the [Resonance Website](https://github.com/resonance-logs/resonance-website) to provide comprehensive combat log analysis
 
 ---
 
@@ -82,7 +83,6 @@ Resonance Logs seamlessly integrates with the [Resonance Website](https://github
 
 ### Foundation
 - **Built from:** [winjwinj/bpsr-logs](https://github.com/winjwinj/bpsr-logs)
-- **Original inspiration** for combat log analysis
 
 ### Data Resources
 - [PotRooms/StarResonanceData](https://github.com/PotRooms/StarResonanceData) - Blue Protocol game data

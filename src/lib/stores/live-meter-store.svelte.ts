@@ -1,4 +1,4 @@
-/**
+    /**
  * @file This file contains the store for the live meter data.
  * It uses `@tauri-store/svelte` to create persistent stores for the DPS, heal, and tanked player data.
  */
@@ -72,7 +72,6 @@ export function generateMockPlayers(): PlayersWindow {
         { name: "Marksman", spec: "Wildpack" },
         { name: "Shield Knight", spec: "Recovery" },
         { name: "Beat Performer", spec: "Dissonance" },
-        { name: "", spec: "" }
     ];
 
     const playerRows = classes.map((cls, idx) => ({
@@ -99,8 +98,8 @@ export function generateMockPlayers(): PlayersWindow {
 }
 
 // Load mock data on store initialization
-// setTimeout(() => {
-//     setDpsPlayers(generateMockPlayers());
-//     setHealPlayers(generateMockPlayers());
-//     setTankedPlayers(generateMockPlayers());
-// }, 1);
+setTimeout(() => {
+    setDpsPlayers(generateMockPlayers());
+    setHealPlayers(generateMockPlayers());
+    setTankedPlayers(generateMockPlayers());
+}, 1);
