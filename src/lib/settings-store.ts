@@ -59,16 +59,16 @@ const DEFAULT_GENERAL_SETTINGS = {
   showOthersName: "Show Others' Name",
   showYourAbilityScore: true,
   showOthersAbilityScore: true,
-  relativeToTopDPSPlayer: false,
-  relativeToTopDPSSkill: false,
-  relativeToTopHealPlayer: false,
-  relativeToTopHealSkill: false,
+  relativeToTopDPSPlayer: true,
+  relativeToTopDPSSkill: true,
+  relativeToTopHealPlayer: true,
+  relativeToTopHealSkill: true,
   // Tanked specific relative-to-top toggles
-  relativeToTopTankedPlayer: false,
-  relativeToTopTankedSkill: false,
+  relativeToTopTankedPlayer: true,
+  relativeToTopTankedSkill: true,
   shortenAbilityScore: true,
-  shortenDps: false,
-  shortenTps: false,
+  shortenDps: true,
+  shortenTps: true,
   bossOnlyDps: false,
 };
 
@@ -81,6 +81,8 @@ const DEFAULT_SETTINGS = {
     blur: false,
     transparency: false,
     transparentOpacityPercent: 2,
+    // UI: condense header to reduce header height
+    condenseHeader: false,
     // backward compatibility flag used in some places
     transparentMode: false,
   },

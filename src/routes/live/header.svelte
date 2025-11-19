@@ -15,7 +15,6 @@
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
   import CrownIcon from "virtual:icons/lucide/crown";
   import MinimizeIcon from "virtual:icons/lucide/minimize-2";
-  import EyeOffIcon from "virtual:icons/lucide/eye-off";
 
   import { onMount } from "svelte";
   import { page } from "$app/stores";
@@ -124,7 +123,7 @@
   // Use live.general for bossOnlyDps; keep density from accessibility store
   let bossOnlyDpsEnabled = $derived(SETTINGS.live.general.state.bossOnlyDps);
   let density = $derived(SETTINGS.accessibility.state.density ?? "comfortable");
-  let transparentMode = $derived(SETTINGS.accessibility.state.transparency ?? false);
+
   // const {
   //   screenshotDiv,
   // }: {
@@ -168,9 +167,7 @@
     triggerDensityAnimation(next);
   }
 
-  function toggleTransparentMode() {
-    SETTINGS.accessibility.state.transparency = !SETTINGS.accessibility.state.transparency;
-  }
+
 
   async function handleClickthroughToggle() {
     await toggleClickthrough();
@@ -241,14 +238,6 @@
       {@attach tooltip(() => (bossOnlyDpsEnabled ? 'Boss Only Damage Enabled' : 'Enable Boss Only Damage'))}
     >
       <CrownIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
-    </button>
-    <button
-      class="rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200 {transparentMode ? 'text-[oklch(0.65_0.12_280)] bg-[oklch(0.9_0.03_280)]/30 hover:bg-[oklch(0.9_0.03_280)]/50' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-      aria-pressed={transparentMode}
-      onclick={toggleTransparentMode}
-      {@attach tooltip(() => (transparentMode ? 'Transparent Mode Enabled' : 'Enable Transparent Mode'))}
-    >
-      <EyeOffIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
     </button>
     <button
       class="rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200 {densityAnimating ? 'scale-90' : ''} {density !== 'comfortable' ? 'text-[oklch(0.6_0.1_220)] bg-[oklch(0.9_0.02_220)]/30 hover:bg-[oklch(0.9_0.02_220)]/50' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"

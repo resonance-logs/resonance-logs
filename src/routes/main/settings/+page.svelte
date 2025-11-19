@@ -6,7 +6,7 @@
   import Themes from "./themes.svelte";
 
   const settingsTabs = [
-    { id: "themes", label: "Themes" },
+    { id: "themes", label: "Themes & Layout" },
     { id: "live", label: "Live" },
     { id: "history", label: "Past Encounters" },
     { id: "shortcuts", label: "Shortcuts" },
