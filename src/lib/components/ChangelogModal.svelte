@@ -1,12 +1,21 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { marked } from 'marked';
-  import changelogRaw from '../../../../CHANGELOG.md?raw';
+  import changelogRaw from '../../../CHANGELOG.md?raw';
 
   const dispatch = createEventDispatcher();
 
-  // Parse markdown synchronously
-  const html = marked.parse(changelogRaw, { async: false }) as string;
+  let html = $state('');
+
+  onMount(async () => {
+    try {
+      // Parse markdown asynchronously
+      html = await marked.parse(changelogRaw) as string;
+    } catch (err) {
+      console.error('Failed to parse changelog:', err);
+      html = `<pre>${changelogRaw}</pre>`;
+    }
+  });
 
   function close() {
     dispatch('close');
@@ -39,9 +48,15 @@
       </button>
     </div>
     <div class="flex-1 overflow-auto p-6">
-      <div class="space-y-2 prose dark:prose-invert max-w-none">
-        {@html html}
-      </div>
+      {#if html}
+        <div class="space-y-2 prose dark:prose-invert max-w-none">
+          {@html html}
+        </div>
+      {:else}
+        <div class="flex items-center justify-center h-full text-muted-foreground">
+          Loading changelog...
+        </div>
+      {/if}
     </div>
   </div>
 </div>
