@@ -82,7 +82,7 @@ const DEFAULT_SETTINGS = {
     transparency: false,
     transparentOpacityPercent: 2,
     // UI: condense header to reduce header height
-    condenseHeader: false,
+    condenseHeader: "all",
     // backward compatibility flag used in some places
     transparentMode: false,
   },

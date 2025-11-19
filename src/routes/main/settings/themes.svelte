@@ -42,27 +42,20 @@
 
     <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
       <div>
-        <h2 class="text-base font-semibold text-foreground">Condense Header</h2>
-        <p class="text-xs text-muted-foreground mt-1">Reduce live header height for more vertical space.</p>
+        <h2 class="text-base font-semibold text-foreground">Live Meter Display Settings</h2>
       </div>
       <div class="mt-1">
-        <SettingsSwitch
-          bind:checked={SETTINGS.accessibility.state.condenseHeader}
-          label="Condense Header"
-          description={SETTINGS.accessibility.state.condenseHeader ? 'Condensed header enabled' : 'Keep header at normal height'}
+        <SettingsSelect
+          label="Header Size"
+          description="Choose compactness for header rows"
+          bind:selected={SETTINGS.accessibility.state.condenseHeader}
+          values={["full", "one row", "none",]}
         />
-      </div>
-    </div>
-
-    <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-foreground">Live Meter Density</h2>
-        <p class="text-xs text-muted-foreground mt-1">Choose row density for live meters (comfortable / medium / compact).</p>
       </div>
       <div class="mt-1">
         <SettingsSelect
           label="Density"
-          description="Choose compactness for live meter rows"
+          description="Choose compactness for live meter"
           bind:selected={SETTINGS.accessibility.state.density}
           values={["comfortable","medium","compact"]}
         />
