@@ -10,6 +10,9 @@
   import { openUrl } from "@tauri-apps/plugin-opener";
   import { SIDEBAR_ROUTES } from "./routes.svelte";
   import { getVersion } from "@tauri-apps/api/app";
+  import ChangelogModal from '$lib/components/ChangelogModal.svelte';
+  import { SETTINGS } from '$lib/settings-store';
+  import { onMount } from 'svelte';
 
   let { children } = $props();
 
@@ -44,6 +47,32 @@
     }
     return pathname;
   });
+
+  let showChangelog = $state(false);
+  let currentVersion = $state('');
+
+  onMount(async () => {
+    try {
+      const v = await getVersion();
+      currentVersion = v;
+      // Compare persisted last-seen version with current app version
+      if ((SETTINGS.appVersion.state as any).value !== v) {
+        showChangelog = true;
+      }
+    } catch (err) {
+      console.error('Failed to get app version', err);
+    }
+  });
+
+  function handleClose() {
+    // mark changelog as seen for this version
+    try {
+      (SETTINGS.appVersion.state as any).value = currentVersion;
+    } catch (e) {
+      console.error('Failed to set appVersion setting', e);
+    }
+    showChangelog = false;
+  }
 </script>
 
 <div class="flex h-screen flex-col bg-background text-foreground p-3 gap-3">
@@ -52,12 +81,12 @@
     <div class="flex items-center justify-between px-4 py-2.5">
       <div class="flex items-center gap-1">
         {#each Object.entries(SIDEBAR_ROUTES) as [href, route] (route.label)}
-          {#if route.externalUrl}
+          {#if (route as any).externalUrl}
             <button
               type="button"
               class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 h-9 text-muted-foreground hover:text-foreground hover:bg-popover/50"
               title={`Open ${route.label} in browser`}
-              on:click={() => openExternalUrl(route.externalUrl)}
+              onclick={() => openExternalUrl((route as any).externalUrl)}
             >
               <route.icon class="w-4 h-4 shrink-0" />
               <span class="whitespace-nowrap flex items-center gap-1">
@@ -92,6 +121,10 @@
       {@render children()}
     </div>
   </main>
+
+  {#if showChangelog}
+    <ChangelogModal on:close={handleClose} />
+  {/if}
 </div>
 
 <style>

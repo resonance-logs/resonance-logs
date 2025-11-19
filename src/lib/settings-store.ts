@@ -59,16 +59,16 @@ const DEFAULT_GENERAL_SETTINGS = {
   showOthersName: "Show Others' Name",
   showYourAbilityScore: true,
   showOthersAbilityScore: true,
-  relativeToTopDPSPlayer: false,
-  relativeToTopDPSSkill: false,
-  relativeToTopHealPlayer: false,
-  relativeToTopHealSkill: false,
+  relativeToTopDPSPlayer: true,
+  relativeToTopDPSSkill: true,
+  relativeToTopHealPlayer: true,
+  relativeToTopHealSkill: true,
   // Tanked specific relative-to-top toggles
-  relativeToTopTankedPlayer: false,
-  relativeToTopTankedSkill: false,
+  relativeToTopTankedPlayer: true,
+  relativeToTopTankedSkill: true,
   shortenAbilityScore: true,
-  shortenDps: false,
-  shortenTps: false,
+  shortenDps: true,
+  shortenTps: true,
   bossOnlyDps: false,
 };
 
@@ -81,8 +81,12 @@ const DEFAULT_SETTINGS = {
     blur: false,
     transparency: false,
     transparentOpacityPercent: 2,
+    // UI: condense header to reduce header height
+    condenseHeader: "all",
     // backward compatibility flag used in some places
     transparentMode: false,
+    // Clickthrough mode
+    clickthrough: false,
   },
   shortcuts: {
     showLiveMeter: "",
@@ -225,6 +229,8 @@ export const SETTINGS = {
       ),
     },
   },
+  // persisted app metadata (tracks which app version the user last saw)
+  appVersion: new RuneStore('appVersion', { value: '' }, RUNE_STORE_OPTIONS),
 };
 
 // Create flattened settings object for backwards compatibility
@@ -248,6 +254,7 @@ export const settings = {
         skills: SETTINGS.live.tanked.skills.state,
       },
     },
+    appVersion: SETTINGS.appVersion.state,
     history: {
       general: SETTINGS.history.general.state,
       dps: {
