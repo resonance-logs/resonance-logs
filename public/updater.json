@@ -1,11 +1,11 @@
 {
-  "version": "0.12.0",
-  "notes": "",
-  "pub_date": "2025-11-09T04:59:34Z",
+  "version": "0.14.1",
+  "notes": "# Changelog\r\n\r\n\r\nInitial Release. New Changes will be posted on website changelog. Meter auto updates when we release a new one.\r\n",
+  "pub_date": "2025-11-19T23:08:29.474Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1Uwci9qWE5yUWdxc1JUZ0Era0l1dDdMOGlzaVd2aG1ybFhPZHp2b0N2OEhKMHpHdnJET0prcHpsdUdyOGJnb0xKTmNoZEt1Z0htUFNseTI0bnVPSWdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYyNjYzOTY2CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xMi4wX3g2NC1zZXR1cC5leGUKS0p1ZXd3ZGFzWUV0bjg5MndEcVhwQnhyUnpXTjBsdlRGamZUdXZsRWRIZjNxeVh5aUxEMjB1VGw3TjIxNXpHa1FhcWYrZVFVb2Y0U0diTjRHR1B0Q2c9PQo=",
-      "url": "https://supa.i7s.me/storage/v1/object/public/binaries/resonance-logs_0.12.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2VvSXJNWkFMdG9zTllaNW9CZ2FudEFzWTV3ZXcydE1wMW0yRmpOaG5UdldYc0tBaEthVUJFVHFQOGl2THhCb2QvQUhpd2xBb1JhRFRhNlBUTkJ5OVFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNTkzNzAxCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC4xX3g2NC1zZXR1cC5leGUKb0dwRXRseW1vQ0JUVVNJLzJjRUlGcHRaUVJIZTN6SUxTS3pWK3FpSGpYVlFzazJ1dG9ORUFRMUo1NTQxbXl5VWtCMC9jelBtWlhVZFJkcGxjWEpwRFE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.1/resonance-logs_0.14.1_x64-setup.exe"
     }
   }
 }
