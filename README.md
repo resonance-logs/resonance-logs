@@ -32,10 +32,10 @@ Resonance Logs is a friendly, cross-platform desktop application designed for **
 ---
 
 ## Images
-![alt text](image-1.png)
-![alt text](image-2.png)
-![alt text](image-4.png)
-![alt text](image-3.png)
+![alt text](img/image-1.png)
+![alt text](img/image-2.png)
+![alt text](img/image-4.png)
+![alt text](img/image-3.png)
 
 ---
 
@@ -51,7 +51,7 @@ No, feel free to look at our codebase.
 **Core Technologies:**
 [![Svelte](https://img.shields.io/badge/Svelte-4-FF3E00?logo=svelte&style=flat-square)](https://svelte.dev/) [![Tauri](https://img.shields.io/badge/Tauri-2-24C8D8?logo=tauri&style=flat-square)](https://tauri.app/) [![Rust](https://img.shields.io/badge/Rust-1.70+-000000?logo=rust&style=flat-square)](https://www.rust-lang.org/)
 
-![Tech Stack](image.png)
+![Tech Stack](img/image.png)
 
 
 ---
