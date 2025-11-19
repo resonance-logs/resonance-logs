@@ -183,21 +183,21 @@
 >
   <!-- Row 1, Col 1: Version + Timer -->
   <div class="col-start-1 row-start-1 flex items-center overflow-hidden {density === 'comfortable' ? 'gap-4' : 'gap-3'} min-w-0" data-tauri-drag-region>
-    <div class="hidden min-[40rem]:flex items-center gap-2 shrink-0">
+    <div class="flex items-center gap-2 shrink-0">
       <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-sm' : 'text-xs'} font-bold text-foreground tracking-tight leading-none">Resonance Logs</span>
       <span class="{density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-medium text-muted-foreground tracking-tight leading-none">v{#await getVersion()}X.Y.Z{:then version}{version}{/await}</span>
     </div>
   {#if headerInfo.sceneName}
-    <div class="hidden min-[48rem]:block h-4 w-px bg-border shrink-0 opacity-60"></div>
+    <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
     <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-sm' : 'text-xs'} text-muted-foreground font-medium shrink-0 leading-none" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName}</span>
   {/if}
   {#if headerInfo.currentPhase}
-    <div class="hidden min-[48rem]:block h-4 w-px bg-border shrink-0 opacity-60"></div>
+    <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {headerInfo.currentPhase === 'mob' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-purple-500/30 bg-purple-500/10 text-purple-400'} {density === 'comfortable' ? 'text-xs' : 'text-[11px]'}">
       <span class="font-semibold uppercase tracking-wide">{headerInfo.currentPhase === 'mob' ? 'Mob Phase' : 'Boss Phase'}</span>
     </span>
   {/if}
-  <div class="hidden min-[48rem]:block h-4 w-px bg-border shrink-0 opacity-60"></div>
+  <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
     <div class="flex items-center gap-2 shrink-0">
   <span class="{density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-medium text-muted-foreground uppercase tracking-wider leading-none">Timer</span>
   <span class="{density === 'comfortable' ? 'text-lg' : density === 'medium' ? 'text-base' : 'text-sm'} font-bold text-foreground tabular-nums tracking-tight leading-none" {@attach tooltip(() => 'Time Elapsed')}>{formatElapsed(clientElapsedMs)}</span>
@@ -269,7 +269,7 @@
   <!-- Row 2, Col 1: Stats summary + Boss Health -->
   <div class="col-start-1 row-start-2 flex overflow-hidden items-center {density === 'comfortable' ? 'gap-5' : 'gap-4'} min-w-0">
     <!-- Stats -->
-    <div class="hidden min-[32rem]:flex overflow-hidden items-center {density === 'comfortable' ? 'gap-5' : 'gap-4'}">
+    <div class="flex overflow-hidden items-center {density === 'comfortable' ? 'gap-5' : 'gap-4'}">
       <div class="flex items-center gap-2 shrink-0">
         <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage Dealt')}>T.DMG</span>
         <span class="{density === 'comfortable' ? 'text-lg' : density === 'medium' ? 'text-base' : 'text-sm'} font-bold text-foreground" {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span>
@@ -281,11 +281,11 @@
     </div>
 
     <!-- Divider -->
-  <div class="hidden min-[48rem]:block h-5 w-px bg-border shrink-0 opacity-60"></div>
+  <div class=" h-5 w-px bg-border shrink-0 opacity-60"></div>
 
     <!-- Boss Health -->
     <div class="flex items-center gap-2 shrink-0">
-  <span class="hidden min-[48rem]:block {density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage per Second')}>BOSS</span>
+  <span class=" {density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage per Second')}>BOSS</span>
       <BossHealth />
     </div>
   </div>
@@ -309,7 +309,3 @@
     >TANKED</button>
   </div>
 </header>
-
-<style>
-  /* removed bespoke icon toggle styles in favor of tailwind utility classes */
-</style>
