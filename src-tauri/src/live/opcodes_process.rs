@@ -659,10 +659,12 @@ pub fn process_aoi_sync_delta(
                 });
             }
 
-            // Insert damage event
-            let is_boss = defender_entity.is_boss();
-            let monster_name_for_event =
-                if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
+            // Only record damage/taken stats if this event is not a heal
+            let is_heal_event = sync_damage_info.r#type.unwrap_or(0) == EDamageType::Heal as i32;
+            if !is_heal_event {
+                // Insert damage event
+                let is_boss = defender_entity.is_boss();
+                let monster_name_for_event = if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
                     defender_entity.monster_name_packet.clone().or_else(|| {
                         if defender_entity.name.is_empty() {
                             None
@@ -673,47 +675,48 @@ pub fn process_aoi_sync_delta(
                 } else {
                     None
                 };
-            enqueue(DbTask::InsertDamageEvent {
-                timestamp_ms: timestamp_ms as i64,
-                attacker_id: attacker_uid,
-                defender_id: Some(target_uid),
-                monster_name: monster_name_for_event,
-                skill_id: Some(skill_uid),
-                value: effective_value as i64,
-                is_crit,
-                is_lucky,
-                hp_loss: hp_loss as i64,
-                shield_loss: shield_loss as i64,
-                defender_max_hp: defender_entity
-                    .attributes
-                    .get(&AttrType::MaxHp)
-                    .and_then(|v| v.as_int()),
-                is_boss,
-                attempt_index: Some(encounter.current_attempt_index),
-            });
+                enqueue(DbTask::InsertDamageEvent {
+                    timestamp_ms: timestamp_ms as i64,
+                    attacker_id: attacker_uid,
+                    defender_id: Some(target_uid),
+                    monster_name: monster_name_for_event,
+                    skill_id: Some(skill_uid),
+                    value: effective_value as i64,
+                    is_crit,
+                    is_lucky,
+                    hp_loss: hp_loss as i64,
+                    shield_loss: shield_loss as i64,
+                    defender_max_hp: defender_entity
+                        .attributes
+                        .get(&AttrType::MaxHp)
+                        .and_then(|v| v.as_int()),
+                    is_boss,
+                    attempt_index: Some(encounter.current_attempt_index),
+                });
 
-            // Taken stats (only when attacker is not a player)
-            if attacker_entity_type_copy != EEntityType::EntChar {
-                let taken_skill = defender_entity
-                    .skill_uid_to_taken_skill
-                    .entry(skill_uid)
-                    .or_insert_with(|| Skill::default());
-                if is_crit {
-                    defender_entity.crit_hits_taken += 1;
-                    defender_entity.crit_total_taken += effective_value;
-                    taken_skill.crit_hits += 1;
-                    taken_skill.crit_total_value += effective_value;
+                // Taken stats (only when attacker is not a player)
+                if attacker_entity_type_copy != EEntityType::EntChar {
+                    let taken_skill = defender_entity
+                        .skill_uid_to_taken_skill
+                        .entry(skill_uid)
+                        .or_insert_with(|| Skill::default());
+                    if is_crit {
+                        defender_entity.crit_hits_taken += 1;
+                        defender_entity.crit_total_taken += effective_value;
+                        taken_skill.crit_hits += 1;
+                        taken_skill.crit_total_value += effective_value;
+                    }
+                    if is_lucky {
+                        defender_entity.lucky_hits_taken += 1;
+                        defender_entity.lucky_total_taken += effective_value;
+                        taken_skill.lucky_hits += 1;
+                        taken_skill.lucky_total_value += effective_value;
+                    }
+                    defender_entity.hits_taken += 1;
+                    defender_entity.total_taken += effective_value;
+                    taken_skill.hits += 1;
+                    taken_skill.total_value += effective_value;
                 }
-                if is_lucky {
-                    defender_entity.lucky_hits_taken += 1;
-                    defender_entity.lucky_total_taken += effective_value;
-                    taken_skill.lucky_hits += 1;
-                    taken_skill.lucky_total_value += effective_value;
-                }
-                defender_entity.hits_taken += 1;
-                defender_entity.total_taken += effective_value;
-                taken_skill.hits += 1;
-                taken_skill.total_value += effective_value;
             }
 
             if died {
