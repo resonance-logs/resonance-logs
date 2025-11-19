@@ -51,9 +51,9 @@
   <table class="w-full border-collapse overflow-hidden">
     <thead>
       <tr class="bg-popover/60">
-  <th class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-left font-medium uppercase tracking-wide text-muted-foreground">Player</th>
+  <th data-tauri-drag-region class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-left font-medium uppercase tracking-wide text-muted-foreground">Player</th>
         {#each visiblePlayerColumns as col (col.key)}
-          <th class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-right font-medium uppercase tracking-wide text-muted-foreground">{col.header}</th>
+          <th data-tauri-drag-region class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-right font-medium uppercase tracking-wide text-muted-foreground">{col.header}</th>
         {/each}
       </tr>
     </thead>

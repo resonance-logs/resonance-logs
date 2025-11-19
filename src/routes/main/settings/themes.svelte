@@ -2,9 +2,16 @@
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import SettingsSelect from "./settings-select.svelte";
   import SettingsSlider from "./settings-slider.svelte";
+  import SettingsSwitch from "./settings-switch.svelte";
   import { SETTINGS, AVAILABLE_THEMES } from "$lib/settings-store";
+  import { setClickthrough } from "$lib/utils.svelte";
 
   const SETTINGS_CATEGORY = "themes";
+
+  // Sync clickthrough state with the setting
+  $effect(() => {
+    setClickthrough(SETTINGS.accessibility.state.clickthrough);
+  });
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
@@ -20,32 +27,51 @@
         bind:selected={SETTINGS.accessibility.state["theme"]}
         values={AVAILABLE_THEMES}
       />
-      <div class="mt-3">
+    </div>
+
+    <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
+      <div>
+        <h2 class="text-base font-semibold text-foreground">Transparency Mode</h2>
+        <p class="text-xs text-muted-foreground mt-1">Enable transparent meter surfaces and adjust opacity.</p>
+      </div>
+      <div class="mt-1 space-y-2">
+        <SettingsSwitch
+          bind:checked={SETTINGS.accessibility.state.transparency}
+          label="Transparent Mode"
+          description={SETTINGS.accessibility.state.transparency ? 'Transparent Mode Enabled' : 'Enable Transparent Mode'}
+        />
         <SettingsSlider bind:value={SETTINGS.accessibility.state["transparentOpacityPercent"]} min={0} max={100} step={1} label="Transparency Opacity" description="Lower values make the meter more see-through. 0% is fully transparent." unit="%" />
       </div>
     </div>
 
-    <!-- Live Preview Card (avoid primary/accent text as requested) -->
-    <div class="rounded-lg border border-border/50 bg-card/30 p-4">
-      <div class="text-sm text-muted-foreground">Preview</div>
-      <div class="mt-2 grid grid-cols-2 gap-3">
-        <div class="rounded-md p-3 bg-background border border-border">
-          <div class="text-xs text-muted-foreground">Background</div>
-          <div class="text-sm text-foreground">Text on background</div>
-        </div>
-        <div class="rounded-md p-3 bg-card border border-border">
-          <div class="text-xs text-muted-foreground">Card</div>
-          <div class="text-sm text-card-foreground">Card foreground</div>
-        </div>
-        <div class="rounded-md p-3 bg-muted/40 border border-border/60">
-          <div class="text-xs text-muted-foreground">Muted Surface</div>
-          <div class="text-sm text-foreground">Muted foreground</div>
-        </div>
-        <div class="rounded-md p-3 bg-popover/40 border border-border/60">
-          <div class="text-xs text-muted-foreground">Popover Surface</div>
-          <div class="text-sm text-foreground">Popover foreground</div>
-        </div>
+    <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
+      <div>
+        <h2 class="text-base font-semibold text-foreground">Live Meter Display Settings</h2>
+      </div>
+      <div class="mt-1">
+        <SettingsSelect
+          label="Header Size"
+          description="Choose compactness for header rows"
+          bind:selected={SETTINGS.accessibility.state.condenseHeader}
+          values={["full", "one row", "none",]}
+        />
+      </div>
+      <div class="mt-1">
+        <SettingsSelect
+          label="Density"
+          description="Choose compactness for live meter"
+          bind:selected={SETTINGS.accessibility.state.density}
+          values={["comfortable","medium","compact"]}
+        />
+      </div>
+      <div class="mt-1">
+        <SettingsSwitch
+          bind:checked={SETTINGS.accessibility.state.clickthrough}
+          label="Clickthrough Mode"
+          description={SETTINGS.accessibility.state.clickthrough ? 'Clickthrough Enabled - Mouse clicks pass through window' : 'Enable Clickthrough Mode'}
+        />
       </div>
     </div>
+
   </div>
 </Tabs.Content>

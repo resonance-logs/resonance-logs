@@ -22,6 +22,7 @@
 
   import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores } from "$lib/stores/live-meter-store.svelte";
   import Header from "./header.svelte";
+  import HeaderOneRow from "./header-one-row.svelte"
 
   import NotificationToast from "./notification-toast.svelte";
 
@@ -34,6 +35,8 @@
   let notificationToast: NotificationToast;
   let mainElement: HTMLElement | undefined = undefined;
   let unlisten: (() => void) | null = null;
+  // Prevent concurrent setupEventListeners runs which can attach duplicate listeners
+  let listenersSetupInProgress = false;
   let lastEventTime = Date.now();
   let hadAnyEvent = false; // becomes true after the first live event arrives
   // Persist last known pause state across listener reconnections so we don't
@@ -46,12 +49,13 @@
   const DISCONNECT_THRESHOLD = 5000;
 
   async function setupEventListeners() {
-    if (isReconnecting) return;
+    if (isReconnecting || listenersSetupInProgress) return;
+    listenersSetupInProgress = true;
 
-    // Clean up existing listeners before setting up new ones
+    // If listeners are already attached, skip setup to avoid duplicates.
     if (unlisten) {
-      unlisten();
-      unlisten = null;
+      listenersSetupInProgress = false;
+      return;
     }
 
     try {
@@ -126,17 +130,19 @@
 
       // Combine all unlisten functions
       unlisten = () => {
-        playersUnlisten();
-        resetUnlisten();
-        encounterUnlisten();
-        bossDeathUnlisten();
-        sceneChangeUnlisten();
-        pauseUnlisten();
+        try { playersUnlisten(); } catch {}
+        try { resetUnlisten(); } catch {}
+        try { encounterUnlisten(); } catch {}
+        try { bossDeathUnlisten(); } catch {}
+        try { sceneChangeUnlisten(); } catch {}
+        try { pauseUnlisten(); } catch {}
       };
 
       console.log("Event listeners set up for live meter data");
+      listenersSetupInProgress = false;
     } catch (e) {
       console.error("Failed to set up event listeners:", e);
+      listenersSetupInProgress = false;
       isReconnecting = true;
       setTimeout(() => {
         isReconnecting = false;
@@ -246,8 +252,12 @@
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-  <div class="flex h-screen flex-col bg-background text-[13px] text-foreground p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]">
-  <Header />
+  <div class="flex h-screen flex-col bg-background text-[13px] text-foreground p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]" data-tauri-drag-region>
+    {#if SETTINGS.accessibility.state.condenseHeader == "full"}
+      <Header />
+    {:else if SETTINGS.accessibility.state.condenseHeader == "one row"}
+      <HeaderOneRow/>
+    {/if}
     <main
     bind:this={mainElement}
     class="flex-1 overflow-y-auto gap-4 rounded-lg bg-card/20 border border-border/40"

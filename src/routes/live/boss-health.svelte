@@ -23,6 +23,7 @@
     ],
     sceneId: null,
     sceneName: null,
+    currentPhase: null,
   });
 
   // Track compact mode
@@ -32,7 +33,7 @@
     let encounterUnlisten: (() => void) | null = null;
     let resetUnlisten: (() => void) | null = null;
 
-    onEncounterUpdate(() => {
+    onEncounterUpdate((event) => {
       headerInfo = event.payload.headerInfo;
     }).then((fn) => {
       encounterUnlisten = fn;
