@@ -227,6 +227,8 @@ export const SETTINGS = {
       ),
     },
   },
+  // persisted app metadata (tracks which app version the user last saw)
+  appVersion: new RuneStore('appVersion', { value: '' }, RUNE_STORE_OPTIONS),
 };
 
 // Create flattened settings object for backwards compatibility
@@ -250,6 +252,7 @@ export const settings = {
         skills: SETTINGS.live.tanked.skills.state,
       },
     },
+    appVersion: SETTINGS.appVersion.state,
     history: {
       general: SETTINGS.history.general.state,
       dps: {

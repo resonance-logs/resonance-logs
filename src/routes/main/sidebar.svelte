@@ -32,8 +32,8 @@
             <Sidebar.MenuItem>
               <Sidebar.MenuButton>
                 {#snippet child({ props })}
-                  {#if route.externalUrl}
-                    <button type="button" {...props} on:click={() => openExternalUrl(route.externalUrl)}>
+                  {#if (route as any).externalUrl}
+                    <button type="button" {...props} onclick={() => openExternalUrl((route as any).externalUrl)}>
                       <route.icon />
                       <span class="inline-flex items-center gap-1">
                         {route.label}
