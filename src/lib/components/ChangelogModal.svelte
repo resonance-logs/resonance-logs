@@ -1,7 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { marked } from 'marked';
+  import changelogRaw from '../../../../CHANGELOG.md?raw';
 
   const dispatch = createEventDispatcher();
+
+  // Parse markdown synchronously
+  const html = marked.parse(changelogRaw, { async: false }) as string;
 
   function close() {
     dispatch('close');
@@ -10,7 +15,7 @@
 
 <div class="fixed inset-0 z-50 flex items-center justify-center">
   <!-- Backdrop -->
-  <button    
+  <button
     class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
     onclick={close}
     type="button"
@@ -34,7 +39,8 @@
       </button>
     </div>
     <div class="flex-1 overflow-auto p-6">
-      <div class="space-y-2">
+      <div class="space-y-2 prose dark:prose-invert max-w-none">
+        {@html html}
       </div>
     </div>
   </div>
