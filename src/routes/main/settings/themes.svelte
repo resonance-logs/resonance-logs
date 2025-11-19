@@ -4,10 +4,14 @@
   import SettingsSlider from "./settings-slider.svelte";
   import SettingsSwitch from "./settings-switch.svelte";
   import { SETTINGS, AVAILABLE_THEMES } from "$lib/settings-store";
+  import { setClickthrough } from "$lib/utils.svelte";
 
   const SETTINGS_CATEGORY = "themes";
 
-  // bind directly to `SETTINGS.accessibility.state.transparency` via SettingsSwitch
+  // Sync clickthrough state with the setting
+  $effect(() => {
+    setClickthrough(SETTINGS.accessibility.state.clickthrough);
+  });
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
@@ -58,6 +62,13 @@
           description="Choose compactness for live meter"
           bind:selected={SETTINGS.accessibility.state.density}
           values={["comfortable","medium","compact"]}
+        />
+      </div>
+      <div class="mt-1">
+        <SettingsSwitch
+          bind:checked={SETTINGS.accessibility.state.clickthrough}
+          label="Clickthrough Mode"
+          description={SETTINGS.accessibility.state.clickthrough ? 'Clickthrough Enabled - Mouse clicks pass through window' : 'Enable Clickthrough Mode'}
         />
       </div>
     </div>

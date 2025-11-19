@@ -85,6 +85,8 @@ const DEFAULT_SETTINGS = {
     condenseHeader: "all",
     // backward compatibility flag used in some places
     transparentMode: false,
+    // Clickthrough mode
+    clickthrough: false,
   },
   shortcuts: {
     showLiveMeter: "",

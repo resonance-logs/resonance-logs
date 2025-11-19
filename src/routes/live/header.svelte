@@ -10,7 +10,6 @@
   import PauseIcon from "virtual:icons/lucide/pause";
   import PlayIcon from "virtual:icons/lucide/play";
   import MinusIcon from "virtual:icons/lucide/minus";
-  import MousePointerClickIcon from "virtual:icons/lucide/mouse-pointer-click";
   import SettingsIcon from "virtual:icons/lucide/settings";
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
   import CrownIcon from "virtual:icons/lucide/crown";
@@ -23,7 +22,7 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { onEncounterUpdate, onResetEncounter, resetEncounter, togglePauseEncounter, setBossOnlyDps, type HeaderInfo } from "$lib/api";
   // import { takeScreenshot, tooltip } from "$lib/utils.svelte";
-  import { tooltip, toggleClickthrough } from "$lib/utils.svelte";
+  import { tooltip } from "$lib/utils.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
   import { SETTINGS } from "$lib/settings-store";
@@ -167,12 +166,6 @@
     triggerDensityAnimation(next);
   }
 
-
-
-  async function handleClickthroughToggle() {
-    await toggleClickthrough();
-  }
-
     // When reset encounter button is pressed -> reset boss hp bar info
   function handleResetEncounter() {
     resetTimer();
@@ -248,13 +241,6 @@
       {@attach tooltip(() => density === 'comfortable' ? 'Density: Comfortable' : density === 'medium' ? 'Density: Medium' : 'Density: Compact')}
     >
       <MinimizeIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
-    </button>
-    <button
-      class="rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-popover/60"
-      onclick={handleClickthroughToggle}
-      {@attach tooltip(() => 'Toggle Clickthrough Mode')}
-    >
-      <MousePointerClickIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
     </button>
     <div class="h-5 w-px bg-neutral-700/60"></div>
     <!-- <button
