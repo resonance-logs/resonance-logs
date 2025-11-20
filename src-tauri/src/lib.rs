@@ -81,6 +81,7 @@ pub fn run() {
     let tauri_builder = tauri::Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
             info!("starting app v{}", app.package_info().version);
@@ -89,8 +90,8 @@ pub fn run() {
 
             // Check app updates
             // https://v2.tauri.app/plugin/updater/#checking-for-updates
-            // Only run updater checks on Windows release builds (automatic apply)
-            #[cfg(all(windows, not(debug_assertions)))]
+            // Only run updater checks on Windows builds (automatic apply)
+            #[cfg(windows)]
             {
                 // Unload driver to avoid file handle conflicts during update
                 unload_and_remove_windivert();
@@ -245,11 +246,11 @@ fn run_command_silently(cmd: &mut Command) -> std::io::Result<std::process::Exit
 }
 
 // Updater helper: checks for updates and downloads+installs them automatically.
-// This runs only on Windows release builds (guarded where it is invoked).
-#[cfg(all(windows, not(debug_assertions)))]
+// This runs only on Windows builds (guarded where it is invoked).
+#[cfg(windows)]
 use tauri_plugin_updater::UpdaterExt;
 
-#[cfg(all(windows, not(debug_assertions)))]
+#[cfg(windows)]
 async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     // If an update is available, download and install it, then restart the app.
     if let Some(update) = app.updater()?.check().await? {
