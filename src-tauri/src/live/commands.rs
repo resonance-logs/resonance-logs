@@ -284,11 +284,14 @@ pub async fn copy_sync_container_data(
 pub async fn reset_encounter(
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<(), String> {
-    // Use the centralized state event handler so that the EndEncounter DB task
-    // is enqueued and all side-effects (emit events, clear subscriptions) are
-    // handled consistently.
-    state_manager.handle_event(StateEvent::ResetEncounter).await;
-    info!("encounter reset via command");
+    let state_manager = state_manager.inner().clone();
+    tauri::async_runtime::spawn(async move {
+        // Use the centralized state event handler so that the EndEncounter DB task
+        // is enqueued and all side-effects (emit events, clear subscriptions) are
+        // handled consistently.
+        state_manager.handle_event(StateEvent::ResetEncounter).await;
+        info!("encounter reset via command");
+    });
     Ok(())
 }
 
@@ -306,13 +309,16 @@ pub async fn reset_encounter(
 pub async fn toggle_pause_encounter(
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<(), String> {
-    // Read current paused state and delegate to centralized handler which
-    // will update the state and emit events as appropriate
-    let is_paused = state_manager
-        .with_state(|state| state.encounter.is_encounter_paused)
-        .await;
-    state_manager
-        .handle_event(StateEvent::PauseEncounter(!is_paused))
-        .await;
+    let state_manager = state_manager.inner().clone();
+    tauri::async_runtime::spawn(async move {
+        // Read current paused state and delegate to centralized handler which
+        // will update the state and emit events as appropriate.
+        let is_paused = state_manager
+            .with_state(|state| state.encounter.is_encounter_paused)
+            .await;
+        state_manager
+            .handle_event(StateEvent::PauseEncounter(!is_paused))
+            .await;
+    });
     Ok(())
 }
