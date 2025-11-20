@@ -57,7 +57,7 @@
             "active": true,
             "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI5MEMwMEVCRjJDNDMyN0MKUldSOE1zVHk2d0FNS1Jlb0ZaUTdvQml4eFZOelZ6ZVU5T2lJT2t1VWVKcSs5L21oSFpWcitxb3IK",
             "endpoints": [
-                "https://github.com/resonance-logs/resonance-logs/releases/latest/download/updater.json"
+                "https://github.com/resonance-logs/resonance-logs/releases/latest/download/latest.json"
             ],
             "dialog": false,
             "windows": {
