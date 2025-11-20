@@ -1,0 +1,19 @@
+{
+  "version": "0.14.3",
+  "notes": "# Changelog\r\n\r\n\r\nInitial Release. New Changes will be posted on website changelog. Meter auto updates when we release a new one.\r\n",
+  "pub_date": "2025-11-20T23:34:39.095Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1pndzR5VVJUREVWUGUzdWd1d0xDOEJXRUowNFVCcTFuUk5MNkRmblJxbUhESzJwZVhQbVNxZDRUempBT2ZrUDhiQjA0aVJ5amZqVTNPN0FJU1c5NkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjgxNjY2CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC4zX3g2NF9lbi1VUy5tc2kKUkJpQlY3S0M4bUR5azZJcm5SZS82WVN0ZFpaRWRRV1RCUGZhZEtkaFJmUmZ2SXhsZXF4cW9LaktrWVpuV1VtUG55TjFIcUpvVFRnaVZyWlhiSGEzQ1E9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.3/resonance-logs_0.14.3_x64_en-US.msi"
+    },
+    "windows-x86_64-msi": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1pndzR5VVJUREVWUGUzdWd1d0xDOEJXRUowNFVCcTFuUk5MNkRmblJxbUhESzJwZVhQbVNxZDRUempBT2ZrUDhiQjA0aVJ5amZqVTNPN0FJU1c5NkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjgxNjY2CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC4zX3g2NF9lbi1VUy5tc2kKUkJpQlY3S0M4bUR5azZJcm5SZS82WVN0ZFpaRWRRV1RCUGZhZEtkaFJmUmZ2SXhsZXF4cW9LaktrWVpuV1VtUG55TjFIcUpvVFRnaVZyWlhiSGEzQ1E9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.3/resonance-logs_0.14.3_x64_en-US.msi"
+    },
+    "windows-x86_64-nsis": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dEc2ltNFc3M0Z0V0N0VWlLSUxVdlRJOEVVWmQrZmtIUWYva3hMWXduZ1JYQWd6U054NGtDeDg3d2d5bmpnU0pWVTJ0b3Vyb0ZCSFF5TWt6bnhBWFFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjgxNjY2CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC4zX3g2NC1zZXR1cC5leGUKR1dNa3A2UGF5MmcrUDA5Ri9JUStPYVI1cHB3VWF4MVhCaWo3MldWZkUyVmtTYXVOWW5jT2RMc2Zudk5VT0xYTkpIQTB3U2twMnM0ZHlwTnBvTnk5RFE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.3/resonance-logs_0.14.3_x64-setup.exe"
+    }
+  }
+}
