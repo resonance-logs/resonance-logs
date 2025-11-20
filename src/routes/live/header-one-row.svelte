@@ -9,7 +9,7 @@
   import CrownIcon from "virtual:icons/lucide/crown";
 
   import { onMount } from "svelte";
-  import { onEncounterUpdate, onResetEncounter, togglePauseEncounter, setBossOnlyDps, type HeaderInfo } from "$lib/api";
+  import { onEncounterUpdate, onResetEncounter, togglePauseEncounter, setBossOnlyDps, resetEncounter, type HeaderInfo } from "$lib/api";
   import { tooltip } from "$lib/utils.svelte";
   import { SETTINGS } from "$lib/settings-store";
 
@@ -114,7 +114,12 @@
     void setBossOnlyDps(nextValue);
   }
 
-    // reset handler intentionally removed for one-row header (button disabled)
+  // When reset encounter button is pressed -> reset state and notify backend
+  function handleResetEncounter() {
+    resetTimer();
+    isEncounterPaused = false;
+    void resetEncounter();
+  }
 
 </script>
 
@@ -136,10 +141,10 @@
   </div>
   <div>
     <button
-      class="text-muted-foreground rounded-lg transition-all duration-200 pointer-events-none opacity-50"
-      disabled aria-disabled="true"
-      title="Reset disabled"
-      {@attach tooltip(() => 'Reset Encounter (disabled)')}
+      class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200"
+      onclick={handleResetEncounter}
+      aria-label="Reset encounter"
+      {@attach tooltip(() => 'Reset Encounter')}
     >
       <RefreshCwIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'}/>
     </button>
