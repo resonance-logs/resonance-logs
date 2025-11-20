@@ -83,37 +83,55 @@ jobs:
           APP_VERSION: ${{ steps.tauri.outputs.appVersion }}
         with:
           script: |
-            const tag = process.env.APP_VERSION ? `v${process.env.APP_VERSION}` : process.env.GITHUB_REF?.replace('refs/tags/', '');
-            if (!tag) {
+            const refTag = process.env.GITHUB_REF?.replace('refs/tags/', '');
+            const versionTag = process.env.APP_VERSION ? `v${process.env.APP_VERSION}` : undefined;
+
+            // Try a few common tag shapes to match whatever was pushed
+            const candidates = Array.from(new Set([
+              refTag,
+              versionTag,
+              versionTag?.replace(/^v/, ''),
+              refTag && !refTag.startsWith('v') ? `v${refTag}` : undefined,
+              refTag?.startsWith('v') ? refTag.slice(1) : undefined,
+            ].filter(Boolean)));
+
+            if (candidates.length === 0) {
               core.warning('No tag detected, skipping publish step.');
               return;
             }
 
-            try {
-              const rel = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag,
-              });
-
-              if (rel.data.draft) {
-                await github.rest.repos.updateRelease({
+            let release;
+            for (const tag of candidates) {
+              try {
+                const rel = await github.rest.repos.getReleaseByTag({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  release_id: rel.data.id,
-                  draft: false,
-                  make_latest: 'true',
+                  tag,
                 });
-                core.info(`Published release for ${tag}`);
-              } else {
-                core.info(`Release for ${tag} already published`);
+                release = { rel, tag };
+                break;
+              } catch (error) {
+                if (error.status !== 404) throw error;
               }
-            } catch (error) {
-              if (error.status === 404) {
-                core.warning(`Release for ${tag} not found; nothing to publish.`);
-              } else {
-                throw error;
-              }
+            }
+
+            if (!release) {
+              core.warning(`Release not found for tags: ${candidates.join(', ')}`);
+              return;
+            }
+
+            const { rel, tag } = release;
+            if (rel.data.draft) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: rel.data.id,
+                draft: false,
+                make_latest: 'true',
+              });
+              core.info(`Published release for ${tag}`);
+            } else {
+              core.info(`Release for ${tag} already published`);
             }
 
       - name: Upload Release Artifacts
