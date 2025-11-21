@@ -258,6 +258,11 @@ pub enum DbTask {
         defeated_bosses: Option<Vec<String>>,
     },
 
+    /// A task to end any encounters that never received an explicit end.
+    EndAllActiveEncounters {
+        ended_at_ms: i64,
+    },
+
     /// A task to insert or update an entity.
     UpsertEntity {
         entity_id: i64,
@@ -370,6 +375,106 @@ pub fn enqueue(task: DbTask) {
     }
 }
 
+fn finalize_encounter(
+    conn: &mut SqliteConnection,
+    encounter_id: i32,
+    ended_at_ms: i64,
+    defeated_bosses: Option<Vec<String>>,
+) -> Result<(), String> {
+    use sch::encounters::dsl as e;
+
+    diesel::update(e::encounters.filter(e::id.eq(encounter_id)))
+        .set(e::ended_at_ms.eq(ended_at_ms))
+        .execute(conn)
+        .map_err(|er| er.to_string())?;
+
+    let started_at_ms: i64 = e::encounters
+        .filter(e::id.eq(encounter_id))
+        .select(e::started_at_ms)
+        .first::<i64>(conn)
+        .map_err(|er| er.to_string())?;
+
+    let mut duration_secs = 1.0_f64;
+    if ended_at_ms > started_at_ms {
+        let computed = ((ended_at_ms - started_at_ms) as f64) / 1000.0;
+        if computed > 1.0 {
+            duration_secs = computed;
+        }
+    }
+
+    diesel::sql_query(
+        "UPDATE actor_encounter_stats
+         SET duration = ?2,
+             dps = CASE WHEN ?2 > 0 THEN damage_dealt * 1.0 / ?2 ELSE 0 END
+         WHERE encounter_id = ?1 AND is_player = 1",
+    )
+    .bind::<diesel::sql_types::Integer, _>(encounter_id)
+    .bind::<diesel::sql_types::Double, _>(duration_secs)
+    .execute(conn)
+    .map_err(|er| er.to_string())?;
+
+    diesel::update(e::encounters.filter(e::id.eq(encounter_id)))
+        .set((
+            e::duration.eq(duration_secs),
+            e::ended_at_ms.eq(ended_at_ms),
+        ))
+        .execute(conn)
+        .map_err(|er| er.to_string())?;
+
+    // Update snapshot fields from entities table for any NULL values
+    // This ensures we capture the final state at encounter end
+    diesel::sql_query(
+        "UPDATE actor_encounter_stats
+         SET name = COALESCE(NULLIF(name, ''), (SELECT name FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
+            class_id = COALESCE(NULLIF(class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
+            class_spec = COALESCE(NULLIF(class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
+             ability_score = COALESCE(NULLIF(ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
+             level = COALESCE(NULLIF(level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
+             attributes = COALESCE(NULLIF(attributes, ''), (SELECT attributes FROM entities WHERE entity_id = actor_encounter_stats.actor_id))
+         WHERE encounter_id = ?1
+          AND (name IS NULL
+               OR name = ''
+               OR class_id IS NULL
+               OR class_id = 0
+               OR class_spec IS NULL
+               OR class_spec = 0
+               OR ability_score IS NULL
+               OR ability_score = 0
+               OR level IS NULL
+               OR level = 0
+               OR attributes IS NULL
+               OR attributes = '')"
+    )
+    .bind::<diesel::sql_types::Integer, _>(encounter_id)
+    .execute(conn)
+    .map_err(|er| er.to_string())?;
+
+    // Aggregate damage events into damage_skill_stats and encounter_bosses
+    materialize_damage_skill_stats(conn, encounter_id)?;
+    materialize_encounter_bosses(conn, encounter_id)?;
+
+    // If any defeated boss names were provided, mark them in encounter_bosses
+    if let Some(names) = defeated_bosses {
+        for name in names {
+            diesel::sql_query(
+                "UPDATE encounter_bosses SET is_defeated = 1 WHERE encounter_id = ?1 AND monster_name = ?2",
+            )
+            .bind::<diesel::sql_types::Integer, _>(encounter_id)
+            .bind::<diesel::sql_types::Text, _>(&name)
+            .execute(conn)
+            .ok();
+        }
+    }
+
+    // Aggregate heal events into heal_skill_stats
+    materialize_heal_skill_stats(conn, encounter_id)?;
+
+    // Delete raw events for this encounter to save space
+    prune_encounter_events(conn, encounter_id)?;
+
+    Ok(())
+}
+
 /// Handles a single database task.
 ///
 /// # Arguments
@@ -423,96 +528,22 @@ fn handle_task(
             defeated_bosses,
         } => {
             if let Some(id) = current_encounter_id.take() {
-                use sch::encounters::dsl as e;
-                diesel::update(e::encounters.filter(e::id.eq(id)))
-                    .set(e::ended_at_ms.eq(ended_at_ms))
-                    .execute(conn)
-                    .map_err(|er| er.to_string())?;
-
-                let started_at_ms: i64 = e::encounters
-                    .filter(e::id.eq(id))
-                    .select(e::started_at_ms)
-                    .first::<i64>(conn)
-                    .map_err(|er| er.to_string())?;
-
-                let mut duration_secs = 1.0_f64;
-                if ended_at_ms > started_at_ms {
-                    let computed = ((ended_at_ms - started_at_ms) as f64) / 1000.0;
-                    if computed > 1.0 {
-                        duration_secs = computed;
-                    }
-                }
-
-                diesel::sql_query(
-                    "UPDATE actor_encounter_stats
-                     SET duration = ?2,
-                         dps = CASE WHEN ?2 > 0 THEN damage_dealt * 1.0 / ?2 ELSE 0 END
-                     WHERE encounter_id = ?1 AND is_player = 1",
-                )
-                .bind::<diesel::sql_types::Integer, _>(id)
-                .bind::<diesel::sql_types::Double, _>(duration_secs)
-                .execute(conn)
-                .map_err(|er| er.to_string())?;
-
-                diesel::update(e::encounters.filter(e::id.eq(id)))
-                    .set((
-                        e::duration.eq(duration_secs),
-                        e::ended_at_ms.eq(ended_at_ms),
-                    ))
-                    .execute(conn)
-                    .map_err(|er| er.to_string())?;
-
-                // Update snapshot fields from entities table for any NULL values
-                // This ensures we capture the final state at encounter end
-                diesel::sql_query(
-                    "UPDATE actor_encounter_stats
-                     SET name = COALESCE(NULLIF(name, ''), (SELECT name FROM entities WHERE entity_id = actor_encounter_stats.actor_id)),
-                        class_id = COALESCE(NULLIF(class_id, 0), NULLIF((SELECT class_id FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
-                        class_spec = COALESCE(NULLIF(class_spec, 0), NULLIF((SELECT class_spec FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
-                         ability_score = COALESCE(NULLIF(ability_score, 0), NULLIF((SELECT ability_score FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
-                         level = COALESCE(NULLIF(level, 0), NULLIF((SELECT level FROM entities WHERE entity_id = actor_encounter_stats.actor_id), 0)),
-                         attributes = COALESCE(NULLIF(attributes, ''), (SELECT attributes FROM entities WHERE entity_id = actor_encounter_stats.actor_id))
-                     WHERE encounter_id = ?1
-                      AND (name IS NULL
-                           OR name = ''
-                           OR class_id IS NULL
-                           OR class_id = 0
-                           OR class_spec IS NULL
-                           OR class_spec = 0
-                           OR ability_score IS NULL
-                           OR ability_score = 0
-                           OR level IS NULL
-                           OR level = 0
-                           OR attributes IS NULL
-                           OR attributes = '')"
-                )
-                .bind::<diesel::sql_types::Integer, _>(id)
-                .execute(conn)
-                .map_err(|er| er.to_string())?;
-
-                // Aggregate damage events into damage_skill_stats and encounter_bosses
-                materialize_damage_skill_stats(conn, id)?;
-                materialize_encounter_bosses(conn, id)?;
-
-                // If any defeated boss names were provided, mark them in encounter_bosses
-                if let Some(names) = defeated_bosses {
-                    for name in names {
-                        diesel::sql_query(
-                            "UPDATE encounter_bosses SET is_defeated = 1 WHERE encounter_id = ?1 AND monster_name = ?2",
-                        )
-                        .bind::<diesel::sql_types::Integer, _>(id)
-                        .bind::<diesel::sql_types::Text, _>(&name)
-                        .execute(conn)
-                        .ok();
-                    }
-                }
-
-                // Aggregate heal events into heal_skill_stats
-                materialize_heal_skill_stats(conn, id)?;
-
-                // Delete raw events for this encounter to save space
-                prune_encounter_events(conn, id)?;
+                finalize_encounter(conn, id, ended_at_ms, defeated_bosses)?;
             }
+        }
+        DbTask::EndAllActiveEncounters { ended_at_ms } => {
+            use sch::encounters::dsl as e;
+            let open_encounters: Vec<i32> = e::encounters
+                .filter(e::ended_at_ms.is_null())
+                .select(e::id)
+                .load::<i32>(conn)
+                .map_err(|er| er.to_string())?;
+
+            for encounter_id in open_encounters {
+                finalize_encounter(conn, encounter_id, ended_at_ms, None)?;
+            }
+
+            *current_encounter_id = None;
         }
         DbTask::UpsertEntity {
             entity_id,
@@ -1789,6 +1820,69 @@ mod tests {
 
         // Ensure the encounter id has been cleared after ending.
         assert!(enc_opt.is_none());
+    }
+
+    #[test]
+    fn test_end_all_active_encounters_finishes_dangling_rows() {
+        use sch::encounters::dsl as e;
+
+        let mut conn = setup_conn();
+
+        let mut enc_opt = None;
+        handle_task(
+            &mut conn,
+            DbTask::BeginEncounter {
+                started_at_ms: 1_000,
+                local_player_id: Some(42),
+                scene_id: None,
+                scene_name: Some("Test Scene".into()),
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
+
+        // Ensure some combat data exists so finalize logic runs typical rollups
+        handle_task(
+            &mut conn,
+            DbTask::InsertDamageEvent {
+                timestamp_ms: 1_100,
+                attacker_id: 42,
+                defender_id: Some(7),
+                monster_name: Some("Training Dummy".into()),
+                skill_id: Some(10),
+                value: 50,
+                is_crit: false,
+                is_lucky: false,
+                hp_loss: 50,
+                shield_loss: 0,
+                defender_max_hp: None,
+                is_boss: false,
+                attempt_index: None,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
+
+        // Simulate startup cleanup
+        handle_task(
+            &mut conn,
+            DbTask::EndAllActiveEncounters {
+                ended_at_ms: 2_000,
+            },
+            &mut enc_opt,
+        )
+        .unwrap();
+
+        // Current encounter pointer should be cleared
+        assert!(enc_opt.is_none());
+
+        // Encounter should be marked ended with duration populated
+        let (ended_at_ms, duration): (Option<i64>, f64) = e::encounters
+            .select((e::ended_at_ms, e::duration))
+            .first(&mut conn)
+            .unwrap();
+        assert_eq!(ended_at_ms, Some(2_000));
+        assert!(duration >= 1.0);
     }
 
     #[test]

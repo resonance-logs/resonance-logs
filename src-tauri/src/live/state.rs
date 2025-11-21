@@ -51,6 +51,8 @@ pub struct AppState {
     pub boss_only_dps: bool,
     /// A map of low HP bosses.
     pub low_hp_bosses: HashMap<i64, u128>,
+    /// Whether we've already handled the first scene change after startup.
+    pub initial_scene_change_handled: bool,
 }
 
 impl AppState {
@@ -67,6 +69,7 @@ impl AppState {
             app_handle,
             boss_only_dps: false,
             low_hp_bosses: HashMap::new(),
+            initial_scene_change_handled: false,
         }
     }
 
@@ -227,6 +230,14 @@ impl AppStateManager {
         use crate::live::scene_names;
 
         info!("EnterScene packet received");
+
+        if !state.initial_scene_change_handled {
+            info!("Initial scene detected; finalizing any dangling encounters");
+            enqueue(DbTask::EndAllActiveEncounters {
+                ended_at_ms: now_ms(),
+            });
+            state.initial_scene_change_handled = true;
+        }
 
         // Quick check: if a scene_guid string is present, try to parse digits from it
         if let Some(info) = enter_scene.enter_scene_info.as_ref() {
@@ -415,6 +426,15 @@ impl AppStateManager {
 
         if let Some(scene_id) = found_scene {
             let scene_name = scene_names::lookup(scene_id);
+            let prev_scene = state.encounter.current_scene_id;
+
+            // If we have an active encounter and the scene actually changed, end it so we don't leave zombie rows
+            if prev_scene.map(|id| id != scene_id).unwrap_or(false)
+                && state.encounter.time_fight_start_ms != 0
+            {
+                info!("Scene changed from {:?} to {}; ending active encounter", prev_scene, scene_id);
+                self.reset_encounter(state).await;
+            }
 
             // Update encounter with scene info
             state.encounter.current_scene_id = Some(scene_id);
