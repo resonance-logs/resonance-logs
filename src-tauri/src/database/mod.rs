@@ -256,7 +256,6 @@ pub enum DbTask {
     EndEncounter {
         ended_at_ms: i64,
         defeated_bosses: Option<Vec<String>>,
-        pause_duration_ms: i64,
     },
 
     /// A task to insert or update an entity.
@@ -422,7 +421,6 @@ fn handle_task(
         DbTask::EndEncounter {
             ended_at_ms,
             defeated_bosses,
-            pause_duration_ms,
         } => {
             if let Some(id) = current_encounter_id.take() {
                 use sch::encounters::dsl as e;
@@ -439,12 +437,7 @@ fn handle_task(
 
                 let mut duration_secs = 1.0_f64;
                 if ended_at_ms > started_at_ms {
-                    // Calculate raw duration
-                    let raw_duration_ms = ended_at_ms - started_at_ms;
-                    // Subtract pause duration
-                    let active_duration_ms = raw_duration_ms - pause_duration_ms;
-
-                    let computed = (active_duration_ms as f64) / 1000.0;
+                    let computed = ((ended_at_ms - started_at_ms) as f64) / 1000.0;
                     if computed > 1.0 {
                         duration_secs = computed;
                     }
@@ -680,13 +673,7 @@ fn handle_task(
                 // Also update phase stats if a phase is active
                 if let Some(phase_id) = get_current_phase_id(conn, enc_id)? {
                     upsert_phase_stats_add_damage_dealt(
-                        conn,
-                        phase_id,
-                        attacker_id,
-                        value,
-                        is_crit,
-                        is_lucky,
-                        is_boss,
+                        conn, phase_id, attacker_id, value, is_crit, is_lucky, is_boss,
                     )?;
 
                     if let Some(def_id) = defender_id {
@@ -1795,7 +1782,6 @@ mod tests {
             DbTask::EndEncounter {
                 ended_at_ms: 4_600,
                 defeated_bosses: None,
-                pause_duration_ms: 0,
             },
             &mut enc_opt,
         )
@@ -1886,7 +1872,6 @@ mod tests {
             DbTask::EndEncounter {
                 ended_at_ms: 10_500,
                 defeated_bosses: None,
-                pause_duration_ms: 0,
             },
             &mut enc_opt,
         )
