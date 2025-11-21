@@ -7,11 +7,13 @@
   import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from '$lib/components/table-row-glow.svelte';
   import AbbreviatedNumber from '$lib/components/abbreviated-number.svelte';
+  import PhaseSelector from '$lib/components/PhaseSelector.svelte';
   import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns, historyTankedPlayerColumns, historyTankedSkillColumns } from '$lib/history-columns';
   import { settings, SETTINGS } from '$lib/settings-store';
   import getDisplayName from '$lib/name-display';
   import { getModuleApiBaseUrl } from '$lib/stores/uploading';
   import { openUrl } from '@tauri-apps/plugin-opener';
+  import { phaseFilterStore } from '$lib/stores/phase-filter-store';
 
   // Get encounter ID from URL params
   let encounterId = $derived($page.params.id ? parseInt($page.params.id) : null);
@@ -350,21 +352,21 @@
               {new Date(encounter.startedAtMs).toLocaleString()} — Duration: {Math.floor(Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000) / 60)}m
             </div>
 
-            <!-- Phases info -->
-            {#if encounter.phases && encounter.phases.length > 0}
-              <div class="text-xs text-muted-foreground mt-1 flex gap-2">
-                {#each encounter.phases as phase}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border {phase.phaseType === 'mob' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-purple-500/30 bg-purple-500/10 text-purple-400'}">
-                    <span class="font-semibold">{phase.phaseType === 'mob' ? 'Mob Phase' : 'Boss Phase'}</span>
-                    <span class="text-muted-foreground">•</span>
-                    <span class="{phase.outcome === 'success' ? 'text-green-400' : phase.outcome === 'wipe' ? 'text-red-400' : 'text-yellow-400'}">{phase.outcome}</span>
-                    <span class="text-muted-foreground">•</span>
-                    <span>{Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s</span>
-                  </span>
-                {/each}
-              </div>
-            {/if}
           </div>
+
+          <!-- Phase Selector Component -->
+          {#if encounter.phases && encounter.phases.length > 0}
+            <div class="mt-2">
+              <PhaseSelector
+                phases={encounter.phases}
+                bind:selectedPhaseId={selectedPhaseId}
+                onPhaseChange={(phaseId) => {
+                  selectedPhaseId = phaseId;
+                  phaseFilterStore.selectPhase(phaseId);
+                }}
+              />
+            </div>
+          {/if}
           {#if encounter.remoteEncounterId}
             <button
               onclick={openEncounterOnWebsite}
@@ -381,22 +383,6 @@
 
         <!-- Tabs, Phase Selector, and Boss Only Toggle -->
         <div class="flex items-end gap-2 h-[48px]">
-          <!-- Phase Selector -->
-          {#if encounter.phases && encounter.phases.length > 0}
-            <select
-              bind:value={selectedPhaseId}
-              class="px-2 py-1 text-xs rounded border border-border bg-popover text-foreground transition-colors hover:bg-muted/40 cursor-pointer"
-            >
-              <option value={null}>Overall Encounter</option>
-              {#each encounter.phases as phase}
-                <option value={phase.id}>
-                  {phase.phaseType === 'mob' ? 'Mob Phase' : 'Boss Phase'}
-                  ({Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s)
-                </option>
-              {/each}
-            </select>
-          {/if}
-
           <div class="flex rounded border border-border bg-popover">
             <button
               onclick={() => activeTab = 'damage'}
