@@ -1,10 +1,10 @@
 # Changelog
 
-## [0.14.3] - 2025-11-20
+## [0.14.4] - 2025-11-20
 
 ### Fixed
 
-- Fixed the crash bug when resetting encounter or pausing/resuming encounter.
+- Fix auto update not working.
 
 ## Previous changelogs
 
