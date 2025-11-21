@@ -16,11 +16,25 @@ def create_dungeon_name_mapping():
     # Create the mapping: SceneID -> Name
     scene_name_mapping = {}
 
+    import re
+
     for dungeon_id, dungeon_info in dungeons_data.items():
         scene_id = str(dungeon_info.get("SceneID", ""))
         name = dungeon_info.get("Name", "")
+        dungeon_type = dungeon_info.get("DungeonTypeName", "")
 
         if scene_id and name:
+            # Append DungeonTypeName if it exists and is a short string (likely a difficulty)
+            if dungeon_type and len(dungeon_type) < 50 and "<br>" not in dungeon_type:
+                # Normalize 'Master 1', 'Master 2' -> 'Master'
+                m = re.match(r"^(Master)\s*\d+$", dungeon_type.strip(), re.IGNORECASE)
+                if m:
+                    normalized = m.group(1).title()
+                else:
+                    normalized = dungeon_type
+
+                name = f"{name} - {normalized}"
+
             scene_name_mapping[scene_id] = name
 
     # Ensure output directory exists
