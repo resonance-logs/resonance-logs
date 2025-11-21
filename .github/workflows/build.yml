@@ -140,6 +140,7 @@ jobs:
           name: resonance-logs-production-v${{ steps.tauri.outputs.appVersion }}
           path: src-tauri/target/release/bundle/
 
+
       - name: Upload Debug Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -165,3 +166,10 @@ jobs:
           git commit -m "Update updater.json for version ${{ steps.tauri.outputs.appVersion }}" || echo "No changes to commit"
           git push origin main
 
+      - name: Upload latest.json to release
+        if: ${{ success() }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          copy updater.json latest.json
+          gh release upload v${{ steps.tauri.outputs.appVersion }} latest.json --clobber
