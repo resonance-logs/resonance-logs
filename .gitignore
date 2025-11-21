@@ -38,3 +38,4 @@ openspec/
 .chunkhound.json
 .chunkhound/
 .vscode/mcp.json
+.github/agents/
