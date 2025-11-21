@@ -867,6 +867,7 @@ impl AppStateManager {
                         if current_time_ms.saturating_sub(*entry) >= 5_000 {
                             if dead_ids.insert(boss.uid) {
                                 dead_bosses.push((boss.uid, boss.name.clone()));
+                                state.encounter.dead_boss_uids.insert(boss.uid);
                             }
                         }
                     } else {

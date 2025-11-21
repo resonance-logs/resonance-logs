@@ -40,6 +40,8 @@ pub struct Encounter {
     pub current_phase_id: Option<i32>, // Database ID of the current phase
     pub phase_start_ms: u128,
     pub boss_detected: bool, // Whether a boss entity has been seen this encounter
+    pub dead_boss_uids: HashSet<i64>,
+    pub engaged_boss_uids: HashSet<i64>,
 }
 
 /// Represents the type of encounter phase
@@ -467,6 +469,8 @@ impl Encounter {
         self.current_phase = None;
         self.phase_start_ms = 0;
         self.boss_detected = false;
+        self.dead_boss_uids.clear();
+        self.engaged_boss_uids.clear();
     }
 }
 
