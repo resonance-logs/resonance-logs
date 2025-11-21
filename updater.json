@@ -1,19 +1,19 @@
 {
-  "version": "0.14.3",
-  "notes": "# Changelog\r\n\r\n\r\nInitial Release. New Changes will be posted on website changelog. Meter auto updates when we release a new one.\r\n",
-  "pub_date": "2025-11-20T23:34:39.095Z",
+  "version": "0.14.4",
+  "notes": "## [0.14.4] - 2025-11-20\r\n\r\n### Fixed\r\n\r\n- Fix auto update not working.\r\n",
+  "pub_date": "2025-11-21T02:17:32.332Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1pndzR5VVJUREVWUGUzdWd1d0xDOEJXRUowNFVCcTFuUk5MNkRmblJxbUhESzJwZVhQbVNxZDRUempBT2ZrUDhiQjA0aVJ5amZqVTNPN0FJU1c5NkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjgxNjY2CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC4zX3g2NF9lbi1VUy5tc2kKUkJpQlY3S0M4bUR5azZJcm5SZS82WVN0ZFpaRWRRV1RCUGZhZEtkaFJmUmZ2SXhsZXF4cW9LaktrWVpuV1VtUG55TjFIcUpvVFRnaVZyWlhiSGEzQ1E9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.3/resonance-logs_0.14.3_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1NMZFMwOGhheEtXdm9hLzdrNWY0TXdrR0ozMEhwd3A1TVZjdmswVDI5ZDZRNXNlUEFXVGh4ck1oMXBxMU1aUFEvNThqTWRJQmVJeHNHeTZscWFpcGdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjkxNDQ0CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC40X3g2NF9lbi1VUy5tc2kKUjJSR2ZHNmNEUFRsL2dHSGNFYWdobG52QndxellidlQ5aGNWL3RiUGtIQkpOeGR2czk0SDYxUG9kTndSQ0I2bjgzNXRBT05pUDN6cE5MdnZUN01zQVE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.4/resonance-logs_0.14.4_x64_en-US.msi"
     },
     "windows-x86_64-msi": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1pndzR5VVJUREVWUGUzdWd1d0xDOEJXRUowNFVCcTFuUk5MNkRmblJxbUhESzJwZVhQbVNxZDRUempBT2ZrUDhiQjA0aVJ5amZqVTNPN0FJU1c5NkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjgxNjY2CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC4zX3g2NF9lbi1VUy5tc2kKUkJpQlY3S0M4bUR5azZJcm5SZS82WVN0ZFpaRWRRV1RCUGZhZEtkaFJmUmZ2SXhsZXF4cW9LaktrWVpuV1VtUG55TjFIcUpvVFRnaVZyWlhiSGEzQ1E9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.3/resonance-logs_0.14.3_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1NMZFMwOGhheEtXdm9hLzdrNWY0TXdrR0ozMEhwd3A1TVZjdmswVDI5ZDZRNXNlUEFXVGh4ck1oMXBxMU1aUFEvNThqTWRJQmVJeHNHeTZscWFpcGdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjkxNDQ0CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC40X3g2NF9lbi1VUy5tc2kKUjJSR2ZHNmNEUFRsL2dHSGNFYWdobG52QndxellidlQ5aGNWL3RiUGtIQkpOeGR2czk0SDYxUG9kTndSQ0I2bjgzNXRBT05pUDN6cE5MdnZUN01zQVE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.4/resonance-logs_0.14.4_x64_en-US.msi"
     },
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dEc2ltNFc3M0Z0V0N0VWlLSUxVdlRJOEVVWmQrZmtIUWYva3hMWXduZ1JYQWd6U054NGtDeDg3d2d5bmpnU0pWVTJ0b3Vyb0ZCSFF5TWt6bnhBWFFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjgxNjY2CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC4zX3g2NC1zZXR1cC5leGUKR1dNa3A2UGF5MmcrUDA5Ri9JUStPYVI1cHB3VWF4MVhCaWo3MldWZkUyVmtTYXVOWW5jT2RMc2Zudk5VT0xYTkpIQTB3U2twMnM0ZHlwTnBvTnk5RFE9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.3/resonance-logs_0.14.3_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1FoUnB4ZVRhZkI5amFwbmpNSVg2YU5qTDFnUVd4dEJqa0FQZ2NQOVhSa1BUc2tKNkpCalJjUVoyMm5BK2UxSGJsZ0Y2MHoxVVVQV1NsSmVnWEM2M3dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzNjkxNDQ0CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNC40X3g2NC1zZXR1cC5leGUKRi9QTHBBUmtOYmswNU1ubG1VOGpMZzlhVnBtdk84YXQ5dkZtSzByWWtLVk1aL3QwMm9yMWc3dkExYmhrU3R4WlgrK3lkRWtuRTBPRmE3TVIyMGttQ2c9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.14.4/resonance-logs_0.14.4_x64-setup.exe"
     }
   }
 }
