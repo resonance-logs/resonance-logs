@@ -204,6 +204,10 @@ impl AppStateManager {
             } else {
                 Some(defeated)
             },
+            pause_duration_ms: state
+                .encounter
+                .get_effective_pause_duration(now_ms() as u128)
+                as i64,
         });
         on_server_change(&mut state.encounter);
 
@@ -530,7 +534,10 @@ impl AppStateManager {
 
         // Extract and upload modules (if enabled)
         // Get module sync state from app handle
-        if let Some(module_state) = state.app_handle.try_state::<crate::module_extractor::commands::ModuleSyncState>() {
+        if let Some(module_state) = state
+            .app_handle
+            .try_state::<crate::module_extractor::commands::ModuleSyncState>(
+        ) {
             let sync_data_clone = sync_container_data.clone();
             let module_state_clone = (*module_state).clone();
 
@@ -540,7 +547,9 @@ impl AppStateManager {
                     &module_state_clone,
                     &sync_data_clone,
                     true, // auto_upload = true
-                ).await {
+                )
+                .await
+                {
                     warn!("Module extraction/upload failed: {}", e);
                 }
             });
@@ -622,6 +631,10 @@ impl AppStateManager {
             } else {
                 Some(defeated)
             },
+            pause_duration_ms: state
+                .encounter
+                .get_effective_pause_duration(now_ms() as u128)
+                as i64,
         });
         state.encounter.reset_combat_state();
         state.skill_subscriptions.clear();

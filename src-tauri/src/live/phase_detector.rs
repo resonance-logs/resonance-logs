@@ -3,7 +3,7 @@
 /// Detects when to transition between mob and boss phases based on:
 /// - Boss entity detection in the encounter
 /// - Wipe scenarios during different phases
-use crate::database::{enqueue, DbTask};
+use crate::database::{DbTask, enqueue};
 use crate::live::opcodes_models::{Encounter, PhaseType};
 use log::info;
 
@@ -13,17 +13,19 @@ use log::info;
 pub fn check_boss_phase_transition(encounter: &Encounter) -> bool {
     // Transition to boss phase if:
     // 1. We're currently in mob phase (or no phase)
-    // 2. A boss has been detected
-    // 3. We haven't already detected a boss before
-    if encounter.boss_detected {
+    // 2. A boss has been detected that is not dead
+
+    // If we are already in a boss phase, don't transition again
+    if encounter.current_phase == Some(PhaseType::Boss) {
         return false;
     }
 
-    // Check if any boss entity exists
+    // Check if any boss entity exists and is NOT dead
+    // This allows re-entering boss phase for sequential bosses
     encounter
         .entity_uid_to_entity
-        .values()
-        .any(|entity| entity.is_boss())
+        .iter()
+        .any(|(uid, entity)| entity.is_boss() && !encounter.dead_boss_uids.contains(uid))
 }
 
 /// Begins a new phase for the current encounter.
@@ -31,6 +33,7 @@ pub fn begin_phase(encounter: &mut Encounter, phase_type: PhaseType, timestamp_m
     let phase_str = match phase_type {
         PhaseType::Mob => "mob",
         PhaseType::Boss => "boss",
+        PhaseType::Idle => "idle",
     };
 
     info!(
@@ -53,6 +56,7 @@ pub fn end_phase(encounter: &mut Encounter, outcome: &str, timestamp_ms: u128) {
         let phase_str = match phase_type {
             PhaseType::Mob => "mob",
             PhaseType::Boss => "boss",
+            PhaseType::Idle => "idle",
         };
 
         info!(
@@ -85,7 +89,30 @@ pub fn transition_to_boss_phase(encounter: &mut Encounter, timestamp_ms: u128) {
 /// Handles boss death scenarios.
 pub fn handle_boss_death(encounter: &mut Encounter, timestamp_ms: u128) {
     if encounter.current_phase == Some(PhaseType::Boss) {
-        end_phase(encounter, "success", timestamp_ms);
+        // Only end the boss phase if ALL engaged bosses are dead.
+        // This allows multi-boss encounters to continue until the last boss dies.
+        let all_bosses_dead = encounter
+            .engaged_boss_uids
+            .iter()
+            .all(|uid| encounter.dead_boss_uids.contains(uid));
+
+        if all_bosses_dead {
+            end_phase(encounter, "success", timestamp_ms);
+
+            // Transition to Idle phase
+            begin_phase(encounter, PhaseType::Idle, timestamp_ms);
+
+            // Also set pause flag for compatibility with paus duration
+            encounter.is_encounter_paused = true;
+            encounter.pause_start_ms = Some(timestamp_ms);
+
+            info!(
+                "All engaged bosses dead. Transitioned to Idle phase and paused timer at {}",
+                timestamp_ms
+            );
+        } else {
+            info!("Boss died, but other bosses are still engaged. Continuing boss phase.");
+        }
     }
 }
 
@@ -100,6 +127,10 @@ pub fn handle_wipe(encounter: &mut Encounter, timestamp_ms: u128) {
             PhaseType::Boss => {
                 // Wipe during boss phase: end boss phase with wipe outcome
                 // Mob phase (if it existed) remains with its previous outcome
+                end_phase(encounter, "wipe", timestamp_ms);
+            }
+            PhaseType::Idle => {
+                // Wipe during idle phase: end idle phase with wipe outcome
                 end_phase(encounter, "wipe", timestamp_ms);
             }
         }
@@ -177,5 +208,32 @@ mod tests {
 
         // Should not detect boss phase transition again
         assert!(!check_boss_phase_transition(&encounter));
+    }
+
+    #[test]
+    fn test_multi_boss_phase_continuation() {
+        let mut encounter = Encounter::default();
+
+        // Begin boss phase
+        transition_to_boss_phase(&mut encounter, 1000);
+        assert_eq!(encounter.current_phase, Some(PhaseType::Boss));
+
+        // Simulate 2 engaged bosses
+        encounter.engaged_boss_uids.insert(100);
+        encounter.engaged_boss_uids.insert(101);
+
+        // Boss 100 dies
+        encounter.dead_boss_uids.insert(100);
+        handle_boss_death(&mut encounter, 2000);
+
+        // Phase should still be Boss because 101 is alive
+        assert_eq!(encounter.current_phase, Some(PhaseType::Boss));
+
+        // Boss 101 dies
+        encounter.dead_boss_uids.insert(101);
+        handle_boss_death(&mut encounter, 3000);
+
+        // Phase should transition to Idle now
+        assert_eq!(encounter.current_phase, Some(PhaseType::Idle));
     }
 }

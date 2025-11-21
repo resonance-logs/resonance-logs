@@ -42,6 +42,8 @@ pub struct Encounter {
     pub boss_detected: bool, // Whether a boss entity has been seen this encounter
     pub dead_boss_uids: HashSet<i64>,
     pub engaged_boss_uids: HashSet<i64>,
+    pub pause_start_ms: Option<u128>,
+    pub total_pause_duration_ms: u128,
 }
 
 /// Represents the type of encounter phase
@@ -49,6 +51,7 @@ pub struct Encounter {
 pub enum PhaseType {
     Mob,
     Boss,
+    Idle,
 }
 
 // Use an async-aware RwLock so readers don't block the tokio runtime threads.
@@ -471,6 +474,19 @@ impl Encounter {
         self.boss_detected = false;
         self.dead_boss_uids.clear();
         self.engaged_boss_uids.clear();
+        self.pause_start_ms = None;
+        self.total_pause_duration_ms = 0;
+    }
+
+    pub fn get_effective_pause_duration(&self, now_ms: u128) -> u128 {
+        let current_pause = if self.is_encounter_paused {
+            self.pause_start_ms
+                .map(|start| now_ms.saturating_sub(start))
+                .unwrap_or(0)
+        } else {
+            0
+        };
+        self.total_pause_duration_ms + current_pause
     }
 }
 

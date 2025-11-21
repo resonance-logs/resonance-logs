@@ -282,7 +282,8 @@ fn is_boss_target(encounter: &Encounter, target_uid: &i64) -> bool {
 pub fn generate_players_window_dps(encounter: &Encounter, boss_only: bool) -> PlayersWindow {
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+        .saturating_sub(encounter.time_fight_start_ms)
+        .saturating_sub(encounter.total_pause_duration_ms);
 
     let mut players_window = PlayersWindow {
         player_rows: Vec::new(),
@@ -339,7 +340,8 @@ pub fn generate_players_window_dps(encounter: &Encounter, boss_only: bool) -> Pl
 pub fn generate_players_window_heal(encounter: &Encounter) -> PlayersWindow {
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+        .saturating_sub(encounter.time_fight_start_ms)
+        .saturating_sub(encounter.total_pause_duration_ms);
 
     let mut players_window = PlayersWindow {
         player_rows: Vec::new(),
@@ -417,7 +419,8 @@ pub fn generate_players_window_heal(encounter: &Encounter) -> PlayersWindow {
 pub fn generate_players_window_tanked(encounter: &Encounter) -> PlayersWindow {
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+        .saturating_sub(encounter.time_fight_start_ms)
+        .saturating_sub(encounter.total_pause_duration_ms);
 
     let mut players_window = PlayersWindow {
         player_rows: Vec::new(),
@@ -507,7 +510,8 @@ pub fn generate_skills_window_dps(
 
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+        .saturating_sub(encounter.time_fight_start_ms)
+        .saturating_sub(encounter.total_pause_duration_ms);
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
@@ -641,7 +645,8 @@ pub fn generate_skills_window_heal(encounter: &Encounter, player_uid: i64) -> Op
 
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+        .saturating_sub(encounter.time_fight_start_ms)
+        .saturating_sub(encounter.total_pause_duration_ms);
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
@@ -729,7 +734,8 @@ pub fn generate_skills_window_tanked(
 
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+        .saturating_sub(encounter.time_fight_start_ms)
+        .saturating_sub(encounter.total_pause_duration_ms);
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
@@ -945,7 +951,8 @@ pub fn generate_header_info(
 ) -> Option<(HeaderInfo, Vec<(i64, String)>)> {
     let time_elapsed_ms = encounter
         .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+        .saturating_sub(encounter.time_fight_start_ms)
+        .saturating_sub(encounter.total_pause_duration_ms);
 
     #[allow(clippy::cast_precision_loss)]
     let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
@@ -1025,11 +1032,10 @@ pub fn generate_header_info(
 
     bosses.sort_by_key(|boss| boss.uid);
 
-    let current_phase = encounter.current_phase.map(|phase_type| {
-        match phase_type {
-            crate::live::opcodes_models::PhaseType::Mob => "mob".to_string(),
-            crate::live::opcodes_models::PhaseType::Boss => "boss".to_string(),
-        }
+    let current_phase = encounter.current_phase.map(|phase_type| match phase_type {
+        crate::live::opcodes_models::PhaseType::Mob => "mob".to_string(),
+        crate::live::opcodes_models::PhaseType::Boss => "boss".to_string(),
+        crate::live::opcodes_models::PhaseType::Idle => "idle".to_string(),
     });
 
     #[allow(clippy::cast_precision_loss)]

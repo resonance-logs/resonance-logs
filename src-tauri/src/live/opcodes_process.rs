@@ -287,11 +287,10 @@ pub fn process_sync_container_data(
         let now = now_ms();
 
         // Serialize the full CharSerialize payload (including nested structures).
-        let char_serialize_json = serde_json::to_string(&v_data)
-            .unwrap_or_else(|e| {
-                log::warn!("Failed to serialize CharSerialize payload: {}", e);
-                "{}".to_string()
-            });
+        let char_serialize_json = serde_json::to_string(&v_data).unwrap_or_else(|e| {
+            log::warn!("Failed to serialize CharSerialize payload: {}", e);
+            "{}".to_string()
+        });
 
         // Extract profession_list for easier access / smaller payloads downstream.
         let profession_list_json = serde_json::to_string(profession_list).ok();
@@ -302,10 +301,7 @@ pub fn process_sync_container_data(
                 .talent_list
                 .iter()
                 .map(|(profession_id, talent_info)| {
-                    (
-                        *profession_id,
-                        talent_info.talent_node_ids.clone(),
-                    )
+                    (*profession_id, talent_info.talent_node_ids.clone())
                 })
                 .collect();
             serde_json::to_string(&talent_map).ok()
@@ -366,41 +362,8 @@ pub fn process_aoi_sync_delta(
     // Check for boss phase reset:
     // If we are targeting a boss that we haven't engaged yet, AND we have already killed a boss in this encounter,
     // then this is a new boss phase (e.g. Boss 2 after Boss 1 died).
-    if let Some(entity) = encounter.entity_uid_to_entity.get(&target_uid) {
-        if entity.is_boss()
-            && !encounter.dead_boss_uids.is_empty()
-            && !encounter.engaged_boss_uids.contains(&target_uid)
-        {
-            info!(
-                "New boss engaged (UID: {}), resetting encounter for next phase",
-                target_uid
-            );
-
-            // End the previous encounter in DB
-            let defeated_bosses: Vec<String> = encounter
-                .dead_boss_uids
-                .iter()
-                .filter_map(|uid| {
-                    encounter
-                        .entity_uid_to_entity
-                        .get(uid)
-                        .map(|e| e.name.clone())
-                })
-                .collect();
-
-            enqueue(DbTask::EndEncounter {
-                ended_at_ms: now_ms(),
-                defeated_bosses: if defeated_bosses.is_empty() {
-                    None
-                } else {
-                    Some(defeated_bosses)
-                },
-            });
-
-            // Reset combat state (clears totals, skills, but keeps players/scene)
-            encounter.reset_combat_state();
-        }
-    }
+    // Check for boss phase reset block removed to support multi-boss encounters within a single session.
+    // The encounter timer will be resumed by the damage processing logic below.
 
     // Process attributes
     let target_entity_type = EEntityType::from(target_uuid);
@@ -469,6 +432,40 @@ pub fn process_aoi_sync_delta(
         } else {
             continue; // skip this iteration
         };
+
+        // Resume encounter timer if paused
+        // Resume encounter timer if paused or in Idle phase
+        use crate::live::opcodes_models::PhaseType;
+        if encounter.is_encounter_paused || encounter.current_phase == Some(PhaseType::Idle) {
+            if let Some(pause_start) = encounter.pause_start_ms {
+                let pause_duration = timestamp_ms as u128 - pause_start;
+                encounter.total_pause_duration_ms += pause_duration;
+                info!(
+                    "Resuming encounter timer. Paused for {} ms. Total pause: {} ms",
+                    pause_duration, encounter.total_pause_duration_ms
+                );
+            }
+            encounter.is_encounter_paused = false;
+            encounter.pause_start_ms = None;
+
+            // If in Idle phase, end it and transition to appropriate phase
+            if encounter.current_phase == Some(PhaseType::Idle) {
+                use crate::live::phase_detector::{
+                    begin_phase, check_boss_phase_transition, end_phase,
+                };
+
+                // End Idle phase
+                end_phase(encounter, "success", timestamp_ms as u128);
+
+                // Determine next phase
+                if check_boss_phase_transition(encounter) {
+                    begin_phase(encounter, PhaseType::Boss, timestamp_ms as u128);
+                    encounter.boss_detected = true;
+                } else {
+                    begin_phase(encounter, PhaseType::Mob, timestamp_ms as u128);
+                }
+            }
+        }
 
         let attacker_uuid = sync_damage_info
             .top_summoner_id
@@ -708,17 +705,18 @@ pub fn process_aoi_sync_delta(
             if !is_heal_event {
                 // Insert damage event
                 let is_boss = defender_entity.is_boss();
-                let monster_name_for_event = if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
-                    defender_entity.monster_name_packet.clone().or_else(|| {
-                        if defender_entity.name.is_empty() {
-                            None
-                        } else {
-                            Some(defender_entity.name.clone())
-                        }
-                    })
-                } else {
-                    None
-                };
+                let monster_name_for_event =
+                    if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
+                        defender_entity.monster_name_packet.clone().or_else(|| {
+                            if defender_entity.name.is_empty() {
+                                None
+                            } else {
+                                Some(defender_entity.name.clone())
+                            }
+                        })
+                    } else {
+                        None
+                    };
                 enqueue(DbTask::InsertDamageEvent {
                     timestamp_ms: timestamp_ms as i64,
                     attacker_id: attacker_uid,
@@ -882,8 +880,8 @@ pub fn process_aoi_sync_delta(
             }
 
             // Begin initial phase: start with mob phase by default
-            use crate::live::phase_detector::{begin_phase, check_boss_phase_transition};
             use crate::live::opcodes_models::PhaseType;
+            use crate::live::phase_detector::{begin_phase, check_boss_phase_transition};
 
             // Check if a boss is already present at encounter start
             if check_boss_phase_transition(encounter) {
