@@ -363,6 +363,45 @@ pub fn process_aoi_sync_delta(
     let target_uuid = aoi_sync_delta.uuid?; // UUID =/= uid (have to >> 16)
     let target_uid = target_uuid >> 16;
 
+    // Check for boss phase reset:
+    // If we are targeting a boss that we haven't engaged yet, AND we have already killed a boss in this encounter,
+    // then this is a new boss phase (e.g. Boss 2 after Boss 1 died).
+    if let Some(entity) = encounter.entity_uid_to_entity.get(&target_uid) {
+        if entity.is_boss()
+            && !encounter.dead_boss_uids.is_empty()
+            && !encounter.engaged_boss_uids.contains(&target_uid)
+        {
+            info!(
+                "New boss engaged (UID: {}), resetting encounter for next phase",
+                target_uid
+            );
+
+            // End the previous encounter in DB
+            let defeated_bosses: Vec<String> = encounter
+                .dead_boss_uids
+                .iter()
+                .filter_map(|uid| {
+                    encounter
+                        .entity_uid_to_entity
+                        .get(uid)
+                        .map(|e| e.name.clone())
+                })
+                .collect();
+
+            enqueue(DbTask::EndEncounter {
+                ended_at_ms: now_ms(),
+                defeated_bosses: if defeated_bosses.is_empty() {
+                    None
+                } else {
+                    Some(defeated_bosses)
+                },
+            });
+
+            // Reset combat state (clears totals, skills, but keeps players/scene)
+            encounter.reset_combat_state();
+        }
+    }
+
     // Process attributes
     let target_entity_type = EEntityType::from(target_uuid);
     let mut target_entity = encounter
@@ -372,6 +411,11 @@ pub fn process_aoi_sync_delta(
             entity_type: target_entity_type,
             ..Default::default()
         });
+
+    // Track engaged bosses
+    if target_entity.is_boss() {
+        encounter.engaged_boss_uids.insert(target_uid);
+    }
 
     if let Some(attrs_collection) = aoi_sync_delta.attrs {
         match target_entity_type {
@@ -720,6 +764,11 @@ pub fn process_aoi_sync_delta(
             }
 
             if died {
+                // Track dead bosses for phase reset logic
+                if defender_entity.is_boss() {
+                    encounter.dead_boss_uids.insert(target_uid);
+                }
+
                 Some((
                     target_uid,
                     Some(attacker_uid),
@@ -734,6 +783,18 @@ pub fn process_aoi_sync_delta(
         // If death detected, record it (dedupe handled inside record_death)
         if let Some((actor, killer, skill, ts)) = death_info_local {
             record_death(encounter, actor, killer, skill, ts);
+
+            // Check if it was a boss death to end the phase
+            let is_boss = encounter
+                .entity_uid_to_entity
+                .get(&actor)
+                .map(|e| e.is_boss())
+                .unwrap_or(false);
+
+            if is_boss {
+                use crate::live::phase_detector::handle_boss_death;
+                handle_boss_death(encounter, ts as u128);
+            }
         }
     }
 

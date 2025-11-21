@@ -82,6 +82,13 @@ pub fn transition_to_boss_phase(encounter: &mut Encounter, timestamp_ms: u128) {
     encounter.boss_detected = true;
 }
 
+/// Handles boss death scenarios.
+pub fn handle_boss_death(encounter: &mut Encounter, timestamp_ms: u128) {
+    if encounter.current_phase == Some(PhaseType::Boss) {
+        end_phase(encounter, "success", timestamp_ms);
+    }
+}
+
 /// Handles wipe scenarios based on the current phase.
 pub fn handle_wipe(encounter: &mut Encounter, timestamp_ms: u128) {
     if let Some(phase_type) = encounter.current_phase {
