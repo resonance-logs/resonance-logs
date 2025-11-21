@@ -39,7 +39,8 @@ pub struct Encounter {
     pub current_phase: Option<PhaseType>,
     pub current_phase_id: Option<i32>, // Database ID of the current phase
     pub phase_start_ms: u128,
-    pub boss_detected: bool, // Whether a boss entity has been seen this encounter
+    pub boss_detected: bool, // Legacy flag for compatibility - use active_boss_ids instead
+    pub active_boss_ids: HashSet<i64>, // Track currently active boss IDs for multi-boss support
 }
 
 /// Represents the type of encounter phase

@@ -790,6 +790,21 @@ impl AppStateManager {
 impl AppStateManager {
     /// Updates and emits events.
     pub async fn update_and_emit_events(&self) {
+        // Check for phase timeout periodically
+        use crate::live::phase_detector::check_phase_timeout;
+        let current_time_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_millis();
+
+        {
+            let mut state = self.state.write().await;
+            if check_phase_timeout(&state.encounter, current_time_ms) {
+                use crate::live::phase_detector::end_phase;
+                end_phase(&mut state.encounter, "timeout", current_time_ms);
+            }
+        }
+
         // First, read the encounter data to generate all the necessary information
         let (encounter, should_emit, boss_only) = {
             let state = self.state.read().await;

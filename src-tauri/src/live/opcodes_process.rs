@@ -734,6 +734,14 @@ pub fn process_aoi_sync_delta(
         // If death detected, record it (dedupe handled inside record_death)
         if let Some((actor, killer, skill, ts)) = death_info_local {
             record_death(encounter, actor, killer, skill, ts);
+
+            // Check if a boss died
+            if let Some(entity) = encounter.entity_uid_to_entity.get(&actor) {
+                if entity.is_boss() && encounter.active_boss_ids.contains(&actor) {
+                    use crate::live::phase_detector::handle_boss_death;
+                    handle_boss_death(encounter, actor, timestamp_ms);
+                }
+            }
         }
     }
 
@@ -850,10 +858,26 @@ pub fn process_aoi_sync_delta(
     }
 
     // Check for boss phase transition during combat
-    use crate::live::phase_detector::{check_boss_phase_transition, transition_to_boss_phase};
-    if check_boss_phase_transition(encounter) && !encounter.boss_detected {
-        transition_to_boss_phase(encounter, timestamp_ms);
+    use crate::live::phase_detector::{check_boss_phase_transition, transition_to_boss_phase, begin_mob_phase};
+
+    // Check if we need to start a mob phase
+    if encounter.current_phase.is_none() {
+        // Start mob phase if we're in combat but no phase is active
+        begin_mob_phase(encounter, timestamp_ms);
     }
+
+    // Check for new boss detection
+    if check_boss_phase_transition(encounter) {
+        // Find the new boss that hasn't been tracked yet
+        if let Some((&boss_id, _)) = encounter
+            .entity_uid_to_entity
+            .iter()
+            .find(|(uid, e)| e.is_boss() && !encounter.active_boss_ids.contains(uid))
+        {
+            transition_to_boss_phase(encounter, boss_id, timestamp_ms);
+        }
+    }
+
     encounter.time_last_combat_packet_ms = timestamp_ms;
     Some(())
 }

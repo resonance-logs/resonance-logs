@@ -49,6 +49,7 @@ pub fn run() {
             live::commands::subscribe_player_skills,
             live::commands::unsubscribe_player_skills,
             live::commands::set_boss_only_dps,
+            live::commands::get_encounter_phases,
             database::commands::get_recent_encounters,
             database::commands::get_unique_scene_names,
             database::commands::get_unique_boss_names,

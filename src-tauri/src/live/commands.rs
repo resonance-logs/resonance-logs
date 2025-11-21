@@ -322,3 +322,63 @@ pub async fn toggle_pause_encounter(
     });
     Ok(())
 }
+
+/// Response for get_encounter_phases command.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EncounterPhase {
+    pub id: i32,
+    pub encounter_id: i32,
+    pub phase_type: String,
+    pub start_time_ms: i64,
+    pub end_time_ms: Option<i64>,
+    pub outcome: String,
+}
+
+/// Gets all phases for a specific encounter.
+///
+/// # Arguments
+///
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<Vec<EncounterPhase>, String>` - A list of encounter phases.
+#[tauri::command]
+#[specta::specta]
+pub fn get_encounter_phases(encounter_id: i32) -> Result<Vec<EncounterPhase>, String> {
+    use crate::database::schema::encounter_phases::dsl as ep;
+    use crate::database::{default_db_path, ensure_parent_dir};
+    use diesel::prelude::*;
+
+    let path = default_db_path();
+    ensure_parent_dir(&path).map_err(|e| e.to_string())?;
+    let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
+        .map_err(|e| e.to_string())?;
+
+    let phases: Vec<(i32, i32, String, i64, Option<i64>, String)> = ep::encounter_phases
+        .filter(ep::encounter_id.eq(encounter_id))
+        .order_by(ep::start_time_ms.asc())
+        .select((
+            ep::id,
+            ep::encounter_id,
+            ep::phase_type,
+            ep::start_time_ms,
+            ep::end_time_ms,
+            ep::outcome,
+        ))
+        .load::<(i32, i32, String, i64, Option<i64>, String)>(&mut conn)
+        .map_err(|e| e.to_string())?;
+
+    Ok(phases
+        .into_iter()
+        .map(|(id, enc_id, phase_type, start_time_ms, end_time_ms, outcome)| EncounterPhase {
+            id,
+            encounter_id: enc_id,
+            phase_type,
+            start_time_ms,
+            end_time_ms,
+            outcome,
+        })
+        .collect())
+}

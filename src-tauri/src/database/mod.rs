@@ -394,11 +394,29 @@ fn finalize_encounter(
         .first::<i64>(conn)
         .map_err(|er| er.to_string())?;
 
+    // Calculate active combat time from phases (excluding downtime)
+    use sch::encounter_phases::dsl as ep;
+    let phases: Vec<(i64, Option<i64>)> = ep::encounter_phases
+        .filter(ep::encounter_id.eq(encounter_id))
+        .select((ep::start_time_ms, ep::end_time_ms))
+        .load::<(i64, Option<i64>)>(conn)
+        .map_err(|er| er.to_string())?;
+
     let mut duration_secs = 1.0_f64;
-    if ended_at_ms > started_at_ms {
-        let computed = ((ended_at_ms - started_at_ms) as f64) / 1000.0;
-        if computed > 1.0 {
-            duration_secs = computed;
+    if !phases.is_empty() {
+        // Use active combat time from phases
+        use crate::live::phase_detector::calculate_active_combat_time;
+        let active_time = calculate_active_combat_time(&phases);
+        if active_time > 1.0 {
+            duration_secs = active_time;
+        }
+    } else {
+        // Fallback to total time if no phases exist
+        if ended_at_ms > started_at_ms {
+            let computed = ((ended_at_ms - started_at_ms) as f64) / 1000.0;
+            if computed > 1.0 {
+                duration_secs = computed;
+            }
         }
     }
 
