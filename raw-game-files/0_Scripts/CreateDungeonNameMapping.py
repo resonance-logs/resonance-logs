@@ -1,13 +1,16 @@
 import json
 import os
+import re
 
 def create_dungeon_name_mapping():
     """
     Extracts SceneID and Name from DungeonsTable.json and creates a mapping
     similar to MonsterNameBoss.json structure
     """
-    input_path = "../1_Dirty/DungeonsTable.json"
-    output_path = "../../src-tauri/meter-data/SceneName.json"
+    # Use absolute paths relative to this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    input_path = os.path.join(script_dir, "../1_Dirty/DungeonsTable.json")
+    output_path = os.path.join(script_dir, "../../src-tauri/meter-data/SceneName.json")
 
     # Load the DungeonsTable.json
     with open(input_path, "r", encoding="utf-8") as f:
@@ -16,11 +19,13 @@ def create_dungeon_name_mapping():
     # Create the mapping: SceneID -> Name
     scene_name_mapping = {}
 
-    import re
-
     for dungeon_id, dungeon_info in dungeons_data.items():
         scene_id = str(dungeon_info.get("SceneID", ""))
         name = dungeon_info.get("Name", "")
+
+        if name.lower() == "content mechanism test scene":
+            name = "Overworld"
+
         dungeon_type = dungeon_info.get("DungeonTypeName", "")
 
         if scene_id and name:
