@@ -858,23 +858,51 @@ pub fn process_aoi_sync_delta(
     }
 
     // Check for boss phase transition during combat
-    use crate::live::phase_detector::{check_boss_phase_transition, transition_to_boss_phase, begin_mob_phase};
+    use crate::live::phase_detector::{begin_boss_phase, begin_mob_phase, begin_phase};
+    use crate::live::opcodes_models::PhaseType;
 
-    // Check if we need to start a mob phase
+    // Check if we need to start a phase (e.g., after a wipe or at combat start)
     if encounter.current_phase.is_none() {
-        // Start mob phase if we're in combat but no phase is active
-        begin_mob_phase(encounter, timestamp_ms);
+        // Determine if a boss is present in the encounter
+        let has_boss = encounter.entity_uid_to_entity.values().any(|e| e.is_boss());
+
+        if has_boss {
+            // Boss present: check if this is a new boss or resuming after wipe
+            let is_resuming_fight = encounter.entity_uid_to_entity.iter()
+                .any(|(uid, e)| e.is_boss() && encounter.active_boss_ids.contains(uid));
+
+            if is_resuming_fight {
+                // Resuming fight with already-tracked boss after wipe
+                // Use legacy begin_phase to avoid re-adding boss to active_boss_ids
+                begin_phase(encounter, PhaseType::Boss, timestamp_ms);
+            } else {
+                // New boss detected for the first time
+                if let Some((&boss_id, _)) = encounter
+                    .entity_uid_to_entity
+                    .iter()
+                    .find(|(uid, e)| e.is_boss() && !encounter.active_boss_ids.contains(uid))
+                {
+                    begin_boss_phase(encounter, boss_id, timestamp_ms);
+                }
+            }
+        } else {
+            // No boss present: start with mob phase
+            begin_mob_phase(encounter, timestamp_ms);
+        }
     }
 
-    // Check for new boss detection
-    if check_boss_phase_transition(encounter) {
-        // Find the new boss that hasn't been tracked yet
-        if let Some((&boss_id, _)) = encounter
-            .entity_uid_to_entity
-            .iter()
-            .find(|(uid, e)| e.is_boss() && !encounter.active_boss_ids.contains(uid))
-        {
-            transition_to_boss_phase(encounter, boss_id, timestamp_ms);
+    // Check for new boss detection (transition from mob to boss phase)
+    if encounter.current_phase == Some(PhaseType::Mob) {
+        use crate::live::phase_detector::{check_boss_phase_transition, transition_to_boss_phase};
+        if check_boss_phase_transition(encounter) {
+            // Find the new boss that hasn't been tracked yet
+            if let Some((&boss_id, _)) = encounter
+                .entity_uid_to_entity
+                .iter()
+                .find(|(uid, e)| e.is_boss() && !encounter.active_boss_ids.contains(uid))
+            {
+                transition_to_boss_phase(encounter, boss_id, timestamp_ms);
+            }
         }
     }
 

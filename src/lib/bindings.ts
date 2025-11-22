@@ -147,6 +147,25 @@ async setBossOnlyDps(enabled: boolean) : Promise<Result<null, string>> {
 }
 },
 /**
+ * Gets all phases for a specific encounter.
+ * 
+ * # Arguments
+ * 
+ * * `encounter_id` - The ID of the encounter.
+ * 
+ * # Returns
+ * 
+ * * `Result<Vec<EncounterPhase>, String>` - A list of encounter phases.
+ */
+async getEncounterPhases(encounterId: number) : Promise<Result<EncounterPhase[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_encounter_phases", { encounterId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Gets a list of recent encounters.
  * 
  * # Arguments
@@ -764,6 +783,10 @@ dateFromMs: number | null;
  * The end date to filter by in milliseconds since the Unix epoch.
  */
 dateToMs: number | null }
+/**
+ * Response for get_encounter_phases command.
+ */
+export type EncounterPhase = { id: number; encounterId: number; phaseType: string; startTimeMs: number; endTimeMs: number | null; outcome: string }
 /**
  * A DTO representing a phase (mob or boss) within an encounter.
  */
