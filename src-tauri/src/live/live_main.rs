@@ -119,6 +119,15 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     }
                 }
+                packets::opcodes::Pkt::SyncSceneAttrs => {
+                    match blueprotobuf::SyncSceneAttrs::decode(Bytes::from(data)) {
+                        Ok(v) => Some(StateEvent::SyncSceneAttrs(v)),
+                        Err(e) => {
+                            warn!("Error decoding SyncSceneAttrs.. ignoring: {e}");
+                            None
+                        }
+                    }
+                }
                 _ => {
                     trace!("Unhandled packet opcode: {op:?}");
                     None
