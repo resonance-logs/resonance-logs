@@ -1455,6 +1455,12 @@ fn process_monster_attrs(monster_entity: &mut Entity, attrs: Vec<Attr>) {
                     monster_entity.set_attr(AttrType::MaxHp, AttrValue::Int(value as i64));
                 }
             }
+            attr_type::ATTR_ELITE_STATUS => match prost::encoding::decode_varint(&mut raw_bytes.as_slice()) {
+                Ok(value) => {
+                    monster_entity.set_attr(AttrType::EliteStatus, AttrValue::Int(value as i64));
+                }
+                Err(e) => log::warn!("Failed to decode ATTR_ELITE_STATUS: {:?}", e),
+            },
             _ => {}
         }
     }

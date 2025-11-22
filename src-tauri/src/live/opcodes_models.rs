@@ -848,11 +848,34 @@ impl Entity {
         if self.entity_type != EEntityType::EntMonster {
             return false;
         }
-
         // Check if monster_type_id exists in the boss list
-        self.monster_type_id
+        if self
+            .monster_type_id
             .map(|id| MONSTER_NAMES_BOSS.contains_key(&id.to_string()))
             .unwrap_or(false)
+        {
+            return true;
+        }
+
+        // If not identified by ID, check for 'Boss' text in the raw packet name
+        if let Some(packet_name) = &self.monster_name_packet {
+            if packet_name.to_lowercase().contains("boss") {
+                return true;
+            }
+        }
+
+        // Fallback: if ATTR_ELITE_STATUS is present and non-zero, consider it a boss
+        if let Some(elite_status) = self
+            .attributes
+            .get(&AttrType::EliteStatus)
+            .and_then(|v| v.as_int())
+        {
+            if elite_status > 0 {
+                return true;
+            }
+        }
+
+        false
     }
 }
 
@@ -877,6 +900,24 @@ mod tests {
         e.entity_type = EEntityType::EntMonster;
         e.set_monster_type(20088); // Boss - Tempest Ogre
         assert!(e.name.to_lowercase().contains("boss"));
+        assert!(e.is_boss());
+    }
+
+    #[test]
+    fn packet_name_contains_boss_is_boss() {
+        // No monster type id, but raw packet name contains 'Boss'
+        let mut e = Entity::default();
+        e.entity_type = EEntityType::EntMonster;
+        e.monster_name_packet = Some("Boss - Scary Thing".to_string());
+        assert!(e.is_boss());
+    }
+
+    #[test]
+    fn elite_status_marked_as_boss() {
+        // No monster type id, but elite status attr is present
+        let mut e = Entity::default();
+        e.entity_type = EEntityType::EntMonster;
+        e.set_attr(AttrType::EliteStatus, AttrValue::Int(2));
         assert!(e.is_boss());
     }
 
