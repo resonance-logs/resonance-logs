@@ -314,7 +314,7 @@ pub async fn toggle_pause_encounter(
         // Read current paused state and delegate to centralized handler which
         // will update the state and emit events as appropriate.
         let is_paused = state_manager
-            .with_state(|state| state.encounter.is_encounter_paused)
+            .with_state(|state| state.encounter.manual_pause_active)
             .await;
         state_manager
             .handle_event(StateEvent::PauseEncounter(!is_paused))

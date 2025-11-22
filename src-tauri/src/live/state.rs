@@ -24,6 +24,8 @@ pub enum StateEvent {
     SyncContainerDirtyData(blueprotobuf::SyncContainerDirtyData),
     /// A sync server time event.
     SyncServerTime(blueprotobuf::SyncServerTime),
+    /// Scene event notifications (phase/encounter markers).
+    SyncSceneEvents(blueprotobuf::SyncSceneEvents),
     /// A sync to me delta info event.
     SyncToMeDeltaInfo(blueprotobuf::SyncToMeDeltaInfo),
     /// A sync near delta info event.
@@ -84,8 +86,9 @@ impl AppState {
     ///
     /// * `paused` - Whether the encounter is paused.
     pub fn set_encounter_paused(&mut self, paused: bool) {
-        self.encounter.is_encounter_paused = paused;
-        self.event_manager.emit_encounter_pause(paused);
+        self.encounter.set_manual_pause(paused);
+        self.event_manager
+            .emit_encounter_pause(self.encounter.is_encounter_paused);
     }
 }
 
@@ -118,7 +121,8 @@ impl AppStateManager {
         let mut state = self.state.write().await;
 
         // Check if encounter is paused for events that should be dropped
-        if state.is_encounter_paused()
+        let drop_packets = state.encounter.manual_pause_active;
+        if drop_packets
             && matches!(
                 event,
                 StateEvent::SyncNearEntities(_)
@@ -155,6 +159,9 @@ impl AppStateManager {
             StateEvent::SyncContainerDirtyData(data) => {
                 self.process_sync_container_dirty_data(&mut state, data)
                     .await;
+            }
+            StateEvent::SyncSceneEvents(data) => {
+                self.process_sync_scene_events(&mut state, data).await;
             }
             StateEvent::SyncServerTime(_data) => {
                 // todo: this is skipped, not sure what info it has
@@ -584,6 +591,26 @@ impl AppStateManager {
         }
     }
 
+    async fn process_sync_scene_events(
+        &self,
+        state: &mut AppState,
+        sync_scene_events: blueprotobuf::SyncSceneEvents,
+    ) {
+        use crate::live::opcodes_process::{process_sync_scene_events, SceneEventResult};
+        // Parse scene events for phase/encounter end markers
+        if let Some(SceneEventResult {
+            encounter_end,
+            outcome,
+        }) = process_sync_scene_events(&mut state.encounter, sync_scene_events)
+        {
+            if encounter_end {
+                // Scene events signal a clean end to the encounter (e.g., victory/defeat cutscene)
+                self.end_encounter_from_scene_event(state, outcome)
+                    .await;
+            }
+        }
+    }
+
     async fn process_sync_to_me_delta_info(
         &self,
         state: &mut AppState,
@@ -652,6 +679,62 @@ impl AppStateManager {
             state.event_manager.clear_dead_bosses();
 
             // Emit an encounter update with cleared state so frontend updates immediately
+            use crate::live::commands_models::HeaderInfo;
+            let cleared_header = HeaderInfo {
+                total_dps: 0.0,
+                total_dmg: 0,
+                elapsed_ms: 0,
+                fight_start_timestamp_ms: 0,
+                bosses: vec![],
+                scene_id: state.encounter.current_scene_id,
+                scene_name: state.encounter.current_scene_name.clone(),
+                current_phase: None,
+            };
+            state
+                .event_manager
+                .emit_encounter_update(cleared_header, false);
+        }
+
+        state.low_hp_bosses.clear();
+        state.skill_subscriptions.clear();
+    }
+
+    async fn end_encounter_from_scene_event(&self, state: &mut AppState, outcome: &str) {
+        use crate::live::phase_detector::end_phase;
+
+        // Avoid double-ending the same scene event rapidly
+        let timestamp_ms = now_ms() as u128;
+        if timestamp_ms.saturating_sub(state.encounter.last_scene_event_end_ms) < 500 {
+            return;
+        }
+        state.encounter.last_scene_event_end_ms = timestamp_ms;
+
+        // End any active phase using the provided outcome hint
+        if state.encounter.current_phase.is_some() {
+            end_phase(&mut state.encounter, outcome, timestamp_ms);
+        }
+
+        // End encounter in DB and reset state, mirroring reset_encounter semantics
+        let defeated = state.event_manager.take_dead_bosses();
+        enqueue(DbTask::EndEncounter {
+            ended_at_ms: now_ms(),
+            defeated_bosses: if defeated.is_empty() {
+                None
+            } else {
+                Some(defeated)
+            },
+        });
+        state.encounter.reset_combat_state();
+        state.skill_subscriptions.clear();
+        state.encounter.manual_pause_active = false;
+        state.encounter.intermission_pause_active = false;
+        state.encounter.is_encounter_paused = false;
+
+        if state.event_manager.should_emit_events() {
+            state.event_manager.emit_encounter_reset();
+            state.event_manager.clear_dead_bosses();
+
+            // Emit a cleared header so the frontend reflects the ended encounter immediately
             use crate::live::commands_models::HeaderInfo;
             let cleared_header = HeaderInfo {
                 total_dps: 0.0,

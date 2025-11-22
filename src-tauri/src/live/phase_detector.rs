@@ -50,7 +50,11 @@ pub fn check_boss_phase_transition(encounter: &Encounter) -> bool {
     encounter
         .entity_uid_to_entity
         .iter()
-        .any(|(uid, entity)| entity.is_boss() && !encounter.active_boss_ids.contains(uid))
+        .any(|(uid, entity)| {
+            entity.is_boss()
+                && !encounter.active_boss_ids.contains(uid)
+                && !encounter.defeated_boss_ids.contains(uid)
+        })
 }
 
 /// Begins a new boss phase for a specific boss entity.
@@ -60,6 +64,7 @@ pub fn begin_boss_phase(encounter: &mut Encounter, boss_id: i64, timestamp_ms: u
         boss_id, timestamp_ms
     );
 
+    encounter.clear_intermission_pause();
     encounter.current_phase = Some(PhaseType::Boss);
     encounter.phase_start_ms = timestamp_ms;
     encounter.active_boss_ids.insert(boss_id);
@@ -75,6 +80,7 @@ pub fn begin_boss_phase(encounter: &mut Encounter, boss_id: i64, timestamp_ms: u
 pub fn begin_mob_phase(encounter: &mut Encounter, timestamp_ms: u128) {
     info!("Beginning mob phase at timestamp {}", timestamp_ms);
 
+    encounter.clear_intermission_pause();
     encounter.current_phase = Some(PhaseType::Mob);
     encounter.phase_start_ms = timestamp_ms;
 
@@ -91,6 +97,7 @@ pub fn begin_phase(encounter: &mut Encounter, phase_type: PhaseType, timestamp_m
         PhaseType::Boss => {
             // For legacy compatibility, just begin a boss phase without specific ID
             info!("Beginning boss phase (legacy) at timestamp {}", timestamp_ms);
+            encounter.clear_intermission_pause();
             encounter.current_phase = Some(PhaseType::Boss);
             encounter.phase_start_ms = timestamp_ms;
             encounter.boss_detected = true;
@@ -111,18 +118,25 @@ pub fn end_phase(encounter: &mut Encounter, outcome: &str, timestamp_ms: u128) {
             PhaseType::Boss => "boss",
         };
 
+        // Outcome is constrained in the DB; map unsupported values to "unknown".
+        let normalized_outcome = match outcome {
+            "success" | "wipe" | "unknown" => outcome,
+            _ => "unknown",
+        };
+
         info!(
             "Ending {} phase with outcome '{}' at timestamp {}",
-            phase_str, outcome, timestamp_ms
+            phase_str, normalized_outcome, timestamp_ms
         );
 
         enqueue(DbTask::EndPhase {
             phase_type: phase_str.to_string(),
             end_time_ms: timestamp_ms as i64,
-            outcome: outcome.to_string(),
+            outcome: normalized_outcome.to_string(),
         });
 
         encounter.current_phase = None;
+        encounter.set_intermission_pause(true, Some(timestamp_ms));
     }
 }
 

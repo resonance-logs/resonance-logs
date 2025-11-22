@@ -9,6 +9,10 @@ use tokio::sync::RwLock;
 #[derive(Debug, Default, Clone)]
 pub struct Encounter {
     pub is_encounter_paused: bool,
+    pub manual_pause_active: bool,
+    pub intermission_pause_active: bool,
+    pub last_phase_end_ms: Option<u128>,
+    pub last_scene_event_end_ms: u128,
     pub time_last_combat_packet_ms: u128, // in ms
     pub time_fight_start_ms: u128,        // in ms
     pub total_dmg: u128,
@@ -41,6 +45,7 @@ pub struct Encounter {
     pub phase_start_ms: u128,
     pub boss_detected: bool, // Legacy flag for compatibility - use active_boss_ids instead
     pub active_boss_ids: HashSet<i64>, // Track currently active boss IDs for multi-boss support
+    pub defeated_boss_ids: HashSet<i64>, // Track defeated bosses to avoid re-opening phases
 }
 
 /// Represents the type of encounter phase
@@ -404,7 +409,6 @@ impl Encounter {
     /// Reset only combat-specific state while preserving player identity fields and cache.
     ///
     /// Preserves:
-    /// - is_encounter_paused
     /// - local_player_uid
     /// - local_player (sync container data)
     /// - entity_uid_to_entity identity fields (name, class, spec, ability score, level, type)
@@ -412,8 +416,14 @@ impl Encounter {
     /// Clears:
     /// - encounter totals and timestamps
     /// - per-entity combat counters and per-encounter skill maps
+    /// - pause flags (manual/intermission)
     pub fn reset_combat_state(&mut self) {
         // Reset encounter-level combat state
+        self.intermission_pause_active = false;
+        self.manual_pause_active = false;
+        self.is_encounter_paused = false;
+        self.last_phase_end_ms = None;
+        self.last_scene_event_end_ms = 0;
         self.time_last_combat_packet_ms = 0;
         self.time_fight_start_ms = 0;
         self.total_dmg = 0;
@@ -468,6 +478,37 @@ impl Encounter {
         self.current_phase = None;
         self.phase_start_ms = 0;
         self.boss_detected = false;
+        self.active_boss_ids.clear();
+        self.defeated_boss_ids.clear();
+    }
+
+    /// Refresh the aggregated pause flag based on manual/intermission pauses.
+    pub fn recompute_pause_state(&mut self) {
+        self.is_encounter_paused = self.manual_pause_active || self.intermission_pause_active;
+    }
+
+    /// Toggle manual pause (user-triggered).
+    pub fn set_manual_pause(&mut self, paused: bool) {
+        self.manual_pause_active = paused;
+        self.recompute_pause_state();
+    }
+
+    /// Toggle intermission pause (automatic between phases).
+    pub fn set_intermission_pause(&mut self, paused: bool, timestamp_ms: Option<u128>) {
+        self.intermission_pause_active = paused;
+        if paused {
+            // Prefer provided timestamp when starting an intermission pause
+            if let Some(ts) = timestamp_ms {
+                self.last_phase_end_ms = Some(ts);
+            }
+        }
+        self.recompute_pause_state();
+    }
+
+    /// Clear intermission pause while respecting any manual pause that might be active.
+    pub fn clear_intermission_pause(&mut self) {
+        self.intermission_pause_active = false;
+        self.recompute_pause_state();
     }
 }
 

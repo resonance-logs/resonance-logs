@@ -92,6 +92,15 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     }
                 }
+                packets::opcodes::Pkt::SyncSceneEvents => {
+                    match blueprotobuf::SyncSceneEvents::decode(Bytes::from(data)) {
+                        Ok(v) => Some(StateEvent::SyncSceneEvents(v)),
+                        Err(e) => {
+                            warn!("Error decoding SyncSceneEvents.. ignoring: {e}");
+                            None
+                        }
+                    }
+                }
                 packets::opcodes::Pkt::SyncToMeDeltaInfo => {
                     match blueprotobuf::SyncToMeDeltaInfo::decode(Bytes::from(data)) {
                         Ok(v) => Some(StateEvent::SyncToMeDeltaInfo(v)),

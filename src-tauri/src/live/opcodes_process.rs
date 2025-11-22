@@ -16,6 +16,13 @@ use std::collections::HashMap;
 use std::default::Default;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Result of parsing SyncSceneEvents packets for phase/encounter signals.
+#[derive(Debug, Clone, Copy)]
+pub struct SceneEventResult {
+    pub encounter_end: bool,
+    pub outcome: &'static str,
+}
+
 /// Record a death event into the encounter and enqueue a DB task.
 fn record_death(
     encounter: &mut Encounter,
@@ -152,6 +159,95 @@ pub fn process_notify_revive_user(
         uid
     );
     Some(())
+}
+
+/// Process scene event notifications to detect phase/encounter endings.
+pub fn process_sync_scene_events(
+    encounter: &mut Encounter,
+    sync_scene_events: blueprotobuf::SyncSceneEvents,
+) -> Option<SceneEventResult> {
+    let evt = sync_scene_events.evt?;
+    if evt.events.is_empty() {
+        return None;
+    }
+
+    let timestamp_ms = now_ms() as u128;
+
+    let mut saw_success = false;
+    let mut saw_failure = false;
+    let mut saw_phase_marker = false;
+
+    for ev in evt.events {
+        let event_type = ev.event_type.unwrap_or_default();
+        let first_int = ev.int_params.first().copied();
+        let text = if ev.str_params.is_empty() {
+            String::new()
+        } else {
+            ev.str_params.join(" ").to_lowercase()
+        };
+
+        // Heuristics: many scene events encode a success/failure flag in the first int param
+        match first_int {
+            Some(1) => saw_success = true,
+            Some(2) => saw_failure = true,
+            _ => {}
+        }
+
+        // Textual hints sent alongside cutscene/result triggers
+        if !text.is_empty() {
+            let t = text.as_str();
+            if t.contains("victory")
+                || t.contains("success")
+                || t.contains("clear")
+                || t.contains("win")
+            {
+                saw_success = true;
+            } else if t.contains("fail") || t.contains("wipe") || t.contains("lose") {
+                saw_failure = true;
+            }
+            saw_phase_marker = true;
+        }
+
+        // Non-zero event types usually indicate a scripted scene trigger
+        if event_type != 0 {
+            saw_phase_marker = true;
+        }
+
+        // Any payload in params is a hint that this is a boundary event
+        if !ev.int_params.is_empty() || !ev.long_params.is_empty() || !ev.float_params.is_empty()
+        {
+            saw_phase_marker = true;
+        }
+    }
+
+    // Determine outcome hint for phase/end handling
+    let outcome = if saw_success {
+        "success"
+    } else if saw_failure {
+        "wipe"
+    } else {
+        "unknown"
+    };
+
+    // End the active phase if scene markers imply completion
+    if encounter.current_phase.is_some() && saw_phase_marker {
+        use crate::live::phase_detector::end_phase;
+        end_phase(encounter, outcome, timestamp_ms);
+    }
+
+    // Enter an intermission pause until a new phase begins
+    if saw_phase_marker {
+        encounter.set_intermission_pause(true, Some(timestamp_ms));
+    }
+
+    let encounter_end = saw_success || saw_failure;
+    if !saw_phase_marker && !encounter_end {
+        return None;
+    }
+    Some(SceneEventResult {
+        encounter_end,
+        outcome,
+    })
 }
 
 pub fn process_sync_near_entities(
@@ -737,9 +833,13 @@ pub fn process_aoi_sync_delta(
 
             // Check if a boss died
             if let Some(entity) = encounter.entity_uid_to_entity.get(&actor) {
-                if entity.is_boss() && encounter.active_boss_ids.contains(&actor) {
-                    use crate::live::phase_detector::handle_boss_death;
-                    handle_boss_death(encounter, actor, timestamp_ms);
+                if entity.is_boss() {
+                    // Track defeated boss to avoid reopening phases for the same boss
+                    encounter.defeated_boss_ids.insert(actor);
+                    if encounter.active_boss_ids.contains(&actor) {
+                        use crate::live::phase_detector::handle_boss_death;
+                        handle_boss_death(encounter, actor, timestamp_ms);
+                    }
                 }
             }
         }
@@ -864,7 +964,17 @@ pub fn process_aoi_sync_delta(
     // Check if we need to start a phase (e.g., after a wipe or at combat start)
     if encounter.current_phase.is_none() {
         // Determine if a boss is present in the encounter
-        let has_boss = encounter.entity_uid_to_entity.values().any(|e| e.is_boss());
+        let has_boss = encounter
+            .entity_uid_to_entity
+            .iter()
+            .any(|(uid, e)| e.is_boss() && !encounter.defeated_boss_ids.contains(uid));
+
+        // If we've already marked a boss as defeated and no active boss exists, avoid
+        // starting a new mob phase spuriously after the encounter ends.
+        let encounter_finished = !has_boss && !encounter.defeated_boss_ids.is_empty();
+        if encounter_finished {
+            return Some(());
+        }
 
         if has_boss {
             // Boss present: check if this is a new boss or resuming after wipe
@@ -880,7 +990,11 @@ pub fn process_aoi_sync_delta(
                 if let Some((&boss_id, _)) = encounter
                     .entity_uid_to_entity
                     .iter()
-                    .find(|(uid, e)| e.is_boss() && !encounter.active_boss_ids.contains(uid))
+                    .find(|(uid, e)| {
+                        e.is_boss()
+                            && !encounter.active_boss_ids.contains(uid)
+                            && !encounter.defeated_boss_ids.contains(uid)
+                    })
                 {
                     begin_boss_phase(encounter, boss_id, timestamp_ms);
                 }
@@ -899,7 +1013,11 @@ pub fn process_aoi_sync_delta(
             if let Some((&boss_id, _)) = encounter
                 .entity_uid_to_entity
                 .iter()
-                .find(|(uid, e)| e.is_boss() && !encounter.active_boss_ids.contains(uid))
+                .find(|(uid, e)| {
+                    e.is_boss()
+                        && !encounter.active_boss_ids.contains(uid)
+                        && !encounter.defeated_boss_ids.contains(uid)
+                })
             {
                 transition_to_boss_phase(encounter, boss_id, timestamp_ms);
             }
@@ -910,6 +1028,7 @@ pub fn process_aoi_sync_delta(
     Some(())
 }
 
+// know what you're doing before even thinking about touching any of this function. YOU ARE WARNED!!! :)
 fn process_player_attrs(player_entity: &mut Entity, target_uid: i64, attrs: Vec<Attr>) {
     use crate::live::opcodes_models::{AttrType, AttrValue};
     use bytes::Buf;
