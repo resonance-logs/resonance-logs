@@ -39,3 +39,4 @@ openspec/
 .chunkhound/
 .vscode/mcp.json
 .github/agents/
+specs/
