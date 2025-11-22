@@ -3,7 +3,7 @@
 /// Detects when to transition between mob and boss phases based on:
 /// - Boss entity detection in the encounter
 /// - Wipe scenarios during different phases
-use crate::database::{enqueue, DbTask};
+use crate::database::{DbTask, enqueue};
 use crate::live::opcodes_models::{Encounter, PhaseType};
 use log::info;
 

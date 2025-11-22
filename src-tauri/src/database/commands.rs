@@ -1558,10 +1558,9 @@ pub fn get_encounter_attempt_player_skills(
         }
 
         let mut items: Vec<(i32, (i64, i64, i64, i64, i64, i64))> = agg.into_iter().collect();
-        items.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
+        items.sort_by(|a, b| b.1.0.cmp(&a.1.0));
 
-        for (skill_id, (total_value, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in
-            items
+        for (skill_id, (total_value, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items
         {
             let name = if skill_id > 0 {
                 skill_names::lookup(skill_id).unwrap_or_else(|| String::from("Unknown Skill"))
@@ -1712,10 +1711,9 @@ pub fn get_encounter_attempt_player_skills(
         }
 
         let mut items: Vec<(i32, (i64, i64, i64, i64, i64, i64))> = agg.into_iter().collect();
-        items.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
+        items.sort_by(|a, b| b.1.0.cmp(&a.1.0));
 
-        for (skill_id, (total_heal, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in
-            items
+        for (skill_id, (total_heal, hits, crit_hits, lucky_hits, crit_total, lucky_total)) in items
         {
             let name = if skill_id > 0 {
                 skill_names::lookup(skill_id).unwrap_or_else(|| String::from("Unknown Skill"))
@@ -1836,11 +1834,11 @@ pub fn get_encounter_attempt_player_skills(
 pub fn delete_encounter(encounter_id: i32) -> Result<(), String> {
     let mut conn = get_conn()?;
     use sch::actor_encounter_stats::dsl as s;
-    use sch::encounters::dsl as e;
     use sch::damage_skill_stats::dsl as dss;
-    use sch::heal_skill_stats::dsl as hss;
-    use sch::encounter_bosses::dsl as eb;
     use sch::death_events::dsl as de;
+    use sch::encounter_bosses::dsl as eb;
+    use sch::encounters::dsl as e;
+    use sch::heal_skill_stats::dsl as hss;
 
     conn.transaction::<(), diesel::result::Error, _>(|conn| {
         // Remove materialized aggregates and related rows for the encounter.

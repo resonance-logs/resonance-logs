@@ -259,9 +259,7 @@ pub enum DbTask {
     },
 
     /// A task to end any encounters that never received an explicit end.
-    EndAllActiveEncounters {
-        ended_at_ms: i64,
-    },
+    EndAllActiveEncounters { ended_at_ms: i64 },
 
     /// A task to insert or update an entity.
     UpsertEntity {
@@ -704,7 +702,13 @@ fn handle_task(
                 // Also update phase stats if a phase is active
                 if let Some(phase_id) = get_current_phase_id(conn, enc_id)? {
                     upsert_phase_stats_add_damage_dealt(
-                        conn, phase_id, attacker_id, value, is_crit, is_lucky, is_boss,
+                        conn,
+                        phase_id,
+                        attacker_id,
+                        value,
+                        is_crit,
+                        is_lucky,
+                        is_boss,
                     )?;
 
                     if let Some(def_id) = defender_id {
@@ -1866,9 +1870,7 @@ mod tests {
         // Simulate startup cleanup
         handle_task(
             &mut conn,
-            DbTask::EndAllActiveEncounters {
-                ended_at_ms: 2_000,
-            },
+            DbTask::EndAllActiveEncounters { ended_at_ms: 2_000 },
             &mut enc_opt,
         )
         .unwrap();

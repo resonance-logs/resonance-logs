@@ -4,6 +4,7 @@ use crate::live::attempt_detector::{
     AttemptConfig, check_hp_rollback_condition, check_wipe_condition, get_boss_hp_percentage,
     split_attempt, track_party_member, update_boss_hp_tracking,
 };
+use crate::live::dungeon_log::{self, DungeonLogRuntime};
 use crate::live::opcodes_models::class::{
     ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
 };
@@ -287,11 +288,10 @@ pub fn process_sync_container_data(
         let now = now_ms();
 
         // Serialize the full CharSerialize payload (including nested structures).
-        let char_serialize_json = serde_json::to_string(&v_data)
-            .unwrap_or_else(|e| {
-                log::warn!("Failed to serialize CharSerialize payload: {}", e);
-                "{}".to_string()
-            });
+        let char_serialize_json = serde_json::to_string(&v_data).unwrap_or_else(|e| {
+            log::warn!("Failed to serialize CharSerialize payload: {}", e);
+            "{}".to_string()
+        });
 
         // Extract profession_list for easier access / smaller payloads downstream.
         let profession_list_json = serde_json::to_string(profession_list).ok();
@@ -302,10 +302,7 @@ pub fn process_sync_container_data(
                 .talent_list
                 .iter()
                 .map(|(profession_id, talent_info)| {
-                    (
-                        *profession_id,
-                        talent_info.talent_node_ids.clone(),
-                    )
+                    (*profession_id, talent_info.talent_node_ids.clone())
                 })
                 .collect();
             serde_json::to_string(&talent_map).ok()
@@ -336,6 +333,7 @@ pub fn process_sync_container_dirty_data(
 pub fn process_sync_to_me_delta_info(
     encounter: &mut Encounter,
     sync_to_me_delta_info: blueprotobuf::SyncToMeDeltaInfo,
+    dungeon_runtime: Option<&DungeonLogRuntime>,
 ) -> Option<()> {
     let delta_info = match sync_to_me_delta_info.delta_info {
         Some(info) => info,
@@ -350,7 +348,7 @@ pub fn process_sync_to_me_delta_info(
     }
 
     if let Some(base_delta) = delta_info.base_delta {
-        process_aoi_sync_delta(encounter, base_delta);
+        process_aoi_sync_delta(encounter, base_delta, dungeon_runtime);
     }
 
     Some(())
@@ -359,6 +357,7 @@ pub fn process_sync_to_me_delta_info(
 pub fn process_aoi_sync_delta(
     encounter: &mut Encounter,
     aoi_sync_delta: blueprotobuf::AoiSyncDelta,
+    dungeon_runtime: Option<&DungeonLogRuntime>,
 ) -> Option<()> {
     let target_uuid = aoi_sync_delta.uuid?; // UUID =/= uid (have to >> 16)
     let target_uid = target_uuid >> 16;
@@ -416,6 +415,7 @@ pub fn process_aoi_sync_delta(
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
             .as_millis();
+        let timestamp_ms_i64 = timestamp_ms.min(i64::MAX as u128) as i64;
         let non_lucky_dmg = sync_damage_info.value;
         let lucky_value = sync_damage_info.lucky_value;
 
@@ -443,7 +443,7 @@ pub fn process_aoi_sync_delta(
         let local_player_uid_copy = encounter.local_player_uid;
 
         // First update attacker-side state in its own scope (single mutable borrow)
-        let (is_crit, is_lucky, attacker_entity_type_copy) = {
+        let (is_crit, is_lucky, attacker_entity_type_copy, was_heal_event) = {
             let attacker_entity = encounter
                 .entity_uid_to_entity
                 .entry(attacker_uid)
@@ -499,14 +499,14 @@ pub fn process_aoi_sync_delta(
                         class_spec: Some(attacker_entity.class_spec as i32),
                         ability_score: Some(attacker_entity.ability_score),
                         level: Some(attacker_entity.level),
-                        seen_at_ms: timestamp_ms as i64,
+                        seen_at_ms: timestamp_ms_i64,
                         attributes: serialize_attributes(attacker_entity),
                     });
                 }
 
                 // Insert heal event
                 enqueue(DbTask::InsertHealEvent {
-                    timestamp_ms: timestamp_ms as i64,
+                    timestamp_ms: timestamp_ms_i64,
                     healer_id: attacker_uid,
                     target_id: Some(target_uid),
                     skill_id: Some(skill_uid),
@@ -516,7 +516,12 @@ pub fn process_aoi_sync_delta(
                     attempt_index: Some(encounter.current_attempt_index),
                 });
 
-                (is_crit_local, is_lucky_local, attacker_entity.entity_type)
+                (
+                    is_crit_local,
+                    is_lucky_local,
+                    attacker_entity.entity_type,
+                    true,
+                )
             } else {
                 let skill = attacker_entity
                     .skill_uid_to_dmg_skill
@@ -600,17 +605,22 @@ pub fn process_aoi_sync_delta(
                         class_spec: Some(attacker_entity.class_spec as i32),
                         ability_score: Some(attacker_entity.ability_score),
                         level: Some(attacker_entity.level),
-                        seen_at_ms: timestamp_ms as i64,
+                        seen_at_ms: timestamp_ms_i64,
                         attributes: serialize_attributes(attacker_entity),
                     });
                 }
 
-                (is_crit_local, is_lucky_local, attacker_entity.entity_type)
+                (
+                    is_crit_local,
+                    is_lucky_local,
+                    attacker_entity.entity_type,
+                    false,
+                )
             }
         };
 
         // Now handle defender-side updates in their own scope and compute death info
-        let death_info_local: Option<(i64, Option<i64>, Option<i32>, i64)> = {
+        let (death_info_local, target_name, target_monster_type_id) = {
             // Track damage taken
             let hp_loss = sync_damage_info.hp_lessen_value.unwrap_or(0).max(0) as u128;
             let shield_loss = sync_damage_info.shield_lessen_value.unwrap_or(0).max(0) as u128;
@@ -627,6 +637,13 @@ pub fn process_aoi_sync_delta(
                     entity_type: EEntityType::from(target_uuid),
                     ..Default::default()
                 });
+
+            let target_name = if defender_entity.name.is_empty() {
+                None
+            } else {
+                Some(defender_entity.name.clone())
+            };
+            let target_monster_type_id = defender_entity.monster_type_id.map(|id| i64::from(id));
 
             // Check for death
             let prev_hp_opt = defender_entity.hp();
@@ -654,29 +671,29 @@ pub fn process_aoi_sync_delta(
                     class_spec: Some(defender_entity.class_spec as i32),
                     ability_score: Some(defender_entity.ability_score),
                     level: Some(defender_entity.level),
-                    seen_at_ms: timestamp_ms as i64,
+                    seen_at_ms: timestamp_ms_i64,
                     attributes: serialize_attributes(defender_entity),
                 });
             }
 
             // Only record damage/taken stats if this event is not a heal
-            let is_heal_event = sync_damage_info.r#type.unwrap_or(0) == EDamageType::Heal as i32;
-            if !is_heal_event {
+            if !was_heal_event {
                 // Insert damage event
                 let is_boss = defender_entity.is_boss();
-                let monster_name_for_event = if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
-                    defender_entity.monster_name_packet.clone().or_else(|| {
-                        if defender_entity.name.is_empty() {
-                            None
-                        } else {
-                            Some(defender_entity.name.clone())
-                        }
-                    })
-                } else {
-                    None
-                };
+                let monster_name_for_event =
+                    if matches!(defender_entity.entity_type, EEntityType::EntMonster) {
+                        defender_entity.monster_name_packet.clone().or_else(|| {
+                            if defender_entity.name.is_empty() {
+                                None
+                            } else {
+                                Some(defender_entity.name.clone())
+                            }
+                        })
+                    } else {
+                        None
+                    };
                 enqueue(DbTask::InsertDamageEvent {
-                    timestamp_ms: timestamp_ms as i64,
+                    timestamp_ms: timestamp_ms_i64,
                     attacker_id: attacker_uid,
                     defender_id: Some(target_uid),
                     monster_name: monster_name_for_event,
@@ -719,17 +736,35 @@ pub fn process_aoi_sync_delta(
                 }
             }
 
-            if died {
+            let death_info = if died {
                 Some((
                     target_uid,
                     Some(attacker_uid),
                     Some(skill_uid),
-                    timestamp_ms as i64,
+                    timestamp_ms_i64,
                 ))
             } else {
                 None
-            }
+            };
+
+            (death_info, target_name, target_monster_type_id)
         };
+
+        if let Some(runtime) = dungeon_runtime {
+            if !was_heal_event {
+                let damage_amount = actual_value.min(i64::MAX as u128) as i64;
+                let damage_event = dungeon_log::build_damage_event(
+                    timestamp_ms_i64,
+                    attacker_uid,
+                    target_uid,
+                    target_name,
+                    target_monster_type_id,
+                    damage_amount,
+                    death_info_local.is_some(),
+                );
+                runtime.process_damage_event(damage_event);
+            }
+        }
 
         // If death detected, record it (dedupe handled inside record_death)
         if let Some((actor, killer, skill, ts)) = death_info_local {
@@ -821,8 +856,8 @@ pub fn process_aoi_sync_delta(
             }
 
             // Begin initial phase: start with mob phase by default
-            use crate::live::phase_detector::{begin_phase, check_boss_phase_transition};
             use crate::live::opcodes_models::PhaseType;
+            use crate::live::phase_detector::{begin_phase, check_boss_phase_transition};
 
             // Check if a boss is already present at encounter start
             if check_boss_phase_transition(encounter) {

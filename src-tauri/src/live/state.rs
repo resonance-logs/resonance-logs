@@ -1,4 +1,5 @@
 use crate::database::{DbTask, enqueue, now_ms};
+use crate::live::dungeon_log::{self, DungeonLogRuntime, SharedDungeonLog};
 use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
@@ -6,6 +7,7 @@ use blueprotobuf_lib::blueprotobuf;
 use log::{error, info, warn};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::RwLock;
 
@@ -53,6 +55,10 @@ pub struct AppState {
     pub low_hp_bosses: HashMap<i64, u128>,
     /// Whether we've already handled the first scene change after startup.
     pub initial_scene_change_handled: bool,
+    /// Shared dungeon log used for segment tracking.
+    pub dungeon_log: SharedDungeonLog,
+    /// Feature flag for dungeon segment tracking.
+    pub dungeon_segments_enabled: bool,
 }
 
 impl AppState {
@@ -70,6 +76,8 @@ impl AppState {
             boss_only_dps: false,
             low_hp_bosses: HashMap::new(),
             initial_scene_change_handled: false,
+            dungeon_log: dungeon_log::create_shared_log(),
+            dungeon_segments_enabled: false,
         }
     }
 
@@ -230,6 +238,8 @@ impl AppStateManager {
         use crate::live::scene_names;
 
         info!("EnterScene packet received");
+
+        let dungeon_runtime = dungeon_runtime_if_enabled(state);
 
         if !state.initial_scene_change_handled {
             info!("Initial scene detected; finalizing any dangling encounters");
@@ -432,7 +442,10 @@ impl AppStateManager {
             if prev_scene.map(|id| id != scene_id).unwrap_or(false)
                 && state.encounter.time_fight_start_ms != 0
             {
-                info!("Scene changed from {:?} to {}; ending active encounter", prev_scene, scene_id);
+                info!(
+                    "Scene changed from {:?} to {}; ending active encounter",
+                    prev_scene, scene_id
+                );
                 self.reset_encounter(state).await;
             }
 
@@ -448,6 +461,22 @@ impl AppStateManager {
                 state.event_manager.emit_scene_change(scene_name.clone());
             } else {
                 warn!("Event manager not ready, skipping scene change emit");
+            }
+
+            match dungeon_runtime.as_ref() {
+                Some(runtime) => {
+                    runtime.reset_for_scene(
+                        state.encounter.current_scene_id,
+                        state.encounter.current_scene_name.clone(),
+                    );
+                }
+                None => {
+                    let _ = dungeon_log::reset_for_scene(
+                        &state.dungeon_log,
+                        state.encounter.current_scene_id,
+                        state.encounter.current_scene_name.clone(),
+                    );
+                }
             }
         } else {
             warn!(
@@ -527,6 +556,19 @@ impl AppStateManager {
                 info!("Emitting fallback scene change event: {}", fallback_name);
                 state.event_manager.emit_scene_change(fallback_name);
             }
+
+            match dungeon_runtime.as_ref() {
+                Some(runtime) => {
+                    runtime.reset_for_scene(None, state.encounter.current_scene_name.clone());
+                }
+                None => {
+                    let _ = dungeon_log::reset_for_scene(
+                        &state.dungeon_log,
+                        None,
+                        state.encounter.current_scene_name.clone(),
+                    );
+                }
+            }
         }
     }
 
@@ -550,7 +592,10 @@ impl AppStateManager {
 
         // Extract and upload modules (if enabled)
         // Get module sync state from app handle
-        if let Some(module_state) = state.app_handle.try_state::<crate::module_extractor::commands::ModuleSyncState>() {
+        if let Some(module_state) = state
+            .app_handle
+            .try_state::<crate::module_extractor::commands::ModuleSyncState>(
+        ) {
             let sync_data_clone = sync_container_data.clone();
             let module_state_clone = (*module_state).clone();
 
@@ -560,7 +605,9 @@ impl AppStateManager {
                     &module_state_clone,
                     &sync_data_clone,
                     true, // auto_upload = true
-                ).await {
+                )
+                .await
+                {
                     warn!("Module extraction/upload failed: {}", e);
                 }
             });
@@ -591,7 +638,12 @@ impl AppStateManager {
     ) {
         use crate::live::opcodes_process::process_sync_to_me_delta_info;
         // Missing fields are normal, no need to log
-        let _ = process_sync_to_me_delta_info(&mut state.encounter, sync_to_me_delta_info);
+        let dungeon_ctx = dungeon_runtime_if_enabled(state);
+        let _ = process_sync_to_me_delta_info(
+            &mut state.encounter,
+            sync_to_me_delta_info,
+            dungeon_ctx.as_ref(),
+        );
     }
 
     async fn process_sync_near_delta_info(
@@ -600,9 +652,11 @@ impl AppStateManager {
         sync_near_delta_info: blueprotobuf::SyncNearDeltaInfo,
     ) {
         use crate::live::opcodes_process::process_aoi_sync_delta;
+        let dungeon_ctx = dungeon_runtime_if_enabled(state);
         for aoi_sync_delta in sync_near_delta_info.delta_infos {
             // Missing fields are normal, no need to log
-            let _ = process_aoi_sync_delta(&mut state.encounter, aoi_sync_delta);
+            let _ =
+                process_aoi_sync_delta(&mut state.encounter, aoi_sync_delta, dungeon_ctx.as_ref());
         }
     }
 
@@ -787,16 +841,28 @@ impl AppStateManager {
     }
 }
 
+fn dungeon_runtime_if_enabled(state: &AppState) -> Option<DungeonLogRuntime> {
+    if state.dungeon_segments_enabled {
+        Some(DungeonLogRuntime::new(
+            state.dungeon_log.clone(),
+            state.app_handle.clone(),
+        ))
+    } else {
+        None
+    }
+}
+
 impl AppStateManager {
     /// Updates and emits events.
     pub async fn update_and_emit_events(&self) {
         // First, read the encounter data to generate all the necessary information
-        let (encounter, should_emit, boss_only) = {
+        let (encounter, should_emit, boss_only, dungeon_ctx) = {
             let state = self.state.read().await;
             (
                 state.encounter.clone(),
                 state.event_manager.should_emit_events(),
                 state.boss_only_dps,
+                dungeon_runtime_if_enabled(&state),
             )
         };
 
@@ -1005,6 +1071,10 @@ impl AppStateManager {
                     }
                 }
             }
+        }
+
+        if let Some(runtime) = dungeon_ctx {
+            runtime.check_for_timeout(Instant::now());
         }
     }
 }

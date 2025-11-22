@@ -1,8 +1,7 @@
+use once_cell::sync::Lazy;
 /// Module type and attribute mappings synchronized with C# implementation
 /// from StarResonanceDps/ModuleType.cs and resonance-website backend
-
 use std::collections::HashMap;
-use once_cell::sync::Lazy;
 
 // Module Type IDs
 pub const BASIC_ATTACK: i32 = 5500101;

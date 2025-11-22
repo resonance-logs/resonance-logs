@@ -1,7 +1,7 @@
 mod build_app;
 mod live;
-mod packets;
 mod module_extractor;
+mod packets;
 
 use crate::build_app::build_and_run;
 use log::{info, warn};
@@ -49,6 +49,8 @@ pub fn run() {
             live::commands::subscribe_player_skills,
             live::commands::unsubscribe_player_skills,
             live::commands::set_boss_only_dps,
+            live::commands::set_dungeon_segments_enabled,
+            live::commands::get_dungeon_log,
             database::commands::get_recent_encounters,
             database::commands::get_unique_scene_names,
             database::commands::get_unique_boss_names,
@@ -130,9 +132,9 @@ pub fn run() {
             app.manage(auto_upload_state.clone());
 
             // Start auto-sync timer
-            tauri::async_runtime::spawn(
-                crate::module_extractor::commands::start_auto_sync_timer(module_sync_state)
-            );
+            tauri::async_runtime::spawn(crate::module_extractor::commands::start_auto_sync_timer(
+                module_sync_state,
+            ));
             crate::uploader::start_auto_upload_task(app_handle.clone(), auto_upload_state);
 
             // Live Meter
@@ -260,7 +262,10 @@ async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Resul
         update
             .download_and_install::<_, _>(
                 |chunk_length: usize, content_length: Option<u64>| {
-                    info!("downloaded {} bytes (total: {:?})", chunk_length, content_length);
+                    info!(
+                        "downloaded {} bytes (total: {:?})",
+                        chunk_length, content_length
+                    );
                 },
                 || {
                     info!("download finished");

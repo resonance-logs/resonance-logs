@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 /// Represents a single module with its parts and attributes
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

@@ -1,17 +1,17 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use sha2::{Digest, Sha256};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use reqwest::Client;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::{Notify, RwLock};
-use tokio::time::{interval, Duration};
+use tokio::time::{Duration, interval};
 
+use crate::database::schema as sch;
 use crate::database::{default_db_path, now_ms};
 use diesel::prelude::*;
-use crate::database::schema as sch;
 
 static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
 static UPLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
@@ -25,11 +25,7 @@ pub struct AutoUploadState {
 }
 
 impl AutoUploadState {
-    pub async fn sync_from_settings(
-        &self,
-        api_key: Option<String>,
-        base_url: Option<String>,
-    ) {
+    pub async fn sync_from_settings(&self, api_key: Option<String>, base_url: Option<String>) {
         let sanitized_key = api_key.and_then(|k| {
             let trimmed = k.trim().to_string();
             if trimmed.is_empty() {
@@ -360,14 +356,23 @@ fn compute_encounter_hash(encounter: &UploadEncounterIn) -> String {
     let mut sorted_attempts = encounter.attempts.clone();
     sorted_attempts.sort_by_key(|a| a.attempt_index);
 
-    let attempt_values: Vec<serde_json::Value> = sorted_attempts.iter().map(|a| json!({
-        "attemptIndex": a.attempt_index,
-        "startedAtMs": a.started_at_ms,
-        "endedAtMs": a.ended_at_ms,
-    })).collect();
+    let attempt_values: Vec<serde_json::Value> = sorted_attempts
+        .iter()
+        .map(|a| {
+            json!({
+                "attemptIndex": a.attempt_index,
+                "startedAtMs": a.started_at_ms,
+                "endedAtMs": a.ended_at_ms,
+            })
+        })
+        .collect();
 
     // Include actor IDs to differentiate encounters with same timing but different participants
-    let mut actor_ids: Vec<i64> = encounter.actor_encounter_stats.iter().map(|s| s.actor_id).collect();
+    let mut actor_ids: Vec<i64> = encounter
+        .actor_encounter_stats
+        .iter()
+        .map(|s| s.actor_id)
+        .collect();
     actor_ids.sort();
 
     // Create a canonical JSON structure with only the fields we want to hash
@@ -405,7 +410,23 @@ fn count_ended_encounters(conn: &mut diesel::sqlite::SqliteConnection) -> Result
 }
 
 /// Load a slice of ended encounters for upload.
-fn load_encounters_slice(conn: &mut diesel::sqlite::SqliteConnection, offset: i64, limit: i64) -> Result<Vec<(i32, i64, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<String>, Option<i64>)>, String> {
+fn load_encounters_slice(
+    conn: &mut diesel::sqlite::SqliteConnection,
+    offset: i64,
+    limit: i64,
+) -> Result<
+    Vec<(
+        i32,
+        i64,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<String>,
+        Option<i64>,
+    )>,
+    String,
+> {
     use sch::encounters::dsl as e;
     e::encounters
         .filter(e::ended_at_ms.is_not_null())
@@ -423,20 +444,50 @@ fn load_encounters_slice(conn: &mut diesel::sqlite::SqliteConnection, offset: i6
         ))
         .offset(offset)
         .limit(limit)
-        .load::<(i32, i64, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<String>, Option<i64>)>(conn)
+        .load::<(
+            i32,
+            i64,
+            Option<i64>,
+            Option<i64>,
+            Option<i64>,
+            Option<i32>,
+            Option<String>,
+            Option<i64>,
+        )>(conn)
         .map_err(|er| er.to_string())
 }
 
-fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i32, i64, Option<i64>, Option<i64>, Option<i64>, Option<i32>, Option<String>, Option<i64>)) -> Result<UploadEncounterIn, String> {
-    let (id, started_at_ms, ended_at_ms, total_dmg, total_heal, scene_id, scene_name, local_player_id) = row;
-    use sch::attempts::dsl as a;
-    use sch::death_events::dsl as de;
+fn build_encounter_payload(
+    conn: &mut diesel::sqlite::SqliteConnection,
+    row: (
+        i32,
+        i64,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i32>,
+        Option<String>,
+        Option<i64>,
+    ),
+) -> Result<UploadEncounterIn, String> {
+    let (
+        id,
+        started_at_ms,
+        ended_at_ms,
+        total_dmg,
+        total_heal,
+        scene_id,
+        scene_name,
+        local_player_id,
+    ) = row;
     use sch::actor_encounter_stats::dsl as s;
+    use sch::attempts::dsl as a;
     use sch::damage_skill_stats::dsl as dss;
-    use sch::heal_skill_stats::dsl as hss;
+    use sch::death_events::dsl as de;
+    use sch::detailed_playerdata::dsl as dpd;
     use sch::encounter_bosses::dsl as eb;
     use sch::entities::dsl as en;
-    use sch::detailed_playerdata::dsl as dpd;
+    use sch::heal_skill_stats::dsl as hss;
 
     // Attempts
     let attempts_rows = a::attempts
@@ -456,15 +507,25 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         .map_err(|e| e.to_string())?;
     let attempts = attempts_rows
         .into_iter()
-        .map(|(attempt_index, started_at_ms, ended_at_ms, reason, boss_hp_start, boss_hp_end, total_deaths)| UploadAttemptIn {
-            attempt_index,
-            started_at_ms,
-            ended_at_ms,
-            reason,
-            boss_hp_start,
-            boss_hp_end,
-            total_deaths,
-        })
+        .map(
+            |(
+                attempt_index,
+                started_at_ms,
+                ended_at_ms,
+                reason,
+                boss_hp_start,
+                boss_hp_end,
+                total_deaths,
+            )| UploadAttemptIn {
+                attempt_index,
+                started_at_ms,
+                ended_at_ms,
+                reason,
+                boss_hp_start,
+                boss_hp_end,
+                total_deaths,
+            },
+        )
         .collect::<Vec<_>>();
 
     // Phases
@@ -482,12 +543,14 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         .map_err(|e| e.to_string())?;
     let phases = phase_rows
         .into_iter()
-        .map(|(phase_type, start_time_ms, end_time_ms, outcome)| UploadEncounterPhaseIn {
-            phase_type,
-            start_time_ms,
-            end_time_ms,
-            outcome,
-        })
+        .map(
+            |(phase_type, start_time_ms, end_time_ms, outcome)| UploadEncounterPhaseIn {
+                phase_type,
+                start_time_ms,
+                end_time_ms,
+                outcome,
+            },
+        )
         .collect::<Vec<_>>();
 
     // Death events
@@ -505,14 +568,18 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         .map_err(|e| e.to_string())?;
     let death_events = de_rows
         .into_iter()
-        .map(|(timestamp_ms, actor_id, killer_id, skill_id, is_local_player, attempt_index)| UploadDeathEventIn {
-            timestamp_ms,
-            actor_id,
-            killer_id,
-            skill_id,
-            is_local_player: is_local_player != 0,
-            attempt_index,
-        })
+        .map(
+            |(timestamp_ms, actor_id, killer_id, skill_id, is_local_player, attempt_index)| {
+                UploadDeathEventIn {
+                    timestamp_ms,
+                    actor_id,
+                    killer_id,
+                    skill_id,
+                    is_local_player: is_local_player != 0,
+                    attempt_index,
+                }
+            },
+        )
         .collect::<Vec<_>>();
 
     // Actor encounter stats
@@ -557,64 +624,123 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
             s::attributes,
         ))
         .load::<(
-            i64, Option<String>, Option<i32>, Option<i32>, Option<i32>, Option<i32>,
-            i64, i64, i64, i64, i64, i64,
-            i64, i64, i64, i64, i64, i64,
-            i64, i64, i64, i64, i64, i64,
-            i64, i64, i64, i64, i64, i64,
-            i64, f64, f64, i32, i32, Option<String>
+            i64,
+            Option<String>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            f64,
+            f64,
+            i32,
+            i32,
+            Option<String>,
         )>(conn)
         .map_err(|e| e.to_string())?;
     let actor_stats = stats_rows
         .into_iter()
-        .map(|(
-            actor_id, name, class_id, class_spec, ability_score, level,
-            damage_dealt, heal_dealt, damage_taken, hits_dealt, hits_heal, hits_taken,
-            crit_hits_dealt, crit_hits_heal, crit_hits_taken,
-            lucky_hits_dealt, lucky_hits_heal, lucky_hits_taken,
-            crit_total_dealt, crit_total_heal, crit_total_taken,
-            lucky_total_dealt, lucky_total_heal, lucky_total_taken,
-            boss_damage_dealt, boss_hits_dealt, boss_crit_hits_dealt, boss_lucky_hits_dealt,
-            boss_crit_total_dealt, boss_lucky_total_dealt,
-            revives, dps, duration, is_player, is_local_player, attributes
-        )| UploadActorEncounterStatIn {
-            actor_id,
-            name,
-            class_id,
-            class_spec,
-            ability_score,
-            level,
-            damage_dealt,
-            heal_dealt,
-            damage_taken,
-            hits_dealt,
-            hits_heal,
-            hits_taken,
-            crit_hits_dealt,
-            crit_hits_heal,
-            crit_hits_taken,
-            lucky_hits_dealt,
-            lucky_hits_heal,
-            lucky_hits_taken,
-            crit_total_dealt,
-            crit_total_heal,
-            crit_total_taken,
-            lucky_total_dealt,
-            lucky_total_heal,
-            lucky_total_taken,
-            boss_damage_dealt,
-            boss_hits_dealt,
-            boss_crit_hits_dealt,
-            boss_lucky_hits_dealt,
-            boss_crit_total_dealt,
-            boss_lucky_total_dealt,
-            revives,
-            dps,
-            duration,
-            is_player: is_player != 0,
-            is_local_player: is_local_player != 0,
-            attributes,
-        })
+        .map(
+            |(
+                actor_id,
+                name,
+                class_id,
+                class_spec,
+                ability_score,
+                level,
+                damage_dealt,
+                heal_dealt,
+                damage_taken,
+                hits_dealt,
+                hits_heal,
+                hits_taken,
+                crit_hits_dealt,
+                crit_hits_heal,
+                crit_hits_taken,
+                lucky_hits_dealt,
+                lucky_hits_heal,
+                lucky_hits_taken,
+                crit_total_dealt,
+                crit_total_heal,
+                crit_total_taken,
+                lucky_total_dealt,
+                lucky_total_heal,
+                lucky_total_taken,
+                boss_damage_dealt,
+                boss_hits_dealt,
+                boss_crit_hits_dealt,
+                boss_lucky_hits_dealt,
+                boss_crit_total_dealt,
+                boss_lucky_total_dealt,
+                revives,
+                dps,
+                duration,
+                is_player,
+                is_local_player,
+                attributes,
+            )| UploadActorEncounterStatIn {
+                actor_id,
+                name,
+                class_id,
+                class_spec,
+                ability_score,
+                level,
+                damage_dealt,
+                heal_dealt,
+                damage_taken,
+                hits_dealt,
+                hits_heal,
+                hits_taken,
+                crit_hits_dealt,
+                crit_hits_heal,
+                crit_hits_taken,
+                lucky_hits_dealt,
+                lucky_hits_heal,
+                lucky_hits_taken,
+                crit_total_dealt,
+                crit_total_heal,
+                crit_total_taken,
+                lucky_total_dealt,
+                lucky_total_heal,
+                lucky_total_taken,
+                boss_damage_dealt,
+                boss_hits_dealt,
+                boss_crit_hits_dealt,
+                boss_lucky_hits_dealt,
+                boss_crit_total_dealt,
+                boss_lucky_total_dealt,
+                revives,
+                dps,
+                duration,
+                is_player: is_player != 0,
+                is_local_player: is_local_player != 0,
+                attributes,
+            },
+        )
         .collect::<Vec<_>>();
 
     // Damage skill stats
@@ -634,24 +760,52 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
             dss::shield_loss_total,
             dss::monster_name,
         ))
-        .load::<(i64, Option<i64>, i32, i32, i64, i32, i32, i64, i64, i64, i64, Option<String>)>(conn)
+        .load::<(
+            i64,
+            Option<i64>,
+            i32,
+            i32,
+            i64,
+            i32,
+            i32,
+            i64,
+            i64,
+            i64,
+            i64,
+            Option<String>,
+        )>(conn)
         .map_err(|e| e.to_string())?;
     let damage_skill_stats = dmg_rows
         .into_iter()
-        .map(|(attacker_id, defender_id, skill_id, hits, total_value, crit_hits, lucky_hits, crit_total, lucky_total, hp_loss_total, shield_loss_total, monster_name)| UploadDamageSkillStatIn {
-            attacker_id,
-            defender_id,
-            skill_id,
-            hits,
-            total_value,
-            crit_hits,
-            lucky_hits,
-            crit_total,
-            lucky_total,
-            hp_loss_total,
-            shield_loss_total,
-            monster_name,
-        })
+        .map(
+            |(
+                attacker_id,
+                defender_id,
+                skill_id,
+                hits,
+                total_value,
+                crit_hits,
+                lucky_hits,
+                crit_total,
+                lucky_total,
+                hp_loss_total,
+                shield_loss_total,
+                monster_name,
+            )| UploadDamageSkillStatIn {
+                attacker_id,
+                defender_id,
+                skill_id,
+                hits,
+                total_value,
+                crit_hits,
+                lucky_hits,
+                crit_total,
+                lucky_total,
+                hp_loss_total,
+                shield_loss_total,
+                monster_name,
+            },
+        )
         .collect::<Vec<_>>();
 
     // Heal skill stats
@@ -669,39 +823,71 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
             hss::lucky_total,
             hss::monster_name,
         ))
-        .load::<(i64, Option<i64>, i32, i32, i64, i32, i32, i64, i64, Option<String>)>(conn)
+        .load::<(
+            i64,
+            Option<i64>,
+            i32,
+            i32,
+            i64,
+            i32,
+            i32,
+            i64,
+            i64,
+            Option<String>,
+        )>(conn)
         .map_err(|e| e.to_string())?;
     let heal_skill_stats = heal_rows
         .into_iter()
-        .map(|(healer_id, target_id, skill_id, hits, total_value, crit_hits, lucky_hits, crit_total, lucky_total, monster_name)| UploadHealSkillStatIn {
-            healer_id,
-            target_id,
-            skill_id,
-            hits,
-            total_value,
-            crit_hits,
-            lucky_hits,
-            crit_total,
-            lucky_total,
-            monster_name,
-        })
+        .map(
+            |(
+                healer_id,
+                target_id,
+                skill_id,
+                hits,
+                total_value,
+                crit_hits,
+                lucky_hits,
+                crit_total,
+                lucky_total,
+                monster_name,
+            )| UploadHealSkillStatIn {
+                healer_id,
+                target_id,
+                skill_id,
+                hits,
+                total_value,
+                crit_hits,
+                lucky_hits,
+                crit_total,
+                lucky_total,
+                monster_name,
+            },
+        )
         .collect::<Vec<_>>();
 
     // Encounter bosses
     let boss_rows = eb::encounter_bosses
         .filter(eb::encounter_id.eq(id))
-        .select((eb::monster_name, eb::hits, eb::total_damage, eb::max_hp, eb::is_defeated))
+        .select((
+            eb::monster_name,
+            eb::hits,
+            eb::total_damage,
+            eb::max_hp,
+            eb::is_defeated,
+        ))
         .load::<(String, i32, i64, Option<i64>, i32)>(conn)
         .map_err(|e| e.to_string())?;
     let encounter_bosses = boss_rows
         .into_iter()
-        .map(|(monster_name, hits, total_damage, max_hp, is_defeated)| UploadEncounterBossIn {
-            monster_name,
-            hits,
-            total_damage,
-            max_hp,
-            is_defeated: is_defeated != 0,
-        })
+        .map(
+            |(monster_name, hits, total_damage, max_hp, is_defeated)| UploadEncounterBossIn {
+                monster_name,
+                hits,
+                total_damage,
+                max_hp,
+                is_defeated: is_defeated != 0,
+            },
+        )
         .collect::<Vec<_>>();
 
     // Detailed player data
@@ -717,13 +903,21 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
         .map_err(|e| e.to_string())?;
     let detailed_playerdata = dpd_rows
         .into_iter()
-        .map(|(player_id, last_seen_ms, char_serialize_json, profession_list_json, talent_node_ids_json)| UploadDetailedPlayerDataIn {
-            player_id,
-            last_seen_ms,
-            char_serialize_json,
-            profession_list_json,
-            talent_node_ids_json,
-        })
+        .map(
+            |(
+                player_id,
+                last_seen_ms,
+                char_serialize_json,
+                profession_list_json,
+                talent_node_ids_json,
+            )| UploadDetailedPlayerDataIn {
+                player_id,
+                last_seen_ms,
+                char_serialize_json,
+                profession_list_json,
+                talent_node_ids_json,
+            },
+        )
         .collect::<Vec<_>>();
 
     // Entities snapshot (players only where is_player=1 or referenced actors)
@@ -736,11 +930,25 @@ fn build_encounter_payload(conn: &mut diesel::sqlite::SqliteConnection, row: (i3
             en::ability_score,
             en::level,
         ))
-        .load::<(i64, Option<String>, Option<i32>, Option<i32>, Option<i32>, Option<i32>)>(conn)
+        .load::<(
+            i64,
+            Option<String>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+        )>(conn)
         .map_err(|e| e.to_string())?;
     let mut entities = Vec::new();
     for (entity_id, name, class_id, class_spec, ability_score, level) in entity_rows {
-        entities.push(UploadEntityIn { entity_id, name, class_id, class_spec, ability_score, level });
+        entities.push(UploadEntityIn {
+            entity_id,
+            name,
+            class_id,
+            class_spec,
+            ability_score,
+            level,
+        });
     }
 
     let mut encounter = UploadEncounterIn {
@@ -775,7 +983,11 @@ struct PendingEncounter {
     payload: UploadEncounterIn,
 }
 
-pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<String>) -> Result<(), String> {
+pub async fn perform_upload(
+    app: AppHandle,
+    api_key: String,
+    base_urls: Vec<String>,
+) -> Result<(), String> {
     CANCEL_FLAG.store(false, Ordering::SeqCst);
     // Establish sqlite connection via diesel
     let path = default_db_path();
@@ -796,7 +1008,10 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         return Ok(());
     }
 
-    let client = Client::builder().timeout(std::time::Duration::from_secs(30)).build().map_err(|e| e.to_string())?;
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| e.to_string())?;
     let mut offset = 0_i64;
     let batch_size = 10_i64;
     let mut uploaded = 0_i64;
@@ -815,7 +1030,9 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
             return Ok(());
         }
         let rows = load_encounters_slice(&mut conn, offset, batch_size)?;
-        if rows.is_empty() { break; }
+        if rows.is_empty() {
+            break;
+        }
         let mut payloads = Vec::with_capacity(rows.len());
         for row in &rows {
             payloads.push(PendingEncounter {
@@ -825,7 +1042,8 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         }
 
         // Preflight check: ask server which encounters are duplicates
-        let hashes: Vec<String> = payloads.iter()
+        let hashes: Vec<String> = payloads
+            .iter()
             .filter_map(|e| e.payload.source_hash.clone())
             .collect();
 
@@ -834,18 +1052,25 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
 
         if !hashes.is_empty() {
             // Perform preflight duplicate check
-            let check_url = format!("{}/upload/check", base_urls[current_url_index].trim_end_matches('/'));
+            let check_url = format!(
+                "{}/upload/check",
+                base_urls[current_url_index].trim_end_matches('/')
+            );
             let check_body = CheckDuplicatesRequest { hashes };
 
-            match client.post(&check_url)
+            match client
+                .post(&check_url)
                 .header("X-Api-Key", api_key.clone())
                 .json(&check_body)
-                .send().await
+                .send()
+                .await
             {
                 Ok(resp) if resp.status().is_success() => {
                     if let Ok(check_result) = resp.json::<CheckDuplicatesResponse>().await {
                         // Map hash -> remote_encounter_id for duplicates
-                        let duplicate_map: std::collections::HashMap<String, i64> = check_result.duplicates.iter()
+                        let duplicate_map: std::collections::HashMap<String, i64> = check_result
+                            .duplicates
+                            .iter()
                             .map(|d| (d.hash.clone(), d.encounter_id))
                             .collect();
 
@@ -858,12 +1083,14 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
                                         duplicate_ids.push(entry.id);
                                         // Update local encounter with remote_encounter_id for this duplicate
                                         use sch::encounters::dsl as e;
-                                        let _ = diesel::update(e::encounters.filter(e::id.eq(entry.id)))
-                                            .set((
-                                                e::remote_encounter_id.eq(remote_id),
-                                                e::uploaded_at_ms.eq(now_ms())
-                                            ))
-                                            .execute(&mut conn);
+                                        let _ = diesel::update(
+                                            e::encounters.filter(e::id.eq(entry.id)),
+                                        )
+                                        .set((
+                                            e::remote_encounter_id.eq(remote_id),
+                                            e::uploaded_at_ms.eq(now_ms()),
+                                        ))
+                                        .execute(&mut conn);
                                         return false;
                                     }
                                 }
@@ -905,7 +1132,12 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
             continue;
         }
 
-        let body = UploadRequestBody { encounters: filtered_payloads.iter().map(|entry| entry.payload.clone()).collect() };
+        let body = UploadRequestBody {
+            encounters: filtered_payloads
+                .iter()
+                .map(|entry| entry.payload.clone())
+                .collect(),
+        };
         let mut processed_ids = duplicate_ids.clone();
 
         // Try each URL in sequence until one succeeds
@@ -916,11 +1148,16 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         while current_url_index < base_urls.len() && !upload_success {
             // Use trailing slash to match server route registration (/api/v1/upload/)
             // Avoids a 307 redirect which can drop custom headers like X-Api-Key.
-            let url = format!("{}/upload/", base_urls[current_url_index].trim_end_matches('/'));
-            match client.post(&url)
+            let url = format!(
+                "{}/upload/",
+                base_urls[current_url_index].trim_end_matches('/')
+            );
+            match client
+                .post(&url)
                 .header("X-Api-Key", api_key.clone())
                 .json(&body)
-                .send().await
+                .send()
+                .await
             {
                 Ok(resp) => {
                     if resp.status().is_success() {
@@ -931,19 +1168,28 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
                                 upload_success = true;
                             }
                             Err(e) => {
-                                last_error = format!("Failed to parse upload response from {}: {}", base_urls[current_url_index], e);
+                                last_error = format!(
+                                    "Failed to parse upload response from {}: {}",
+                                    base_urls[current_url_index], e
+                                );
                                 current_url_index += 1;
                             }
                         }
                     } else {
                         let text = resp.text().await.unwrap_or_default();
-                        last_error = format!("Server error from {}: {}", base_urls[current_url_index], text);
+                        last_error = format!(
+                            "Server error from {}: {}",
+                            base_urls[current_url_index], text
+                        );
                         // Try next URL for server errors
                         current_url_index += 1;
                     }
                 }
                 Err(e) => {
-                    last_error = format!("Connection error from {}: {}", base_urls[current_url_index], e);
+                    last_error = format!(
+                        "Connection error from {}: {}",
+                        base_urls[current_url_index], e
+                    );
                     // Try next URL for connection errors
                     current_url_index += 1;
                 }
@@ -970,7 +1216,7 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
                 let _ = diesel::update(e::encounters.filter(e::id.eq(local_entry.id)))
                     .set((
                         e::remote_encounter_id.eq(remote_id),
-                        e::uploaded_at_ms.eq(now_ms())
+                        e::uploaded_at_ms.eq(now_ms()),
                     ))
                     .execute(&mut conn);
             }
@@ -988,7 +1234,8 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
         uploaded += rows.len() as i64;
         offset += rows.len() as i64;
         // Emit progress for UI to known windows and as a fallback via app.emit
-        let progress_payload: serde_json::Value = json!({"uploaded": uploaded, "total": total, "batch": (offset / batch_size)+1});
+        let progress_payload: serde_json::Value =
+            json!({"uploaded": uploaded, "total": total, "batch": (offset / batch_size)+1});
         if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
             let _ = w.emit("upload:progress", progress_payload.clone());
         }
@@ -1009,11 +1256,17 @@ pub async fn perform_upload(app: AppHandle, api_key: String, base_urls: Vec<Stri
     Ok(())
 }
 
-pub fn cancel_upload() { CANCEL_FLAG.store(true, Ordering::SeqCst); }
+pub fn cancel_upload() {
+    CANCEL_FLAG.store(true, Ordering::SeqCst);
+}
 
 #[tauri::command]
 #[specta::specta]
-pub async fn start_upload(app: tauri::AppHandle, api_key: String, base_url: Option<String>) -> Result<(), String> {
+pub async fn start_upload(
+    app: tauri::AppHandle,
+    api_key: String,
+    base_url: Option<String>,
+) -> Result<(), String> {
     let key = api_key.trim().to_string();
     if key.is_empty() {
         return Err("API key is required".to_string());

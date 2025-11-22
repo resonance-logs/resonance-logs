@@ -1,16 +1,15 @@
+use crate::module_extractor::types::{ImportModulesResponse, UnknownAttribute};
 /// Tauri commands for module sync functionality
 /// Exposes module extraction and upload to the frontend
-
 use crate::module_extractor::{extract_modules, upload_modules};
-use crate::module_extractor::types::{ImportModulesResponse, UnknownAttribute};
 use crate::uploader::AutoUploadState;
 use blueprotobuf_lib::blueprotobuf::SyncContainerData;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use sha2::{Sha256, Digest};
 
 /// Failed upload queue entry
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,8 +23,7 @@ pub struct FailedUpload {
 const LEGACY_LOCAL_BASE_URL: &str = "http://localhost:8080/api/v1";
 
 fn default_api_base_url() -> String {
-    std::env::var("WEBSITE_API_BASE")
-        .unwrap_or_else(|_| "https://api.bpsr.app/api/v1".to_string())
+    std::env::var("WEBSITE_API_BASE").unwrap_or_else(|_| "https://api.bpsr.app/api/v1".to_string())
 }
 
 /// Module sync state shared across commands
@@ -212,7 +210,10 @@ pub fn trigger_module_sync(
         }
     }
 
-    info!("Manually triggering module sync for {} modules", modules.len());
+    info!(
+        "Manually triggering module sync for {} modules",
+        modules.len()
+    );
 
     let rt = tokio::runtime::Handle::current();
     let response = rt.block_on(upload_modules(modules, &api_key, &base_url))?;
@@ -298,7 +299,8 @@ pub async fn process_sync_container_data(
         let now = chrono::Utc::now().to_rfc3339();
 
         for (part_id, config_ids) in unknown_part_ids {
-            unknown_attrs.entry(part_id)
+            unknown_attrs
+                .entry(part_id)
                 .and_modify(|attr| {
                     attr.occurrence_count += 1;
                     for config_id in &config_ids {
@@ -319,7 +321,8 @@ pub async fn process_sync_container_data(
     // Differential sync - filter changed modules
     let changed_modules = if auto_upload {
         let last_uuids = state.last_sync_uuids.read().await;
-        modules.iter()
+        modules
+            .iter()
             .filter(|m| !last_uuids.contains(&m.uuid))
             .cloned()
             .collect::<Vec<_>>()
@@ -404,7 +407,10 @@ pub async fn process_sync_container_data(
 /// Extract modules with unknown attribute tracking
 fn extract_modules_with_tracking(
     sync_data: &SyncContainerData,
-) -> (Vec<crate::module_extractor::types::ModuleInfo>, HashMap<i32, Vec<i32>>) {
+) -> (
+    Vec<crate::module_extractor::types::ModuleInfo>,
+    HashMap<i32, Vec<i32>>,
+) {
     let modules = extract_modules(sync_data);
     let mut unknown_part_ids: HashMap<i32, Vec<i32>> = HashMap::new();
 
@@ -412,7 +418,8 @@ fn extract_modules_with_tracking(
     for module in &modules {
         for part in &module.parts {
             if part.name.starts_with("未知属性") {
-                unknown_part_ids.entry(part.part_id)
+                unknown_part_ids
+                    .entry(part.part_id)
                     .or_insert_with(Vec::new)
                     .push(module.config_id);
             }
@@ -460,8 +467,10 @@ pub async fn start_auto_sync_timer(state: ModuleSyncState) {
                     tokio::spawn(async move {
                         match upload_modules(modules, &api_key, &base_url).await {
                             Ok(response) => {
-                                info!("Scheduled auto-sync succeeded: added={}, updated={}",
-                                    response.summary.added, response.summary.updated);
+                                info!(
+                                    "Scheduled auto-sync succeeded: added={}, updated={}",
+                                    response.summary.added, response.summary.updated
+                                );
                             }
                             Err(e) => {
                                 error!("Scheduled auto-sync failed: {}", e);

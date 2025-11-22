@@ -4,7 +4,7 @@
   import SettingsSelect from "./settings-select.svelte";
   import { dpsPlayersColumnDefs, dpsSkillsColumnDefs, healPlayersColumnDefs, healSkillsColumnDefs, tankedPlayersColumnDefs, tankedSkillsColumnDefs } from "$lib/table-info";
   import { SETTINGS } from "$lib/settings-store";
-  import { setBossOnlyDps } from "$lib/api";
+  import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
 
   const SETTINGS_CATEGORY = "live";
@@ -23,6 +23,12 @@
   $effect(() => {
     if (_mounted) {
       void setBossOnlyDps(SETTINGS.live.general.state.bossOnlyDps);
+    }
+  });
+
+  $effect(() => {
+    if (_mounted) {
+      void setDungeonSegmentsEnabled(SETTINGS.live.general.state.dungeonSegmentsEnabled);
     }
   });
 
@@ -70,6 +76,7 @@
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
           <SettingsSwitch bind:checked={SETTINGS.live.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
+          <SettingsSwitch bind:checked={SETTINGS.live.general.state.dungeonSegmentsEnabled} label="Dungeon Segments" description="Persist a dungeon-wide log with boss and trash segments" />
         </div>
       {/if}
     </div>
