@@ -12,6 +12,7 @@
   import getDisplayName from '$lib/name-display';
   import { getModuleApiBaseUrl } from '$lib/stores/uploading';
   import { openUrl } from '@tauri-apps/plugin-opener';
+  import { getEncounterSegments, type Segment } from '$lib/api';
 
   // Get encounter ID from URL params
   let encounterId = $derived($page.params.id ? parseInt($page.params.id) : null);
@@ -81,6 +82,10 @@
 
   // Phase selection state
   let selectedPhaseId = $state<number | null>(null); // null = overall encounter stats
+
+  // Segment selection state
+  let segments = $state<Segment[]>([]);
+  let selectedSegmentId = $state<number | null>(null); // null = all segments
 
   // Skills view state
   let skillsWindow = $state<SkillsWindow | null>(null);
@@ -179,6 +184,14 @@
     } else {
       error = String(encounterRes.error);
       return;
+    }
+
+    // Load dungeon segments
+    try {
+      segments = await getEncounterSegments(encounterId);
+    } catch (e) {
+      console.error('Failed to load segments:', e);
+      segments = [];
     }
 
     // Use phase actors if a phase is selected, otherwise use overall encounter actors
@@ -362,6 +375,30 @@
                     <span>{Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s</span>
                   </span>
                 {/each}
+              </div>
+            {/if}
+
+            <!-- Segments info -->
+            {#if segments.length > 0}
+              <div class="text-xs text-muted-foreground mt-2">
+                <div class="font-semibold text-foreground mb-1">Dungeon Segments ({segments.length})</div>
+                <div class="flex flex-wrap gap-2">
+                  {#each segments as segment}
+                    <button
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded border transition-colors
+                        {segment.segmentType === 'boss' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}
+                        {selectedSegmentId === segment.id ? 'ring-2 ring-primary/50' : ''}
+                        hover:bg-opacity-20"
+                      onclick={() => selectedSegmentId = selectedSegmentId === segment.id ? null : segment.id}
+                    >
+                      <span class="font-semibold">{segment.segmentType === 'boss' ? segment.bossName || 'Boss' : 'Trash'}</span>
+                      <span class="text-muted-foreground">•</span>
+                      <span>{Math.floor(((segment.endedAtMs ?? Date.now()) - segment.startedAtMs) / 1000)}s</span>
+                      <span class="text-muted-foreground">•</span>
+                      <AbbreviatedNumber num={segment.totalDamage} />
+                    </button>
+                  {/each}
+                </div>
               </div>
             {/if}
           </div>

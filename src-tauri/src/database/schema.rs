@@ -371,6 +371,32 @@ diesel::table! {
     }
 }
 
+/// Represents the `dungeon_segments` table.
+diesel::table! {
+    dungeon_segments (id) {
+        /// The unique ID of the segment.
+        id -> Integer,
+        /// The ID of the encounter this segment belongs to.
+        encounter_id -> Integer,
+        /// The type of segment ('boss' or 'trash').
+        segment_type -> Text,
+        /// The entity ID of the boss (if boss segment).
+        boss_entity_id -> Nullable<BigInt>,
+        /// The monster type ID of the boss (if boss segment).
+        boss_monster_type_id -> Nullable<BigInt>,
+        /// The name of the boss (if boss segment).
+        boss_name -> Nullable<Text>,
+        /// The timestamp of when the segment started, in milliseconds since the Unix epoch.
+        started_at_ms -> BigInt,
+        /// The timestamp of when the segment ended, in milliseconds since the Unix epoch.
+        ended_at_ms -> Nullable<BigInt>,
+        /// The total damage dealt during this segment.
+        total_damage -> BigInt,
+        /// The number of hits during this segment.
+        hit_count -> BigInt,
+    }
+}
+
 // Joins
 
 // joinable entries for raw event tables removed
@@ -381,6 +407,7 @@ diesel::joinable!(death_events -> encounters (encounter_id));
 diesel::joinable!(attempts -> encounters (encounter_id));
 diesel::joinable!(encounter_phases -> encounters (encounter_id));
 diesel::joinable!(actor_phase_stats -> encounter_phases (phase_id));
+diesel::joinable!(dungeon_segments -> encounters (encounter_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     entities,
@@ -394,4 +421,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     attempts,
     encounter_phases,
     actor_phase_stats,
+    dungeon_segments,
 );

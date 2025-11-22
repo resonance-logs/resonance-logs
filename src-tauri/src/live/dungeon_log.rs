@@ -396,6 +396,39 @@ fn timestamp_now_ms() -> i64 {
         .unwrap_or_default()
 }
 
+/// Persists all closed segments to the database.
+pub fn persist_segments(handle: &SharedDungeonLog) {
+    use crate::database::{enqueue, DbTask};
+
+    let log = match lock_log(handle) {
+        Some(guard) => guard.clone(),
+        None => return,
+    };
+
+    for segment in log.segments.iter() {
+        // Only persist closed segments
+        if segment.ended_at_ms.is_none() {
+            continue;
+        }
+
+        let segment_type = match segment.segment_type {
+            SegmentType::Boss => "boss",
+            SegmentType::Trash => "trash",
+        };
+
+        enqueue(DbTask::InsertDungeonSegment {
+            segment_type: segment_type.to_string(),
+            boss_entity_id: segment.boss_entity_id,
+            boss_monster_type_id: segment.boss_monster_type_id,
+            boss_name: segment.boss_name.clone(),
+            started_at_ms: segment.started_at_ms,
+            ended_at_ms: segment.ended_at_ms,
+            total_damage: segment.total_damage,
+            hit_count: segment.hit_count as i64,
+        });
+    }
+}
+
 /// Helper to construct a damage event from raw values.
 pub fn build_damage_event(
     timestamp_ms: i64,

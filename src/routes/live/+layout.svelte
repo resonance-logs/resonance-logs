@@ -10,7 +10,7 @@
    */
   import { onMount } from "svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter } from "$lib/api";
+  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter, onDungeonLogUpdate } from "$lib/api";
   import { writable } from "svelte/store";
   import { beforeNavigate, afterNavigate } from "$app/navigation";
 
@@ -20,7 +20,7 @@
   // Store for scroll positions
   const scrollPositions = writable<Record<string, number>>({});
 
-  import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores } from "$lib/stores/live-meter-store.svelte";
+  import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores, setLiveDungeonLog, clearLiveDungeonLog } from "$lib/stores/live-meter-store.svelte";
   import Header from "./header.svelte";
   import HeaderOneRow from "./header-one-row.svelte"
 
@@ -77,7 +77,15 @@
       // Set up reset encounter listener
       const resetUnlisten = await onResetEncounter(() => {
         clearMeterData();
+        clearLiveDungeonLog();
         notificationToast?.showToast('notice', 'Server change detected, resetting log');
+      });
+
+      // Set up dungeon log listener
+      const dungeonLogUnlisten = await onDungeonLogUpdate((event) => {
+        lastEventTime = Date.now();
+        hadAnyEvent = true;
+        setLiveDungeonLog(event.payload);
       });
 
       // Set up encounter update listener (pause/resume)
@@ -136,6 +144,7 @@
         try { bossDeathUnlisten(); } catch {}
         try { sceneChangeUnlisten(); } catch {}
         try { pauseUnlisten(); } catch {}
+        try { dungeonLogUnlisten(); } catch {}
       };
 
       console.log("Event listeners set up for live meter data");

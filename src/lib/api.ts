@@ -174,3 +174,6 @@ export const setDungeonSegmentsEnabled = (enabled: boolean): Promise<void> =>
   invoke("set_dungeon_segments_enabled", { enabled });
 
 export const getDungeonLog = (): Promise<DungeonLog> => invoke("get_dungeon_log");
+
+export const getEncounterSegments = (encounterId: number): Promise<Segment[]> =>
+  invoke("get_encounter_segments", { encounterId });

@@ -763,3 +763,54 @@ pub struct NewActorPhaseStat {
     /// The number of revives for the actor during the phase.
     pub revives: i64,
 }
+
+/// Represents a row in the `dungeon_segments` table.
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize, specta::Type)]
+#[diesel(table_name = sch::dungeon_segments, belongs_to(EncounterRow, foreign_key = encounter_id))]
+#[serde(rename_all = "camelCase")]
+pub struct DungeonSegmentRow {
+    /// The unique ID of the segment.
+    pub id: i32,
+    /// The ID of the encounter this segment belongs to.
+    pub encounter_id: i32,
+    /// The type of segment ('boss' or 'trash').
+    pub segment_type: String,
+    /// The entity ID of the boss (if boss segment).
+    pub boss_entity_id: Option<i64>,
+    /// The monster type ID of the boss (if boss segment).
+    pub boss_monster_type_id: Option<i64>,
+    /// The name of the boss (if boss segment).
+    pub boss_name: Option<String>,
+    /// The timestamp of when the segment started, in milliseconds since the Unix epoch.
+    pub started_at_ms: i64,
+    /// The timestamp of when the segment ended, in milliseconds since the Unix epoch.
+    pub ended_at_ms: Option<i64>,
+    /// The total damage dealt during this segment.
+    pub total_damage: i64,
+    /// The number of hits during this segment.
+    pub hit_count: i64,
+}
+
+/// Represents a new segment to be inserted into the `dungeon_segments` table.
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::dungeon_segments)]
+pub struct NewDungeonSegment<'a> {
+    /// The ID of the encounter this segment belongs to.
+    pub encounter_id: i32,
+    /// The type of segment ('boss' or 'trash').
+    pub segment_type: &'a str,
+    /// The entity ID of the boss (if boss segment).
+    pub boss_entity_id: Option<i64>,
+    /// The monster type ID of the boss (if boss segment).
+    pub boss_monster_type_id: Option<i64>,
+    /// The name of the boss (if boss segment).
+    pub boss_name: Option<&'a str>,
+    /// The timestamp of when the segment started, in milliseconds since the Unix epoch.
+    pub started_at_ms: i64,
+    /// The timestamp of when the segment ended, in milliseconds since the Unix epoch.
+    pub ended_at_ms: Option<i64>,
+    /// The total damage dealt during this segment.
+    pub total_damage: i64,
+    /// The number of hits during this segment.
+    pub hit_count: i64,
+}

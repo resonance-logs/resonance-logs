@@ -2255,3 +2255,36 @@ pub fn get_encounter_player_skills(
 
     Ok(sw)
 }
+
+/// Gets dungeon segments for an encounter.
+///
+/// # Arguments
+///
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<Vec<m::DungeonSegmentRow>, String>` - A list of dungeon segments.
+#[tauri::command]
+#[specta::specta]
+pub fn get_encounter_segments(
+    encounter_id: i32,
+) -> Result<Vec<m::DungeonSegmentRow>, String> {
+    use sch::dungeon_segments::dsl as ds;
+
+    let db_path = default_db_path();
+    if let Err(e) = ensure_parent_dir(&db_path) {
+        return Err(format!("Failed to create db dir: {}", e));
+    }
+
+    let mut conn = SqliteConnection::establish(db_path.to_string_lossy().as_ref())
+        .map_err(|e| e.to_string())?;
+
+    let segments = ds::dungeon_segments
+        .filter(ds::encounter_id.eq(encounter_id))
+        .order_by(ds::started_at_ms.asc())
+        .load::<m::DungeonSegmentRow>(&mut conn)
+        .map_err(|e| e.to_string())?;
+
+    Ok(segments)
+}

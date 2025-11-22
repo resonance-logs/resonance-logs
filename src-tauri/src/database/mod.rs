@@ -355,6 +355,18 @@ pub enum DbTask {
         end_time_ms: i64,
         outcome: String,
     },
+
+    /// A task to insert a dungeon segment.
+    InsertDungeonSegment {
+        segment_type: String,
+        boss_entity_id: Option<i64>,
+        boss_monster_type_id: Option<i64>,
+        boss_name: Option<String>,
+        started_at_ms: i64,
+        ended_at_ms: Option<i64>,
+        total_damage: i64,
+        hit_count: i64,
+    },
 }
 
 /// Enqueues a database task to be processed by the background writer thread.
@@ -956,6 +968,35 @@ fn handle_task(
                 .bind::<diesel::sql_types::Text, _>(&phase_type)
                 .execute(conn)
                 .map_err(|e| e.to_string())?;
+            }
+        }
+        DbTask::InsertDungeonSegment {
+            segment_type,
+            boss_entity_id,
+            boss_monster_type_id,
+            boss_name,
+            started_at_ms,
+            ended_at_ms,
+            total_damage,
+            hit_count,
+        } => {
+            if let Some(enc_id) = *current_encounter_id {
+                use sch::dungeon_segments::dsl as ds;
+                let new_segment = m::NewDungeonSegment {
+                    encounter_id: enc_id,
+                    segment_type: &segment_type,
+                    boss_entity_id,
+                    boss_monster_type_id,
+                    boss_name: boss_name.as_deref(),
+                    started_at_ms,
+                    ended_at_ms,
+                    total_damage,
+                    hit_count,
+                };
+                diesel::insert_into(ds::dungeon_segments)
+                    .values(&new_segment)
+                    .execute(conn)
+                    .map_err(|e| e.to_string())?;
             }
         }
     }

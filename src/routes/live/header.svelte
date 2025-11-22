@@ -26,10 +26,20 @@
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
   import { SETTINGS } from "$lib/settings-store";
+  import { getLiveDungeonLog } from "$lib/stores/live-meter-store.svelte";
 
   let fightStartTimestampMs = $state(0);
   let clientElapsedMs = $state(0);
   let animationFrameId: number | null = null;
+
+  // Reactive dungeon log state
+  let dungeonLog = $derived(getLiveDungeonLog());
+  let activeSegment = $derived(dungeonLog?.segments?.find(s => !s.endedAtMs) ?? null);
+  let showBossSegment = $derived(
+    dungeonLog?.combatState === 'inCombat' &&
+    activeSegment?.segmentType === 'boss' &&
+    activeSegment?.bossName
+  );
 
   // Client-side timer loop
   function updateClientTimer() {
@@ -195,6 +205,12 @@
     <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {headerInfo.currentPhase === 'mob' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-purple-500/30 bg-purple-500/10 text-purple-400'} {density === 'comfortable' ? 'text-xs' : 'text-[11px]'}">
       <span class="font-semibold uppercase tracking-wide">{headerInfo.currentPhase === 'mob' ? 'Mob Phase' : 'Boss Phase'}</span>
+    </span>
+  {/if}
+  {#if showBossSegment && activeSegment?.bossName}
+    <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
+    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 border-orange-500/30 bg-orange-500/10 text-orange-400 {density === 'comfortable' ? 'text-xs' : 'text-[11px]'}">
+      <span class="font-semibold tracking-wide">{activeSegment.bossName}</span>
     </span>
   {/if}
   <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>

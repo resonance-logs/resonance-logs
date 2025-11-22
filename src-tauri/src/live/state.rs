@@ -206,6 +206,11 @@ impl AppStateManager {
             end_phase(&mut state.encounter, outcome, timestamp_ms);
         }
 
+        // Persist dungeon segments if enabled
+        if state.dungeon_segments_enabled {
+            dungeon_log::persist_segments(&state.dungeon_log);
+        }
+
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
         let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
@@ -685,6 +690,11 @@ impl AppStateManager {
                 "unknown"
             };
             end_phase(&mut state.encounter, outcome, timestamp_ms);
+        }
+
+        // Persist dungeon segments if enabled
+        if state.dungeon_segments_enabled {
+            dungeon_log::persist_segments(&state.dungeon_log);
         }
 
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
