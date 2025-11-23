@@ -279,7 +279,6 @@ pub enum DbTask {
 
     /// A task to end any encounters that never received an explicit end.
     EndAllActiveEncounters { ended_at_ms: i64 },
-    EndAllActiveEncounters { ended_at_ms: i64 },
 
     /// A task to insert or update an entity.
     UpsertEntity {
@@ -1981,6 +1980,7 @@ mod tests {
             &mut conn,
             DbTask::EndAllActiveEncounters { ended_at_ms: 2_000 },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
