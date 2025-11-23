@@ -357,6 +357,53 @@ impl AppStateManager {
         state.skill_subscriptions.clear();
         state.low_hp_bosses.clear();
     }
+
+    async fn snapshot_segment_and_reset_live_meter(&self, state: &mut AppState) {
+        use crate::live::phase_detector::end_phase;
+
+        // End any active phase before snapshotting
+        let timestamp_ms = now_ms() as u128;
+        if state.encounter.current_phase.is_some() {
+            let defeated = state.event_manager.peek_dead_bosses();
+            let outcome = if !defeated.is_empty() {
+                "success"
+            } else {
+                "unknown"
+            };
+            end_phase(&mut state.encounter, outcome, timestamp_ms);
+        }
+
+        // Persist dungeon segments
+        dungeon_log::persist_segments(&state.dungeon_log);
+
+        // Reset combat state (live meter)
+        state.encounter.reset_combat_state();
+        state.skill_subscriptions.clear();
+
+        if state.event_manager.should_emit_events() {
+            state.event_manager.emit_encounter_reset();
+            // Clear dead bosses tracking for the new segment
+            state.event_manager.clear_dead_bosses();
+
+            // Emit an encounter update with cleared state so frontend updates immediately
+            use crate::live::commands_models::HeaderInfo;
+            let cleared_header = HeaderInfo {
+                total_dps: 0.0,
+                total_dmg: 0,
+                elapsed_ms: 0,
+                fight_start_timestamp_ms: 0,
+                bosses: vec![],
+                scene_id: state.encounter.current_scene_id,
+                scene_name: state.encounter.current_scene_name.clone(),
+                current_phase: None,
+            };
+            state
+                .event_manager
+                .emit_encounter_update(cleared_header, false);
+        }
+
+        state.low_hp_bosses.clear();
+    }
     // all scene id extraction logic is here (its pretty rough)
     async fn process_enter_scene(
         &self,
@@ -444,10 +491,19 @@ impl AppStateManager {
                 && state.encounter.time_fight_start_ms != 0
             {
                 info!(
-                    "Scene changed from {:?} to {}; ending active encounter",
+                    "Scene changed from {:?} to {}; checking segment logic",
                     prev_scene, scene_id
                 );
-                self.reset_encounter(state).await;
+
+                if state.dungeon_segments_enabled {
+                    info!(
+                        "Dungeon segments enabled: snapshotting segment and resetting live meter"
+                    );
+                    self.snapshot_segment_and_reset_live_meter(state).await;
+                } else {
+                    info!("Standard mode: ending active encounter");
+                    self.reset_encounter(state).await;
+                }
             }
 
             // Update encounter with scene info
@@ -630,7 +686,10 @@ impl AppStateManager {
 
         // Emit scene change event
         if state.event_manager.should_emit_events() {
-            info!("[SyncSceneAttrs] Emitting scene change event for: {}", scene_name);
+            info!(
+                "[SyncSceneAttrs] Emitting scene change event for: {}",
+                scene_name
+            );
             state.event_manager.emit_scene_change(scene_name.clone());
         }
 

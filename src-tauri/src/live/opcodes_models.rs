@@ -40,6 +40,8 @@ pub struct Encounter {
     pub current_phase_id: Option<i32>, // Database ID of the current phase
     pub phase_start_ms: u128,
     pub boss_detected: bool, // Whether a boss entity has been seen this encounter
+    // Dungeon segment tracking: set to true when a boss dies, cleared when next boss is hit
+    pub waiting_for_next_boss: bool,
 }
 
 /// Represents the type of encounter phase
@@ -467,6 +469,7 @@ impl Encounter {
         self.current_phase = None;
         self.phase_start_ms = 0;
         self.boss_detected = false;
+        self.waiting_for_next_boss = false;
     }
 }
 

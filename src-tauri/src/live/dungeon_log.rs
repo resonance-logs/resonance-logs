@@ -38,9 +38,10 @@ impl DungeonLogRuntime {
         }
     }
 
-    pub fn process_damage_event(&self, event: DamageEvent) {
-        let snapshot = process_damage_event(&self.shared_log, event);
+    pub fn process_damage_event(&self, event: DamageEvent) -> (bool, bool) {
+        let (snapshot, boss_died, new_boss_started) = process_damage_event(&self.shared_log, event);
         emit_if_changed(&self.app_handle, snapshot);
+        (boss_died, new_boss_started)
     }
 
     pub fn reset_for_scene(&self, scene_id: Option<i32>, scene_name: Option<String>) {
@@ -109,6 +110,9 @@ pub struct Segment {
     pub total_damage: i64,
     pub hit_count: u64,
     pub events: Vec<DamageEvent>,
+    #[serde(skip)]
+    #[specta(skip)]
+    pub persisted: bool,
 }
 
 impl Segment {
@@ -124,6 +128,7 @@ impl Segment {
             total_damage: 0,
             hit_count: 0,
             events: Vec::new(),
+            persisted: false,
         }
     }
 
@@ -182,12 +187,22 @@ pub fn emit_if_changed(app_handle: &AppHandle, snapshot: Option<DungeonLog>) {
     }
 }
 
-/// Processes a damage event and returns a snapshot if the log mutated.
-pub fn process_damage_event(handle: &SharedDungeonLog, event: DamageEvent) -> Option<DungeonLog> {
+/// Processes a damage event and returns (snapshot if mutated, boss_died, new_boss_started).
+pub fn process_damage_event(
+    handle: &SharedDungeonLog,
+    event: DamageEvent,
+) -> (Option<DungeonLog>, bool, bool) {
     let now = Instant::now();
-    let mut log = lock_log(handle)?;
-    let changed = log.apply_damage_event(event, now);
-    if changed { Some(log.clone()) } else { None }
+    let mut log = match lock_log(handle) {
+        Some(guard) => guard,
+        None => return (None, false, false),
+    };
+    let (changed, boss_died, new_boss_started) = log.apply_damage_event(event, now);
+    if changed {
+        (Some(log.clone()), boss_died, new_boss_started)
+    } else {
+        (None, boss_died, new_boss_started)
+    }
 }
 
 /// Resets the log when a new scene is detected and returns a snapshot if it changed.
@@ -264,16 +279,16 @@ impl DungeonLog {
         }
     }
 
-    fn apply_damage_event(&mut self, event: DamageEvent, now: Instant) -> bool {
+    fn apply_damage_event(&mut self, event: DamageEvent, now: Instant) -> (bool, bool, bool) {
         self.last_event_at = Some(now);
 
         match self.combat_state {
             CombatState::Idle => {
                 if event.is_boss_target {
                     self.start_boss_segment(event);
-                    true
+                    (true, false, true) // changed, boss_died, new_boss_started
                 } else {
-                    self.log_trash_event(event)
+                    (self.log_trash_event(event), false, false)
                 }
             }
             CombatState::InCombat => self.append_to_active_segment(event),
@@ -327,7 +342,7 @@ impl DungeonLog {
         idx
     }
 
-    fn append_to_active_segment(&mut self, event: DamageEvent) -> bool {
+    fn append_to_active_segment(&mut self, event: DamageEvent) -> (bool, bool, bool) {
         if let Some(idx) = self.active_segment_idx {
             if let Some(segment) = self.segments.get_mut(idx) {
                 let is_killing = event.is_killing_blow
@@ -345,15 +360,16 @@ impl DungeonLog {
                     segment.close(timestamp_ms);
                     self.active_segment_idx = None;
                     self.combat_state = CombatState::Idle;
+                    return (true, true, false); // changed, boss_died, new_boss_started
                 }
-                true
+                (true, false, false)
             } else {
-                false
+                (false, false, false)
             }
         } else {
             // No active boss segment, treat as trash
             self.combat_state = CombatState::Idle;
-            self.log_trash_event(event)
+            (self.log_trash_event(event), false, false)
         }
     }
 
@@ -398,16 +414,17 @@ fn timestamp_now_ms() -> i64 {
 
 /// Persists all closed segments to the database.
 pub fn persist_segments(handle: &SharedDungeonLog) {
-    use crate::database::{enqueue, DbTask};
+    use crate::database::{DbTask, enqueue};
 
-    let log = match lock_log(handle) {
-        Some(guard) => guard.clone(),
+    // Lock the log to mutate persistence state
+    let mut log = match lock_log(handle) {
+        Some(guard) => guard,
         None => return,
     };
 
-    for segment in log.segments.iter() {
-        // Only persist closed segments
-        if segment.ended_at_ms.is_none() {
+    for segment in log.segments.iter_mut() {
+        // Only persist closed segments that haven't been persisted yet
+        if segment.ended_at_ms.is_none() || segment.persisted {
             continue;
         }
 
@@ -426,6 +443,8 @@ pub fn persist_segments(handle: &SharedDungeonLog) {
             total_damage: segment.total_damage,
             hit_count: segment.hit_count as i64,
         });
+
+        segment.persisted = true;
     }
 }
 

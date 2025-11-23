@@ -757,12 +757,43 @@ pub fn process_aoi_sync_delta(
                     timestamp_ms_i64,
                     attacker_uid,
                     target_uid,
-                    target_name,
+                    target_name.clone(),
                     target_monster_type_id,
                     damage_amount,
                     death_info_local.is_some(),
                 );
-                runtime.process_damage_event(damage_event);
+                let (boss_died, new_boss_started) = runtime.process_damage_event(damage_event);
+
+                // If a boss just died, set the waiting flag
+                if boss_died {
+                    encounter.waiting_for_next_boss = true;
+                }
+
+                // If a new boss started while we were waiting, reset the live meter
+                if new_boss_started && encounter.waiting_for_next_boss {
+                    use crate::database::now_ms;
+                    use crate::live::dungeon_log;
+                    use crate::live::phase_detector::end_phase;
+
+                    info!("New boss detected after previous boss death - resetting live meter");
+
+                    // End current phase if any
+                    if encounter.current_phase.is_some() {
+                        end_phase(encounter, "segment_complete", timestamp_ms);
+                    }
+
+                    // Persist segments
+                    dungeon_log::persist_segments(&runtime.shared_log);
+
+                    // Reset combat state (live meter)
+                    encounter.reset_combat_state();
+
+                    // Clear the waiting flag
+                    encounter.waiting_for_next_boss = false;
+
+                    // Restart the encounter timer
+                    encounter.time_fight_start_ms = timestamp_ms;
+                }
             }
         }
 
@@ -1455,12 +1486,15 @@ fn process_monster_attrs(monster_entity: &mut Entity, attrs: Vec<Attr>) {
                     monster_entity.set_attr(AttrType::MaxHp, AttrValue::Int(value as i64));
                 }
             }
-            attr_type::ATTR_ELITE_STATUS => match prost::encoding::decode_varint(&mut raw_bytes.as_slice()) {
-                Ok(value) => {
-                    monster_entity.set_attr(AttrType::EliteStatus, AttrValue::Int(value as i64));
+            attr_type::ATTR_ELITE_STATUS => {
+                match prost::encoding::decode_varint(&mut raw_bytes.as_slice()) {
+                    Ok(value) => {
+                        monster_entity
+                            .set_attr(AttrType::EliteStatus, AttrValue::Int(value as i64));
+                    }
+                    Err(e) => log::warn!("Failed to decode ATTR_ELITE_STATUS: {:?}", e),
                 }
-                Err(e) => log::warn!("Failed to decode ATTR_ELITE_STATUS: {:?}", e),
-            },
+            }
             _ => {}
         }
     }
