@@ -30,62 +30,14 @@
   let players = $state<any[]>([]);
   let error = $state<string | null>(null);
 
-  // Current phase data for display
-  let currentPhaseActors = $derived.by(() => {
-    if (!selectedPhaseId || !encounter) return actors;
-
-    const phase = encounter.phases.find(p => p.id === selectedPhaseId);
-    if (!phase || !encounter) return actors;
-
-    // Calculate phase duration for DPS
-    const phaseDurationSecs = Math.max(1, ((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000);
-
-    return phase.actorStats.map(stat => ({
-      encounterId: encounter!.id,
-      actorId: stat.actorId,
-      name: stat.name,
-      classId: stat.classId,
-      abilityScore: stat.abilityScore,
-      damageDealt: stat.damageDealt,
-      healDealt: stat.healDealt,
-      damageTaken: stat.damageTaken,
-      hitsDealt: stat.hitsDealt,
-      hitsHeal: stat.hitsHeal,
-      hitsTaken: stat.hitsTaken,
-      critHitsDealt: stat.critHitsDealt,
-      critHitsHeal: stat.critHitsHeal,
-      critHitsTaken: stat.critHitsTaken,
-      luckyHitsDealt: stat.luckyHitsDealt,
-      luckyHitsHeal: stat.luckyHitsHeal,
-      luckyHitsTaken: stat.luckyHitsTaken,
-      critTotalDealt: stat.critTotalDealt,
-      critTotalHeal: stat.critTotalHeal,
-      critTotalTaken: stat.critTotalTaken,
-      luckyTotalDealt: stat.luckyTotalDealt,
-      luckyTotalHeal: stat.luckyTotalHeal,
-      luckyTotalTaken: stat.luckyTotalTaken,
-      bossDamageDealt: stat.bossDamageDealt,
-      bossHitsDealt: stat.bossHitsDealt,
-      bossCritHitsDealt: stat.bossCritHitsDealt,
-      bossLuckyHitsDealt: stat.bossLuckyHitsDealt,
-      bossCritTotalDealt: stat.bossCritTotalDealt,
-      bossLuckyTotalDealt: stat.bossLuckyTotalDealt,
-      dps: stat.damageDealt / phaseDurationSecs,
-      duration: phaseDurationSecs,
-      isLocalPlayer: stat.isLocalPlayer,
-    })) as ActorEncounterStatDto[];
-  });
-
   // Tab state for encounter view
   let activeTab = $state<'damage' | 'tanked' | 'healing'>('damage');
   let bossOnlyMode = $state(false);
 
-  // Phase selection state
-  let selectedPhaseId = $state<number | null>(null); // null = overall encounter stats
-
   // Segment selection state
   let segments = $state<Segment[]>([]);
   let selectedSegmentId = $state<number | null>(null); // null = all segments
+  let selectedSegment = $derived.by(() => segments.find((s) => s.id === selectedSegmentId) ?? null);
 
   // Skills view state
   let skillsWindow = $state<SkillsWindow | null>(null);
@@ -194,23 +146,18 @@
       segments = [];
     }
 
-    // Use phase actors if a phase is selected, otherwise use overall encounter actors
-    const displayActors = currentPhaseActors;
+    const displayActors = actors;
 
     const totalDmg = displayActors.reduce((sum, a) => sum + (a.damageDealt ?? 0), 0);
     const totalBossDmg = displayActors.reduce((sum, a) => sum + (a.bossDamageDealt ?? 0), 0);
     const totalDamageTaken = displayActors.reduce((sum, a) => sum + (a.damageTaken ?? 0), 0);
     const totalHealing = displayActors.reduce((sum, a) => sum + (a.healDealt ?? 0), 0);
 
-    // Calculate duration based on selected phase or overall encounter
-    let durationSecs: number;
-    if (selectedPhaseId && encounter.phases.length > 0) {
-      const phase = encounter.phases.find(p => p.id === selectedPhaseId);
-      durationSecs = phase ? Math.max(1, ((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000) :
-                             Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000);
-    } else {
-      durationSecs = Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000);
-    }
+    // Calculate duration for overall encounter
+    const durationSecs = Math.max(
+      1,
+      ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000
+    );
 
     players = displayActors.map(a => {
       const hits = a.hitsDealt || 0;
@@ -287,6 +234,11 @@
     goto('/main/history');
   }
 
+  function handleSegmentSelect(event: Event) {
+    const value = (event.target as HTMLSelectElement).value;
+    selectedSegmentId = value ? Number(value) : null;
+  }
+
   async function openEncounterOnWebsite() {
     if (!encounter || !encounter.remoteEncounterId) return;
 
@@ -316,13 +268,6 @@
   $effect(() => {
     // Reload encounter when bossOnlyMode changes
     if (bossOnlyMode !== undefined) {
-      loadEncounter();
-    }
-  });
-
-  $effect(() => {
-    // Reload encounter when selectedPhaseId changes
-    if (selectedPhaseId !== undefined) {
       loadEncounter();
     }
   });
@@ -362,22 +307,6 @@
             <div class="text-sm text-muted-foreground">
               {new Date(encounter.startedAtMs).toLocaleString()} — Duration: {Math.floor(Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000) / 60)}m
             </div>
-
-            <!-- Phases info -->
-            {#if encounter.phases && encounter.phases.length > 0}
-              <div class="text-xs text-muted-foreground mt-1 flex gap-2">
-                {#each encounter.phases as phase}
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border {phase.phaseType === 'mob' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-purple-500/30 bg-purple-500/10 text-purple-400'}">
-                    <span class="font-semibold">{phase.phaseType === 'mob' ? 'Mob Phase' : 'Boss Phase'}</span>
-                    <span class="text-muted-foreground">•</span>
-                    <span class="{phase.outcome === 'success' ? 'text-green-400' : phase.outcome === 'wipe' ? 'text-red-400' : 'text-yellow-400'}">{phase.outcome}</span>
-                    <span class="text-muted-foreground">•</span>
-                    <span>{Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s</span>
-                  </span>
-                {/each}
-              </div>
-            {/if}
-
             <!-- Segments info -->
             {#if segments.length > 0}
               <div class="text-xs text-muted-foreground mt-2">
@@ -416,19 +345,20 @@
           {/if}
         </div>
 
-        <!-- Tabs, Phase Selector, and Boss Only Toggle -->
+        <!-- Tabs, Segment Selector, and Boss Only Toggle -->
         <div class="flex items-end gap-2 h-[48px]">
-          <!-- Phase Selector -->
-          {#if encounter.phases && encounter.phases.length > 0}
+          <!-- Segment Selector -->
+          {#if segments.length > 0}
             <select
-              bind:value={selectedPhaseId}
+              value={selectedSegmentId ?? ''}
+              onchange={handleSegmentSelect}
               class="px-2 py-1 text-xs rounded border border-border bg-popover text-foreground transition-colors hover:bg-muted/40 cursor-pointer"
             >
-              <option value={null}>Overall Encounter</option>
-              {#each encounter.phases as phase}
-                <option value={phase.id}>
-                  {phase.phaseType === 'mob' ? 'Mob Phase' : 'Boss Phase'}
-                  ({Math.floor(((phase.endTimeMs ?? Date.now()) - phase.startTimeMs) / 1000)}s)
+              <option value=''>All Segments</option>
+              {#each segments as segment}
+                <option value={segment.id}>
+                  {segment.segmentType === 'boss' ? segment.bossName || 'Boss Segment' : 'Trash Segment'}
+                  ({Math.floor(((segment.endedAtMs ?? Date.now()) - segment.startedAtMs) / 1000)}s)
                 </option>
               {/each}
             </select>
@@ -629,3 +559,4 @@
     color: #facc15;
   }
 </style>
+

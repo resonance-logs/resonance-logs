@@ -1,5 +1,5 @@
 use crate::database::{DbTask, enqueue, now_ms};
-use crate::live::dungeon_log::{self, DungeonLogRuntime, SharedDungeonLog};
+use crate::live::dungeon_log::{self, DungeonLogRuntime, SegmentType, SharedDungeonLog};
 use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
@@ -395,7 +395,8 @@ impl AppStateManager {
                 bosses: vec![],
                 scene_id: state.encounter.current_scene_id,
                 scene_name: state.encounter.current_scene_name.clone(),
-                current_phase: None,
+                current_segment_type: None,
+                current_segment_name: None,
             };
             state
                 .event_manager
@@ -849,7 +850,8 @@ impl AppStateManager {
                 bosses: vec![],
                 scene_id: state.encounter.current_scene_id,
                 scene_name: state.encounter.current_scene_name.clone(),
-                current_phase: None,
+                current_segment_type: None,
+                current_segment_name: None,
             };
             state
                 .event_manager
@@ -1054,6 +1056,23 @@ impl AppStateManager {
             subscribed_players.push(entity_uid);
         }
 
+        let active_segment = dungeon_ctx
+            .as_ref()
+            .and_then(|runtime| runtime.snapshot())
+            .and_then(|log| {
+                log.segments
+                    .iter()
+                    .find(|s| s.ended_at_ms.is_none())
+                    .map(|segment| {
+                        let segment_type = match segment.segment_type {
+                            SegmentType::Boss => "boss".to_string(),
+                            SegmentType::Trash => "trash".to_string(),
+                        };
+                        let segment_name = segment.boss_name.clone();
+                        (segment_type, segment_name)
+                    })
+            });
+
         // Process boss death detection and collect ALL data needed for emission
         // We'll do ALL emissions without holding any locks to prevent deadlock
         let (final_header_info, boss_deaths, skill_subscriptions_clone, app_handle_opt) = {
@@ -1063,6 +1082,14 @@ impl AppStateManager {
                 header_info_with_deaths
             {
                 use std::collections::HashSet;
+
+                if let Some((segment_type, segment_name)) = &active_segment {
+                    header_info.current_segment_type = Some(segment_type.clone());
+                    header_info.current_segment_name = segment_name.clone();
+                } else {
+                    header_info.current_segment_type = None;
+                    header_info.current_segment_name = None;
+                }
 
                 let mut dead_ids: HashSet<i64> = dead_bosses.iter().map(|(uid, _)| *uid).collect();
                 let current_time_ms = now_ms() as u128;

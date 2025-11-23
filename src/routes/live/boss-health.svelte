@@ -23,7 +23,8 @@
     ],
     sceneId: null,
     sceneName: null,
-    currentPhase: null,
+    currentSegmentType: null,
+    currentSegmentName: null,
   });
 
   // Track compact mode
