@@ -40,3 +40,4 @@ openspec/
 .vscode/mcp.json
 .github/agents/
 specs/
+src-tauri/build_errors.log

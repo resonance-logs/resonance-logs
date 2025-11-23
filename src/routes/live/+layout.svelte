@@ -261,7 +261,7 @@
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-  <div class="flex h-screen flex-col bg-background text-[13px] text-foreground p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]" data-tauri-drag-region>
+  <div class={`flex h-screen flex-col bg-background text-[13px] text-foreground ${ SETTINGS.accessibility.state.condenseHeader === 'none' ?  '' : 'p-3'} rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]`} data-tauri-drag-region>
     {#if SETTINGS.accessibility.state.condenseHeader == "full"}
       <Header />
     {:else if SETTINGS.accessibility.state.condenseHeader == "one row"}

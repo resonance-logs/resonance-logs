@@ -395,35 +395,35 @@
 		{/if}
 	</div>
 
-	<div class="overflow-x-auto rounded border border-border/60 bg-card/30">
+	<div class="overflow-x-auto rounded border border-border/60 bg-card/30 relative">
+		<div class="absolute top-2 right-3 z-10">
+			<button
+				onclick={() => loadEncounters(page)}
+				class="text-neutral-400 hover:text-neutral-200 transition-colors"
+				disabled={isRefreshing}
+				aria-label="Refresh encounters"
+			>
+				<svg
+					class:animate-spin={isRefreshing}
+					class="w-4 h-4"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+				</svg>
+			</button>
+		</div>
+
 		<table class="w-full border-collapse" style="min-width: 740px;">
 			<thead>
 				<tr class="bg-popover/60">
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-10">ID</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-36">Encounter</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Bosses</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-80">Encounter</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-[400px]">Players</th>
 					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-12">Duration</th>
-						<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Date</th>
-					<th class="px-3 py-2.5 text-right w-12 text-muted-foreground">
-						<button
-							onclick={() => loadEncounters(page)}
-							class="text-neutral-400 hover:text-neutral-200 transition-colors"
-							disabled={isRefreshing}
-							aria-label="Refresh encounters"
-						>
-							<svg
-								class:animate-spin={isRefreshing}
-								class="w-4 h-4"
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-							</svg>
-						</button>
-					</th>
+					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Date</th>
 				</tr>
 			</thead>
 			<tbody class="bg-background/40">
@@ -433,23 +433,25 @@
 					>
 						<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>{enc.id}</td>
 						<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>
-							{#if enc.sceneName}
-								<span class="text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">{enc.sceneName}</span>
-							{:else}
-								<span class="text-muted-foreground text-xs opacity-70">No scene</span>
-							{/if}
+							<div class="space-y-1">
+								<div>
+									{#if enc.sceneName}
+										<span class="text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">{enc.sceneName}</span>
+									{:else}
+										<span class="text-muted-foreground text-xs opacity-70">No scene</span>
+									{/if}
+								</div>
+								<div>
+									{#if enc.bosses.length > 0}
+										<div class="flex flex-wrap gap-1">
+											<span class="text-xs py-0.5 rounded px-1.5">{enc.bosses[0]?.monsterName}</span>
+										</div>
+									{:else}
+										<span class="inline-block text-muted-foreground text-xs opacity-70 py-0.5 px-1.5">No boss</span>
+									{/if}
+								</div>
+							</div>
 						</td>
-							<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>
-								{#if enc.bosses.length > 0}
-									<div class="flex flex-wrap gap-1">
-										{#each enc.bosses as boss}
-											<span class="text-xs px-1.5 py-0.5 rounded {boss.isDefeated ? 'text-[oklch(0.65_0.1_145)] bg-muted' : 'bg-muted text-foreground'}">{boss.monsterName}</span>
-										{/each}
-									</div>
-								{:else}
-									<span class="text-muted-foreground text-xs opacity-70">No bosses</span>
-								{/if}
-							</td>
 							<td class="px-3 py-2 text-sm text-muted-foreground max-w-[400px] cursor-pointer" onclick={() => onView(enc)}>
 								{#if enc.players.length > 0}
 									{@const sortedPlayers = [...enc.players].sort((a, b) => {
@@ -483,7 +485,6 @@
 									<div class="text-xs text-muted-foreground opacity-70">{fmtTime(enc.startedAtMs)}</div>
 								</div>
 							</td>
-							<td></td>
 					</tr>
 				{/each}
 			</tbody>

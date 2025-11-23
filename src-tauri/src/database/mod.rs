@@ -15,6 +15,7 @@ use tokio::sync::mpsc::{self, UnboundedSender};
 
 use crate::database::models as m;
 use crate::database::schema as sch;
+use serde_json::json;
 
 /// A type alias for a database connection pool.
 #[allow(dead_code)]
@@ -136,6 +137,7 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 
     std::thread::spawn(move || {
         let mut current_encounter_id: Option<i32> = None;
+        let mut current_encounter_start_ms: Option<i64> = None;
         loop {
             // Block until we receive the first task
             let first = rx.blocking_recv();
@@ -174,7 +176,13 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 
             let batch_result = conn.transaction::<(), diesel::result::Error, _>(|tx_conn| {
                 for task in tasks.iter().cloned() {
-                    handle_task(tx_conn, task, &mut current_encounter_id).map_err(|e| {
+                    handle_task(
+                        tx_conn,
+                        task,
+                        &mut current_encounter_id,
+                        &mut current_encounter_start_ms,
+                    )
+                    .map_err(|e| {
                         log::error!("DB task in batch failed: {}", e);
                         diesel::result::Error::RollbackTransaction
                     })?;
@@ -192,6 +200,7 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                 // Any encounter that was created in the failed transaction no longer exists.
                 // This ensures BeginEncounter tasks will create new encounters instead of being skipped.
                 current_encounter_id = None;
+                current_encounter_start_ms = None;
 
                 // Try to process tasks individually; this uses the same connection
                 // (and therefore the same transaction semantics as earlier).
@@ -209,14 +218,24 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 
                 // Process BeginEncounter tasks first
                 for task in begin_encounter_tasks {
-                    if let Err(e) = handle_task(&mut conn, task, &mut current_encounter_id) {
+                    if let Err(e) = handle_task(
+                        &mut conn,
+                        task,
+                        &mut current_encounter_id,
+                        &mut current_encounter_start_ms,
+                    ) {
                         log::error!("DB task error (fallback - BeginEncounter): {}", e);
                     }
                 }
 
                 // Then process all other tasks
                 for task in other_tasks {
-                    if let Err(e) = handle_task(&mut conn, task, &mut current_encounter_id) {
+                    if let Err(e) = handle_task(
+                        &mut conn,
+                        task,
+                        &mut current_encounter_id,
+                        &mut current_encounter_start_ms,
+                    ) {
                         log::error!("DB task error (fallback): {}", e);
                     }
                 }
@@ -259,6 +278,7 @@ pub enum DbTask {
     },
 
     /// A task to end any encounters that never received an explicit end.
+    EndAllActiveEncounters { ended_at_ms: i64 },
     EndAllActiveEncounters { ended_at_ms: i64 },
 
     /// A task to insert or update an entity.
@@ -500,6 +520,7 @@ fn handle_task(
     conn: &mut SqliteConnection,
     task: DbTask,
     current_encounter_id: &mut Option<i32>,
+    current_encounter_start_ms: &mut Option<i64>,
 ) -> Result<(), String> {
     match task {
         DbTask::BeginEncounter {
@@ -532,6 +553,7 @@ fn handle_task(
                 .first::<i32>(conn)
                 .map_err(|e| e.to_string())?;
             *current_encounter_id = Some(id);
+            *current_encounter_start_ms = Some(started_at_ms);
         }
         DbTask::EndEncounter {
             ended_at_ms,
@@ -540,6 +562,7 @@ fn handle_task(
             if let Some(id) = current_encounter_id.take() {
                 finalize_encounter(conn, id, ended_at_ms, defeated_bosses)?;
             }
+            *current_encounter_start_ms = None;
         }
         DbTask::EndAllActiveEncounters { ended_at_ms } => {
             use sch::encounters::dsl as e;
@@ -554,6 +577,7 @@ fn handle_task(
             }
 
             *current_encounter_id = None;
+            *current_encounter_start_ms = None;
         }
         DbTask::UpsertEntity {
             entity_id,
@@ -744,14 +768,29 @@ fn handle_task(
                 let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
                 let crit_i: i32 = if is_crit { 1 } else { 0 };
                 let lucky_i: i32 = if is_lucky { 1 } else { 0 };
+
+                let hit_detail = json!({
+                    "timestamp": timestamp_ms,
+                    "ms_from_start": timestamp_ms - current_encounter_start_ms.unwrap_or(timestamp_ms),
+                    "damage": value,
+                    "crit": is_crit,
+                    "lucky": is_lucky,
+                    "hp_loss": hp_loss,
+                    "shield_loss": shield_loss,
+                    "is_boss": is_boss,
+                    "attempt_index": attempt_index,
+                });
+                let hit_detail_str = hit_detail.to_string();
+
                 diesel::sql_query(
                     "INSERT INTO damage_skill_stats (encounter_id, attacker_id, defender_id, skill_id, hits, total_value, crit_hits, lucky_hits, crit_total, lucky_total, hp_loss_total, shield_loss_total, hit_details, monster_name) \
-                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, ?10, ?11, '[]', ?12) \
+                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, ?10, ?11, json_array(json(?13)), ?12) \
                      ON CONFLICT(encounter_id, attacker_id, defender_id, skill_id) DO UPDATE SET \
                          hits = hits + 1, total_value = total_value + excluded.total_value, \
                          crit_hits = crit_hits + excluded.crit_hits, lucky_hits = lucky_hits + excluded.lucky_hits, \
                          crit_total = crit_total + excluded.crit_total, lucky_total = lucky_total + excluded.lucky_total, \
-                         hp_loss_total = hp_loss_total + excluded.hp_loss_total, shield_loss_total = shield_loss_total + excluded.shield_loss_total",
+                         hp_loss_total = hp_loss_total + excluded.hp_loss_total, shield_loss_total = shield_loss_total + excluded.shield_loss_total, \
+                         hit_details = json_insert(hit_details, '$[#]', json(?13))",
                 )
                 .bind::<diesel::sql_types::Integer, _>(enc_id)
                 .bind::<diesel::sql_types::BigInt, _>(attacker_id)
@@ -765,6 +804,7 @@ fn handle_task(
                 .bind::<diesel::sql_types::BigInt, _>(hp_loss)
                 .bind::<diesel::sql_types::BigInt, _>(shield_loss)
                 .bind::<diesel::sql_types::Nullable<diesel::sql_types::Text>, _>(monster_name.clone())
+                .bind::<diesel::sql_types::Text, _>(hit_detail_str)
                 .execute(conn)
                 .ok();
 
@@ -821,13 +861,25 @@ fn handle_task(
                 let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
                 let crit_i: i32 = if is_crit { 1 } else { 0 };
                 let lucky_i: i32 = if is_lucky { 1 } else { 0 };
+
+                let heal_detail = json!({
+                    "timestamp": timestamp_ms,
+                    "ms_from_start": timestamp_ms - current_encounter_start_ms.unwrap_or(timestamp_ms),
+                    "heal": value,
+                    "crit": is_crit,
+                    "lucky": is_lucky,
+                    "attempt_index": attempt_index,
+                });
+                let heal_detail_str = heal_detail.to_string();
+
                 diesel::sql_query(
                     "INSERT INTO heal_skill_stats (encounter_id, healer_id, target_id, skill_id, hits, total_value, crit_hits, lucky_hits, crit_total, lucky_total, heal_details, monster_name) \
-                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, '[]', ?10) \
+                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, json_array(json(?11)), ?10) \
                      ON CONFLICT(encounter_id, healer_id, target_id, skill_id) DO UPDATE SET \
                          hits = hits + 1, total_value = total_value + excluded.total_value, \
                          crit_hits = crit_hits + excluded.crit_hits, lucky_hits = lucky_hits + excluded.lucky_hits, \
-                         crit_total = crit_total + excluded.crit_total, lucky_total = lucky_total + excluded.lucky_total",
+                         crit_total = crit_total + excluded.crit_total, lucky_total = lucky_total + excluded.lucky_total, \
+                         heal_details = json_insert(heal_details, '$[#]', json(?11))",
                 )
                 .bind::<diesel::sql_types::Integer, _>(enc_id)
                 .bind::<diesel::sql_types::BigInt, _>(healer_id)
@@ -839,6 +891,7 @@ fn handle_task(
                 .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
                 .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
                 .bind::<diesel::sql_types::Nullable<diesel::sql_types::Text>, _>(None::<String>)
+                .bind::<diesel::sql_types::Text, _>(heal_detail_str)
                 .execute(conn)
                 .ok();
             }
@@ -1633,6 +1686,7 @@ mod tests {
 
         // Begin encounter
         let mut enc_opt = None;
+        let mut enc_start_opt = None;
         handle_task(
             &mut conn,
             DbTask::BeginEncounter {
@@ -1642,6 +1696,7 @@ mod tests {
                 scene_name: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
         let enc_id = enc_opt.expect("encounter started");
@@ -1662,6 +1717,7 @@ mod tests {
                 attributes: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1684,6 +1740,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1723,6 +1780,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1741,6 +1799,7 @@ mod tests {
         let mut conn = setup_conn();
 
         let mut enc_opt = None;
+        let mut enc_start_opt = None;
         handle_task(
             &mut conn,
             DbTask::BeginEncounter {
@@ -1750,6 +1809,7 @@ mod tests {
                 scene_name: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
         let encounter_id = enc_opt.expect("encounter started");
@@ -1768,6 +1828,7 @@ mod tests {
                 attributes: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1790,6 +1851,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1816,6 +1878,7 @@ mod tests {
                 attributes: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1838,6 +1901,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1860,6 +1924,7 @@ mod tests {
                 defeated_bosses: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1874,6 +1939,7 @@ mod tests {
         let mut conn = setup_conn();
 
         let mut enc_opt = None;
+        let mut enc_start_opt = None;
         handle_task(
             &mut conn,
             DbTask::BeginEncounter {
@@ -1883,6 +1949,7 @@ mod tests {
                 scene_name: Some("Test Scene".into()),
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1905,6 +1972,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1933,6 +2001,7 @@ mod tests {
         let mut conn = setup_conn();
 
         let mut enc_opt = None;
+        let mut enc_start_opt = None;
         handle_task(
             &mut conn,
             DbTask::BeginEncounter {
@@ -1942,6 +2011,7 @@ mod tests {
                 scene_name: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
         let encounter_id = enc_opt.expect("encounter started");
@@ -1964,6 +2034,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1985,6 +2056,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -2001,6 +2073,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -2011,6 +2084,7 @@ mod tests {
                 defeated_bosses: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
         assert!(enc_opt.is_none());
