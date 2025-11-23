@@ -191,6 +191,7 @@ pub struct UploadDamageSkillStatIn {
     pub lucky_total: i64,
     pub hp_loss_total: i64,
     pub shield_loss_total: i64,
+    pub hit_details: Option<String>,
     pub monster_name: Option<String>,
 }
 
@@ -206,6 +207,7 @@ pub struct UploadHealSkillStatIn {
     pub lucky_hits: i32,
     pub crit_total: i64,
     pub lucky_total: i64,
+    pub heal_details: Option<String>,
     pub monster_name: Option<String>,
 }
 
@@ -758,6 +760,7 @@ fn build_encounter_payload(
             dss::lucky_total,
             dss::hp_loss_total,
             dss::shield_loss_total,
+            dss::hit_details,
             dss::monster_name,
         ))
         .load::<(
@@ -772,6 +775,7 @@ fn build_encounter_payload(
             i64,
             i64,
             i64,
+            String,
             Option<String>,
         )>(conn)
         .map_err(|e| e.to_string())?;
@@ -790,6 +794,7 @@ fn build_encounter_payload(
                 lucky_total,
                 hp_loss_total,
                 shield_loss_total,
+                hit_details,
                 monster_name,
             )| UploadDamageSkillStatIn {
                 attacker_id,
@@ -803,6 +808,7 @@ fn build_encounter_payload(
                 lucky_total,
                 hp_loss_total,
                 shield_loss_total,
+                hit_details: Some(hit_details),
                 monster_name,
             },
         )
@@ -821,6 +827,7 @@ fn build_encounter_payload(
             hss::lucky_hits,
             hss::crit_total,
             hss::lucky_total,
+            hss::heal_details,
             hss::monster_name,
         ))
         .load::<(
@@ -833,6 +840,7 @@ fn build_encounter_payload(
             i32,
             i64,
             i64,
+            String,
             Option<String>,
         )>(conn)
         .map_err(|e| e.to_string())?;
@@ -849,6 +857,7 @@ fn build_encounter_payload(
                 lucky_hits,
                 crit_total,
                 lucky_total,
+                heal_details,
                 monster_name,
             )| UploadHealSkillStatIn {
                 healer_id,
@@ -860,6 +869,7 @@ fn build_encounter_payload(
                 lucky_hits,
                 crit_total,
                 lucky_total,
+                heal_details: Some(heal_details),
                 monster_name,
             },
         )
