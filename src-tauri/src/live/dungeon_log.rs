@@ -285,8 +285,8 @@ impl DungeonLog {
         match self.combat_state {
             CombatState::Idle => {
                 if event.is_boss_target {
-                    self.start_boss_segment(event);
-                    (true, false, true) // changed, boss_died, new_boss_started
+                    let new_boss = self.start_boss_segment(event);
+                    (true, false, new_boss) // changed, boss_died, new_boss_started
                 } else {
                     (self.log_trash_event(event), false, false)
                 }
@@ -295,8 +295,22 @@ impl DungeonLog {
         }
     }
 
-    fn start_boss_segment(&mut self, event: DamageEvent) {
+    fn start_boss_segment(&mut self, event: DamageEvent) -> bool {
         self.close_active_trash(event.timestamp_ms);
+
+        // Check if this is the same boss as the last boss segment
+        // If it is, we don't want to trigger a "new boss" reset in the live meter
+        let is_new_boss = if let Some(last_boss) = self
+            .segments
+            .iter()
+            .rev()
+            .find(|s| s.segment_type == SegmentType::Boss)
+        {
+            last_boss.boss_entity_id != Some(event.target_id)
+        } else {
+            true
+        };
+
         let mut segment = Segment::new(SegmentType::Boss, event.timestamp_ms, self.next_segment_id);
         self.next_segment_id += 1;
         segment.boss_entity_id = Some(event.target_id);
@@ -306,6 +320,8 @@ impl DungeonLog {
         self.segments.push(segment);
         self.active_segment_idx = Some(self.segments.len() - 1);
         self.combat_state = CombatState::InCombat;
+
+        is_new_boss
     }
 
     fn log_trash_event(&mut self, event: DamageEvent) -> bool {
