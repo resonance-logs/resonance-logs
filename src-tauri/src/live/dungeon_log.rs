@@ -328,6 +328,17 @@ fn lock_log(handle: &SharedDungeonLog) -> Option<MutexGuard<'_, DungeonLog>> {
 }
 
 impl DungeonLog {
+    fn should_treat_as_trash(event: &DamageEvent) -> bool {
+        if event.amount <= 0 {
+            return false;
+        }
+
+        match event.target_monster_type_id {
+            Some(monster_type_id) => !GLOBAL_BOSS_LIST.contains(&monster_type_id),
+            None => false,
+        }
+    }
+
     fn is_boss_event(&self, event: &DamageEvent) -> bool {
         if event.is_boss_target {
             return true;
@@ -447,6 +458,10 @@ impl DungeonLog {
     }
 
     fn log_trash_event(&mut self, event: DamageEvent) -> bool {
+        if !Self::should_treat_as_trash(&event) {
+            return false;
+        }
+
         let idx = match self.active_trash_idx {
             Some(idx) => {
                 if self
@@ -589,11 +604,18 @@ impl DungeonLog {
             return false;
         }
 
-        if let Some(idx) = self.active_segment_idx.take() {
+        let mut keep_active_idx = None;
+        if let Some(idx) = self.active_segment_idx {
             if let Some(segment) = self.segments.get_mut(idx) {
-                segment.close(timestamp_now_ms());
+                if segment.segment_type == SegmentType::Boss {
+                    keep_active_idx = Some(idx);
+                } else {
+                    segment.close(timestamp_now_ms());
+                }
             }
         }
+
+        self.active_segment_idx = keep_active_idx;
         self.combat_state = CombatState::Idle;
         self.last_event_at = Some(now);
         true
