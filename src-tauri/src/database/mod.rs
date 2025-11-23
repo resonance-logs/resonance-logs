@@ -137,6 +137,7 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 
     std::thread::spawn(move || {
         let mut current_encounter_id: Option<i32> = None;
+        let mut current_encounter_start_ms: Option<i64> = None;
         loop {
             // Block until we receive the first task
             let first = rx.blocking_recv();
@@ -175,7 +176,13 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 
             let batch_result = conn.transaction::<(), diesel::result::Error, _>(|tx_conn| {
                 for task in tasks.iter().cloned() {
-                    handle_task(tx_conn, task, &mut current_encounter_id).map_err(|e| {
+                    handle_task(
+                        tx_conn,
+                        task,
+                        &mut current_encounter_id,
+                        &mut current_encounter_start_ms,
+                    )
+                    .map_err(|e| {
                         log::error!("DB task in batch failed: {}", e);
                         diesel::result::Error::RollbackTransaction
                     })?;
@@ -193,6 +200,7 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                 // Any encounter that was created in the failed transaction no longer exists.
                 // This ensures BeginEncounter tasks will create new encounters instead of being skipped.
                 current_encounter_id = None;
+                current_encounter_start_ms = None;
 
                 // Try to process tasks individually; this uses the same connection
                 // (and therefore the same transaction semantics as earlier).
@@ -210,14 +218,24 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 
                 // Process BeginEncounter tasks first
                 for task in begin_encounter_tasks {
-                    if let Err(e) = handle_task(&mut conn, task, &mut current_encounter_id) {
+                    if let Err(e) = handle_task(
+                        &mut conn,
+                        task,
+                        &mut current_encounter_id,
+                        &mut current_encounter_start_ms,
+                    ) {
                         log::error!("DB task error (fallback - BeginEncounter): {}", e);
                     }
                 }
 
                 // Then process all other tasks
                 for task in other_tasks {
-                    if let Err(e) = handle_task(&mut conn, task, &mut current_encounter_id) {
+                    if let Err(e) = handle_task(
+                        &mut conn,
+                        task,
+                        &mut current_encounter_id,
+                        &mut current_encounter_start_ms,
+                    ) {
                         log::error!("DB task error (fallback): {}", e);
                     }
                 }
@@ -260,9 +278,7 @@ pub enum DbTask {
     },
 
     /// A task to end any encounters that never received an explicit end.
-    EndAllActiveEncounters {
-        ended_at_ms: i64,
-    },
+    EndAllActiveEncounters { ended_at_ms: i64 },
 
     /// A task to insert or update an entity.
     UpsertEntity {
@@ -491,6 +507,7 @@ fn handle_task(
     conn: &mut SqliteConnection,
     task: DbTask,
     current_encounter_id: &mut Option<i32>,
+    current_encounter_start_ms: &mut Option<i64>,
 ) -> Result<(), String> {
     match task {
         DbTask::BeginEncounter {
@@ -523,6 +540,7 @@ fn handle_task(
                 .first::<i32>(conn)
                 .map_err(|e| e.to_string())?;
             *current_encounter_id = Some(id);
+            *current_encounter_start_ms = Some(started_at_ms);
         }
         DbTask::EndEncounter {
             ended_at_ms,
@@ -531,6 +549,7 @@ fn handle_task(
             if let Some(id) = current_encounter_id.take() {
                 finalize_encounter(conn, id, ended_at_ms, defeated_bosses)?;
             }
+            *current_encounter_start_ms = None;
         }
         DbTask::EndAllActiveEncounters { ended_at_ms } => {
             use sch::encounters::dsl as e;
@@ -545,6 +564,7 @@ fn handle_task(
             }
 
             *current_encounter_id = None;
+            *current_encounter_start_ms = None;
         }
         DbTask::UpsertEntity {
             entity_id,
@@ -705,7 +725,13 @@ fn handle_task(
                 // Also update phase stats if a phase is active
                 if let Some(phase_id) = get_current_phase_id(conn, enc_id)? {
                     upsert_phase_stats_add_damage_dealt(
-                        conn, phase_id, attacker_id, value, is_crit, is_lucky, is_boss,
+                        conn,
+                        phase_id,
+                        attacker_id,
+                        value,
+                        is_crit,
+                        is_lucky,
+                        is_boss,
                     )?;
 
                     if let Some(def_id) = defender_id {
@@ -732,6 +758,7 @@ fn handle_task(
 
                 let hit_detail = json!({
                     "timestamp": timestamp_ms,
+                    "ms_from_start": timestamp_ms - current_encounter_start_ms.unwrap_or(timestamp_ms),
                     "damage": value,
                     "crit": is_crit,
                     "lucky": is_lucky,
@@ -824,6 +851,7 @@ fn handle_task(
 
                 let heal_detail = json!({
                     "timestamp": timestamp_ms,
+                    "ms_from_start": timestamp_ms - current_encounter_start_ms.unwrap_or(timestamp_ms),
                     "heal": value,
                     "crit": is_crit,
                     "lucky": is_lucky,
@@ -1616,6 +1644,7 @@ mod tests {
 
         // Begin encounter
         let mut enc_opt = None;
+        let mut enc_start_opt = None;
         handle_task(
             &mut conn,
             DbTask::BeginEncounter {
@@ -1625,6 +1654,7 @@ mod tests {
                 scene_name: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
         let enc_id = enc_opt.expect("encounter started");
@@ -1645,6 +1675,7 @@ mod tests {
                 attributes: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1667,6 +1698,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1706,6 +1738,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1724,6 +1757,7 @@ mod tests {
         let mut conn = setup_conn();
 
         let mut enc_opt = None;
+        let mut enc_start_opt = None;
         handle_task(
             &mut conn,
             DbTask::BeginEncounter {
@@ -1733,6 +1767,7 @@ mod tests {
                 scene_name: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
         let encounter_id = enc_opt.expect("encounter started");
@@ -1751,6 +1786,7 @@ mod tests {
                 attributes: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1773,6 +1809,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1799,6 +1836,7 @@ mod tests {
                 attributes: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1821,6 +1859,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1843,6 +1882,7 @@ mod tests {
                 defeated_bosses: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1857,6 +1897,7 @@ mod tests {
         let mut conn = setup_conn();
 
         let mut enc_opt = None;
+        let mut enc_start_opt = None;
         handle_task(
             &mut conn,
             DbTask::BeginEncounter {
@@ -1866,6 +1907,7 @@ mod tests {
                 scene_name: Some("Test Scene".into()),
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1888,22 +1930,9 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
-
-        // Simulate startup cleanup
-        handle_task(
-            &mut conn,
-            DbTask::EndAllActiveEncounters {
-                ended_at_ms: 2_000,
-            },
-            &mut enc_opt,
-        )
-        .unwrap();
-
-        // Current encounter pointer should be cleared
-        assert!(enc_opt.is_none());
-
         // Encounter should be marked ended with duration populated
         let (ended_at_ms, duration): (Option<i64>, f64) = e::encounters
             .select((e::ended_at_ms, e::duration))
@@ -1918,6 +1947,7 @@ mod tests {
         let mut conn = setup_conn();
 
         let mut enc_opt = None;
+        let mut enc_start_opt = None;
         handle_task(
             &mut conn,
             DbTask::BeginEncounter {
@@ -1927,6 +1957,7 @@ mod tests {
                 scene_name: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
         let encounter_id = enc_opt.expect("encounter started");
@@ -1949,6 +1980,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1970,6 +2002,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1986,6 +2019,7 @@ mod tests {
                 attempt_index: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
 
@@ -1996,6 +2030,7 @@ mod tests {
                 defeated_bosses: None,
             },
             &mut enc_opt,
+            &mut enc_start_opt,
         )
         .unwrap();
         assert!(enc_opt.is_none());
