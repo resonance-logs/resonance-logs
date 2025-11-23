@@ -315,7 +315,7 @@
   });
 </script>
 
-<div class="p-6">
+<div class="">
   {#if error}
     <div class="text-red-400 mb-3">{error}</div>
   {/if}
