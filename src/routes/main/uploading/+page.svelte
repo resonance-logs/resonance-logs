@@ -244,6 +244,17 @@
           <span>Save</span>
         </button>
       </div>
+      <div class="flex items-center gap-2 pt-1">
+        <label class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer select-none transition-colors">
+          <input
+            type="checkbox"
+            class="h-4 w-4 rounded border-border bg-popover text-primary focus:ring-primary"
+            checked={SETTINGS.moduleSync.state.autoUpload ?? true}
+            onchange={(e) => (SETTINGS.moduleSync.state.autoUpload = e.currentTarget.checked)}
+          />
+          <span>Auto-upload logs</span>
+        </label>
+      </div>
     </div>
 
     <div class="flex items-center gap-2 pt-2">
