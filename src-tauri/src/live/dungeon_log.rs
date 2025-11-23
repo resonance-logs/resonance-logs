@@ -51,6 +51,9 @@ impl DungeonLogRuntime {
 
     pub fn check_for_timeout(&self, now: Instant) {
         let snapshot = check_for_timeout(&self.shared_log, now, SEGMENT_TIMEOUT);
+        if snapshot.is_some() {
+            persist_segments(&self.shared_log, false);
+        }
         emit_if_changed(&self.app_handle, snapshot);
     }
 
@@ -138,6 +141,41 @@ impl Segment {
         self.events.push(event);
     }
 
+    fn matches_boss_target(&mut self, event: &DamageEvent) -> bool {
+        if self.segment_type != SegmentType::Boss {
+            return false;
+        }
+
+        let entity_match = self.boss_entity_id == Some(event.target_id);
+        let monster_match = match (self.boss_monster_type_id, event.target_monster_type_id) {
+            (Some(existing), Some(incoming)) => existing == incoming,
+            _ => false,
+        };
+        let name_match = self
+            .boss_name
+            .as_ref()
+            .zip(event.target_name.as_ref())
+            .map(|(a, b)| a.eq_ignore_ascii_case(b))
+            .unwrap_or(false);
+
+        if !entity_match && (monster_match || name_match) {
+            self.boss_entity_id = Some(event.target_id);
+        }
+
+        if self.boss_monster_type_id.is_none()
+            && event.target_monster_type_id.is_some()
+            && (entity_match || name_match)
+        {
+            self.boss_monster_type_id = event.target_monster_type_id;
+        }
+
+        if self.boss_name.is_none() && event.target_name.is_some() {
+            self.boss_name = event.target_name.clone();
+        }
+
+        entity_match || monster_match || name_match
+    }
+
     fn close(&mut self, timestamp_ms: i64) {
         if self.ended_at_ms.is_none() {
             self.ended_at_ms = Some(timestamp_ms);
@@ -176,6 +214,46 @@ pub enum CombatState {
 /// Creates a new shared dungeon log handle.
 pub fn create_shared_log() -> SharedDungeonLog {
     Arc::new(Mutex::new(DungeonLog::default()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn boss_event(timestamp: i64, target_id: i64, killing: bool) -> DamageEvent {
+        DamageEvent {
+            timestamp_ms: timestamp,
+            attacker_id: 1,
+            target_id,
+            target_name: Some("Test Boss".into()),
+            target_monster_type_id: Some(42),
+            amount: 1000,
+            is_boss_target: true,
+            is_killing_blow: killing,
+        }
+    }
+
+    #[test]
+    fn boss_segment_created_and_closed() {
+        let mut log = DungeonLog::default();
+        let (changed, boss_died, new_boss) =
+            log.apply_damage_event(boss_event(100, 10, false), Instant::now());
+        assert!(changed);
+        assert!(new_boss);
+        assert!(!boss_died);
+        assert_eq!(log.segments.len(), 1);
+        assert_eq!(log.combat_state, CombatState::InCombat);
+
+        let (changed, boss_died, new_boss) =
+            log.apply_damage_event(boss_event(200, 10, true), Instant::now());
+        assert!(changed);
+        assert!(boss_died);
+        assert!(!new_boss);
+        assert_eq!(log.segments.len(), 1);
+        // Segment should remain open to support multi-entity bosses
+        assert!(log.segments[0].ended_at_ms.is_none());
+        assert_eq!(log.combat_state, CombatState::InCombat);
+    }
 }
 
 /// Emits the provided snapshot if available.
@@ -250,6 +328,24 @@ fn lock_log(handle: &SharedDungeonLog) -> Option<MutexGuard<'_, DungeonLog>> {
 }
 
 impl DungeonLog {
+    fn is_boss_event(&self, event: &DamageEvent) -> bool {
+        if event.is_boss_target {
+            return true;
+        }
+
+        if let Some(monster_type_id) = event.target_monster_type_id {
+            if GLOBAL_BOSS_LIST.contains(&monster_type_id) {
+                return true;
+            }
+        }
+
+        self.segments.iter().any(|segment| {
+            segment.segment_type == SegmentType::Boss
+                && (segment.boss_entity_id == Some(event.target_id)
+                    || segment.boss_monster_type_id == event.target_monster_type_id)
+        })
+    }
+
     fn reset_if_scene_changed(
         &mut self,
         scene_id: Option<i32>,
@@ -284,9 +380,35 @@ impl DungeonLog {
 
         match self.combat_state {
             CombatState::Idle => {
-                if event.is_boss_target {
-                    let new_boss = self.start_boss_segment(event);
-                    (true, false, new_boss) // changed, boss_died, new_boss_started
+                if self.is_boss_event(&event) {
+                    // Check if we have an existing open boss segment for this same boss
+                    let existing_boss_segment_idx = self
+                        .segments
+                        .iter()
+                        .enumerate()
+                        .rev()
+                        .find(|(_, s)| {
+                            s.segment_type == SegmentType::Boss
+                                && s.ended_at_ms.is_none()
+                                && s.boss_entity_id == Some(event.target_id)
+                        })
+                        .map(|(idx, _)| idx);
+
+                    if let Some(idx) = existing_boss_segment_idx {
+                        // Resume existing segment for same boss
+                        if let Some(segment) = self.segments.get_mut(idx) {
+                            segment.append_event(event);
+                            self.active_segment_idx = Some(idx);
+                            self.combat_state = CombatState::InCombat;
+                            (true, false, false) // changed, boss_died, new_boss_started
+                        } else {
+                            (false, false, false)
+                        }
+                    } else {
+                        // Create new segment for new/different boss
+                        let new_boss = self.start_boss_segment(event);
+                        (true, false, new_boss) // changed, boss_died, new_boss_started
+                    }
                 } else {
                     (self.log_trash_event(event), false, false)
                 }
@@ -359,23 +481,48 @@ impl DungeonLog {
     }
 
     fn append_to_active_segment(&mut self, event: DamageEvent) -> (bool, bool, bool) {
+        let is_boss_event = self.is_boss_event(&event);
+
         if let Some(idx) = self.active_segment_idx {
             if let Some(segment) = self.segments.get_mut(idx) {
+                // Check if this event belongs to the active segment
+                let belongs_to_segment = match segment.segment_type {
+                    SegmentType::Boss => segment.matches_boss_target(&event),
+                    SegmentType::Trash => !is_boss_event,
+                };
+
+                if !belongs_to_segment {
+                    // Event doesn't belong to active segment
+                    if is_boss_event {
+                        // Different boss - close active segment and create new one
+                        segment.close(event.timestamp_ms);
+                        self.active_segment_idx = None;
+                        let new_boss = self.start_boss_segment(event);
+                        return (true, false, new_boss);
+                    } else if segment.segment_type == SegmentType::Boss {
+                        // Non-boss damage during a boss fight (cleave on adds, etc.).
+                        // Keep the boss segment active but log the trash hit separately.
+                        let changed = self.log_trash_event(event);
+                        return (changed, false, false);
+                    } else {
+                        // Trash during boss fight - close boss segment, go to Idle, log as trash
+                        segment.close(event.timestamp_ms);
+                        self.active_segment_idx = None;
+                        self.combat_state = CombatState::Idle;
+                        return (self.log_trash_event(event), false, false);
+                    }
+                }
+
+                // Event belongs to segment - append it
                 let is_killing = event.is_killing_blow
                     && (segment.boss_entity_id == Some(event.target_id)
                         || segment.boss_monster_type_id == event.target_monster_type_id);
 
                 segment.append_event(event);
 
+                // Keep the segment open even after a killing blow to support multi-entity bosses
+                // Segment will close via timeout or when switching to a different boss
                 if is_killing {
-                    let timestamp_ms = segment
-                        .events
-                        .last()
-                        .map(|ev| ev.timestamp_ms)
-                        .unwrap_or_else(timestamp_now_ms);
-                    segment.close(timestamp_ms);
-                    self.active_segment_idx = None;
-                    self.combat_state = CombatState::Idle;
                     return (true, true, false); // changed, boss_died, new_boss_started
                 }
                 (true, false, false)
@@ -383,9 +530,41 @@ impl DungeonLog {
                 (false, false, false)
             }
         } else {
-            // No active boss segment, treat as trash
-            self.combat_state = CombatState::Idle;
-            (self.log_trash_event(event), false, false)
+            // No active segment - check if this is a boss event
+            if is_boss_event {
+                // Boss event but no active segment - check for existing open segment or create new one
+                let existing_boss_segment_idx = self
+                    .segments
+                    .iter()
+                    .enumerate()
+                    .rev()
+                    .find(|(_, s)| {
+                        s.segment_type == SegmentType::Boss
+                            && s.ended_at_ms.is_none()
+                            && s.boss_entity_id == Some(event.target_id)
+                    })
+                    .map(|(idx, _)| idx);
+
+                if let Some(idx) = existing_boss_segment_idx {
+                    // Resume existing segment
+                    if let Some(segment) = self.segments.get_mut(idx) {
+                        segment.append_event(event);
+                        self.active_segment_idx = Some(idx);
+                        // Stay in InCombat state
+                        (true, false, false)
+                    } else {
+                        (false, false, false)
+                    }
+                } else {
+                    // Create new boss segment
+                    let new_boss = self.start_boss_segment(event);
+                    (true, false, new_boss)
+                }
+            } else {
+                // Not a boss event, treat as trash and go to Idle
+                self.combat_state = CombatState::Idle;
+                (self.log_trash_event(event), false, false)
+            }
         }
     }
 
@@ -429,7 +608,7 @@ fn timestamp_now_ms() -> i64 {
 }
 
 /// Persists all closed segments to the database.
-pub fn persist_segments(handle: &SharedDungeonLog) {
+pub fn persist_segments(handle: &SharedDungeonLog, force_close: bool) {
     use crate::database::{DbTask, enqueue};
 
     // Lock the log to mutate persistence state
@@ -438,7 +617,13 @@ pub fn persist_segments(handle: &SharedDungeonLog) {
         None => return,
     };
 
+    let now = timestamp_now_ms();
+
     for segment in log.segments.iter_mut() {
+        if force_close && segment.ended_at_ms.is_none() {
+            segment.close(now);
+        }
+
         // Only persist closed segments that haven't been persisted yet
         if segment.ended_at_ms.is_none() || segment.persisted {
             continue;
@@ -473,10 +658,15 @@ pub fn build_damage_event(
     target_monster_type_id: Option<i64>,
     amount: i64,
     is_killing_blow: bool,
+    is_boss_target_hint: bool,
 ) -> DamageEvent {
-    let is_boss_target = target_monster_type_id
-        .map(|id| GLOBAL_BOSS_LIST.contains(&id))
-        .unwrap_or(false);
+    let is_boss_target = if is_boss_target_hint {
+        true
+    } else {
+        target_monster_type_id
+            .map(|id| GLOBAL_BOSS_LIST.contains(&id))
+            .unwrap_or(false)
+    };
     let sanitized_amount = amount.max(0);
 
     DamageEvent {

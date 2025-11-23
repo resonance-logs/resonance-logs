@@ -331,7 +331,7 @@ impl AppStateManager {
 
         // Persist dungeon segments if enabled
         if state.dungeon_segments_enabled {
-            dungeon_log::persist_segments(&state.dungeon_log);
+            dungeon_log::persist_segments(&state.dungeon_log, true);
         }
 
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
@@ -374,7 +374,7 @@ impl AppStateManager {
         }
 
         // Persist dungeon segments
-        dungeon_log::persist_segments(&state.dungeon_log);
+        dungeon_log::persist_segments(&state.dungeon_log, true);
 
         // Reset combat state (live meter)
         state.encounter.reset_combat_state();
@@ -819,7 +819,7 @@ impl AppStateManager {
 
         // Persist dungeon segments if enabled
         if state.dungeon_segments_enabled {
-            dungeon_log::persist_segments(&state.dungeon_log);
+            dungeon_log::persist_segments(&state.dungeon_log, true);
         }
 
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
@@ -1157,8 +1157,17 @@ impl AppStateManager {
             // Emit boss death events using EventManager for deduplication
             if !boss_deaths.is_empty() {
                 let mut state = self.state.write().await;
+                let mut any_new_death = false;
                 for (boss_uid, boss_name) in boss_deaths {
-                    state.event_manager.emit_boss_death(boss_name, boss_uid);
+                    let first_time = state.event_manager.emit_boss_death(boss_name, boss_uid);
+                    if first_time {
+                        state.encounter.waiting_for_next_boss = true;
+                        any_new_death = true;
+                    }
+                }
+
+                if any_new_death && state.dungeon_segments_enabled {
+                    dungeon_log::persist_segments(&state.dungeon_log, true);
                 }
             }
 

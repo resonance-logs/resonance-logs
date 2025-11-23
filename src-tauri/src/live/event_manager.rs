@@ -158,7 +158,8 @@ impl EventManager {
     ///
     /// * `boss_name` - The name of the boss that died.
     /// * `boss_uid` - The UID of the boss that died.
-    pub fn emit_boss_death(&mut self, boss_name: String, boss_uid: i64) {
+    /// Returns true if this is the first time we saw this boss die.
+    pub fn emit_boss_death(&mut self, boss_name: String, boss_uid: i64) -> bool {
         // Only emit if we haven't already emitted for this boss
         if self.dead_bosses.insert(boss_uid) {
             // record the boss name for later persistence
@@ -170,7 +171,10 @@ impl EventManager {
                     Err(e) => error!("Failed to emit boss-death event: {}", e),
                 }
             }
+            return true;
         }
+
+        false
     }
 
     /// Peek at dead boss names without consuming them.

@@ -83,6 +83,39 @@ fn record_revive(encounter: &mut Encounter, actor_id: i64, timestamp_ms: i64) {
     info!("Recorded revive for UID {}", actor_id);
 }
 
+fn did_target_die(
+    is_dead_flag: Option<bool>,
+    hp_loss: u128,
+    shield_loss: u128,
+    prev_hp: Option<i64>,
+    max_hp: Option<i64>,
+) -> bool {
+    if let Some(true) = is_dead_flag {
+        return true;
+    }
+
+    let total_loss = hp_loss.saturating_add(shield_loss);
+    if total_loss == 0 {
+        return false;
+    }
+
+    if let Some(prev_hp_val) = prev_hp.filter(|hp| *hp > 0) {
+        let prev_hp_u128 = prev_hp_val as u128;
+        if total_loss >= prev_hp_u128 {
+            return true;
+        }
+    }
+
+    if let Some(max_hp_val) = max_hp.filter(|hp| *hp > 0) {
+        let max_hp_u128 = max_hp_val as u128;
+        if total_loss >= max_hp_u128 {
+            return true;
+        }
+    }
+
+    false
+}
+
 /// Serialize entity attributes HashMap to JSON string for database storage.
 /// Converts AttrType keys to string representation for JSON compatibility.
 fn serialize_attributes(entity: &Entity) -> Option<String> {
@@ -647,16 +680,14 @@ pub fn process_aoi_sync_delta(
 
             // Check for death
             let prev_hp_opt = defender_entity.hp();
-            let mut died = false;
-            if let Some(prev_hp) = prev_hp_opt {
-                if (hp_loss as i64) >= prev_hp {
-                    died = true;
-                }
-            } else if let Some(def_max_hp) = defender_entity.max_hp() {
-                if (hp_loss + shield_loss) >= (def_max_hp as u128) {
-                    died = true;
-                }
-            }
+            let max_hp_opt = defender_entity.max_hp();
+            let died = did_target_die(
+                sync_damage_info.is_dead,
+                hp_loss,
+                shield_loss,
+                prev_hp_opt,
+                max_hp_opt,
+            );
 
             // Persist defender
             if matches!(defender_entity.entity_type, EEntityType::EntChar) {
@@ -753,6 +784,12 @@ pub fn process_aoi_sync_delta(
         if let Some(runtime) = dungeon_runtime {
             if !was_heal_event {
                 let damage_amount = actual_value.min(i64::MAX as u128) as i64;
+                let is_boss_target_hint = encounter
+                    .entity_uid_to_entity
+                    .get(&target_uid)
+                    .map(|entity| entity.is_boss())
+                    .unwrap_or(false);
+
                 let damage_event = dungeon_log::build_damage_event(
                     timestamp_ms_i64,
                     attacker_uid,
@@ -761,8 +798,14 @@ pub fn process_aoi_sync_delta(
                     target_monster_type_id,
                     damage_amount,
                     death_info_local.is_some(),
+                    is_boss_target_hint,
                 );
                 let (boss_died, new_boss_started) = runtime.process_damage_event(damage_event);
+
+                // Persist segments if a boss died or a new boss started (implies previous segment closed)
+                if boss_died || new_boss_started {
+                    dungeon_log::persist_segments(&runtime.shared_log, false);
+                }
 
                 // If a boss just died, set the waiting flag
                 if boss_died {
@@ -772,7 +815,6 @@ pub fn process_aoi_sync_delta(
                 // If a new boss started while we were waiting, reset the live meter
                 if new_boss_started && encounter.waiting_for_next_boss {
                     use crate::database::now_ms;
-                    use crate::live::dungeon_log;
                     use crate::live::phase_detector::end_phase;
 
                     info!("New boss detected after previous boss death - resetting live meter");
@@ -783,7 +825,7 @@ pub fn process_aoi_sync_delta(
                     }
 
                     // Persist segments
-                    dungeon_log::persist_segments(&runtime.shared_log);
+                    dungeon_log::persist_segments(&runtime.shared_log, false);
 
                     // Reset combat state (live meter)
                     encounter.reset_combat_state();
@@ -1497,5 +1539,33 @@ fn process_monster_attrs(monster_entity: &mut Entity, attrs: Vec<Attr>) {
             }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::did_target_die;
+
+    #[test]
+    fn uses_packet_flag_when_present() {
+        assert!(did_target_die(Some(true), 0, 0, None, None));
+        assert!(!did_target_die(Some(false), 0, 0, Some(10), Some(20)));
+    }
+
+    #[test]
+    fn hp_loss_must_exceed_previous_hp() {
+        assert!(!did_target_die(None, 50, 0, Some(100), Some(200)));
+        assert!(did_target_die(None, 150, 0, Some(100), Some(200)));
+    }
+
+    #[test]
+    fn falls_back_to_max_hp_when_needed() {
+        assert!(did_target_die(None, 1_500, 0, None, Some(1_000)));
+        assert!(!did_target_die(None, 500, 0, None, Some(1_000)));
+    }
+
+    #[test]
+    fn zero_loss_never_marks_death() {
+        assert!(!did_target_die(None, 0, 0, Some(1), Some(2)));
     }
 }

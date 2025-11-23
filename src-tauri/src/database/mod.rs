@@ -1032,7 +1032,13 @@ fn handle_task(
             total_damage,
             hit_count,
         } => {
-            if let Some(enc_id) = *current_encounter_id {
+            let target_encounter_id = if let Some(enc_id) = *current_encounter_id {
+                Some(enc_id)
+            } else {
+                find_encounter_id_for_segment(conn, started_at_ms)?
+            };
+
+            if let Some(enc_id) = target_encounter_id {
                 use sch::dungeon_segments::dsl as ds;
                 let new_segment = m::NewDungeonSegment {
                     encounter_id: enc_id,
@@ -1049,10 +1055,34 @@ fn handle_task(
                     .values(&new_segment)
                     .execute(conn)
                     .map_err(|e| e.to_string())?;
+            } else {
+                log::warn!(
+                    "Dropping dungeon segment {:?} ({:?}) – no matching encounter for start_ms {}",
+                    segment_type,
+                    boss_name,
+                    started_at_ms
+                );
             }
         }
     }
     Ok(())
+}
+
+/// Attempt to find the encounter id that was active when a dungeon segment started.
+/// Falls back to the most recent encounter that started on or before the segment timestamp.
+fn find_encounter_id_for_segment(
+    conn: &mut SqliteConnection,
+    segment_start_ms: i64,
+) -> Result<Option<i32>, String> {
+    use sch::encounters::dsl as e;
+
+    e::encounters
+        .select(e::id)
+        .filter(e::started_at_ms.le(segment_start_ms))
+        .order(e::started_at_ms.desc())
+        .first::<i32>(conn)
+        .optional()
+        .map_err(|er| er.to_string())
 }
 
 /// Gets the current active phase ID for an encounter.
