@@ -15,6 +15,7 @@ use tokio::sync::mpsc::{self, UnboundedSender};
 
 use crate::database::models as m;
 use crate::database::schema as sch;
+use serde_json::json;
 
 /// A type alias for a database connection pool.
 #[allow(dead_code)]
@@ -728,14 +729,28 @@ fn handle_task(
                 let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
                 let crit_i: i32 = if is_crit { 1 } else { 0 };
                 let lucky_i: i32 = if is_lucky { 1 } else { 0 };
+
+                let hit_detail = json!({
+                    "timestamp": timestamp_ms,
+                    "damage": value,
+                    "crit": is_crit,
+                    "lucky": is_lucky,
+                    "hp_loss": hp_loss,
+                    "shield_loss": shield_loss,
+                    "is_boss": is_boss,
+                    "attempt_index": attempt_index,
+                });
+                let hit_detail_str = hit_detail.to_string();
+
                 diesel::sql_query(
                     "INSERT INTO damage_skill_stats (encounter_id, attacker_id, defender_id, skill_id, hits, total_value, crit_hits, lucky_hits, crit_total, lucky_total, hp_loss_total, shield_loss_total, hit_details, monster_name) \
-                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, ?10, ?11, '[]', ?12) \
+                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, ?10, ?11, json_array(json(?13)), ?12) \
                      ON CONFLICT(encounter_id, attacker_id, defender_id, skill_id) DO UPDATE SET \
                          hits = hits + 1, total_value = total_value + excluded.total_value, \
                          crit_hits = crit_hits + excluded.crit_hits, lucky_hits = lucky_hits + excluded.lucky_hits, \
                          crit_total = crit_total + excluded.crit_total, lucky_total = lucky_total + excluded.lucky_total, \
-                         hp_loss_total = hp_loss_total + excluded.hp_loss_total, shield_loss_total = shield_loss_total + excluded.shield_loss_total",
+                         hp_loss_total = hp_loss_total + excluded.hp_loss_total, shield_loss_total = shield_loss_total + excluded.shield_loss_total, \
+                         hit_details = json_insert(hit_details, '$[#]', json(?13))",
                 )
                 .bind::<diesel::sql_types::Integer, _>(enc_id)
                 .bind::<diesel::sql_types::BigInt, _>(attacker_id)
@@ -749,6 +764,7 @@ fn handle_task(
                 .bind::<diesel::sql_types::BigInt, _>(hp_loss)
                 .bind::<diesel::sql_types::BigInt, _>(shield_loss)
                 .bind::<diesel::sql_types::Nullable<diesel::sql_types::Text>, _>(monster_name.clone())
+                .bind::<diesel::sql_types::Text, _>(hit_detail_str)
                 .execute(conn)
                 .ok();
 
@@ -805,13 +821,24 @@ fn handle_task(
                 let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
                 let crit_i: i32 = if is_crit { 1 } else { 0 };
                 let lucky_i: i32 = if is_lucky { 1 } else { 0 };
+
+                let heal_detail = json!({
+                    "timestamp": timestamp_ms,
+                    "heal": value,
+                    "crit": is_crit,
+                    "lucky": is_lucky,
+                    "attempt_index": attempt_index,
+                });
+                let heal_detail_str = heal_detail.to_string();
+
                 diesel::sql_query(
                     "INSERT INTO heal_skill_stats (encounter_id, healer_id, target_id, skill_id, hits, total_value, crit_hits, lucky_hits, crit_total, lucky_total, heal_details, monster_name) \
-                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, '[]', ?10) \
+                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?7, ?8, ?9, json_array(json(?11)), ?10) \
                      ON CONFLICT(encounter_id, healer_id, target_id, skill_id) DO UPDATE SET \
                          hits = hits + 1, total_value = total_value + excluded.total_value, \
                          crit_hits = crit_hits + excluded.crit_hits, lucky_hits = lucky_hits + excluded.lucky_hits, \
-                         crit_total = crit_total + excluded.crit_total, lucky_total = lucky_total + excluded.lucky_total",
+                         crit_total = crit_total + excluded.crit_total, lucky_total = lucky_total + excluded.lucky_total, \
+                         heal_details = json_insert(heal_details, '$[#]', json(?11))",
                 )
                 .bind::<diesel::sql_types::Integer, _>(enc_id)
                 .bind::<diesel::sql_types::BigInt, _>(healer_id)
@@ -823,6 +850,7 @@ fn handle_task(
                 .bind::<diesel::sql_types::BigInt, _>(if is_crit { value } else { 0 })
                 .bind::<diesel::sql_types::BigInt, _>(if is_lucky { value } else { 0 })
                 .bind::<diesel::sql_types::Nullable<diesel::sql_types::Text>, _>(None::<String>)
+                .bind::<diesel::sql_types::Text, _>(heal_detail_str)
                 .execute(conn)
                 .ok();
             }
