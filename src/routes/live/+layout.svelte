@@ -10,7 +10,7 @@
    */
   import { onMount } from "svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter, onDungeonLogUpdate } from "$lib/api";
+  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter, onDungeonLogUpdate, resetPlayerMetrics } from "$lib/api";
   import { writable } from "svelte/store";
   import { beforeNavigate, afterNavigate } from "$app/navigation";
 
@@ -35,6 +35,9 @@
   let notificationToast: NotificationToast;
   let mainElement: HTMLElement | undefined = undefined;
   let unlisten: (() => void) | null = null;
+
+  // Track the current active segment type for fake reset on segment switches
+  let lastActiveSegmentType: 'boss' | 'trash' | null = null;
   // Prevent concurrent setupEventListeners runs which can attach duplicate listeners
   let listenersSetupInProgress = false;
   let lastEventTime = Date.now();
@@ -78,6 +81,7 @@
       const resetUnlisten = await onResetEncounter(() => {
         clearMeterData();
         clearLiveDungeonLog();
+        lastActiveSegmentType = null; // Reset segment tracking
         notificationToast?.showToast('notice', 'Server change detected, resetting log');
       });
 
@@ -85,7 +89,35 @@
       const dungeonLogUnlisten = await onDungeonLogUpdate((event) => {
         lastEventTime = Date.now();
         hadAnyEvent = true;
-        setLiveDungeonLog(event.payload);
+
+        // Check for active segment and detect segment type changes
+        const dungeonLog = event.payload;
+        const activeSegment = dungeonLog.segments.find(s => !s.endedAtMs);
+        const currentSegmentType = activeSegment?.segmentType ?? null;
+
+        // If segment type changed (trash -> boss or boss -> trash), perform fake reset
+        if (currentSegmentType !== null &&
+            lastActiveSegmentType !== null &&
+            currentSegmentType !== lastActiveSegmentType) {
+
+          // Call backend to reset player metrics (this will clear stores and emit reset event)
+          // Fire and forget - we don't need to wait for the result
+          resetPlayerMetrics().catch(e => {
+            console.error('Failed to reset player metrics:', e);
+          });
+
+          // Show notification
+          const segmentName = currentSegmentType === 'boss'
+            ? (activeSegment?.bossName ?? 'Boss Segment')
+            : 'Trash Segment';
+          notificationToast?.showToast('notice', `Switched to ${segmentName}`);
+        }
+
+        // Update last segment type
+        lastActiveSegmentType = currentSegmentType;
+
+        // Update the dungeon log store
+        setLiveDungeonLog(dungeonLog);
       });
 
       // Set up encounter update listener (pause/resume)

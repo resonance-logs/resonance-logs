@@ -807,28 +807,47 @@ pub fn process_aoi_sync_delta(
                     dungeon_log::persist_segments(&runtime.shared_log, false);
                 }
 
+                // Check for segment type transitions and reset metrics if needed
+                let current_segment_type = dungeon_log::snapshot(&runtime.shared_log)
+                    .and_then(|log| {
+                        log.segments
+                            .iter()
+                            .rev()
+                            .find(|s| s.ended_at_ms.is_none())
+                            .map(|s| match s.segment_type {
+                                dungeon_log::SegmentType::Boss => "boss".to_string(),
+                                dungeon_log::SegmentType::Trash => "trash".to_string(),
+                            })
+                    });
+
+                // If segment type changed, reset the live meter
+                if let Some(current_type) = &current_segment_type {
+                    if encounter.last_active_segment_type.as_ref() != Some(current_type) {
+                        info!("Segment type changed from {:?} to {}, resetting live meter",
+                            encounter.last_active_segment_type, current_type);
+
+                        // Store the original fight start time before reset
+                        let original_fight_start_ms = encounter.time_fight_start_ms;
+
+                        // Reset combat state (live meter) - this clears player metrics but also resets time_fight_start_ms
+                        encounter.reset_combat_state();
+
+                        // Restore the original fight start time to preserve total encounter duration
+                        encounter.time_fight_start_ms = original_fight_start_ms;
+
+                        // Update the last segment type
+                        encounter.last_active_segment_type = Some(current_type.clone());
+                    }
+                }
+
                 // If a boss just died, set the waiting flag
                 if boss_died {
                     encounter.waiting_for_next_boss = true;
                 }
 
-                // If a new boss started while we were waiting, reset the live meter
+                // If a new boss started while we were waiting, clear the waiting flag
                 if new_boss_started && encounter.waiting_for_next_boss {
-                    use crate::database::now_ms;
-
-                    info!("New boss detected after previous boss death - resetting live meter");
-
-                    // Persist segments
-                    dungeon_log::persist_segments(&runtime.shared_log, false);
-
-                    // Reset combat state (live meter)
-                    encounter.reset_combat_state();
-
-                    // Clear the waiting flag
                     encounter.waiting_for_next_boss = false;
-
-                    // Restart the encounter timer
-                    encounter.time_fight_start_ms = timestamp_ms;
                 }
             }
         }

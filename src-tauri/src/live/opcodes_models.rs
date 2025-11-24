@@ -37,6 +37,8 @@ pub struct Encounter {
     pub last_attempt_split_ms: u128,     // Cooldown to avoid rapid splits
     // Dungeon segment tracking: set to true when a boss dies, cleared when next boss is hit
     pub waiting_for_next_boss: bool,
+    // Track the last active segment type to detect transitions for meter resets
+    pub last_active_segment_type: Option<String>, // "boss" or "trash"
 }
 
 // Use an async-aware RwLock so readers don't block the tokio runtime threads.
@@ -455,6 +457,7 @@ impl Encounter {
         self.party_member_uids.clear();
         self.last_attempt_split_ms = 0;
         self.waiting_for_next_boss = false;
+        self.last_active_segment_type = None;
     }
 }
 

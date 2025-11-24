@@ -32,7 +32,8 @@
   let clientElapsedMs = $state(0);
   let animationFrameId: number | null = null;
 
-  // Reactive dungeon log state
+  // Reactive dungeon log state with derived active segment info
+  // also does a fake reset on segment type change for the live meter
   let dungeonLog = $derived(getLiveDungeonLog());
   let activeSegment = $derived(dungeonLog?.segments?.find(s => !s.endedAtMs) ?? null);
   let activeSegmentInfo = $derived.by(() => {

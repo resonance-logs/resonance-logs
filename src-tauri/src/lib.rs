@@ -45,6 +45,7 @@ pub fn run() {
             live::commands::disable_blur,
             live::commands::reset_encounter,
             live::commands::toggle_pause_encounter,
+            live::commands::reset_player_metrics,
             live::commands::get_player_skills,
             live::commands::subscribe_player_skills,
             live::commands::unsubscribe_player_skills,

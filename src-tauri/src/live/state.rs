@@ -348,9 +348,15 @@ impl AppStateManager {
         // Persist dungeon segments
         dungeon_log::persist_segments(&state.dungeon_log, true);
 
+        // Store the original fight start time before reset
+        let original_fight_start_ms = state.encounter.time_fight_start_ms;
+
         // Reset combat state (live meter)
         state.encounter.reset_combat_state();
         state.skill_subscriptions.clear();
+
+        // Restore the original fight start time to preserve total encounter duration
+        state.encounter.time_fight_start_ms = original_fight_start_ms;
 
         if state.event_manager.should_emit_events() {
             state.event_manager.emit_encounter_reset();

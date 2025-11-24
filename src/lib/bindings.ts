@@ -64,6 +64,26 @@ async togglePauseEncounter() : Promise<Result<null, string>> {
 }
 },
 /**
+ * Resets player metrics for the live meter without ending the encounter.
+ * This is used for segment transitions to clear UI data.
+ * 
+ * # Arguments
+ * 
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result.
+ */
+async resetPlayerMetrics() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_player_metrics") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Gets a player's skills.
  * 
  * # Arguments

@@ -165,6 +165,7 @@ import type { Result } from "./bindings";
 
 export const resetEncounter = (): Promise<Result<null, string>> => commands.resetEncounter();
 export const togglePauseEncounter = (): Promise<Result<null, string>> => commands.togglePauseEncounter();
+export const resetPlayerMetrics = (): Promise<Result<null, string>> => commands.resetPlayerMetrics();
 export const enableBlur = (): Promise<void> => commands.enableBlur();
 export const disableBlur = (): Promise<void> => commands.disableBlur();
 
