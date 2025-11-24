@@ -362,17 +362,16 @@ pub enum DbTask {
         total_deaths: i32,
     },
 
-    /// A task to begin a new encounter phase.
-    BeginPhase {
-        phase_type: String,
-        start_time_ms: i64,
-    },
-
-    /// A task to end the current encounter phase.
-    EndPhase {
-        phase_type: String,
-        end_time_ms: i64,
-        outcome: String,
+    /// A task to insert a dungeon segment.
+    InsertDungeonSegment {
+        segment_type: String,
+        boss_entity_id: Option<i64>,
+        boss_monster_type_id: Option<i64>,
+        boss_name: Option<String>,
+        started_at_ms: i64,
+        ended_at_ms: Option<i64>,
+        total_damage: i64,
+        hit_count: i64,
     },
 }
 
@@ -722,35 +721,6 @@ fn handle_task(
                     }
                 }
 
-                // Also update phase stats if a phase is active
-                if let Some(phase_id) = get_current_phase_id(conn, enc_id)? {
-                    upsert_phase_stats_add_damage_dealt(
-                        conn,
-                        phase_id,
-                        attacker_id,
-                        value,
-                        is_crit,
-                        is_lucky,
-                        is_boss,
-                    )?;
-
-                    if let Some(def_id) = defender_id {
-                        if let Some(attacker_type) = get_entity_type(conn, attacker_id)? {
-                            if attacker_type
-                                != (blueprotobuf_lib::blueprotobuf::EEntityType::EntChar as i32)
-                            {
-                                upsert_phase_stats_add_damage_taken(
-                                    conn, phase_id, def_id, value, is_crit, is_lucky,
-                                )?;
-                            }
-                        } else {
-                            upsert_phase_stats_add_damage_taken(
-                                conn, phase_id, def_id, value, is_crit, is_lucky,
-                            )?;
-                        }
-                    }
-                }
-
                 // Upsert per-skill aggregated stats into damage_skill_stats
                 let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
                 let crit_i: i32 = if is_crit { 1 } else { 0 };
@@ -836,13 +806,6 @@ fn handle_task(
                 .ok();
 
                 upsert_stats_add_heal_dealt(conn, enc_id, healer_id, value, is_crit, is_lucky)?;
-
-                // Also update phase stats if a phase is active
-                if let Some(phase_id) = get_current_phase_id(conn, enc_id)? {
-                    upsert_phase_stats_add_heal_dealt(
-                        conn, phase_id, healer_id, value, is_crit, is_lucky,
-                    )?;
-                }
 
                 // Upsert into heal_skill_stats
                 let skill_id_val: i32 = skill_id.unwrap_or(UNKNOWN_SKILL_ID_SENTINEL);
@@ -965,80 +928,70 @@ fn handle_task(
                 .map_err(|e| e.to_string())?;
             }
         }
-        DbTask::BeginPhase {
-            phase_type,
-            start_time_ms,
+        DbTask::InsertDungeonSegment {
+            segment_type,
+            boss_entity_id,
+            boss_monster_type_id,
+            boss_name,
+            started_at_ms,
+            ended_at_ms,
+            total_damage,
+            hit_count,
         } => {
-            if let Some(enc_id) = *current_encounter_id {
-                use sch::encounter_phases::dsl as ep;
-                let new_phase = m::NewEncounterPhase {
+            let target_encounter_id = if let Some(enc_id) = *current_encounter_id {
+                Some(enc_id)
+            } else {
+                find_encounter_id_for_segment(conn, started_at_ms)?
+            };
+
+            if let Some(enc_id) = target_encounter_id {
+                use sch::dungeon_segments::dsl as ds;
+                let new_segment = m::NewDungeonSegment {
                     encounter_id: enc_id,
-                    phase_type,
-                    start_time_ms,
-                    end_time_ms: None,
-                    outcome: "unknown".to_string(),
+                    segment_type: &segment_type,
+                    boss_entity_id,
+                    boss_monster_type_id,
+                    boss_name: boss_name.as_deref(),
+                    started_at_ms,
+                    ended_at_ms,
+                    total_damage,
+                    hit_count,
                 };
-                diesel::insert_into(ep::encounter_phases)
-                    .values(&new_phase)
+                diesel::insert_into(ds::dungeon_segments)
+                    .values(&new_segment)
                     .execute(conn)
                     .map_err(|e| e.to_string())?;
-            }
-        }
-        DbTask::EndPhase {
-            phase_type,
-            end_time_ms,
-            outcome,
-        } => {
-            if let Some(enc_id) = *current_encounter_id {
-                // Update the most recent unclosed phase of this type for this encounter
-                // We use raw SQL because Diesel doesn't support ORDER BY in UPDATE queries
-                diesel::sql_query(
-                    "UPDATE encounter_phases
-                     SET end_time_ms = ?1, outcome = ?2
-                     WHERE id = (
-                       SELECT id FROM encounter_phases
-                       WHERE encounter_id = ?3 AND phase_type = ?4 AND end_time_ms IS NULL
-                       ORDER BY start_time_ms DESC
-                       LIMIT 1
-                     )",
-                )
-                .bind::<diesel::sql_types::BigInt, _>(end_time_ms)
-                .bind::<diesel::sql_types::Text, _>(&outcome)
-                .bind::<diesel::sql_types::Integer, _>(enc_id)
-                .bind::<diesel::sql_types::Text, _>(&phase_type)
-                .execute(conn)
-                .map_err(|e| e.to_string())?;
+            } else {
+                log::warn!(
+                    "Dropping dungeon segment {:?} ({:?}) – no matching encounter for start_ms {}",
+                    segment_type,
+                    boss_name,
+                    started_at_ms
+                );
             }
         }
     }
     Ok(())
 }
 
-/// Gets the current active phase ID for an encounter.
-///
-/// # Arguments
-///
-/// * `conn` - A mutable reference to a `SqliteConnection`.
-/// * `encounter_id` - The ID of the encounter.
-///
-/// # Returns
-///
-/// * `Result<Option<i32>, String>` - The phase ID, or `None` if no active phase.
-fn get_current_phase_id(
+/// Attempt to find the encounter id that was active when a dungeon segment started.
+/// Falls back to the most recent encounter that started on or before the segment timestamp.
+fn find_encounter_id_for_segment(
     conn: &mut SqliteConnection,
-    encounter_id: i32,
+    segment_start_ms: i64,
 ) -> Result<Option<i32>, String> {
-    use sch::encounter_phases::dsl as ep;
-    let phase_id: Option<i32> = ep::encounter_phases
-        .select(ep::id)
-        .filter(ep::encounter_id.eq(encounter_id))
-        .filter(ep::end_time_ms.is_null())
-        .order_by(ep::start_time_ms.desc())
+    use sch::encounters::dsl as e;
+
+    e::encounters
+        .select(e::id)
+        .filter(e::started_at_ms.le(segment_start_ms))
+        .order(e::started_at_ms.desc())
         .first::<i32>(conn)
         .optional()
-        .map_err(|e| e.to_string())?;
-    Ok(phase_id)
+        .map_err(|er| er.to_string())
 }
+
+/// Removed - phases replaced by segments
 
 /// Gets the entity type of a given entity ID.
 ///
@@ -1320,22 +1273,9 @@ fn upsert_stats_add_damage_taken(
     .map_err(|e| e.to_string())
 }
 
-/// Upserts actor phase stats for damage dealt.
-///
-/// # Arguments
-///
-/// * `conn` - A mutable reference to a `SqliteConnection`.
-/// * `phase_id` - The ID of the phase.
-/// * `actor_id` - The ID of the actor.
-/// * `value` - The amount of damage dealt.
-/// * `is_crit` - Whether the damage was a critical hit.
-/// * `is_lucky` - Whether the damage was a lucky hit.
-/// * `is_boss` - Whether the target was a boss.
-///
-/// # Returns
-///
-/// * `Result<(), String>` - An empty result indicating success or failure.
-fn upsert_phase_stats_add_damage_dealt(
+/// Removed - phases replaced by segments
+#[allow(dead_code)]
+fn _upsert_phase_stats_add_damage_dealt(
     conn: &mut SqliteConnection,
     phase_id: i32,
     actor_id: i64,
@@ -1406,21 +1346,9 @@ fn upsert_phase_stats_add_damage_dealt(
     .map_err(|e| e.to_string())
 }
 
-/// Upserts actor phase stats for heal dealt.
-///
-/// # Arguments
-///
-/// * `conn` - A mutable reference to a `SqliteConnection`.
-/// * `phase_id` - The ID of the phase.
-/// * `actor_id` - The ID of the actor.
-/// * `value` - The amount of heal dealt.
-/// * `is_crit` - Whether the heal was a critical hit.
-/// * `is_lucky` - Whether the heal was a lucky hit.
-///
-/// # Returns
-///
-/// * `Result<(), String>` - An empty result indicating success or failure.
-fn upsert_phase_stats_add_heal_dealt(
+/// Removed - phases replaced by segments
+#[allow(dead_code)]
+fn _upsert_phase_stats_add_heal_dealt(
     conn: &mut SqliteConnection,
     phase_id: i32,
     actor_id: i64,
@@ -1476,21 +1404,9 @@ fn upsert_phase_stats_add_heal_dealt(
     .map_err(|e| e.to_string())
 }
 
-/// Upserts actor phase stats for damage taken.
-///
-/// # Arguments
-///
-/// * `conn` - A mutable reference to a `SqliteConnection`.
-/// * `phase_id` - The ID of the phase.
-/// * `actor_id` - The ID of the actor.
-/// * `value` - The amount of damage taken.
-/// * `is_crit` - Whether the damage was a critical hit.
-/// * `is_lucky` - Whether the damage was a lucky hit.
-///
-/// # Returns
-///
-/// * `Result<(), String>` - An empty result indicating success or failure.
-fn upsert_phase_stats_add_damage_taken(
+/// Removed - phases replaced by segments
+#[allow(dead_code)]
+fn _upsert_phase_stats_add_damage_taken(
     conn: &mut SqliteConnection,
     phase_id: i32,
     actor_id: i64,
@@ -1933,6 +1849,19 @@ mod tests {
             &mut enc_start_opt,
         )
         .unwrap();
+
+        // Simulate startup cleanup
+        handle_task(
+            &mut conn,
+            DbTask::EndAllActiveEncounters { ended_at_ms: 2_000 },
+            &mut enc_opt,
+            &mut enc_start_opt,
+        )
+        .unwrap();
+
+        // Current encounter pointer should be cleared
+        assert!(enc_opt.is_none());
+
         // Encounter should be marked ended with duration populated
         let (ended_at_ms, duration): (Option<i64>, f64) = e::encounters
             .select((e::ended_at_ms, e::duration))

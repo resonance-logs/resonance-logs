@@ -158,7 +158,8 @@ impl EventManager {
     ///
     /// * `boss_name` - The name of the boss that died.
     /// * `boss_uid` - The UID of the boss that died.
-    pub fn emit_boss_death(&mut self, boss_name: String, boss_uid: i64) {
+    /// Returns true if this is the first time we saw this boss die.
+    pub fn emit_boss_death(&mut self, boss_name: String, boss_uid: i64) -> bool {
         // Only emit if we haven't already emitted for this boss
         if self.dead_bosses.insert(boss_uid) {
             // record the boss name for later persistence
@@ -170,7 +171,10 @@ impl EventManager {
                     Err(e) => error!("Failed to emit boss-death event: {}", e),
                 }
             }
+            return true;
         }
+
+        false
     }
 
     /// Peek at dead boss names without consuming them.
@@ -1025,13 +1029,6 @@ pub fn generate_header_info(
 
     bosses.sort_by_key(|boss| boss.uid);
 
-    let current_phase = encounter.current_phase.map(|phase_type| {
-        match phase_type {
-            crate::live::opcodes_models::PhaseType::Mob => "mob".to_string(),
-            crate::live::opcodes_models::PhaseType::Boss => "boss".to_string(),
-        }
-    });
-
     #[allow(clippy::cast_precision_loss)]
     Some((
         HeaderInfo {
@@ -1042,7 +1039,8 @@ pub fn generate_header_info(
             bosses,
             scene_id: encounter.current_scene_id,
             scene_name: encounter.current_scene_name.clone(),
-            current_phase,
+            current_segment_type: None,
+            current_segment_name: None,
         },
         dead_bosses,
     ))

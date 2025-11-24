@@ -143,12 +143,6 @@ pub fn split_attempt(
         total_deaths: deaths_in_attempt,
     });
 
-    // Handle phase outcomes for wipes
-    if reason == "wipe" {
-        use crate::live::phase_detector::handle_wipe;
-        handle_wipe(encounter, timestamp_ms);
-    }
-
     // Increment attempt index
     encounter.current_attempt_index += 1;
 

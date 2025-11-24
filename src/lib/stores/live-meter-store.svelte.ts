@@ -103,3 +103,18 @@ export function generateMockPlayers(): PlayersWindow {
 //     setHealPlayers(generateMockPlayers());
 //     setTankedPlayers(generateMockPlayers());
 // }, 1);
+
+// Live dungeon segments state
+let liveDungeonLog = $state<import('$lib/api').DungeonLog | null>(null);
+
+export function setLiveDungeonLog(log: import('$lib/api').DungeonLog | null) {
+    liveDungeonLog = log;
+}
+
+export function getLiveDungeonLog() {
+    return liveDungeonLog;
+}
+
+export function clearLiveDungeonLog() {
+    liveDungeonLog = null;
+}

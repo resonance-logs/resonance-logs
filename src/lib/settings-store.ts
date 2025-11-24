@@ -70,6 +70,7 @@ const DEFAULT_GENERAL_SETTINGS = {
   shortenDps: true,
   shortenTps: true,
   bossOnlyDps: false,
+  dungeonSegmentsEnabled: true,
 };
 
 const DEFAULT_SETTINGS = {
@@ -104,6 +105,7 @@ const DEFAULT_SETTINGS = {
     apiKey: "",
     baseUrl: "https://api.bpsr.app/api/v1",
     autoSyncIntervalMinutes: 0,
+    autoUpload: true,
   },
   live: {
     general: { ...DEFAULT_GENERAL_SETTINGS },

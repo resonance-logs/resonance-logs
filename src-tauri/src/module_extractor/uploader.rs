@@ -1,6 +1,5 @@
 /// Module upload functionality for syncing modules to resonance-website API
 /// Handles HTTP communication, retries, and error handling
-
 use crate::module_extractor::types::{
     ImportModulesRequest, ImportModulesResponse, ModuleImportData, ModuleInfo,
 };
@@ -53,7 +52,10 @@ pub async fn upload_modules(
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
-    let url = format!("{}/module-optimizer/modules/import", base_url.trim_end_matches('/'));
+    let url = format!(
+        "{}/module-optimizer/modules/import",
+        base_url.trim_end_matches('/')
+    );
 
     // Retry logic
     let mut last_error = String::new();
@@ -68,16 +70,23 @@ pub async fn upload_modules(
             }
             Err(e) => {
                 last_error = e.clone();
-                warn!("Module upload attempt {}/{} failed: {}", attempt, MAX_RETRIES, e);
+                warn!(
+                    "Module upload attempt {}/{} failed: {}",
+                    attempt, MAX_RETRIES, e
+                );
 
                 if attempt < MAX_RETRIES {
-                    tokio::time::sleep(Duration::from_millis(RETRY_DELAY_MS * attempt as u64)).await;
+                    tokio::time::sleep(Duration::from_millis(RETRY_DELAY_MS * attempt as u64))
+                        .await;
                 }
             }
         }
     }
 
-    error!("Module upload failed after {} retries: {}", MAX_RETRIES, last_error);
+    error!(
+        "Module upload failed after {} retries: {}",
+        MAX_RETRIES, last_error
+    );
     Err(last_error)
 }
 

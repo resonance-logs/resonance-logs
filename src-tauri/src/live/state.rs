@@ -1,4 +1,5 @@
 use crate::database::{DbTask, enqueue, now_ms};
+use crate::live::dungeon_log::{self, DungeonLogRuntime, SegmentType, SharedDungeonLog};
 use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
@@ -6,6 +7,7 @@ use blueprotobuf_lib::blueprotobuf;
 use log::{error, info, warn};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::RwLock;
 
@@ -30,6 +32,8 @@ pub enum StateEvent {
     SyncNearDeltaInfo(blueprotobuf::SyncNearDeltaInfo),
     /// A notify revive user event.
     NotifyReviveUser(blueprotobuf::NotifyReviveUser),
+    /// A sync scene attrs event.
+    SyncSceneAttrs(blueprotobuf::SyncSceneAttrs),
     /// A pause encounter event.
     PauseEncounter(bool),
     /// A reset encounter event.
@@ -53,6 +57,10 @@ pub struct AppState {
     pub low_hp_bosses: HashMap<i64, u128>,
     /// Whether we've already handled the first scene change after startup.
     pub initial_scene_change_handled: bool,
+    /// Shared dungeon log used for segment tracking.
+    pub dungeon_log: SharedDungeonLog,
+    /// Feature flag for dungeon segment tracking.
+    pub dungeon_segments_enabled: bool,
 }
 
 impl AppState {
@@ -70,6 +78,8 @@ impl AppState {
             boss_only_dps: false,
             low_hp_bosses: HashMap::new(),
             initial_scene_change_handled: false,
+            dungeon_log: dungeon_log::create_shared_log(),
+            dungeon_segments_enabled: true,
         }
     }
 
@@ -87,6 +97,124 @@ impl AppState {
         self.encounter.is_encounter_paused = paused;
         self.event_manager.emit_encounter_pause(paused);
     }
+}
+
+/// Helper: try to find a known scene id by scanning varints at every offset in binary data
+fn find_scene_id_in_bytes(data: &[u8]) -> Option<i32> {
+    use crate::live::scene_names;
+
+    // 1) Try protobuf varint decoding at every offset
+    for offset in 0..data.len() {
+        let mut slice = &data[offset..];
+        if let Ok(v) = prost::encoding::decode_varint(&mut slice) {
+            if v <= i32::MAX as u64 {
+                let cand = v as i32;
+                if scene_names::contains(cand) {
+                    return Some(cand);
+                }
+            }
+        }
+    }
+
+    // 2) Try 4-byte little-endian and big-endian ints
+    if data.len() >= 4 {
+        for i in 0..=data.len() - 4 {
+            let le = i32::from_le_bytes([data[i], data[i + 1], data[i + 2], data[i + 3]]);
+            if le > 0 && scene_names::contains(le) {
+                return Some(le);
+            }
+            let be = i32::from_be_bytes([data[i], data[i + 1], data[i + 2], data[i + 3]]);
+            if be > 0 && scene_names::contains(be) {
+                return Some(be);
+            }
+        }
+    }
+
+    // 3) Try ASCII decimal substrings of length 2..6
+    let mut i = 0;
+    while i < data.len() {
+        if data[i].is_ascii_digit() {
+            let start = i;
+            i += 1;
+            while i < data.len() && data[i].is_ascii_digit() {
+                i += 1;
+            }
+            let len_digits = i - start;
+            if len_digits >= 2 && len_digits <= 6 {
+                if let Ok(s) = std::str::from_utf8(&data[start..i]) {
+                    if let Ok(v) = s.parse::<i32>() {
+                        if scene_names::contains(v) {
+                            return Some(v);
+                        }
+                    }
+                }
+            }
+        } else {
+            i += 1;
+        }
+    }
+
+    None
+}
+
+/// Extracts scene ID from an AttrCollection by scanning attrs and map_attrs
+fn extract_scene_id_from_attr_collection(attrs: &blueprotobuf::AttrCollection) -> Option<i32> {
+    use crate::live::scene_names;
+
+    // Check simple attrs (varint or length-prefixed)
+    for attr in &attrs.attrs {
+        if let Some(raw) = &attr.raw_data {
+            // If attr id suggests a scene id, prefer that first
+            if let Some(attr_id) = attr.id {
+                // Prefer ATTR_ID (0x0a) which contains numeric identifiers.
+                // Do NOT treat ATTR_NAME (0x01) as a varint: its raw_data is a
+                // length-prefixed string and decoding it as a varint can yield
+                // the string length (false positive scene id).
+                if attr_id == crate::live::opcodes_models::attr_type::ATTR_ID {
+                    let mut buf = raw.as_slice();
+                    if let Ok(v) = prost::encoding::decode_varint(&mut buf) {
+                        let cand = v as i32;
+                        if scene_names::contains(cand) {
+                            info!("Found scene_id {} in attr {}", cand, attr_id);
+                            return Some(cand);
+                        }
+                    }
+                }
+            }
+
+            // Fallback: scan all varints in the raw bytes for a known scene id
+            if let Some(cand) = find_scene_id_in_bytes(raw) {
+                info!("Found scene_id {} by scanning attr raw bytes", cand);
+                return Some(cand);
+            }
+        }
+    }
+
+    // Check map_attrs entries (keys/values may contain the id)
+    for map_attr in &attrs.map_attrs {
+        for kv in &map_attr.attrs {
+            if let Some(val) = &kv.value {
+                if let Some(cand) = find_scene_id_in_bytes(val) {
+                    info!(
+                        "Found scene_id {} in map_attr value (map id {:?})",
+                        cand, map_attr.id
+                    );
+                    return Some(cand);
+                }
+            }
+            if let Some(key) = &kv.key {
+                if let Some(cand) = find_scene_id_in_bytes(key) {
+                    info!(
+                        "Found scene_id {} in map_attr key (map id {:?})",
+                        cand, map_attr.id
+                    );
+                    return Some(cand);
+                }
+            }
+        }
+    }
+
+    None
 }
 
 /// Manages the state of the application.
@@ -172,6 +300,9 @@ impl AppStateManager {
             StateEvent::NotifyReviveUser(data) => {
                 self.process_notify_revive_user(&mut state, data).await;
             }
+            StateEvent::SyncSceneAttrs(data) => {
+                self.process_sync_scene_attrs(&mut state, data).await;
+            }
             StateEvent::PauseEncounter(paused) => {
                 state.set_encounter_paused(paused);
             }
@@ -183,19 +314,10 @@ impl AppStateManager {
 
     async fn on_server_change(&self, state: &mut AppState) {
         use crate::live::opcodes_process::on_server_change;
-        use crate::live::phase_detector::end_phase;
 
-        // End any active phase before ending the encounter
-        let timestamp_ms = now_ms() as u128;
-        if state.encounter.current_phase.is_some() {
-            // Determine outcome based on whether bosses were defeated
-            let defeated = state.event_manager.peek_dead_bosses();
-            let outcome = if !defeated.is_empty() {
-                "success"
-            } else {
-                "unknown"
-            };
-            end_phase(&mut state.encounter, outcome, timestamp_ms);
+        // Persist dungeon segments if enabled
+        if state.dungeon_segments_enabled {
+            dungeon_log::persist_segments(&state.dungeon_log, true);
         }
 
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
@@ -221,6 +343,46 @@ impl AppStateManager {
         state.skill_subscriptions.clear();
         state.low_hp_bosses.clear();
     }
+
+    async fn snapshot_segment_and_reset_live_meter(&self, state: &mut AppState) {
+        // Persist dungeon segments
+        dungeon_log::persist_segments(&state.dungeon_log, true);
+
+        // Store the original fight start time before reset
+        let original_fight_start_ms = state.encounter.time_fight_start_ms;
+
+        // Reset combat state (live meter)
+        state.encounter.reset_combat_state();
+        state.skill_subscriptions.clear();
+
+        // Restore the original fight start time to preserve total encounter duration
+        state.encounter.time_fight_start_ms = original_fight_start_ms;
+
+        if state.event_manager.should_emit_events() {
+            state.event_manager.emit_encounter_reset();
+            // Clear dead bosses tracking for the new segment
+            state.event_manager.clear_dead_bosses();
+
+            // Emit an encounter update with cleared state so frontend updates immediately
+            use crate::live::commands_models::HeaderInfo;
+            let cleared_header = HeaderInfo {
+                total_dps: 0.0,
+                total_dmg: 0,
+                elapsed_ms: 0,
+                fight_start_timestamp_ms: 0,
+                bosses: vec![],
+                scene_id: state.encounter.current_scene_id,
+                scene_name: state.encounter.current_scene_name.clone(),
+                current_segment_type: None,
+                current_segment_name: None,
+            };
+            state
+                .event_manager
+                .emit_encounter_update(cleared_header, false);
+        }
+
+        state.low_hp_bosses.clear();
+    }
     // all scene id extraction logic is here (its pretty rough)
     async fn process_enter_scene(
         &self,
@@ -230,6 +392,8 @@ impl AppStateManager {
         use crate::live::scene_names;
 
         info!("EnterScene packet received");
+
+        let dungeon_runtime = dungeon_runtime_if_enabled(state);
 
         if !state.initial_scene_change_handled {
             info!("Initial scene detected; finalizing any dangling encounters");
@@ -266,141 +430,14 @@ impl AppStateManager {
             }
         }
 
-        // Helper: try to find a known scene id by scanning varints at every offset
-        let find_scene_id_in_bytes = |data: &[u8]| -> Option<i32> {
-            // 1) Try protobuf varint decoding at every offset
-            for offset in 0..data.len() {
-                let mut slice = &data[offset..];
-                if let Ok(v) = prost::encoding::decode_varint(&mut slice) {
-                    if v <= i32::MAX as u64 {
-                        let cand = v as i32;
-                        if scene_names::contains(cand) {
-                            return Some(cand);
-                        }
-                    }
-                }
-            }
-
-            // 2) Try 4-byte little-endian and big-endian ints
-            if data.len() >= 4 {
-                for i in 0..=data.len() - 4 {
-                    let le = i32::from_le_bytes([data[i], data[i + 1], data[i + 2], data[i + 3]]);
-                    if le > 0 && scene_names::contains(le) {
-                        return Some(le);
-                    }
-                    let be = i32::from_be_bytes([data[i], data[i + 1], data[i + 2], data[i + 3]]);
-                    if be > 0 && scene_names::contains(be) {
-                        return Some(be);
-                    }
-                }
-            }
-
-            // 3) Try ASCII decimal substrings of length 2..6
-            let mut i = 0;
-            while i < data.len() {
-                if data[i].is_ascii_digit() {
-                    let start = i;
-                    i += 1;
-                    while i < data.len() && data[i].is_ascii_digit() {
-                        i += 1;
-                    }
-                    let len_digits = i - start;
-                    if len_digits >= 2 && len_digits <= 6 {
-                        if let Ok(s) = std::str::from_utf8(&data[start..i]) {
-                            if let Ok(v) = s.parse::<i32>() {
-                                if scene_names::contains(v) {
-                                    return Some(v);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    i += 1;
-                }
-            }
-
-            None
-        };
-
         // Try several likely locations in the EnterSceneInfo where a scene id might be present
         let mut found_scene: Option<i32> = None;
         if let Some(info) = enter_scene.enter_scene_info.as_ref() {
             // 1) Inspect explicit attr collections (subscene_attrs then scene_attrs)
             for maybe_attrs in [info.subscene_attrs.as_ref(), info.scene_attrs.as_ref()] {
                 if let Some(attrs) = maybe_attrs {
-                    // Check simple attrs (varint or length-prefixed)
-                    for attr in &attrs.attrs {
-                        if found_scene.is_some() {
-                            break;
-                        }
-                        if let Some(raw) = &attr.raw_data {
-                            // If attr id suggests a scene id, prefer that first
-                            if let Some(attr_id) = attr.id {
-                                // Prefer ATTR_ID (0x0a) which contains numeric identifiers.
-                                // Do NOT treat ATTR_NAME (0x01) as a varint: its raw_data is a
-                                // length-prefixed string and decoding it as a varint can yield
-                                // the string length (false positive scene id).
-                                if attr_id == crate::live::opcodes_models::attr_type::ATTR_ID {
-                                    let mut buf = raw.as_slice();
-                                    if let Ok(v) = prost::encoding::decode_varint(&mut buf) {
-                                        let cand = v as i32;
-                                        if scene_names::contains(cand) {
-                                            info!("Found scene_id {} in attr {}", cand, attr_id);
-                                            found_scene = Some(cand);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Fallback: scan all varints in the raw bytes for a known scene id
-                            if found_scene.is_none() {
-                                if let Some(cand) = find_scene_id_in_bytes(raw) {
-                                    info!("Found scene_id {} by scanning attr raw bytes", cand);
-                                    found_scene = Some(cand);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if found_scene.is_some() {
-                        break;
-                    }
-
-                    // Check map_attrs entries (keys/values may contain the id)
-                    for map_attr in &attrs.map_attrs {
-                        if found_scene.is_some() {
-                            break;
-                        }
-                        for kv in &map_attr.attrs {
-                            if found_scene.is_some() {
-                                break;
-                            }
-                            if let Some(val) = &kv.value {
-                                if let Some(cand) = find_scene_id_in_bytes(val) {
-                                    info!(
-                                        "Found scene_id {} in map_attr value (map id {:?})",
-                                        cand, map_attr.id
-                                    );
-                                    found_scene = Some(cand);
-                                    break;
-                                }
-                            }
-                            if let Some(key) = &kv.key {
-                                if let Some(cand) = find_scene_id_in_bytes(key) {
-                                    info!(
-                                        "Found scene_id {} in map_attr key (map id {:?})",
-                                        cand, map_attr.id
-                                    );
-                                    found_scene = Some(cand);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if found_scene.is_some() {
+                    if let Some(scene_id) = extract_scene_id_from_attr_collection(attrs) {
+                        found_scene = Some(scene_id);
                         break;
                     }
                 }
@@ -432,8 +469,20 @@ impl AppStateManager {
             if prev_scene.map(|id| id != scene_id).unwrap_or(false)
                 && state.encounter.time_fight_start_ms != 0
             {
-                info!("Scene changed from {:?} to {}; ending active encounter", prev_scene, scene_id);
-                self.reset_encounter(state).await;
+                info!(
+                    "Scene changed from {:?} to {}; checking segment logic",
+                    prev_scene, scene_id
+                );
+
+                if state.dungeon_segments_enabled {
+                    info!(
+                        "Dungeon segments enabled: snapshotting segment and resetting live meter"
+                    );
+                    self.snapshot_segment_and_reset_live_meter(state).await;
+                } else {
+                    info!("Standard mode: ending active encounter");
+                    self.reset_encounter(state).await;
+                }
             }
 
             // Update encounter with scene info
@@ -448,6 +497,22 @@ impl AppStateManager {
                 state.event_manager.emit_scene_change(scene_name.clone());
             } else {
                 warn!("Event manager not ready, skipping scene change emit");
+            }
+
+            match dungeon_runtime.as_ref() {
+                Some(runtime) => {
+                    runtime.reset_for_scene(
+                        state.encounter.current_scene_id,
+                        state.encounter.current_scene_name.clone(),
+                    );
+                }
+                None => {
+                    let _ = dungeon_log::reset_for_scene(
+                        &state.dungeon_log,
+                        state.encounter.current_scene_id,
+                        state.encounter.current_scene_name.clone(),
+                    );
+                }
             }
         } else {
             warn!(
@@ -527,6 +592,19 @@ impl AppStateManager {
                 info!("Emitting fallback scene change event: {}", fallback_name);
                 state.event_manager.emit_scene_change(fallback_name);
             }
+
+            match dungeon_runtime.as_ref() {
+                Some(runtime) => {
+                    runtime.reset_for_scene(None, state.encounter.current_scene_name.clone());
+                }
+                None => {
+                    let _ = dungeon_log::reset_for_scene(
+                        &state.dungeon_log,
+                        None,
+                        state.encounter.current_scene_name.clone(),
+                    );
+                }
+            }
         }
     }
 
@@ -541,6 +619,78 @@ impl AppStateManager {
         }
     }
 
+    async fn process_sync_scene_attrs(
+        &self,
+        state: &mut AppState,
+        sync_scene_attrs: blueprotobuf::SyncSceneAttrs,
+    ) {
+        use crate::live::scene_names;
+
+        // Only act as fallback if current scene is unknown/unset
+        let should_process = state.encounter.current_scene_id.is_none()
+            || state
+                .encounter
+                .current_scene_name
+                .as_ref()
+                .map(|name| name.starts_with("Unknown") || name.starts_with("Scene GUID:"))
+                .unwrap_or(false);
+
+        if !should_process {
+            // Scene already detected, no need to process as fallback
+            return;
+        }
+
+        let Some(attrs) = sync_scene_attrs.attrs else {
+            return;
+        };
+
+        let Some(scene_id) = extract_scene_id_from_attr_collection(&attrs) else {
+            return;
+        };
+
+        // Deduplicate: only update if different from current scene
+        if state.encounter.current_scene_id == Some(scene_id) {
+            return;
+        }
+
+        let scene_name = scene_names::lookup(scene_id);
+        info!(
+            "[SyncSceneAttrs fallback] Detected scene: {} (ID: {})",
+            scene_name, scene_id
+        );
+
+        // Update scene info (but don't reset encounter - only update metadata)
+        state.encounter.current_scene_id = Some(scene_id);
+        state.encounter.current_scene_name = Some(scene_name.clone());
+
+        // Emit scene change event
+        if state.event_manager.should_emit_events() {
+            info!(
+                "[SyncSceneAttrs] Emitting scene change event for: {}",
+                scene_name
+            );
+            state.event_manager.emit_scene_change(scene_name.clone());
+        }
+
+        // Update dungeon log scene context if enabled
+        let dungeon_runtime = dungeon_runtime_if_enabled(state);
+        match dungeon_runtime.as_ref() {
+            Some(runtime) => {
+                runtime.reset_for_scene(
+                    state.encounter.current_scene_id,
+                    state.encounter.current_scene_name.clone(),
+                );
+            }
+            None => {
+                let _ = dungeon_log::reset_for_scene(
+                    &state.dungeon_log,
+                    state.encounter.current_scene_id,
+                    state.encounter.current_scene_name.clone(),
+                );
+            }
+        }
+    }
+
     async fn process_sync_container_data(
         &self,
         state: &mut AppState,
@@ -550,7 +700,10 @@ impl AppStateManager {
 
         // Extract and upload modules (if enabled)
         // Get module sync state from app handle
-        if let Some(module_state) = state.app_handle.try_state::<crate::module_extractor::commands::ModuleSyncState>() {
+        if let Some(module_state) = state
+            .app_handle
+            .try_state::<crate::module_extractor::commands::ModuleSyncState>(
+        ) {
             let sync_data_clone = sync_container_data.clone();
             let module_state_clone = (*module_state).clone();
 
@@ -560,7 +713,9 @@ impl AppStateManager {
                     &module_state_clone,
                     &sync_data_clone,
                     true, // auto_upload = true
-                ).await {
+                )
+                .await
+                {
                     warn!("Module extraction/upload failed: {}", e);
                 }
             });
@@ -591,7 +746,12 @@ impl AppStateManager {
     ) {
         use crate::live::opcodes_process::process_sync_to_me_delta_info;
         // Missing fields are normal, no need to log
-        let _ = process_sync_to_me_delta_info(&mut state.encounter, sync_to_me_delta_info);
+        let dungeon_ctx = dungeon_runtime_if_enabled(state);
+        let _ = process_sync_to_me_delta_info(
+            &mut state.encounter,
+            sync_to_me_delta_info,
+            dungeon_ctx.as_ref(),
+        );
     }
 
     async fn process_sync_near_delta_info(
@@ -600,9 +760,11 @@ impl AppStateManager {
         sync_near_delta_info: blueprotobuf::SyncNearDeltaInfo,
     ) {
         use crate::live::opcodes_process::process_aoi_sync_delta;
+        let dungeon_ctx = dungeon_runtime_if_enabled(state);
         for aoi_sync_delta in sync_near_delta_info.delta_infos {
             // Missing fields are normal, no need to log
-            let _ = process_aoi_sync_delta(&mut state.encounter, aoi_sync_delta);
+            let _ =
+                process_aoi_sync_delta(&mut state.encounter, aoi_sync_delta, dungeon_ctx.as_ref());
         }
     }
 
@@ -618,19 +780,9 @@ impl AppStateManager {
     }
 
     async fn reset_encounter(&self, state: &mut AppState) {
-        use crate::live::phase_detector::end_phase;
-
-        // End any active phase before ending the encounter
-        let timestamp_ms = now_ms() as u128;
-        if state.encounter.current_phase.is_some() {
-            // Determine outcome based on whether bosses were defeated
-            let defeated = state.event_manager.peek_dead_bosses();
-            let outcome = if !defeated.is_empty() {
-                "success"
-            } else {
-                "unknown"
-            };
-            end_phase(&mut state.encounter, outcome, timestamp_ms);
+        // Persist dungeon segments if enabled
+        if state.dungeon_segments_enabled {
+            dungeon_log::persist_segments(&state.dungeon_log, true);
         }
 
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
@@ -661,7 +813,8 @@ impl AppStateManager {
                 bosses: vec![],
                 scene_id: state.encounter.current_scene_id,
                 scene_name: state.encounter.current_scene_name.clone(),
-                current_phase: None,
+                current_segment_type: None,
+                current_segment_name: None,
             };
             state
                 .event_manager
@@ -787,16 +940,28 @@ impl AppStateManager {
     }
 }
 
+fn dungeon_runtime_if_enabled(state: &AppState) -> Option<DungeonLogRuntime> {
+    if state.dungeon_segments_enabled {
+        Some(DungeonLogRuntime::new(
+            state.dungeon_log.clone(),
+            state.app_handle.clone(),
+        ))
+    } else {
+        None
+    }
+}
+
 impl AppStateManager {
     /// Updates and emits events.
     pub async fn update_and_emit_events(&self) {
         // First, read the encounter data to generate all the necessary information
-        let (encounter, should_emit, boss_only) = {
+        let (encounter, should_emit, boss_only, dungeon_ctx) = {
             let state = self.state.read().await;
             (
                 state.encounter.clone(),
                 state.event_manager.should_emit_events(),
                 state.boss_only_dps,
+                dungeon_runtime_if_enabled(&state),
             )
         };
 
@@ -854,6 +1019,23 @@ impl AppStateManager {
             subscribed_players.push(entity_uid);
         }
 
+        let active_segment = dungeon_ctx
+            .as_ref()
+            .and_then(|runtime| runtime.snapshot())
+            .and_then(|log| {
+                log.segments
+                    .iter()
+                    .find(|s| s.ended_at_ms.is_none())
+                    .map(|segment| {
+                        let segment_type = match segment.segment_type {
+                            SegmentType::Boss => "boss".to_string(),
+                            SegmentType::Trash => "trash".to_string(),
+                        };
+                        let segment_name = segment.boss_name.clone();
+                        (segment_type, segment_name)
+                    })
+            });
+
         // Process boss death detection and collect ALL data needed for emission
         // We'll do ALL emissions without holding any locks to prevent deadlock
         let (final_header_info, boss_deaths, skill_subscriptions_clone, app_handle_opt) = {
@@ -863,6 +1045,14 @@ impl AppStateManager {
                 header_info_with_deaths
             {
                 use std::collections::HashSet;
+
+                if let Some((segment_type, segment_name)) = &active_segment {
+                    header_info.current_segment_type = Some(segment_type.clone());
+                    header_info.current_segment_name = segment_name.clone();
+                } else {
+                    header_info.current_segment_type = None;
+                    header_info.current_segment_name = None;
+                }
 
                 let mut dead_ids: HashSet<i64> = dead_bosses.iter().map(|(uid, _)| *uid).collect();
                 let current_time_ms = now_ms() as u128;
@@ -930,8 +1120,17 @@ impl AppStateManager {
             // Emit boss death events using EventManager for deduplication
             if !boss_deaths.is_empty() {
                 let mut state = self.state.write().await;
+                let mut any_new_death = false;
                 for (boss_uid, boss_name) in boss_deaths {
-                    state.event_manager.emit_boss_death(boss_name, boss_uid);
+                    let first_time = state.event_manager.emit_boss_death(boss_name, boss_uid);
+                    if first_time {
+                        state.encounter.waiting_for_next_boss = true;
+                        any_new_death = true;
+                    }
+                }
+
+                if any_new_death && state.dungeon_segments_enabled {
+                    dungeon_log::persist_segments(&state.dungeon_log, true);
                 }
             }
 
@@ -1005,6 +1204,10 @@ impl AppStateManager {
                     }
                 }
             }
+        }
+
+        if let Some(runtime) = dungeon_ctx {
+            runtime.check_for_timeout(Instant::now());
         }
     }
 }

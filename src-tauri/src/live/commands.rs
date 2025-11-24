@@ -1,4 +1,5 @@
 use crate::WINDOW_LIVE_LABEL;
+use crate::live::dungeon_log::{self, DungeonLogRuntime};
 use crate::live::state::{AppStateManager, StateEvent};
 use log::info;
 use tauri::Manager;
@@ -187,6 +188,38 @@ pub async fn set_boss_only_dps(
     Ok(())
 }
 
+/// Enables or disables dungeon segment tracking.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_dungeon_segments_enabled(
+    enabled: bool,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    let runtime = state_manager
+        .with_state_mut(|state| {
+            state.dungeon_segments_enabled = enabled;
+            DungeonLogRuntime::new(state.dungeon_log.clone(), state.app_handle.clone())
+        })
+        .await;
+
+    let snapshot = runtime.snapshot();
+    dungeon_log::emit_if_changed(&runtime.app_handle, snapshot);
+    Ok(())
+}
+
+/// Returns the current dungeon log snapshot for the frontend.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_dungeon_log(
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<dungeon_log::DungeonLog, String> {
+    let shared_log = state_manager
+        .with_state(|state| state.dungeon_log.clone())
+        .await;
+
+    dungeon_log::snapshot(&shared_log).ok_or_else(|| "Failed to read dungeon log state".to_string())
+}
+
 /// Enables blur on the live meter window.
 ///
 /// # Arguments
@@ -320,5 +353,59 @@ pub async fn toggle_pause_encounter(
             .handle_event(StateEvent::PauseEncounter(!is_paused))
             .await;
     });
+    Ok(())
+}
+
+/// Resets player metrics for the live meter without ending the encounter.
+/// This is used for segment transitions to clear UI data.
+///
+/// # Arguments
+///
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
+#[tauri::command]
+#[specta::specta]
+pub async fn reset_player_metrics(
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    use crate::live::commands_models::HeaderInfo;
+
+    state_manager.with_state_mut(|state| {
+        // Store the original fight start time before reset
+        let original_fight_start_ms = state.encounter.time_fight_start_ms;
+
+        // Reset combat state (player metrics)
+        state.encounter.reset_combat_state();
+        state.skill_subscriptions.clear();
+
+        // Restore the original fight start time to preserve total encounter duration
+        state.encounter.time_fight_start_ms = original_fight_start_ms;
+
+        // Emit reset event to clear frontend stores
+        if state.event_manager.should_emit_events() {
+            state.event_manager.emit_encounter_reset();
+
+            // Emit an encounter update with cleared player data but preserve encounter context
+            let cleared_header = HeaderInfo {
+                total_dps: 0.0,
+                total_dmg: 0,
+                elapsed_ms: 0,
+                fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
+                bosses: vec![],
+                scene_id: state.encounter.current_scene_id,
+                scene_name: state.encounter.current_scene_name.clone(),
+                current_segment_type: None,
+                current_segment_name: None,
+            };
+            state
+                .event_manager
+                .emit_encounter_update(cleared_header, state.encounter.is_encounter_paused);
+        }
+    }).await;
+
+    info!("Player metrics reset for segment transition");
     Ok(())
 }

@@ -36,7 +36,8 @@
       bosses: [],
       sceneId: null,
       sceneName: null,
-      currentPhase: null,
+      currentSegmentType: null,
+      currentSegmentName: null,
     };
   }
 
@@ -101,7 +102,8 @@
     bosses: [],
     sceneId: null,
     sceneName: null,
-    currentPhase: null,
+    currentSegmentType: null,
+    currentSegmentName: null,
   });
   let isEncounterPaused = $state(false);
   // Use live.general for bossOnlyDps; keep density from accessibility store

@@ -23,7 +23,8 @@ export type HeaderInfo = {
   bosses: BossHealth[];
   sceneId: number | null;
   sceneName: string | null;
-  currentPhase: string | null;
+  currentSegmentType: 'boss' | 'trash' | null;
+  currentSegmentName: string | null;
 };
 
 export type PlayerRow = {
@@ -91,6 +92,37 @@ export type SceneChangePayload = {
   sceneName: string;
 };
 
+export type DamageEvent = {
+  timestampMs: number;
+  attackerId: number;
+  targetId: number;
+  targetName: string | null;
+  targetMonsterTypeId: number | null;
+  amount: number;
+  isBossTarget: boolean;
+  isKillingBlow: boolean;
+};
+
+export type Segment = {
+  id: number;
+  segmentType: 'boss' | 'trash';
+  bossEntityId: number | null;
+  bossMonsterTypeId: number | null;
+  bossName: string | null;
+  startedAtMs: number;
+  endedAtMs: number | null;
+  totalDamage: number;
+  hitCount: number;
+  events: DamageEvent[];
+};
+
+export type DungeonLog = {
+  sceneId: number | null;
+  sceneName: string | null;
+  combatState: 'idle' | 'inCombat';
+  segments: Segment[];
+};
+
 // Event listener functions
 export const onEncounterUpdate = (handler: (event: { payload: EncounterUpdatePayload }) => void): Promise<UnlistenFn> =>
   listen("encounter-update", handler);
@@ -106,6 +138,9 @@ export const onBossDeath = (handler: (event: { payload: BossDeathPayload }) => v
 
 export const onSceneChange = (handler: (event: { payload: SceneChangePayload }) => void): Promise<UnlistenFn> =>
   listen("scene-change", handler);
+
+export const onDungeonLogUpdate = (handler: (event: { payload: DungeonLog }) => void): Promise<UnlistenFn> =>
+  listen("log-update", handler);
 
 // Convenience: factory to create metric-filtered listeners
 export const makeSkillsUpdateFilter =
@@ -130,8 +165,17 @@ import type { Result } from "./bindings";
 
 export const resetEncounter = (): Promise<Result<null, string>> => commands.resetEncounter();
 export const togglePauseEncounter = (): Promise<Result<null, string>> => commands.togglePauseEncounter();
+export const resetPlayerMetrics = (): Promise<Result<null, string>> => commands.resetPlayerMetrics();
 export const enableBlur = (): Promise<void> => commands.enableBlur();
 export const disableBlur = (): Promise<void> => commands.disableBlur();
 
 // New: toggle boss-only DPS filtering on the backend
 export const setBossOnlyDps = (enabled: boolean): Promise<void> => invoke("set_boss_only_dps", { enabled });
+
+export const setDungeonSegmentsEnabled = (enabled: boolean): Promise<void> =>
+  invoke("set_dungeon_segments_enabled", { enabled });
+
+export const getDungeonLog = (): Promise<DungeonLog> => invoke("get_dungeon_log");
+
+export const getEncounterSegments = (encounterId: number): Promise<Segment[]> =>
+  invoke("get_encounter_segments", { encounterId });

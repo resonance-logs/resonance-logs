@@ -1,6 +1,5 @@
 /// Module extraction logic ported from C# StarResonanceDps ModuleParser.cs
 /// Extracts module information from SyncContainerData protobuf packets
-
 use crate::module_extractor::mappings;
 use crate::module_extractor::types::{ModuleInfo, ModulePart};
 use blueprotobuf_lib::blueprotobuf::SyncContainerData;

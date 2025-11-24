@@ -26,10 +26,33 @@
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
   import { SETTINGS } from "$lib/settings-store";
+  import { getLiveDungeonLog } from "$lib/stores/live-meter-store.svelte";
 
   let fightStartTimestampMs = $state(0);
   let clientElapsedMs = $state(0);
   let animationFrameId: number | null = null;
+
+  // Reactive dungeon log state with derived active segment info
+  // also does a fake reset on segment type change for the live meter
+  let dungeonLog = $derived(getLiveDungeonLog());
+  let activeSegment = $derived(dungeonLog?.segments?.find(s => !s.endedAtMs) ?? null);
+  let activeSegmentInfo = $derived.by(() => {
+    if (!activeSegment) return null;
+
+    const durationSecs = Math.max(
+      1,
+      ((activeSegment.endedAtMs ?? Date.now()) - activeSegment.startedAtMs) / 1000
+    );
+
+    return {
+      durationSecs,
+      type: activeSegment.segmentType,
+      label:
+        activeSegment.segmentType === 'boss'
+          ? activeSegment.bossName ?? 'Boss Segment'
+          : 'Trash Segment',
+    };
+  });
 
   // Client-side timer loop
   function updateClientTimer() {
@@ -50,7 +73,8 @@
       bosses: [],
       sceneId: null,
       sceneName: null,
-      currentPhase: null,
+      currentSegmentType: null,
+      currentSegmentName: null,
     };
   }
 
@@ -116,7 +140,8 @@
     bosses: [],
     sceneId: null,
     sceneName: null,
-    currentPhase: null,
+    currentSegmentType: null,
+    currentSegmentName: null,
   });
   let isEncounterPaused = $state(false);
   // Use live.general for bossOnlyDps; keep density from accessibility store
@@ -191,10 +216,15 @@
     <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
     <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-sm' : 'text-xs'} text-muted-foreground font-medium shrink-0 leading-none" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName}</span>
   {/if}
-  {#if headerInfo.currentPhase}
+  {#if activeSegmentInfo}
     <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
-    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {headerInfo.currentPhase === 'mob' ? 'border-blue-500/30 bg-blue-500/10 text-blue-400' : 'border-purple-500/30 bg-purple-500/10 text-purple-400'} {density === 'comfortable' ? 'text-xs' : 'text-[11px]'}">
-      <span class="font-semibold uppercase tracking-wide">{headerInfo.currentPhase === 'mob' ? 'Mob Phase' : 'Boss Phase'}</span>
+    <span
+      class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {activeSegmentInfo.type === 'boss' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'} {density === 'comfortable' ? 'text-xs' : 'text-[11px]'}"
+    >
+      <span class="font-semibold tracking-wide">{activeSegmentInfo.label}</span>
+      <span class="text-muted-foreground">•</span>
+      <span>{Math.floor(activeSegmentInfo.durationSecs)}s</span>
+        <!-- totalDamage removed per request: do not display segment total damage in live meter -->
     </span>
   {/if}
   <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>

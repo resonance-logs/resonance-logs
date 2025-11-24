@@ -277,97 +277,29 @@ diesel::table! {
     }
 }
 
-/// Represents the `encounter_phases` table.
+/// Represents the `dungeon_segments` table.
 diesel::table! {
-    encounter_phases (id) {
-        /// The unique ID of the encounter phase.
+    dungeon_segments (id) {
+        /// The unique ID of the segment.
         id -> Integer,
-        /// The ID of the encounter this phase belongs to.
+        /// The ID of the encounter this segment belongs to.
         encounter_id -> Integer,
-        /// The type of phase ('mob' or 'boss').
-        phase_type -> Text,
-        /// The timestamp of when the phase started, in milliseconds since the Unix epoch.
-        start_time_ms -> BigInt,
-        /// The timestamp of when the phase ended, in milliseconds since the Unix epoch.
-        end_time_ms -> Nullable<BigInt>,
-        /// The outcome of the phase ('success', 'wipe', 'unknown').
-        outcome -> Text,
-    }
-}
-
-/// Represents the `actor_phase_stats` table.
-diesel::table! {
-    actor_phase_stats (phase_id, actor_id) {
-        /// The ID of the phase.
-        phase_id -> Integer,
-        /// The ID of the actor.
-        actor_id -> BigInt,
-        /// The name of the actor.
-        name -> Nullable<Text>,
-        /// The class ID of the actor.
-        class_id -> Nullable<Integer>,
-        /// The class spec of the actor.
-        class_spec -> Nullable<Integer>,
-        /// The ability score of the actor.
-        ability_score -> Nullable<Integer>,
-        /// The level of the actor.
-        level -> Nullable<Integer>,
-        /// The total damage dealt by the actor.
-        damage_dealt -> BigInt,
-        /// The total healing done by the actor.
-        heal_dealt -> BigInt,
-        /// The total damage taken by the actor.
-        damage_taken -> BigInt,
-        /// The number of hits dealt by the actor.
-        hits_dealt -> BigInt,
-        /// The number of hits healed by the actor.
-        hits_heal -> BigInt,
-        /// The number of hits taken by the actor.
-        hits_taken -> BigInt,
-        /// The number of critical hits dealt by the actor.
-        crit_hits_dealt -> BigInt,
-        /// The number of critical hits healed by the actor.
-        crit_hits_heal -> BigInt,
-        /// The number of critical hits taken by the actor.
-        crit_hits_taken -> BigInt,
-        /// The number of lucky hits dealt by the actor.
-        lucky_hits_dealt -> BigInt,
-        /// The number of lucky hits healed by the actor.
-        lucky_hits_heal -> BigInt,
-        /// The number of lucky hits taken by the actor.
-        lucky_hits_taken -> BigInt,
-        /// The total critical damage dealt by the actor.
-        crit_total_dealt -> BigInt,
-        /// The total critical healing done by the actor.
-        crit_total_heal -> BigInt,
-        /// The total critical damage taken by the actor.
-        crit_total_taken -> BigInt,
-        /// The total lucky damage dealt by the actor.
-        lucky_total_dealt -> BigInt,
-        /// The total lucky healing done by the actor.
-        lucky_total_heal -> BigInt,
-        /// The total lucky damage taken by the actor.
-        lucky_total_taken -> BigInt,
-        /// The total damage dealt to bosses by the actor.
-        boss_damage_dealt -> BigInt,
-        /// The number of hits dealt to bosses by the actor.
-        boss_hits_dealt -> BigInt,
-        /// The number of critical hits dealt to bosses by the actor.
-        boss_crit_hits_dealt -> BigInt,
-        /// The number of lucky hits dealt to bosses by the actor.
-        boss_lucky_hits_dealt -> BigInt,
-        /// The total critical damage dealt to bosses by the actor.
-        boss_crit_total_dealt -> BigInt,
-        /// The total lucky damage dealt to bosses by the actor.
-        boss_lucky_total_dealt -> BigInt,
-        /// The number of revives for the actor during the phase.
-        revives -> BigInt,
-        /// Whether the actor is a player.
-        is_player -> Integer,
-        /// Whether the actor is the local player.
-        is_local_player -> Integer,
-        /// The attributes of the actor.
-        attributes -> Nullable<Text>,
+        /// The type of segment ('boss' or 'trash').
+        segment_type -> Text,
+        /// The entity ID of the boss (if boss segment).
+        boss_entity_id -> Nullable<BigInt>,
+        /// The monster type ID of the boss (if boss segment).
+        boss_monster_type_id -> Nullable<BigInt>,
+        /// The name of the boss (if boss segment).
+        boss_name -> Nullable<Text>,
+        /// The timestamp of when the segment started, in milliseconds since the Unix epoch.
+        started_at_ms -> BigInt,
+        /// The timestamp of when the segment ended, in milliseconds since the Unix epoch.
+        ended_at_ms -> Nullable<BigInt>,
+        /// The total damage dealt during this segment.
+        total_damage -> BigInt,
+        /// The number of hits during this segment.
+        hit_count -> BigInt,
     }
 }
 
@@ -379,8 +311,7 @@ diesel::joinable!(heal_skill_stats -> encounters (encounter_id));
 diesel::joinable!(encounter_bosses -> encounters (encounter_id));
 diesel::joinable!(death_events -> encounters (encounter_id));
 diesel::joinable!(attempts -> encounters (encounter_id));
-diesel::joinable!(encounter_phases -> encounters (encounter_id));
-diesel::joinable!(actor_phase_stats -> encounter_phases (phase_id));
+diesel::joinable!(dungeon_segments -> encounters (encounter_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     entities,
@@ -392,6 +323,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     encounter_bosses,
     death_events,
     attempts,
-    encounter_phases,
-    actor_phase_stats,
+    dungeon_segments,
 );

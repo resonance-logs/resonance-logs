@@ -35,18 +35,10 @@ pub struct Encounter {
     pub lowest_boss_hp: Option<f64>,
     pub party_member_uids: HashSet<i64>, // Track party members for wipe detection
     pub last_attempt_split_ms: u128,     // Cooldown to avoid rapid splits
-    // Phase tracking for mob/boss splitting
-    pub current_phase: Option<PhaseType>,
-    pub current_phase_id: Option<i32>, // Database ID of the current phase
-    pub phase_start_ms: u128,
-    pub boss_detected: bool, // Whether a boss entity has been seen this encounter
-}
-
-/// Represents the type of encounter phase
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PhaseType {
-    Mob,
-    Boss,
+    // Dungeon segment tracking: set to true when a boss dies, cleared when next boss is hit
+    pub waiting_for_next_boss: bool,
+    // Track the last active segment type to detect transitions for meter resets
+    pub last_active_segment_type: Option<String>, // "boss" or "trash"
 }
 
 // Use an async-aware RwLock so readers don't block the tokio runtime threads.
@@ -464,9 +456,8 @@ impl Encounter {
         self.lowest_boss_hp = None;
         self.party_member_uids.clear();
         self.last_attempt_split_ms = 0;
-        self.current_phase = None;
-        self.phase_start_ms = 0;
-        self.boss_detected = false;
+        self.waiting_for_next_boss = false;
+        self.last_active_segment_type = None;
     }
 }
 
@@ -848,11 +839,34 @@ impl Entity {
         if self.entity_type != EEntityType::EntMonster {
             return false;
         }
-
         // Check if monster_type_id exists in the boss list
-        self.monster_type_id
+        if self
+            .monster_type_id
             .map(|id| MONSTER_NAMES_BOSS.contains_key(&id.to_string()))
             .unwrap_or(false)
+        {
+            return true;
+        }
+
+        // If not identified by ID, check for 'Boss' text in the raw packet name
+        if let Some(packet_name) = &self.monster_name_packet {
+            if packet_name.to_lowercase().contains("boss") {
+                return true;
+            }
+        }
+
+        // Fallback: if ATTR_ELITE_STATUS is present and non-zero, consider it a boss
+        if let Some(elite_status) = self
+            .attributes
+            .get(&AttrType::EliteStatus)
+            .and_then(|v| v.as_int())
+        {
+            if elite_status > 0 {
+                return true;
+            }
+        }
+
+        false
     }
 }
 
@@ -877,6 +891,24 @@ mod tests {
         e.entity_type = EEntityType::EntMonster;
         e.set_monster_type(20088); // Boss - Tempest Ogre
         assert!(e.name.to_lowercase().contains("boss"));
+        assert!(e.is_boss());
+    }
+
+    #[test]
+    fn packet_name_contains_boss_is_boss() {
+        // No monster type id, but raw packet name contains 'Boss'
+        let mut e = Entity::default();
+        e.entity_type = EEntityType::EntMonster;
+        e.monster_name_packet = Some("Boss - Scary Thing".to_string());
+        assert!(e.is_boss());
+    }
+
+    #[test]
+    fn elite_status_marked_as_boss() {
+        // No monster type id, but elite status attr is present
+        let mut e = Entity::default();
+        e.entity_type = EEntityType::EntMonster;
+        e.set_attr(AttrType::EliteStatus, AttrValue::Int(2));
         assert!(e.is_boss());
     }
 

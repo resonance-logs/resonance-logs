@@ -1,5 +1,4 @@
 import { commands } from "$lib/bindings";
-import { setBossOnlyDps } from "$lib/api";
 import { SETTINGS } from "$lib/settings-store";
 import { setClickthrough, toggleClickthrough } from "$lib/utils.svelte";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -90,7 +89,6 @@ export async function registerShortcut(cmdId: string, shortcutKey: string) {
           if (event.state === "Pressed") {
             const nextValue = !SETTINGS.live.general.state.bossOnlyDps;
             SETTINGS.live.general.state.bossOnlyDps = nextValue;
-            await setBossOnlyDps(nextValue);
           }
         });
         break;
