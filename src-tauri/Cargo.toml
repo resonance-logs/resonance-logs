@@ -18,6 +18,11 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.5.2", features = [] }
 serde_json = "1"
 
+[features]
+default = ["npcap"]
+npcap = ["dep:pcap"]
+
+
 [dependencies]
 # image-png for frontend
 tauri = { version = "2.9.3", features = ["tray-icon", "image-png"] }
@@ -26,7 +31,7 @@ tauri-plugin-single-instance = "2.3.4"
 tauri-plugin-log = { version = "2.7.0", features = ["colored"] }
 chrono = "0.4.41"
 windivert = {version = "0.6.0", features = ["vendored"] }
-pcap = "2.3.0"
+pcap = { version = "2.3.0", optional = true }
 etherparse = "0.19.0"
 tokio = {version = "1.47.1", features = ["macros"] }
 log = "0.4.28"

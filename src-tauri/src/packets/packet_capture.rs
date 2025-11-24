@@ -9,11 +9,13 @@ use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
 use log::{debug, error, info, warn};
 use once_cell::sync::OnceCell;
-use pcap::Linktype;
 use tauri::Manager;
 use tokio::sync::watch;
 use windivert::WinDivert;
 use windivert::prelude::WinDivertFlags;
+
+#[cfg(feature = "npcap")]
+use pcap::Linktype;
 
 // Global sender for restart signal
 static RESTART_SENDER: OnceCell<watch::Sender<bool>> = OnceCell::new();
@@ -101,6 +103,7 @@ async fn read_packets(
                 }
             }
         }
+        #[cfg(feature = "npcap")]
         CaptureMethod::Npcap => {
             let device_name = adapter.unwrap_or_else(|| "\\Device\\NPF_Loopback".to_string());
             info!("Initializing Npcap on device: {}", device_name);
@@ -109,12 +112,38 @@ async fn read_packets(
                 Ok(d) => match d.immediate_mode(true).open() {
                     Ok(c) => c,
                     Err(e) => {
-                        error!("Failed to open Npcap device: {}", e);
+                        let error_msg = e.to_string();
+                        if error_msg.contains("wpcap")
+                            || error_msg.contains("packet.dll")
+                            || error_msg.contains("library")
+                        {
+                            error!(
+                                "Npcap is not installed or wpcap.dll could not be loaded. \
+                                Please install Npcap from https://npcap.com/ to use network adapter selection. \
+                                Error: {}",
+                                e
+                            );
+                        } else {
+                            error!("Failed to open Npcap device: {}", e);
+                        }
                         return;
                     }
                 },
                 Err(e) => {
-                    error!("Failed to find Npcap device: {}", e);
+                    let error_msg = e.to_string();
+                    if error_msg.contains("wpcap")
+                        || error_msg.contains("packet.dll")
+                        || error_msg.contains("library")
+                    {
+                        error!(
+                            "Npcap is not installed or wpcap.dll could not be loaded. \
+                            Please install Npcap from https://npcap.com/ to use network adapter selection. \
+                            Error: {}",
+                            e
+                        );
+                    } else {
+                        error!("Failed to find Npcap device: {}", e);
+                    }
                     return;
                 }
             };
@@ -168,6 +197,46 @@ async fn read_packets(
                 // Yield to runtime to allow other tasks (like restart signal check) to run
                 // since pcap might be blocking or tight loop
                 tokio::task::yield_now().await;
+            }
+        }
+        #[cfg(not(feature = "npcap"))]
+        CaptureMethod::Npcap => {
+            error!("Npcap support not compiled in. Falling back to WinDivert.");
+            warn!("To use Npcap, rebuild with --features npcap");
+            // Fall back to WinDivert
+            let windivert = match WinDivert::network(
+                "!loopback && ip && tcp",
+                0,
+                WinDivertFlags::new().set_sniff(),
+            ) {
+                Ok(windivert_handle) => {
+                    info!("WinDivert handle opened (fallback from Npcap)!");
+                    Some(windivert_handle)
+                }
+                Err(e) => {
+                    error!("Failed to initialize WinDivert fallback: {}", e);
+                    return;
+                }
+            }
+            .expect("Failed to initialize WinDivert");
+
+            let mut windivert_buffer = vec![0u8; 10 * 1024 * 1024];
+
+            while let Ok(packet) = windivert.recv(Some(&mut windivert_buffer)) {
+                if let Ok(slices) = SlicedPacket::from_ip(packet.data.as_ref()) {
+                    process_raw_packet(
+                        slices,
+                        packet_sender,
+                        &mut known_server,
+                        &mut tcp_reassembler,
+                        &mut reassembler,
+                    )
+                    .await;
+                }
+
+                if *restart_receiver.borrow() {
+                    break;
+                }
             }
         }
     }

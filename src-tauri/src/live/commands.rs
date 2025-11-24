@@ -20,7 +20,21 @@ pub fn get_network_adapters() -> Result<Vec<crate::live::commands_models::Networ
                 description: d.desc.unwrap_or(d.name),
             })
             .collect()),
-        Err(e) => Err(format!("Failed to list network adapters: {}", e)),
+        Err(e) => {
+            let error_msg = e.to_string();
+            // Check if the error is related to missing wpcap.dll or Npcap not being installed
+            if error_msg.contains("wpcap")
+                || error_msg.contains("packet.dll")
+                || error_msg.contains("library")
+            {
+                Err(format!(
+                    "Npcap is not installed. Please install Npcap from https://npcap.com/ to use network adapter selection. \
+                    Alternatively, use WinDivert (default) which doesn't require additional installation."
+                ))
+            } else {
+                Err(format!("Failed to list network adapters: {}", e))
+            }
+        }
     }
 }
 
