@@ -94,7 +94,6 @@ pub struct UploadEncounterIn {
     pub scene_name: Option<String>,
     pub source_hash: Option<String>,
     pub attempts: Vec<UploadAttemptIn>,
-    pub phases: Vec<UploadEncounterPhaseIn>,
     pub death_events: Vec<UploadDeathEventIn>,
     pub actor_encounter_stats: Vec<UploadActorEncounterStatIn>,
     pub damage_skill_stats: Vec<UploadDamageSkillStatIn>,
@@ -115,15 +114,6 @@ pub struct UploadAttemptIn {
     pub boss_hp_start: Option<i64>,
     pub boss_hp_end: Option<i64>,
     pub total_deaths: i32,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UploadEncounterPhaseIn {
-    pub phase_type: String,
-    pub start_time_ms: i64,
-    pub end_time_ms: Option<i64>,
-    pub outcome: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -541,31 +531,6 @@ fn build_encounter_payload(
                 boss_hp_start,
                 boss_hp_end,
                 total_deaths,
-            },
-        )
-        .collect::<Vec<_>>();
-
-    // Phases
-    use sch::encounter_phases::dsl as ep;
-    let phase_rows = ep::encounter_phases
-        .filter(ep::encounter_id.eq(id))
-        .order(ep::start_time_ms.asc())
-        .select((
-            ep::phase_type,
-            ep::start_time_ms,
-            ep::end_time_ms,
-            ep::outcome,
-        ))
-        .load::<(String, i64, Option<i64>, String)>(conn)
-        .map_err(|e| e.to_string())?;
-    let phases = phase_rows
-        .into_iter()
-        .map(
-            |(phase_type, start_time_ms, end_time_ms, outcome)| UploadEncounterPhaseIn {
-                phase_type,
-                start_time_ms,
-                end_time_ms,
-                outcome,
             },
         )
         .collect::<Vec<_>>();
@@ -1036,7 +1001,6 @@ fn build_encounter_payload(
         scene_name,
         source_hash: None, // Will be computed below
         attempts,
-        phases,
         death_events,
         actor_encounter_stats: actor_stats,
         damage_skill_stats,

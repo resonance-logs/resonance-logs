@@ -6,7 +6,6 @@ pub mod event_manager;
 pub mod live_main;
 pub mod opcodes_models;
 pub mod opcodes_process;
-pub mod phase_detector;
 pub mod player_names;
 pub mod scene_names;
 pub mod skill_names;

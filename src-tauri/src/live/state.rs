@@ -314,20 +314,6 @@ impl AppStateManager {
 
     async fn on_server_change(&self, state: &mut AppState) {
         use crate::live::opcodes_process::on_server_change;
-        use crate::live::phase_detector::end_phase;
-
-        // End any active phase before ending the encounter
-        let timestamp_ms = now_ms() as u128;
-        if state.encounter.current_phase.is_some() {
-            // Determine outcome based on whether bosses were defeated
-            let defeated = state.event_manager.peek_dead_bosses();
-            let outcome = if !defeated.is_empty() {
-                "success"
-            } else {
-                "unknown"
-            };
-            end_phase(&mut state.encounter, outcome, timestamp_ms);
-        }
 
         // Persist dungeon segments if enabled
         if state.dungeon_segments_enabled {
@@ -359,20 +345,6 @@ impl AppStateManager {
     }
 
     async fn snapshot_segment_and_reset_live_meter(&self, state: &mut AppState) {
-        use crate::live::phase_detector::end_phase;
-
-        // End any active phase before snapshotting
-        let timestamp_ms = now_ms() as u128;
-        if state.encounter.current_phase.is_some() {
-            let defeated = state.event_manager.peek_dead_bosses();
-            let outcome = if !defeated.is_empty() {
-                "success"
-            } else {
-                "unknown"
-            };
-            end_phase(&mut state.encounter, outcome, timestamp_ms);
-        }
-
         // Persist dungeon segments
         dungeon_log::persist_segments(&state.dungeon_log, true);
 
@@ -802,21 +774,6 @@ impl AppStateManager {
     }
 
     async fn reset_encounter(&self, state: &mut AppState) {
-        use crate::live::phase_detector::end_phase;
-
-        // End any active phase before ending the encounter
-        let timestamp_ms = now_ms() as u128;
-        if state.encounter.current_phase.is_some() {
-            // Determine outcome based on whether bosses were defeated
-            let defeated = state.event_manager.peek_dead_bosses();
-            let outcome = if !defeated.is_empty() {
-                "success"
-            } else {
-                "unknown"
-            };
-            end_phase(&mut state.encounter, outcome, timestamp_ms);
-        }
-
         // Persist dungeon segments if enabled
         if state.dungeon_segments_enabled {
             dungeon_log::persist_segments(&state.dungeon_log, true);
