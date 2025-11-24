@@ -6,6 +6,8 @@ use crate::live::player_names::PlayerNames;
 use blueprotobuf_lib::blueprotobuf;
 use log::{info, trace, warn};
 use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use specta::Type;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Instant;
@@ -34,12 +36,36 @@ fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload:
             let error_str = format!("{:?}", e);
             if error_str.contains("0x8007139F") || error_str.contains("not in the correct state") {
                 // This is expected when windows are minimized/hidden - don't spam logs
-                trace!("WebView2 not ready for '{}' (window may be minimized/hidden)", event);
+                trace!(
+                    "WebView2 not ready for '{}' (window may be minimized/hidden)",
+                    event
+                );
             } else {
                 // Log other errors as warnings
                 warn!("Failed to emit '{}': {}", event, e);
             }
             false
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
+pub enum CaptureMethod {
+    Windivert,
+    Npcap,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct PacketCaptureConfig {
+    pub method: CaptureMethod,
+    pub adapter: Option<String>, // Device name for Npcap
+}
+
+impl Default for PacketCaptureConfig {
+    fn default() -> Self {
+        Self {
+            method: CaptureMethod::Windivert,
+            adapter: None,
         }
     }
 }
@@ -94,6 +120,8 @@ pub struct AppState {
     pub dungeon_log: SharedDungeonLog,
     /// Feature flag for dungeon segment tracking.
     pub dungeon_segments_enabled: bool,
+    /// Packet capture configuration.
+    pub packet_capture_config: PacketCaptureConfig,
 }
 
 impl AppState {
@@ -112,7 +140,9 @@ impl AppState {
             low_hp_bosses: HashMap::new(),
             initial_scene_change_handled: false,
             dungeon_log: dungeon_log::create_shared_log(),
+
             dungeon_segments_enabled: true,
+            packet_capture_config: PacketCaptureConfig::default(),
         }
     }
 

@@ -35,7 +35,7 @@ pub async fn start(app_handle: AppHandle) {
     let heartbeat_duration = Duration::from_secs(2);
 
     // 1. Start capturing packets and send to rx
-    let mut rx = packets::packet_capture::start_capture(); // Since live meter is not critical, it's ok to just log it // TODO: maybe bubble an error up to the frontend instead?
+    let mut rx = packets::packet_capture::start_capture(app_handle.clone()); // Since live meter is not critical, it's ok to just log it // TODO: maybe bubble an error up to the frontend instead?
 
     // 2. Use the channel to receive packets back and process them
     loop {

@@ -4,9 +4,11 @@
   import History from "./history.svelte";
   import Shortcuts from "./shortcuts.svelte";
   import Themes from "./themes.svelte";
+  import Network from "./network.svelte";
 
   const settingsTabs = [
     { id: "themes", label: "Themes & Accessibility" },
+    { id: "network", label: "Network" },
     { id: "live", label: "Live" },
     { id: "history", label: "Past Encounters" },
     { id: "shortcuts", label: "Shortcuts" },
@@ -17,7 +19,7 @@
   // settings tab to initialize on page load. That in turn triggers backend
   // side-effects (e.g. setBossOnlyDps) from every tab and can stall the live
   // emitter. We render only the currently active tab component to avoid that.
-  let activeTab = $state('themes');
+  let activeTab = $state("themes");
 </script>
 
 <Tabs.Root bind:value={activeTab}>
@@ -27,14 +29,16 @@
     {/each}
   </Tabs.List>
 
-  {#if activeTab === 'themes'}
+  {#if activeTab === "themes"}
     <Themes />
-  {:else if activeTab === 'live'}
+  {:else if activeTab === "network"}
+    <Network />
+  {:else if activeTab === "live"}
     <Live />
-  {:else if activeTab === 'history'}
+  {:else if activeTab === "history"}
     <History />
-  {:else if activeTab === 'shortcuts'}
+  {:else if activeTab === "shortcuts"}
     <Shortcuts />
-  <!-- Module sync moved to uploading UI; removed from settings tabs -->
+    <!-- Module sync moved to uploading UI; removed from settings tabs -->
   {/if}
 </Tabs.Root>
