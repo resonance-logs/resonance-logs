@@ -71,7 +71,10 @@ pub fn run() {
             module_extractor::commands::trigger_module_sync,
             module_extractor::commands::retry_failed_uploads,
             module_extractor::commands::get_unknown_attributes,
+            module_extractor::commands::get_unknown_attributes,
             module_extractor::commands::clear_unknown_attributes,
+            live::commands::get_network_adapters,
+            live::commands::set_packet_capture_config,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

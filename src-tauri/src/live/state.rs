@@ -5,11 +5,34 @@ use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
 use blueprotobuf_lib::blueprotobuf;
 use log::{error, info, warn};
+use serde::{Deserialize, Serialize};
+use specta::Type;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::RwLock;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
+pub enum CaptureMethod {
+    Windivert,
+    Npcap,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct PacketCaptureConfig {
+    pub method: CaptureMethod,
+    pub adapter: Option<String>, // Device name for Npcap
+}
+
+impl Default for PacketCaptureConfig {
+    fn default() -> Self {
+        Self {
+            method: CaptureMethod::Windivert,
+            adapter: None,
+        }
+    }
+}
 
 /// Represents the possible events that can be handled by the state manager.
 #[derive(Debug, Clone)]
@@ -61,6 +84,8 @@ pub struct AppState {
     pub dungeon_log: SharedDungeonLog,
     /// Feature flag for dungeon segment tracking.
     pub dungeon_segments_enabled: bool,
+    /// Packet capture configuration.
+    pub packet_capture_config: PacketCaptureConfig,
 }
 
 impl AppState {
@@ -79,7 +104,9 @@ impl AppState {
             low_hp_bosses: HashMap::new(),
             initial_scene_change_handled: false,
             dungeon_log: dungeon_log::create_shared_log(),
+
             dungeon_segments_enabled: true,
+            packet_capture_config: PacketCaptureConfig::default(),
         }
     }
 

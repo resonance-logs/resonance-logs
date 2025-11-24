@@ -487,11 +487,38 @@ async getUnknownAttributes() : Promise<Result<UnknownAttribute[], string>> {
 }
 },
 /**
+ * Get unknown attributes for telemetry
+ */
+async getUnknownAttributes() : Promise<Result<UnknownAttribute[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_unknown_attributes") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Clear unknown attributes tracking
  */
 async clearUnknownAttributes() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("clear_unknown_attributes") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getNetworkAdapters() : Promise<Result<NetworkAdapter[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_network_adapters") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setPacketCaptureConfig(config: PacketCaptureConfig) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_packet_capture_config", { config }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -665,6 +692,7 @@ maxHp: number | null;
  * Whether the boss was defeated.
  */
 isDefeated: boolean }
+export type CaptureMethod = "Windivert" | "Npcap"
 export type CombatState = "idle" | "inCombat"
 /**
  * Discrete damage occurrence stored on a segment.
@@ -818,6 +846,19 @@ export type ImportSummary = { added: number; updated: number; errors: number }
  * Response for module sync status query
  */
 export type ModuleSyncStatus = { enabled: boolean; has_api_key: boolean; last_module_count: number; base_url: string; auto_sync_interval_minutes: number; failed_uploads_count: number; unknown_attributes_count: number }
+/**
+ * Represents a network adapter for Npcap.
+ */
+export type NetworkAdapter = { 
+/**
+ * The system name of the adapter (e.g., \Device\NPF_{...}).
+ */
+name: string; 
+/**
+ * The human-readable description of the adapter.
+ */
+description: string }
+export type PacketCaptureConfig = { method: CaptureMethod; adapter: string | null }
 /**
  * Information about a player.
  */

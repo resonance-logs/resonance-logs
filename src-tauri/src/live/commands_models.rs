@@ -144,3 +144,13 @@ pub struct SkillRow {
     /// The number of hits per minute dealt by the skill.
     pub hits_per_minute: f64,
 }
+
+/// Represents a network adapter for Npcap.
+#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkAdapter {
+    /// The system name of the adapter (e.g., \Device\NPF_{...}).
+    pub name: String,
+    /// The human-readable description of the adapter.
+    pub description: String,
+}

@@ -7,6 +7,40 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use window_vibrancy::{apply_blur, clear_blur};
 // request_restart is not needed in this module at present
 use crate::live::event_manager; // for generate_skills_window_*
+use crate::live::state::{CaptureMethod, PacketCaptureConfig};
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_network_adapters() -> Result<Vec<crate::live::commands_models::NetworkAdapter>, String> {
+    match pcap::Device::list() {
+        Ok(devices) => Ok(devices
+            .into_iter()
+            .map(|d| crate::live::commands_models::NetworkAdapter {
+                name: d.name.clone(),
+                description: d.desc.unwrap_or(d.name),
+            })
+            .collect()),
+        Err(e) => Err(format!("Failed to list network adapters: {}", e)),
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn set_packet_capture_config(
+    config: PacketCaptureConfig,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    state_manager
+        .with_state_mut(|state| {
+            state.packet_capture_config = config;
+        })
+        .await;
+
+    // Restart capture to apply changes
+    crate::packets::packet_capture::request_restart();
+
+    Ok(())
+}
 
 /// Prettifies a player's name.
 ///
@@ -373,38 +407,40 @@ pub async fn reset_player_metrics(
 ) -> Result<(), String> {
     use crate::live::commands_models::HeaderInfo;
 
-    state_manager.with_state_mut(|state| {
-        // Store the original fight start time before reset
-        let original_fight_start_ms = state.encounter.time_fight_start_ms;
+    state_manager
+        .with_state_mut(|state| {
+            // Store the original fight start time before reset
+            let original_fight_start_ms = state.encounter.time_fight_start_ms;
 
-        // Reset combat state (player metrics)
-        state.encounter.reset_combat_state();
-        state.skill_subscriptions.clear();
+            // Reset combat state (player metrics)
+            state.encounter.reset_combat_state();
+            state.skill_subscriptions.clear();
 
-        // Restore the original fight start time to preserve total encounter duration
-        state.encounter.time_fight_start_ms = original_fight_start_ms;
+            // Restore the original fight start time to preserve total encounter duration
+            state.encounter.time_fight_start_ms = original_fight_start_ms;
 
-        // Emit reset event to clear frontend stores
-        if state.event_manager.should_emit_events() {
-            state.event_manager.emit_encounter_reset();
+            // Emit reset event to clear frontend stores
+            if state.event_manager.should_emit_events() {
+                state.event_manager.emit_encounter_reset();
 
-            // Emit an encounter update with cleared player data but preserve encounter context
-            let cleared_header = HeaderInfo {
-                total_dps: 0.0,
-                total_dmg: 0,
-                elapsed_ms: 0,
-                fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
-                bosses: vec![],
-                scene_id: state.encounter.current_scene_id,
-                scene_name: state.encounter.current_scene_name.clone(),
-                current_segment_type: None,
-                current_segment_name: None,
-            };
-            state
-                .event_manager
-                .emit_encounter_update(cleared_header, state.encounter.is_encounter_paused);
-        }
-    }).await;
+                // Emit an encounter update with cleared player data but preserve encounter context
+                let cleared_header = HeaderInfo {
+                    total_dps: 0.0,
+                    total_dmg: 0,
+                    elapsed_ms: 0,
+                    fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
+                    bosses: vec![],
+                    scene_id: state.encounter.current_scene_id,
+                    scene_name: state.encounter.current_scene_name.clone(),
+                    current_segment_type: None,
+                    current_segment_name: None,
+                };
+                state
+                    .event_manager
+                    .emit_encounter_update(cleared_header, state.encounter.is_encounter_paused);
+            }
+        })
+        .await;
 
     info!("Player metrics reset for segment transition");
     Ok(())

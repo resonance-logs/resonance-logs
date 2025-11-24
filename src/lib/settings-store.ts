@@ -52,6 +52,11 @@ export const DEFAULT_HISTORY_HEAL_STATS = {
   hitsPerMinute: false,
 };
 
+export const DEFAULT_PACKET_CAPTURE_SETTINGS = {
+  method: "Windivert", // "Windivert" | "Npcap"
+  adapter: null as string | null,
+};
+
 export type ShortcutSettingId = keyof typeof DEFAULT_SETTINGS.shortcuts;
 
 const DEFAULT_GENERAL_SETTINGS = {
@@ -107,6 +112,7 @@ const DEFAULT_SETTINGS = {
     autoSyncIntervalMinutes: 0,
     autoUpload: true,
   },
+  packetCapture: { ...DEFAULT_PACKET_CAPTURE_SETTINGS },
   live: {
     general: { ...DEFAULT_GENERAL_SETTINGS },
     dpsPlayers: { ...DEFAULT_STATS },
@@ -143,6 +149,11 @@ export const SETTINGS = {
   moduleSync: new RuneStore(
     'moduleSync',
     DEFAULT_SETTINGS.moduleSync,
+    RUNE_STORE_OPTIONS
+  ),
+  packetCapture: new RuneStore(
+    'packetCapture',
+    DEFAULT_SETTINGS.packetCapture,
     RUNE_STORE_OPTIONS
   ),
   live: {
@@ -241,6 +252,7 @@ export const settings = {
     accessibility: SETTINGS.accessibility.state,
     shortcuts: SETTINGS.shortcuts.state,
     moduleSync: SETTINGS.moduleSync.state,
+    packetCapture: SETTINGS.packetCapture.state,
     live: {
       general: SETTINGS.live.general.state,
       dps: {
