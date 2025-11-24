@@ -247,8 +247,10 @@ pub struct UploadEncounterBossIn {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UploadRequestBody {
     pub encounters: Vec<UploadEncounterIn>,
+    pub client_version: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1177,6 +1179,7 @@ pub async fn perform_upload(
                 .iter()
                 .map(|entry| entry.payload.clone())
                 .collect(),
+            client_version: Some(env!("CARGO_PKG_VERSION").to_string()),
         };
         let mut processed_ids = duplicate_ids.clone();
 
@@ -1380,5 +1383,15 @@ mod tests {
             let formatted_url = format!("{}/upload/", base_url.trim_end_matches('/'));
             assert_eq!(formatted_url, expected_endpoints[i]);
         }
+    }
+
+    #[test]
+    fn test_upload_request_includes_client_version() {
+        let body = UploadRequestBody {
+            encounters: vec![],
+            client_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+        };
+        let v = serde_json::to_value(&body).expect("serialize");
+        assert!(v.get("clientVersion").is_some());
     }
 }
