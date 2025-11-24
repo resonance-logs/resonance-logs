@@ -102,6 +102,7 @@ pub struct UploadEncounterIn {
     pub entities: Vec<UploadEntityIn>,
     pub encounter_bosses: Vec<UploadEncounterBossIn>,
     pub detailed_playerdata: Vec<UploadDetailedPlayerDataIn>,
+    pub dungeon_segments: Vec<UploadDungeonSegmentIn>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -230,6 +231,19 @@ pub struct UploadDetailedPlayerDataIn {
     pub char_serialize_json: String,
     pub profession_list_json: Option<String>,
     pub talent_node_ids_json: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UploadDungeonSegmentIn {
+    pub segment_type: String,
+    pub boss_entity_id: Option<i64>,
+    pub boss_monster_type_id: Option<i64>,
+    pub boss_name: Option<String>,
+    pub started_at_ms: i64,
+    pub ended_at_ms: Option<i64>,
+    pub total_damage: i64,
+    pub hit_count: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -486,6 +500,7 @@ fn build_encounter_payload(
     use sch::attempts::dsl as a;
     use sch::damage_skill_stats::dsl as dss;
     use sch::death_events::dsl as de;
+    use sch::dungeon_segments::dsl as ds;
     use sch::detailed_playerdata::dsl as dpd;
     use sch::encounter_bosses::dsl as eb;
     use sch::entities::dsl as en;
@@ -551,6 +566,56 @@ fn build_encounter_payload(
                 start_time_ms,
                 end_time_ms,
                 outcome,
+            },
+        )
+        .collect::<Vec<_>>();
+
+    // Dungeon segments
+    let segment_rows = ds::dungeon_segments
+        .filter(ds::encounter_id.eq(id))
+        .order(ds::started_at_ms.asc())
+        .select((
+            ds::segment_type,
+            ds::boss_entity_id,
+            ds::boss_monster_type_id,
+            ds::boss_name,
+            ds::started_at_ms,
+            ds::ended_at_ms,
+            ds::total_damage,
+            ds::hit_count,
+        ))
+        .load::<(
+            String,
+            Option<i64>,
+            Option<i64>,
+            Option<String>,
+            i64,
+            Option<i64>,
+            i64,
+            i64,
+        )>(conn)
+        .map_err(|e| e.to_string())?;
+    let dungeon_segments = segment_rows
+        .into_iter()
+        .map(
+            |(
+                segment_type,
+                boss_entity_id,
+                boss_monster_type_id,
+                boss_name,
+                started_at_ms,
+                ended_at_ms,
+                total_damage,
+                hit_count,
+            )| UploadDungeonSegmentIn {
+                segment_type,
+                boss_entity_id,
+                boss_monster_type_id,
+                boss_name,
+                started_at_ms,
+                ended_at_ms,
+                total_damage,
+                hit_count,
             },
         )
         .collect::<Vec<_>>();
@@ -979,6 +1044,7 @@ fn build_encounter_payload(
         entities,
         encounter_bosses,
         detailed_playerdata,
+        dungeon_segments,
     };
 
     // Compute and set the source hash
