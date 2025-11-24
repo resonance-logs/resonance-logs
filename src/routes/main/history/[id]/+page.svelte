@@ -34,10 +34,8 @@
   let activeTab = $state<'damage' | 'tanked' | 'healing'>('damage');
   let bossOnlyMode = $state(false);
 
-  // Segment selection state
+  // Segment state - read-only in the UI
   let segments = $state<Segment[]>([]);
-  let selectedSegmentId = $state<number | null>(null); // null = all segments
-  let selectedSegment = $derived.by(() => segments.find((s) => s.id === selectedSegmentId) ?? null);
 
   // Skills view state
   let skillsWindow = $state<SkillsWindow | null>(null);
@@ -234,10 +232,7 @@
     goto('/main/history');
   }
 
-  function handleSegmentSelect(event: Event) {
-    const value = (event.target as HTMLSelectElement).value;
-    selectedSegmentId = value ? Number(value) : null;
-  }
+  // Segments are now read-only in the UI; selection is disabled
 
   async function openEncounterOnWebsite() {
     if (!encounter || !encounter.remoteEncounterId) return;
@@ -313,19 +308,16 @@
                 <div class="font-semibold text-foreground mb-1">Dungeon Segments ({segments.length})</div>
                 <div class="flex flex-wrap gap-2">
                   {#each segments as segment}
-                    <button
-                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded border transition-colors
-                        {segment.segmentType === 'boss' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}
-                        {selectedSegmentId === segment.id ? 'ring-2 ring-primary/50' : ''}
-                        hover:bg-opacity-20"
-                      onclick={() => selectedSegmentId = selectedSegmentId === segment.id ? null : segment.id}
+                    <span
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded border
+                        {segment.segmentType === 'boss' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}"
                     >
                       <span class="font-semibold">{segment.segmentType === 'boss' ? segment.bossName || 'Boss' : 'Trash'}</span>
                       <span class="text-muted-foreground">•</span>
                       <span>{Math.floor(((segment.endedAtMs ?? Date.now()) - segment.startedAtMs) / 1000)}s</span>
                       <span class="text-muted-foreground">•</span>
                       <AbbreviatedNumber num={segment.totalDamage} />
-                    </button>
+                    </span>
                   {/each}
                 </div>
               </div>
@@ -347,22 +339,7 @@
 
         <!-- Tabs, Segment Selector, and Boss Only Toggle -->
         <div class="flex items-end gap-2 h-[48px]">
-          <!-- Segment Selector -->
-          {#if segments.length > 0}
-            <select
-              value={selectedSegmentId ?? ''}
-              onchange={handleSegmentSelect}
-              class="px-2 py-1 text-xs rounded border border-border bg-popover text-foreground transition-colors hover:bg-muted/40 cursor-pointer"
-            >
-              <option value=''>All Segments</option>
-              {#each segments as segment}
-                <option value={segment.id}>
-                  {segment.segmentType === 'boss' ? segment.bossName || 'Boss Segment' : 'Trash Segment'}
-                  ({Math.floor(((segment.endedAtMs ?? Date.now()) - segment.startedAtMs) / 1000)}s)
-                </option>
-              {/each}
-            </select>
-          {/if}
+          <!-- Segment selector removed (display only) -->
 
           <div class="flex rounded border border-border bg-popover">
             <button
