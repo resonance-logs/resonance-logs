@@ -13,10 +13,8 @@
 
 Resonance Logs is a friendly, cross-platform desktop application designed for **Blue Protocol: Star Resonance** players who want live, actionable feedback during gameplay. Monitor your performance in real-time, track encounters, and share your achievements with the community.
 
-### Key Features
-
 - **Real-time Performance** - Live stat monitoring
-- **Encounter Tracking** - Save and review past encounters
+- **Encounter Tracking** - Save and review past encounters (Main Page > History)
 - **Cloud Sync** - Upload encounters to the [Resonance Website](https://github.com/resonance-logs/resonance-website)
 
 ---
@@ -31,6 +29,12 @@ Resonance Logs is a friendly, cross-platform desktop application designed for **
 
 ---
 
+### Features
+- **Themes & UI Customization** under Settings > Themes & Accessibility 
+- **Live & History Meter Customization** under Settings > Live & Past Encounters
+- **Hotkeys** under Settings > Shortcuts
+---
+
 ## Images
 ![alt text](img/image-1.png)
 ![alt text](img/image-2.png)
@@ -43,6 +47,9 @@ Resonance Logs is a friendly, cross-platform desktop application designed for **
 
 ### Is it a virus?
 No, feel free to look at our codebase.
+
+### I closed my settings, how do I them open again?
+Naviate to your system tray, right click the resonance logs icon and click show settings
 
 ---
 
