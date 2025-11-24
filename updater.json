@@ -1,15 +1,15 @@
 {
-  "version": "0.15.0",
-  "notes": "## [0.15.0] - 2025-11-23\r\n\r\n### Added\r\n\r\n- Added auto upload logs toggle.\r\n- Added dungeon segments tracking. Can be disabled in Settings > Live > Dungeon Segments. (EXPERIMENTAL)\r\n\r\n### Changed\r\n\r\n- Updated history table UI.\r\n- Updated live meter so that if no header is enabled, there is no padding.\r\n\r\n### Fixed\r\n\r\n- Fixed skills page not working in history page.\r\n- Fixed skill name issues.\r\n",
-  "pub_date": "2025-11-24T03:59:03.606Z",
+  "version": "0.15.1",
+  "notes": "## [0.15.1] - 2025-11-23\r\n\r\n### Added\r\n\r\n- Extra log file creation on crash to diagnose crashing bug.\r\n\r\n### Fixed\r\n\r\n- Potential crash fix\r\n- Fixed dps being wrong per segment in live meter. (should be correct now)\r\n",
+  "pub_date": "2025-11-24T17:51:49.242Z",
   "platforms": {
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2MzZ011NS8rZTlwSm9BVS93TnA1TzViZW9WLzhjVkNsVFE4MzZRc1ZMMmRleDRPTDRDRExjUk0wSnpNQkZsbC8vbURBZllvbHh1aUNsaWpPV24xNXdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzOTU2NzM3CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4wX3g2NC1zZXR1cC5leGUKdExGVW9jU0d0RDY4RG13RVYvckJrWGNiYWpxV3lCenZLbFBoTzdLTCtzZUhmRTcwRlhKY3VjTDZoQ3pQUTZjWXl5WkJReGdOb3hkbDJmRGJSUFAwQnc9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.0/resonance-logs_0.15.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2JmeE1SQWl2WEExZ245bzdWNVRIRTBqZElhNXd5UEJlMUFGWU9OWkF3OXBYRVI1TVlMdXB0TXFudUxzTndWZnVwaDZ2aWYwNWpzS3BmWG5EK0lnNUE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MDA2NzAzCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4xX3g2NC1zZXR1cC5leGUKc1F1ZFJsenRTTjVlOUJnNnN6ZUtzcnNzUXZzMFZ3OGgza1JNdEJ2VHBqVFQ3eTBwak0xRldMdjhvQzVxMzFzZm15eU43OHdFVUtYTzZjSVNoUjVQREE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.1/resonance-logs_0.15.1_x64-setup.exe"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2MzZ011NS8rZTlwSm9BVS93TnA1TzViZW9WLzhjVkNsVFE4MzZRc1ZMMmRleDRPTDRDRExjUk0wSnpNQkZsbC8vbURBZllvbHh1aUNsaWpPV24xNXdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzYzOTU2NzM3CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4wX3g2NC1zZXR1cC5leGUKdExGVW9jU0d0RDY4RG13RVYvckJrWGNiYWpxV3lCenZLbFBoTzdLTCtzZUhmRTcwRlhKY3VjTDZoQ3pQUTZjWXl5WkJReGdOb3hkbDJmRGJSUFAwQnc9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.0/resonance-logs_0.15.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2JmeE1SQWl2WEExZ245bzdWNVRIRTBqZElhNXd5UEJlMUFGWU9OWkF3OXBYRVI1TVlMdXB0TXFudUxzTndWZnVwaDZ2aWYwNWpzS3BmWG5EK0lnNUE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MDA2NzAzCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4xX3g2NC1zZXR1cC5leGUKc1F1ZFJsenRTTjVlOUJnNnN6ZUtzcnNzUXZzMFZ3OGgza1JNdEJ2VHBqVFQ3eTBwak0xRldMdjhvQzVxMzFzZm15eU43OHdFVUtYTzZjSVNoUjVQREE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.1/resonance-logs_0.15.1_x64-setup.exe"
     }
   }
 }
