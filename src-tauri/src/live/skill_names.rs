@@ -6,9 +6,8 @@ use std::fs;
 const DEFAULT_SKILL_JSON_RELATIVE: &str = "meter-data/SkillName.json";
 
 /// Thread-safe cache for skill names, loaded lazily on first access
-static SKILL_CACHE: Lazy<RwLock<HashMap<i32, String>>> = Lazy::new(|| {
-    RwLock::new(load_skill_names().unwrap_or_default())
-});
+static SKILL_CACHE: Lazy<RwLock<HashMap<i32, String>>> =
+    Lazy::new(|| RwLock::new(load_skill_names().unwrap_or_default()));
 
 /// Loads skill names from the JSON file into a HashMap
 fn load_skill_names() -> Result<HashMap<i32, String>, Box<dyn std::error::Error>> {

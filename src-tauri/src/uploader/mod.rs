@@ -490,8 +490,8 @@ fn build_encounter_payload(
     use sch::attempts::dsl as a;
     use sch::damage_skill_stats::dsl as dss;
     use sch::death_events::dsl as de;
-    use sch::dungeon_segments::dsl as ds;
     use sch::detailed_playerdata::dsl as dpd;
+    use sch::dungeon_segments::dsl as ds;
     use sch::encounter_bosses::dsl as eb;
     use sch::entities::dsl as en;
     use sch::heal_skill_stats::dsl as hss;

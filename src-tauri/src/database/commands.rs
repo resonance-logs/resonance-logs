@@ -2096,9 +2096,7 @@ pub fn get_encounter_player_skills(
 /// * `Result<Vec<m::DungeonSegmentRow>, String>` - A list of dungeon segments.
 #[tauri::command]
 #[specta::specta]
-pub fn get_encounter_segments(
-    encounter_id: i32,
-) -> Result<Vec<m::DungeonSegmentRow>, String> {
+pub fn get_encounter_segments(encounter_id: i32) -> Result<Vec<m::DungeonSegmentRow>, String> {
     use sch::dungeon_segments::dsl as ds;
 
     let db_path = default_db_path();

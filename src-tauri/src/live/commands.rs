@@ -85,15 +85,44 @@ pub async fn subscribe_player_skills(
     state_manager
         .with_state(|state| {
             let boss_only = state.boss_only_dps;
+            let segment_elapsed_ms = if state.dungeon_segments_enabled {
+                dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
+                    log.segments
+                        .iter()
+                        .find(|s| s.ended_at_ms.is_none())
+                        .map(|segment| {
+                            let start_ms = segment.started_at_ms.max(0) as u128;
+                            let end_ms = segment
+                                .ended_at_ms
+                                .map(|t| t.max(0) as u128)
+                                .unwrap_or(state.encounter.time_last_combat_packet_ms);
+                            end_ms.saturating_sub(start_ms)
+                        })
+                })
+            } else {
+                None
+            };
+
             match skill_type.as_str() {
-                "dps" => {
-                    event_manager::generate_skills_window_dps(&state.encounter, uid, boss_only)
-                        .ok_or_else(|| format!("No DPS skills found for player {}", uid))
-                }
-                "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
-                    .ok_or_else(|| format!("No heal skills found for player {}", uid)),
-                "tanked" => event_manager::generate_skills_window_tanked(&state.encounter, uid)
-                    .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
+                "dps" => event_manager::generate_skills_window_dps(
+                    &state.encounter,
+                    uid,
+                    boss_only,
+                    segment_elapsed_ms,
+                )
+                .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
+                "heal" => event_manager::generate_skills_window_heal(
+                    &state.encounter,
+                    uid,
+                    segment_elapsed_ms,
+                )
+                .ok_or_else(|| format!("No heal skills found for player {}", uid)),
+                "tanked" => event_manager::generate_skills_window_tanked(
+                    &state.encounter,
+                    uid,
+                    segment_elapsed_ms,
+                )
+                .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
                 _ => Err(format!("Invalid skill type: {}", skill_type)),
             }
         })
@@ -147,15 +176,43 @@ pub async fn get_player_skills(
     state_manager
         .with_state(|state| {
             let boss_only = state.boss_only_dps;
+            let segment_elapsed_ms = if state.dungeon_segments_enabled {
+                dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
+                    log.segments
+                        .iter()
+                        .find(|s| s.ended_at_ms.is_none())
+                        .map(|segment| {
+                            let start_ms = segment.started_at_ms.max(0) as u128;
+                            let end_ms = segment
+                                .ended_at_ms
+                                .map(|t| t.max(0) as u128)
+                                .unwrap_or(state.encounter.time_last_combat_packet_ms);
+                            end_ms.saturating_sub(start_ms)
+                        })
+                })
+            } else {
+                None
+            };
             match skill_type.as_str() {
-                "dps" => {
-                    event_manager::generate_skills_window_dps(&state.encounter, uid, boss_only)
-                        .ok_or_else(|| format!("No DPS skills found for player {}", uid))
-                }
-                "heal" => event_manager::generate_skills_window_heal(&state.encounter, uid)
-                    .ok_or_else(|| format!("No heal skills found for player {}", uid)),
-                "tanked" => event_manager::generate_skills_window_tanked(&state.encounter, uid)
-                    .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
+                "dps" => event_manager::generate_skills_window_dps(
+                    &state.encounter,
+                    uid,
+                    boss_only,
+                    segment_elapsed_ms,
+                )
+                .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
+                "heal" => event_manager::generate_skills_window_heal(
+                    &state.encounter,
+                    uid,
+                    segment_elapsed_ms,
+                )
+                .ok_or_else(|| format!("No heal skills found for player {}", uid)),
+                "tanked" => event_manager::generate_skills_window_tanked(
+                    &state.encounter,
+                    uid,
+                    segment_elapsed_ms,
+                )
+                .ok_or_else(|| format!("No tanked skills found for player {}", uid)),
                 _ => Err(format!("Invalid skill type: {}", skill_type)),
             }
         })
@@ -373,38 +430,40 @@ pub async fn reset_player_metrics(
 ) -> Result<(), String> {
     use crate::live::commands_models::HeaderInfo;
 
-    state_manager.with_state_mut(|state| {
-        // Store the original fight start time before reset
-        let original_fight_start_ms = state.encounter.time_fight_start_ms;
+    state_manager
+        .with_state_mut(|state| {
+            // Store the original fight start time before reset
+            let original_fight_start_ms = state.encounter.time_fight_start_ms;
 
-        // Reset combat state (player metrics)
-        state.encounter.reset_combat_state();
-        state.skill_subscriptions.clear();
+            // Reset combat state (player metrics)
+            state.encounter.reset_combat_state();
+            state.skill_subscriptions.clear();
 
-        // Restore the original fight start time to preserve total encounter duration
-        state.encounter.time_fight_start_ms = original_fight_start_ms;
+            // Restore the original fight start time to preserve total encounter duration
+            state.encounter.time_fight_start_ms = original_fight_start_ms;
 
-        // Emit reset event to clear frontend stores
-        if state.event_manager.should_emit_events() {
-            state.event_manager.emit_encounter_reset();
+            // Emit reset event to clear frontend stores
+            if state.event_manager.should_emit_events() {
+                state.event_manager.emit_encounter_reset();
 
-            // Emit an encounter update with cleared player data but preserve encounter context
-            let cleared_header = HeaderInfo {
-                total_dps: 0.0,
-                total_dmg: 0,
-                elapsed_ms: 0,
-                fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
-                bosses: vec![],
-                scene_id: state.encounter.current_scene_id,
-                scene_name: state.encounter.current_scene_name.clone(),
-                current_segment_type: None,
-                current_segment_name: None,
-            };
-            state
-                .event_manager
-                .emit_encounter_update(cleared_header, state.encounter.is_encounter_paused);
-        }
-    }).await;
+                // Emit an encounter update with cleared player data but preserve encounter context
+                let cleared_header = HeaderInfo {
+                    total_dps: 0.0,
+                    total_dmg: 0,
+                    elapsed_ms: 0,
+                    fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
+                    bosses: vec![],
+                    scene_id: state.encounter.current_scene_id,
+                    scene_name: state.encounter.current_scene_name.clone(),
+                    current_segment_type: None,
+                    current_segment_name: None,
+                };
+                state
+                    .event_manager
+                    .emit_encounter_update(cleared_header, state.encounter.is_encounter_paused);
+            }
+        })
+        .await;
 
     info!("Player metrics reset for segment transition");
     Ok(())

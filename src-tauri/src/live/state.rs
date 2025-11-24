@@ -969,13 +969,55 @@ impl AppStateManager {
             return;
         }
 
+        let active_segment_snapshot = dungeon_ctx
+            .as_ref()
+            .and_then(|runtime| runtime.snapshot())
+            .and_then(|log| {
+                log.segments
+                    .iter()
+                    .find(|s| s.ended_at_ms.is_none())
+                    .cloned()
+            });
+
+        let (segment_timing, active_segment) = if let Some(segment) = active_segment_snapshot {
+            let segment_type = match segment.segment_type {
+                SegmentType::Boss => "boss".to_string(),
+                SegmentType::Trash => "trash".to_string(),
+            };
+
+            let start_ms = segment.started_at_ms.max(0) as u128;
+            let end_ms = segment
+                .ended_at_ms
+                .map(|t| t.max(0) as u128)
+                .unwrap_or(encounter.time_last_combat_packet_ms);
+            let elapsed_ms = end_ms.saturating_sub(start_ms);
+
+            (
+                Some((start_ms, elapsed_ms)),
+                Some((segment_type, segment.boss_name.clone())),
+            )
+        } else {
+            (None, None)
+        };
+
+        let segment_elapsed_ms = segment_timing.map(|(_, elapsed)| elapsed);
+
         // Generate all the data we need without holding the lock
         let header_info_with_deaths =
-            crate::live::event_manager::generate_header_info(&encounter, boss_only);
-        let dps_players =
-            crate::live::event_manager::generate_players_window_dps(&encounter, boss_only);
-        let heal_players = crate::live::event_manager::generate_players_window_heal(&encounter);
-        let tanked_players = crate::live::event_manager::generate_players_window_tanked(&encounter);
+            crate::live::event_manager::generate_header_info(&encounter, boss_only, segment_timing);
+        let dps_players = crate::live::event_manager::generate_players_window_dps(
+            &encounter,
+            boss_only,
+            segment_elapsed_ms,
+        );
+        let heal_players = crate::live::event_manager::generate_players_window_heal(
+            &encounter,
+            segment_elapsed_ms,
+        );
+        let tanked_players = crate::live::event_manager::generate_players_window_tanked(
+            &encounter,
+            segment_elapsed_ms,
+        );
 
         // Generate skill windows for all players
         let mut dps_skill_windows = Vec::new();
@@ -991,16 +1033,21 @@ impl AppStateManager {
 
             if is_player && has_dmg_skills {
                 if let Some(skills_window) = crate::live::event_manager::generate_skills_window_dps(
-                    &encounter, entity_uid, boss_only,
+                    &encounter,
+                    entity_uid,
+                    boss_only,
+                    segment_elapsed_ms,
                 ) {
                     dps_skill_windows.push((entity_uid, skills_window));
                 }
             }
 
             if is_player && has_heal_skills {
-                if let Some(skills_window) =
-                    crate::live::event_manager::generate_skills_window_heal(&encounter, entity_uid)
-                {
+                if let Some(skills_window) = crate::live::event_manager::generate_skills_window_heal(
+                    &encounter,
+                    entity_uid,
+                    segment_elapsed_ms,
+                ) {
                     heal_skill_windows.push((entity_uid, skills_window));
                 }
             }
@@ -1008,7 +1055,9 @@ impl AppStateManager {
             if is_player && has_taken_skills {
                 if let Some(skills_window) =
                     crate::live::event_manager::generate_skills_window_tanked(
-                        &encounter, entity_uid,
+                        &encounter,
+                        entity_uid,
+                        segment_elapsed_ms,
                     )
                 {
                     tanked_skill_windows.push((entity_uid, skills_window));
@@ -1018,24 +1067,6 @@ impl AppStateManager {
             // Collect subscribed players for later emission
             subscribed_players.push(entity_uid);
         }
-
-        let active_segment = dungeon_ctx
-            .as_ref()
-            .and_then(|runtime| runtime.snapshot())
-            .and_then(|log| {
-                log.segments
-                    .iter()
-                    .find(|s| s.ended_at_ms.is_none())
-                    .map(|segment| {
-                        let segment_type = match segment.segment_type {
-                            SegmentType::Boss => "boss".to_string(),
-                            SegmentType::Trash => "trash".to_string(),
-                        };
-                        let segment_name = segment.boss_name.clone();
-                        (segment_type, segment_name)
-                    })
-            });
-
         // Process boss death detection and collect ALL data needed for emission
         // We'll do ALL emissions without holding any locks to prevent deadlock
         let (final_header_info, boss_deaths, skill_subscriptions_clone, app_handle_opt) = {

@@ -584,7 +584,9 @@ pub struct NewAttempt {
 }
 
 /// Represents a row in the `dungeon_segments` table.
-#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize, specta::Type)]
+#[derive(
+    Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize, specta::Type,
+)]
 #[diesel(table_name = sch::dungeon_segments, belongs_to(EncounterRow, foreign_key = encounter_id))]
 #[serde(rename_all = "camelCase")]
 pub struct DungeonSegmentRow {

@@ -808,8 +808,8 @@ pub fn process_aoi_sync_delta(
                 }
 
                 // Check for segment type transitions and reset metrics if needed
-                let current_segment_type = dungeon_log::snapshot(&runtime.shared_log)
-                    .and_then(|log| {
+                let current_segment_type =
+                    dungeon_log::snapshot(&runtime.shared_log).and_then(|log| {
                         log.segments
                             .iter()
                             .rev()
@@ -823,8 +823,10 @@ pub fn process_aoi_sync_delta(
                 // If segment type changed, reset the live meter
                 if let Some(current_type) = &current_segment_type {
                     if encounter.last_active_segment_type.as_ref() != Some(current_type) {
-                        info!("Segment type changed from {:?} to {}, resetting live meter",
-                            encounter.last_active_segment_type, current_type);
+                        info!(
+                            "Segment type changed from {:?} to {}, resetting live meter",
+                            encounter.last_active_segment_type, current_type
+                        );
 
                         // Store the original fight start time before reset
                         let original_fight_start_ms = encounter.time_fight_start_ms;

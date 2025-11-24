@@ -283,17 +283,16 @@ fn is_boss_target(encounter: &Encounter, target_uid: &i64) -> bool {
 }
 
 // Helper functions for generating data structures
-pub fn generate_players_window_dps(encounter: &Encounter, boss_only: bool) -> PlayersWindow {
-    let time_elapsed_ms = encounter
-        .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+pub fn generate_players_window_dps(
+    encounter: &Encounter,
+    boss_only: bool,
+    segment_elapsed_ms: Option<u128>,
+) -> PlayersWindow {
+    let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
     let mut players_window = PlayersWindow {
         player_rows: Vec::new(),
     };
-
-    #[allow(clippy::cast_precision_loss)]
-    let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
     let total_scope_dmg: u128 = if boss_only {
         encounter
@@ -340,10 +339,11 @@ pub fn generate_players_window_dps(encounter: &Encounter, boss_only: bool) -> Pl
     players_window
 }
 
-pub fn generate_players_window_heal(encounter: &Encounter) -> PlayersWindow {
-    let time_elapsed_ms = encounter
-        .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+pub fn generate_players_window_heal(
+    encounter: &Encounter,
+    segment_elapsed_ms: Option<u128>,
+) -> PlayersWindow {
+    let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
     let mut players_window = PlayersWindow {
         player_rows: Vec::new(),
@@ -352,9 +352,6 @@ pub fn generate_players_window_heal(encounter: &Encounter) -> PlayersWindow {
     if encounter.total_heal == 0 {
         return players_window;
     }
-
-    #[allow(clippy::cast_precision_loss)]
-    let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
     for (&entity_uid, entity) in &encounter.entity_uid_to_entity {
         let is_player = entity.entity_type == EEntityType::EntChar;
@@ -418,17 +415,15 @@ pub fn generate_players_window_heal(encounter: &Encounter) -> PlayersWindow {
     players_window
 }
 
-pub fn generate_players_window_tanked(encounter: &Encounter) -> PlayersWindow {
-    let time_elapsed_ms = encounter
-        .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
+pub fn generate_players_window_tanked(
+    encounter: &Encounter,
+    segment_elapsed_ms: Option<u128>,
+) -> PlayersWindow {
+    let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
     let mut players_window = PlayersWindow {
         player_rows: Vec::new(),
     };
-
-    #[allow(clippy::cast_precision_loss)]
-    let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
 
     // Calculate total damage taken across all players
     let mut total_taken_all: u128 = 0;
@@ -506,14 +501,10 @@ pub fn generate_skills_window_dps(
     encounter: &Encounter,
     player_uid: i64,
     boss_only: bool,
+    segment_elapsed_ms: Option<u128>,
 ) -> Option<SkillsWindow> {
     let entity = encounter.entity_uid_to_entity.get(&player_uid)?;
-
-    let time_elapsed_ms = encounter
-        .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
-    #[allow(clippy::cast_precision_loss)]
-    let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
+    let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
     // Compute encounter and player totals within scope
     let total_scope_dmg: u128 = if boss_only {
@@ -640,14 +631,13 @@ pub fn generate_skills_window_dps(
     Some(skills_window)
 }
 
-pub fn generate_skills_window_heal(encounter: &Encounter, player_uid: i64) -> Option<SkillsWindow> {
+pub fn generate_skills_window_heal(
+    encounter: &Encounter,
+    player_uid: i64,
+    segment_elapsed_ms: Option<u128>,
+) -> Option<SkillsWindow> {
     let entity = encounter.entity_uid_to_entity.get(&player_uid)?;
-
-    let time_elapsed_ms = encounter
-        .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
-    #[allow(clippy::cast_precision_loss)]
-    let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
+    let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
     // Player Heal Stats
     #[allow(clippy::cast_precision_loss)]
@@ -728,14 +718,10 @@ pub fn generate_skills_window_heal(encounter: &Encounter, player_uid: i64) -> Op
 pub fn generate_skills_window_tanked(
     encounter: &Encounter,
     player_uid: i64,
+    segment_elapsed_ms: Option<u128>,
 ) -> Option<SkillsWindow> {
     let entity = encounter.entity_uid_to_entity.get(&player_uid)?;
-
-    let time_elapsed_ms = encounter
-        .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
-    #[allow(clippy::cast_precision_loss)]
-    let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
+    let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
     // Player Tanked Stats
     #[allow(clippy::cast_precision_loss)]
@@ -843,6 +829,19 @@ fn nan_is_zero(value: f64) -> f64 {
     }
 }
 
+fn resolve_elapsed(encounter: &Encounter, segment_elapsed_ms: Option<u128>) -> (u128, f64) {
+    let elapsed_ms = segment_elapsed_ms.unwrap_or_else(|| {
+        encounter
+            .time_last_combat_packet_ms
+            .saturating_sub(encounter.time_fight_start_ms)
+    });
+
+    #[allow(clippy::cast_precision_loss)]
+    let elapsed_secs = elapsed_ms as f64 / 1000.0;
+
+    (elapsed_ms, elapsed_secs)
+}
+
 pub fn generate_player_row_filtered(
     entity_uid: i64,
     entity: &Entity,
@@ -946,13 +945,11 @@ pub fn generate_skill_rows(entity: &Entity, time_elapsed_secs: f64) -> Vec<Skill
 pub fn generate_header_info(
     encounter: &Encounter,
     boss_only: bool,
+    segment_timing: Option<(u128, u128)>,
 ) -> Option<(HeaderInfo, Vec<(i64, String)>)> {
-    let time_elapsed_ms = encounter
-        .time_last_combat_packet_ms
-        .saturating_sub(encounter.time_fight_start_ms);
-
-    #[allow(clippy::cast_precision_loss)]
-    let time_elapsed_secs = time_elapsed_ms as f64 / 1000.0;
+    let segment_elapsed_ms = segment_timing.as_ref().map(|(_, elapsed)| *elapsed);
+    let segment_start_ms = segment_timing.as_ref().map(|(start, _)| *start);
+    let (time_elapsed_ms, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
     let total_scope_dmg: u128 = if boss_only {
         encounter
@@ -1035,7 +1032,7 @@ pub fn generate_header_info(
             total_dps: team_dps,
             total_dmg: total_scope_dmg,
             elapsed_ms: time_elapsed_ms,
-            fight_start_timestamp_ms: encounter.time_fight_start_ms,
+            fight_start_timestamp_ms: segment_start_ms.unwrap_or(encounter.time_fight_start_ms),
             bosses,
             scene_id: encounter.current_scene_id,
             scene_name: encounter.current_scene_name.clone(),
