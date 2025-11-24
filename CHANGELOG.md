@@ -5,7 +5,7 @@
 ### Added
 
 - Added auto upload logs toggle.
-- Added dungeon segments tracking. Can be enabled in Settings > Live > Dungeon Segments. (EXPERIMENTAL)
+- Added dungeon segments tracking. Can be disabled in Settings > Live > Dungeon Segments. (EXPERIMENTAL)
 
 ### Changed
 
