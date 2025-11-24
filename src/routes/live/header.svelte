@@ -46,7 +46,6 @@
 
     return {
       durationSecs,
-      totalDamage: activeSegment.totalDamage,
       type: activeSegment.segmentType,
       label:
         activeSegment.segmentType === 'boss'
@@ -225,8 +224,7 @@
       <span class="font-semibold tracking-wide">{activeSegmentInfo.label}</span>
       <span class="text-muted-foreground">•</span>
       <span>{Math.floor(activeSegmentInfo.durationSecs)}s</span>
-      <span class="text-muted-foreground">•</span>
-      <span><AbbreviatedNumber num={activeSegmentInfo.totalDamage} /></span>
+        <!-- totalDamage removed per request: do not display segment total damage in live meter -->
     </span>
   {/if}
   <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
