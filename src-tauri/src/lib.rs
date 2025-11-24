@@ -7,7 +7,6 @@ use crate::build_app::build_and_run;
 use log::{info, warn};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 #[cfg(windows)]
-use std::os::windows::process::CommandExt;
 use std::process::{Command, Stdio};
 
 use chrono_tz;
@@ -111,7 +110,57 @@ pub fn run() {
             let app_handle = app.handle().clone();
 
             // Setup logs
-            setup_logs(&app_handle);
+            if let Err(e) = setup_logs(&app_handle) {
+                warn!("Failed to setup logs: {}", e);
+            }
+
+            // Install panic hook to create a crash dump file when the app panics.
+            // This is installed after logs so we can use the configured logger.
+            let hook_app_handle = app_handle.clone();
+            // Take the default panic hook so we can call it after our handling.
+            let default_hook = std::panic::take_hook();
+            std::panic::set_hook(Box::new(move |info| {
+                // Try to persist a crash dump to the app log directory.
+                let backtrace = std::backtrace::Backtrace::force_capture();
+                let package_version = hook_app_handle.package_info().version.clone();
+                let timestamp = chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+                let file_name = format!("crash_dump_v{}_{timestamp}.log", package_version);
+                let mut dump_content = String::new();
+                dump_content.push_str(&format!("Panic occurred: {}\n", info));
+                dump_content.push_str(&format!("Backtrace:\n{:?}\n", backtrace));
+                dump_content.push_str(&format!("OS: {} {}\n", std::env::consts::OS, std::env::consts::ARCH));
+                // Prefer to write to the app-specific log directory; fall back to a standard OS directory.
+                let path_targets = [
+                    // Try app-specific data dir first (by vendor settings via dirs crate)
+                    dirs::data_local_dir().map(|d| d.join("resonance-logs").join("logs")),
+                    // Fallback to current working directory
+                    std::env::current_dir().ok().map(|d| d.join("logs")),
+                ];
+                let mut written = false;
+                for target in path_targets.into_iter().flatten() {
+                    if let Err(e) = std::fs::create_dir_all(&target) {
+                        warn!("Failed to create dump dir {}: {}", target.display(), e);
+                        continue;
+                    }
+                    let file_path = target.join(&file_name);
+                    match std::fs::write(&file_path, &dump_content) {
+                        Ok(_) => {
+                            warn!("Wrote crash dump to {}", file_path.display());
+                            written = true;
+                            break;
+                        }
+                        Err(e) => warn!("Failed to write crash dump to {}: {}", file_path.display(), e),
+                    }
+                }
+                if !written {
+                    warn!("Failed to write crash dump to any known location; printing dump content to logs instead");
+                    warn!("Crash dump:\n{}", dump_content);
+                }
+                // Attempt a clean up of resources (driver) before handing off to default handler.
+                unload_and_remove_windivert();
+                // Call the previously installed panic hook (prints to stderr etc)
+                default_hook(info);
+            }));
 
             // Initialize database and background writer
             if let Err(e) = crate::database::init_and_spawn_writer() {
@@ -336,12 +385,20 @@ fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()> {
 /// * `tauri::Result<()>` - An empty result indicating success or failure.
 fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     fn show_window_and_disable_clickthrough(window: &tauri::WebviewWindow) {
-        window.show().unwrap();
-        window.unminimize().unwrap();
-        window.set_focus().unwrap();
+        if let Err(e) = window.show() {
+            warn!("failed to show window {}: {}", window.label(), e);
+        }
+        if let Err(e) = window.unminimize() {
+            warn!("failed to unminimize window {}: {}", window.label(), e);
+        }
+        if let Err(e) = window.set_focus() {
+            warn!("failed to focus window {}: {}", window.label(), e);
+        }
         // Always disable clickthrough when showing window from tray
         if window.label() == WINDOW_LIVE_LABEL {
-            window.set_ignore_cursor_events(false).unwrap();
+            if let Err(e) = window.set_ignore_cursor_events(false) {
+                warn!("failed to set ignore_cursor_events for {}: {}", window.label(), e);
+            }
         }
     }
 
@@ -380,25 +437,22 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                 let Some(live_meter_window) = tray_app.get_webview_window(WINDOW_LIVE_LABEL) else {
                     return;
                 };
-                live_meter_window
-                    .set_size(Size::Logical(LogicalSize {
-                        width: 500.0,
-                        height: 350.0,
-                    }))
-                    .unwrap();
-                live_meter_window
-                    .set_position(Position::Logical(LogicalPosition { x: 100.0, y: 100.0 }))
-                    .unwrap();
-                live_meter_window.show().unwrap();
-                live_meter_window.unminimize().unwrap();
-                live_meter_window.set_focus().unwrap();
-                live_meter_window.set_ignore_cursor_events(false).unwrap();
+                if let Err(e) = live_meter_window.set_size(Size::Logical(LogicalSize { width: 500.0, height: 350.0 })) {
+                    warn!("failed to resize live window: {}", e);
+                }
+                if let Err(e) = live_meter_window.set_position(Position::Logical(LogicalPosition { x: 100.0, y: 100.0 })) {
+                    warn!("failed to set position for live window: {}", e);
+                }
+                if let Err(e) = live_meter_window.show() { warn!("failed to show live window: {}", e); }
+                if let Err(e) = live_meter_window.unminimize() { warn!("failed to unminimize live window: {}", e); }
+                if let Err(e) = live_meter_window.set_focus() { warn!("failed to focus live window: {}", e); }
+                if let Err(e) = live_meter_window.set_ignore_cursor_events(false) { warn!("failed to set ignore_cursor_events for live window: {}", e); }
             }
             "clickthrough" => {
                 let Some(live_meter_window) = tray_app.get_webview_window(WINDOW_LIVE_LABEL) else {
                     return;
                 };
-                live_meter_window.set_ignore_cursor_events(false).unwrap();
+                if let Err(e) = live_meter_window.set_ignore_cursor_events(false) { warn!("failed to set ignore_cursor_events for live window: {}", e); }
             }
             "quit" => {
                 stop_windivert();
@@ -440,14 +494,13 @@ fn on_window_event_fn(window: &Window, event: &WindowEvent) {
         WindowEvent::CloseRequested { api, .. } => {
             api.prevent_close(); // don't close it, just hide it
             if window.label() == WINDOW_MAIN_LABEL {
-                window.hide().unwrap();
+                if let Err(e) = window.hide() { warn!("failed to hide main window: {}", e); }
             }
         }
         WindowEvent::Focused(focused) if !focused => {
-            window
-                .app_handle()
-                .save_window_state(StateFlags::all())
-                .unwrap();
+            if let Err(e) = window.app_handle().save_window_state(StateFlags::all()) {
+                warn!("failed to save window state for {}: {}", window.label(), e);
+            }
         }
         _ => {}
     }
