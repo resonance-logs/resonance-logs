@@ -1019,6 +1019,54 @@ fn build_encounter_payload(
     Ok(encounter)
 }
 
+// Scenes allowed to be uploaded to the public website and their minimum
+// required boss max HP. If the scene id isn't present here the encounter
+// will be skipped by the uploader.
+fn allowed_scenes_min_hp() -> Vec<(i32, i64)> {
+    vec![
+        (1333, 0),
+        (1033, 0),
+        (1123, 0),
+        (6009, 0),
+        (1223, 0),
+        (6023, 0),
+        (13003, 0),
+        (30150, 0),
+        (30160, 0),
+        (30170, 0),
+        (30175, 0),
+    ]
+}
+
+fn is_encounter_allowed(enc: &UploadEncounterIn) -> bool {
+    // Must have a scene id
+    let scene_id = match enc.scene_id {
+        Some(s) => s,
+        None => return false,
+    };
+
+    // Must be in allowed scenes
+    let scenes = allowed_scenes_min_hp();
+    let min_hp = match scenes.iter().find(|(s, _)| *s == scene_id) {
+        Some((_, hp)) => *hp,
+        None => return false,
+    };
+
+    // Must have at least one detected boss
+    if enc.encounter_bosses.is_empty() {
+        return false;
+    }
+
+    // At least one boss must have max_hp >= min_hp. Treat missing max_hp as 0.
+    for b in &enc.encounter_bosses {
+        let max_hp = b.max_hp.unwrap_or(0);
+        if max_hp >= min_hp {
+            return true;
+        }
+    }
+    false
+}
+
 #[derive(Clone)]
 struct PendingEncounter {
     id: i32,
@@ -1076,11 +1124,26 @@ pub async fn perform_upload(
             break;
         }
         let mut payloads = Vec::with_capacity(rows.len());
+        let mut skipped_policy_ids: Vec<i32> = Vec::new();
         for row in &rows {
-            payloads.push(PendingEncounter {
-                id: row.0,
-                payload: build_encounter_payload(&mut conn, row.clone())?,
-            });
+            let built = build_encounter_payload(&mut conn, row.clone())?;
+            if is_encounter_allowed(&built) {
+                payloads.push(PendingEncounter { id: row.0, payload: built });
+            } else {
+                skipped_policy_ids.push(row.0);
+            }
+        }
+
+        // Notify UI about any local encounters skipped by upload policy
+        if !skipped_policy_ids.is_empty() {
+            let skipped_payload = json!({"uploaded": uploaded + skipped_policy_ids.len() as i64, "total": total, "skipped_by_policy": skipped_policy_ids.len(), "message": format!("Skipped {} encounter(s) due to upload policy", skipped_policy_ids.len())});
+            if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+                let _ = w.emit("upload:progress", skipped_payload.clone());
+            }
+            if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+                let _ = w.emit("upload:progress", skipped_payload.clone());
+            }
+            let _ = app.emit("upload:progress", skipped_payload);
         }
 
         // Preflight check: ask server which encounters are duplicates
@@ -1165,9 +1228,12 @@ pub async fn perform_upload(
             }
         }
 
-        // If all encounters were duplicates, skip upload and continue to next batch
+        // If no payloads remain for upload (either duplicates or filtered by policy), mark
+        // duplicates and policy-skipped encounters as uploaded locally and continue.
         if filtered_payloads.is_empty() {
-            let ids: Vec<i32> = payloads.iter().map(|p| p.id).collect();
+            // mark duplicates + any policy-skipped rows
+            let mut ids: Vec<i32> = payloads.iter().map(|p| p.id).collect();
+            ids.extend(skipped_policy_ids.iter());
             mark_encounters_uploaded(&mut conn, &ids)?;
             uploaded += rows.len() as i64;
             offset += rows.len() as i64;
@@ -1271,7 +1337,9 @@ pub async fn perform_upload(
             );
         }
 
+        // Persist processed ids: duplicates (already present) + uploaded + policy-skipped
         processed_ids.extend(filtered_payloads.iter().map(|entry| entry.id));
+        processed_ids.extend(skipped_policy_ids.iter());
         mark_encounters_uploaded(&mut conn, &processed_ids)?;
 
         uploaded += rows.len() as i64;
