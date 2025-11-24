@@ -1,21 +1,15 @@
 # Changelog
 
-## [0.15.0] - 2025-11-23
+## [0.15.1] - 2025-11-23
 
 ### Added
 
-- Added auto upload logs toggle.
-- Added dungeon segments tracking. Can be disabled in Settings > Live > Dungeon Segments. (EXPERIMENTAL)
-
-### Changed
-
-- Updated history table UI.
-- Updated live meter so that if no header is enabled, there is no padding.
+- Extra log file creation on crash to diagnose crashing bug.
 
 ### Fixed
 
-- Fixed skills page not working in history page.
-- Fixed skill name issues.
+- Potential crash fix
+- Fixed dps being wrong per segment in live meter. (should be correct now)
 
 ## Previous changelogs
 
