@@ -63,8 +63,8 @@
           <AbbreviatedNumber num={boss.currentHp !== null ? boss.currentHp : 0} />
           {#if boss.maxHp}
             <span> / <AbbreviatedNumber num={boss.maxHp} /></span>
+            <span class="text-rose-400 ml-1">({hpPercent.toFixed(1)}%)</span>
           {/if}
-          <span class="text-rose-400 ml-1">({hpPercent.toFixed(1)}%)</span>
         </span>
       </div>
     {/each}
