@@ -1,7 +1,6 @@
 <script lang="ts">
   import { commands } from "$lib/bindings";
-  import { getClassIcon } from "$lib/utils.svelte";
-  import { settings, SETTINGS } from "$lib/settings-store";
+  import { settings } from "$lib/settings-store";
   import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
   import { onTankedSkillsUpdate } from "$lib/api";
   import type { Event as TauriEvent } from "@tauri-apps/api/event";
@@ -10,7 +9,7 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
-  import { historyDpsSkillColumns, liveTankedSkillColumns } from "$lib/history-columns"; // Use tanked structure for consistency
+  import { liveTankedSkillColumns } from "$lib/history-columns"; // Use tanked structure for consistency
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import PercentFormat from "$lib/components/percent-format.svelte";
 
@@ -88,7 +87,7 @@
 {#if currentPlayer}
   {@const className = currentPlayer.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currentPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? currentPlayer.className : ""}
   <div
-    class="sticky top-0 z-10 flex h-8 w-full items-center gap-2 bg-neutral-900 px-2 text-xs"
+    class="sticky top-0 z-10 flex h-8 w-full items-center gap-2 bg-popover/60 px-2 text-xs"
     style="background-color: {`color-mix(in srgb, ${className ? `var(--class-color-${className.toLowerCase().replace(/\s+/g, '-')})` : '#6b7280'} 30%, transparent)`};"
   >
     <button class="underline" onclick={() => goto("/live/tanked")}>Back</button>
@@ -108,26 +107,26 @@
 <div class="relative flex flex-col">
   <table class="w-full border-collapse">
     <thead class="z-1 sticky top-0">
-      <tr class="bg-neutral-800">
-        <th class="px-2 py-1 text-left text-xs font-medium uppercase tracking-wider text-neutral-400 text-left">Skill</th>
+      <tr class="bg-popover/60">
+        <th class="px-2 py-1 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Skill</th>
         {#each visibleSkillColumns as col (col.key)}
-          <th class="px-2 py-1 text-right text-xs font-medium uppercase tracking-wider text-neutral-400 text-right">{col.header}</th>
+          <th class="px-2 py-1 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">{col.header}</th>
         {/each}
       </tr>
     </thead>
-    <tbody class="bg-neutral-900">
+    <tbody>
       {#each skillsWindow?.skillRows as skill (skill.name)}
         {@const className = currentPlayer?.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currentPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" && currentPlayer ? currentPlayer.className : ""}
         <tr
-          class="relative border-t border-neutral-800 hover:bg-neutral-800 transition-colors h-6 text-xs"
+          class="relative border-t border-border hover:bg-muted/60 transition-colors h-6 text-xs bg-background/40"
         >
-          <td class="px-2 py-1 text-xs text-neutral-300 relative z-10">
+          <td class="px-2 py-1 text-xs text-muted-foreground relative z-10">
             <div class="flex items-center gap-1 h-full">
               <span class="truncate">{skill.name}</span>
             </div>
           </td>
           {#each visibleSkillColumns as col (col.key)}
-            <td class="px-2 py-1 text-right text-xs text-neutral-300 relative z-10">
+            <td class="px-2 py-1 text-right text-xs text-muted-foreground relative z-10">
               {#if col.key === 'totalDmg'}
                 {#if SETTINGS_SHORTEN_TPS}
                   <AbbreviatedNumber num={skill.totalDmg} />
