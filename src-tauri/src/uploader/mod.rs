@@ -19,15 +19,49 @@ static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
 static UPLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 const AUTO_UPLOAD_INTERVAL_SECS: u64 = 30;
 
+/// Settings from the moduleSync.json store file
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ModuleSyncSettings {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_auto_upload")]
+    pub auto_upload: bool,
+    #[serde(default)]
+    pub api_key: String,
+    #[serde(default)]
+    pub base_url: String,
+}
+
+fn default_auto_upload() -> bool {
+    true
+}
+
+/// Read the moduleSync settings from the tauri-plugin-svelte store file
+/// This is a blocking operation - call from spawn_blocking or non-async context
+pub(crate) fn read_module_sync_settings_blocking(settings_path: std::path::PathBuf) -> Option<ModuleSyncSettings> {
+    let content = std::fs::read_to_string(&settings_path).ok()?;
+    serde_json::from_str(&content).ok()
+}
+
+/// Get the path to the moduleSync.json settings file
+pub(crate) fn get_module_sync_settings_path(app: &AppHandle) -> Option<std::path::PathBuf> {
+    let app_data_dir = app.path().app_config_dir().ok()?;
+    Some(app_data_dir
+        .join("tauri-plugin-svelte")
+        .join("moduleSync.json"))
+}
+
 #[derive(Clone, Default)]
 pub struct AutoUploadState {
     api_key: Arc<RwLock<Option<String>>>,
     base_url: Arc<RwLock<Option<String>>>,
+    auto_upload_enabled: Arc<RwLock<bool>>,
     notifier: Arc<Notify>,
 }
 
 impl AutoUploadState {
-    pub async fn sync_from_settings(&self, api_key: Option<String>, base_url: Option<String>) {
+    pub async fn sync_from_settings(&self, api_key: Option<String>, base_url: Option<String>, auto_upload: bool) {
         let sanitized_key = api_key.and_then(|k| {
             let trimmed = k.trim().to_string();
             if trimmed.is_empty() {
@@ -47,7 +81,54 @@ impl AutoUploadState {
 
         *self.api_key.write().await = sanitized_key;
         *self.base_url.write().await = sanitized_base;
+        *self.auto_upload_enabled.write().await = auto_upload;
         self.notifier.notify_one();
+    }
+
+    /// Reload settings from the JSON file (non-blocking)
+    pub async fn reload_from_file(&self, app: &AppHandle) {
+        let settings_path = match get_module_sync_settings_path(app) {
+            Some(p) => p,
+            None => {
+                log::debug!("could not determine moduleSync.json settings path");
+                return;
+            }
+        };
+
+        // Read file in a blocking thread to avoid blocking the async runtime
+        let settings = match tauri::async_runtime::spawn_blocking(move || {
+            read_module_sync_settings_blocking(settings_path)
+        }).await {
+            Ok(s) => s,
+            Err(e) => {
+                log::debug!("failed to spawn blocking task for settings read: {}", e);
+                return;
+            }
+        };
+
+        if let Some(settings) = settings {
+            let api_key = if settings.api_key.trim().is_empty() {
+                None
+            } else {
+                Some(settings.api_key.trim().to_string())
+            };
+            let base_url = if settings.base_url.trim().is_empty() {
+                None
+            } else {
+                Some(settings.base_url.trim().to_string())
+            };
+            let has_key = api_key.is_some();
+            *self.api_key.write().await = api_key;
+            *self.base_url.write().await = base_url;
+            *self.auto_upload_enabled.write().await = settings.auto_upload;
+            log::debug!(
+                "reloaded auto upload settings: auto_upload={}, has_api_key={}",
+                settings.auto_upload,
+                has_key
+            );
+        } else {
+            log::debug!("could not read moduleSync.json settings file");
+        }
     }
 
     pub async fn current_api_key(&self) -> Option<String> {
@@ -56,6 +137,10 @@ impl AutoUploadState {
 
     pub async fn current_base_url(&self) -> Option<String> {
         self.base_url.read().await.clone()
+    }
+
+    pub async fn is_auto_upload_enabled(&self) -> bool {
+        *self.auto_upload_enabled.read().await
     }
 
     pub fn notifier(&self) -> Arc<Notify> {
@@ -315,12 +400,18 @@ fn pending_encounter_count() -> Result<i64, String> {
 
 pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
     tauri::async_runtime::spawn(async move {
+        // Load settings once at startup
+        state.reload_from_file(&app).await;
+
         let mut ticker = interval(Duration::from_secs(AUTO_UPLOAD_INTERVAL_SECS));
         let notifier = state.notifier();
         loop {
             tokio::select! {
                 _ = ticker.tick() => {},
-                _ = notifier.notified() => {},
+                _ = notifier.notified() => {
+                    // Settings changed notification - reload settings
+                    state.reload_from_file(&app).await;
+                },
             }
 
             if let Err(err) = maybe_trigger_auto_upload(app.clone(), state.clone()).await {
@@ -331,6 +422,11 @@ pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
 }
 
 async fn maybe_trigger_auto_upload(app: AppHandle, state: AutoUploadState) -> Result<(), String> {
+    // Check if auto-upload is enabled (uses cached value)
+    if !state.is_auto_upload_enabled().await {
+        return Ok(());
+    }
+
     let api_key = match state.current_api_key().await {
         Some(key) => key,
         None => return Ok(()),
@@ -343,6 +439,8 @@ async fn maybe_trigger_auto_upload(app: AppHandle, state: AutoUploadState) -> Re
     if pending == 0 {
         return Ok(());
     }
+
+    log::info!("auto upload: found {} pending encounter(s), starting upload", pending);
 
     if let Some(guard) = UploadRunGuard::try_acquire() {
         let base_urls = resolve_base_urls(state.current_base_url().await);

@@ -12,6 +12,8 @@ use crate::database::schema as sch;
 use crate::database::{default_db_path, now_ms};
 use diesel::prelude::*;
 
+use super::{get_module_sync_settings_path, read_module_sync_settings_blocking};
+
 static PLAYER_DATA_SYNC_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 
 /// Sync interval for player data (15 minutes)
@@ -22,13 +24,14 @@ const PLAYER_DATA_SYNC_INTERVAL_SECS: u64 = 15 * 60;
 pub struct PlayerDataSyncState {
     api_key: Arc<RwLock<Option<String>>>,
     base_url: Arc<RwLock<Option<String>>>,
+    auto_upload_enabled: Arc<RwLock<bool>>,
     notifier: Arc<Notify>,
     /// Tracks the last sync time to ensure we only sync data updated since then
     last_sync_ms: Arc<RwLock<i64>>,
 }
 
 impl PlayerDataSyncState {
-    pub async fn sync_from_settings(&self, api_key: Option<String>, base_url: Option<String>) {
+    pub async fn sync_from_settings(&self, api_key: Option<String>, base_url: Option<String>, auto_upload: bool) {
         let sanitized_key = api_key.and_then(|k| {
             let trimmed = k.trim().to_string();
             if trimmed.is_empty() {
@@ -48,7 +51,40 @@ impl PlayerDataSyncState {
 
         *self.api_key.write().await = sanitized_key;
         *self.base_url.write().await = sanitized_base;
+        *self.auto_upload_enabled.write().await = auto_upload;
         self.notifier.notify_one();
+    }
+
+    /// Reload settings from the JSON file (non-blocking)
+    pub async fn reload_from_file(&self, app: &AppHandle) {
+        let settings_path = match get_module_sync_settings_path(app) {
+            Some(p) => p,
+            None => return,
+        };
+
+        // Read file in a blocking thread to avoid blocking the async runtime
+        let settings = match tauri::async_runtime::spawn_blocking(move || {
+            read_module_sync_settings_blocking(settings_path)
+        }).await {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+
+        if let Some(settings) = settings {
+            let api_key = if settings.api_key.trim().is_empty() {
+                None
+            } else {
+                Some(settings.api_key.trim().to_string())
+            };
+            let base_url = if settings.base_url.trim().is_empty() {
+                None
+            } else {
+                Some(settings.base_url.trim().to_string())
+            };
+            *self.api_key.write().await = api_key;
+            *self.base_url.write().await = base_url;
+            *self.auto_upload_enabled.write().await = settings.auto_upload;
+        }
     }
 
     pub async fn current_api_key(&self) -> Option<String> {
@@ -57,6 +93,10 @@ impl PlayerDataSyncState {
 
     pub async fn current_base_url(&self) -> Option<String> {
         self.base_url.read().await.clone()
+    }
+
+    pub async fn is_auto_upload_enabled(&self) -> bool {
+        *self.auto_upload_enabled.read().await
     }
 
     pub fn notifier(&self) -> Arc<Notify> {
@@ -173,13 +213,19 @@ fn count_player_data() -> Result<i64, String> {
 /// Start the automatic player data sync background task
 pub fn start_player_data_sync_task(app: AppHandle, state: PlayerDataSyncState) {
     tauri::async_runtime::spawn(async move {
+        // Load settings once at startup
+        state.reload_from_file(&app).await;
+
         let mut ticker = interval(Duration::from_secs(PLAYER_DATA_SYNC_INTERVAL_SECS));
         let notifier = state.notifier();
 
         loop {
             tokio::select! {
                 _ = ticker.tick() => {},
-                _ = notifier.notified() => {},
+                _ = notifier.notified() => {
+                    // Settings changed notification - reload settings
+                    state.reload_from_file(&app).await;
+                },
             }
 
             if let Err(err) = maybe_trigger_player_data_sync(app.clone(), state.clone()).await {
@@ -190,6 +236,11 @@ pub fn start_player_data_sync_task(app: AppHandle, state: PlayerDataSyncState) {
 }
 
 async fn maybe_trigger_player_data_sync(app: AppHandle, state: PlayerDataSyncState) -> Result<(), String> {
+    // Check if auto-upload is enabled (uses cached value)
+    if !state.is_auto_upload_enabled().await {
+        return Ok(());
+    }
+
     let api_key = match state.current_api_key().await {
         Some(key) => key,
         None => return Ok(()), // No API key configured, skip sync
