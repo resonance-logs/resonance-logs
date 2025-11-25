@@ -5,7 +5,6 @@
    */
   import "../app.css";
   import { SETTINGS } from "$lib/settings-store";
-  import { commands } from "$lib/bindings";
   import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
 
   let { children } = $props();
@@ -37,30 +36,6 @@
         document.body.classList.remove('transparent-mode');
       }
     }
-  });
-})()}
-
-{(() => {
-  $effect(() => {
-    if (typeof window === "undefined") return;
-    const enabled = SETTINGS.moduleSync.state.enabled;
-    const apiKey = (SETTINGS.moduleSync.state.apiKey || "").trim();
-    let baseUrl = (SETTINGS.moduleSync.state.baseUrl || "").trim();
-    const interval = SETTINGS.moduleSync.state.autoSyncIntervalMinutes || 0;
-
-    const LEGACY_BASE_URL = "http://localhost:8080/api/v1";
-    const DEFAULT_BASE_URL = "https://api.bpsr.app/api/v1";
-
-    if (!baseUrl || baseUrl === LEGACY_BASE_URL) {
-      if (SETTINGS.moduleSync.state.baseUrl !== DEFAULT_BASE_URL) {
-        SETTINGS.moduleSync.state.baseUrl = DEFAULT_BASE_URL;
-      }
-      baseUrl = DEFAULT_BASE_URL;
-    }
-
-    commands
-      .setModuleSyncConfig(enabled, apiKey || null, baseUrl || null, interval)
-      .catch(() => {});
   });
 })()}
 

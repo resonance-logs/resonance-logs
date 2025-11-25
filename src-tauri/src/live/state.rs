@@ -731,29 +731,6 @@ impl AppStateManager {
     ) {
         use crate::live::opcodes_process::process_sync_container_data;
 
-        // Extract and upload modules (if enabled)
-        // Get module sync state from app handle
-        if let Some(module_state) = state
-            .app_handle
-            .try_state::<crate::module_extractor::commands::ModuleSyncState>(
-        ) {
-            let sync_data_clone = sync_container_data.clone();
-            let module_state_clone = (*module_state).clone();
-
-            // Process module extraction in background
-            tokio::spawn(async move {
-                if let Err(e) = crate::module_extractor::commands::process_sync_container_data(
-                    &module_state_clone,
-                    &sync_data_clone,
-                    true, // auto_upload = true
-                )
-                .await
-                {
-                    warn!("Module extraction/upload failed: {}", e);
-                }
-            });
-        }
-
         if process_sync_container_data(&mut state.encounter, sync_container_data).is_none() {
             warn!("Error processing SyncContainerData.. ignoring.");
         }

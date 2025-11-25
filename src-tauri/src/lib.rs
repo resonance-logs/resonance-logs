@@ -1,6 +1,5 @@
 mod build_app;
 mod live;
-mod module_extractor;
 mod packets;
 
 use crate::build_app::build_and_run;
@@ -65,12 +64,6 @@ pub fn run() {
             database::commands::get_player_name_command,
             uploader::start_upload,
             uploader::cancel_upload_cmd,
-            module_extractor::commands::set_module_sync_config,
-            module_extractor::commands::get_module_sync_status,
-            module_extractor::commands::trigger_module_sync,
-            module_extractor::commands::retry_failed_uploads,
-            module_extractor::commands::get_unknown_attributes,
-            module_extractor::commands::clear_unknown_attributes,
             uploader::player_data_sync::sync_player_data,
         ]);
 
@@ -175,10 +168,6 @@ pub fn run() {
             let state_manager = crate::live::state::AppStateManager::new(app_handle.clone());
             app.manage(state_manager.clone());
 
-            // Create and manage the module sync state
-            let module_sync_state = crate::module_extractor::commands::ModuleSyncState::default();
-            app.manage(module_sync_state.clone());
-
             // Auto-upload state (combat log uploader)
             let auto_upload_state = crate::uploader::AutoUploadState::default();
             app.manage(auto_upload_state.clone());
@@ -187,10 +176,6 @@ pub fn run() {
             let player_data_sync_state = crate::uploader::player_data_sync::PlayerDataSyncState::default();
             app.manage(player_data_sync_state.clone());
 
-            // Start auto-sync timer
-            tauri::async_runtime::spawn(crate::module_extractor::commands::start_auto_sync_timer(
-                module_sync_state,
-            ));
             crate::uploader::start_auto_upload_task(app_handle.clone(), auto_upload_state.clone());
             // Start player data sync background task (runs every 15 minutes)
             crate::uploader::player_data_sync::start_player_data_sync_task(app_handle.clone(), player_data_sync_state.clone());
