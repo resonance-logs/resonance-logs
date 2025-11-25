@@ -1047,6 +1047,11 @@ fn is_encounter_allowed(enc: &UploadEncounterIn) -> bool {
         None => return false,
     };
 
+    // Never upload overworld encounters
+    if scene_id == 5000 {
+        return false;
+    }
+
     // Must be in allowed scenes
     let scenes = allowed_scenes_min_hp();
     let min_hp = match scenes.iter().find(|(s, _)| *s == scene_id) {
@@ -1463,5 +1468,36 @@ mod tests {
         };
         let v = serde_json::to_value(&body).expect("serialize");
         assert!(v.get("clientVersion").is_some());
+    }
+
+    #[test]
+    fn blocks_overworld_scene_from_upload() {
+        let encounter = UploadEncounterIn {
+            started_at_ms: 0,
+            ended_at_ms: Some(1),
+            local_player_id: None,
+            total_dmg: Some(0),
+            total_heal: Some(0),
+            scene_id: Some(5000),
+            scene_name: Some("Overworld".to_string()),
+            source_hash: None,
+            attempts: vec![],
+            death_events: vec![],
+            actor_encounter_stats: vec![],
+            damage_skill_stats: vec![],
+            heal_skill_stats: vec![],
+            entities: vec![],
+            encounter_bosses: vec![UploadEncounterBossIn {
+                monster_name: "Dummy".to_string(),
+                hits: 0,
+                total_damage: 0,
+                max_hp: Some(1_000),
+                is_defeated: false,
+            }],
+            detailed_playerdata: vec![],
+            dungeon_segments: vec![],
+        };
+
+        assert!(!is_encounter_allowed(&encounter));
     }
 }
