@@ -432,72 +432,6 @@ async cancelUploadCmd() : Promise<Result<null, string>> {
 }
 },
 /**
- * Set module sync configuration
- */
-async setModuleSyncConfig(enabled: boolean, apiKey: string | null, baseUrl: string | null, autoSyncIntervalMinutes: number | null) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_module_sync_config", { enabled, apiKey, baseUrl, autoSyncIntervalMinutes }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Get current module sync status
- */
-async getModuleSyncStatus() : Promise<Result<ModuleSyncStatus, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_module_sync_status") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Manually trigger module sync (uploads last extracted modules)
- */
-async triggerModuleSync() : Promise<Result<ImportModulesResponse, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("trigger_module_sync") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Retry failed uploads
- */
-async retryFailedUploads() : Promise<Result<ImportModulesResponse[], string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("retry_failed_uploads") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Get unknown attributes for telemetry
- */
-async getUnknownAttributes() : Promise<Result<UnknownAttribute[], string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_unknown_attributes") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Clear unknown attributes tracking
- */
-async clearUnknownAttributes() : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("clear_unknown_attributes") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
  * Manual trigger for player data sync (can be called from Tauri command)
  */
 async syncPlayerData(apiKey: string, baseUrl: string | null) : Promise<Result<null, string>> {
@@ -814,22 +748,6 @@ actors: ActorEncounterStatDto[];
  */
 remoteEncounterId: number | null }
 /**
- * Error for a specific module during import
- */
-export type ImportError = { index: number; uuid: string; error: string }
-/**
- * Response from module import API
- */
-export type ImportModulesResponse = { summary: ImportSummary; errors?: ImportError[] }
-/**
- * Summary of import operation
- */
-export type ImportSummary = { added: number; updated: number; errors: number }
-/**
- * Response for module sync status query
- */
-export type ModuleSyncStatus = { enabled: boolean; has_api_key: boolean; last_module_count: number; base_url: string; auto_sync_interval_minutes: number; failed_uploads_count: number; unknown_attributes_count: number }
-/**
  * Information about a player.
  */
 export type PlayerInfoDto = { 
@@ -1034,10 +952,6 @@ currPlayer: PlayerRow[];
  * A list of skill rows.
  */
 skillRows: SkillRow[] }
-/**
- * Represents an unknown attribute ID encountered during extraction
- */
-export type UnknownAttribute = { part_id: number; first_seen: string; occurrence_count: number; module_config_ids: number[] }
 
 /** tauri-specta globals **/
 
