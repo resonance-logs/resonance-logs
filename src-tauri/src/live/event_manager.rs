@@ -3,12 +3,46 @@ use crate::live::commands_models::{
 };
 use crate::live::opcodes_models::{Encounter, Entity, Skill, class};
 use blueprotobuf_lib::blueprotobuf::EEntityType;
-use log::{error, info, trace};
+use log::{info, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::RwLock;
+
+/// Safely emits an event to the frontend, handling WebView2 state errors gracefully.
+/// This prevents the app from freezing when the WebView is in an invalid state
+/// (e.g., minimized, hidden, or transitioning).
+///
+/// Returns `true` if the event was emitted successfully, `false` otherwise.
+fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload: S) -> bool {
+    // First check if the live window exists and is valid
+    let live_window = app_handle.get_webview_window(crate::WINDOW_LIVE_LABEL);
+    let main_window = app_handle.get_webview_window(crate::WINDOW_MAIN_LABEL);
+
+    // If no windows are available, skip emitting
+    if live_window.is_none() && main_window.is_none() {
+        trace!("Skipping emit for '{}': no windows available", event);
+        return false;
+    }
+
+    // Try to emit the event, catching WebView2 errors
+    match app_handle.emit(event, payload) {
+        Ok(_) => true,
+        Err(e) => {
+            // Check if this is a WebView2 state error (0x8007139F)
+            let error_str = format!("{:?}", e);
+            if error_str.contains("0x8007139F") || error_str.contains("not in the correct state") {
+                // This is expected when windows are minimized/hidden - don't spam logs
+                trace!("WebView2 not ready for '{}' (window may be minimized/hidden)", event);
+            } else {
+                // Log other errors as warnings
+                warn!("Failed to emit '{}': {}", event, e);
+            }
+            false
+        }
+    }
+}
 
 /// Represents the type of metric being displayed.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -63,10 +97,7 @@ impl EventManager {
                 header_info,
                 is_paused,
             };
-            match app_handle.emit("encounter-update", payload) {
-                Ok(_) => {} // trace!("Emitted encounter-update event"),
-                Err(e) => error!("Failed to emit encounter-update event: {}", e),
-            }
+            safe_emit(app_handle, "encounter-update", payload);
         }
     }
 
@@ -82,9 +113,7 @@ impl EventManager {
                 metric_type,
                 players_window,
             };
-            if let Err(e) = app_handle.emit("players-update", payload) {
-                error!("Failed to emit players-update event: {}", e);
-            }
+            safe_emit(app_handle, "players-update", payload);
         }
     }
 
@@ -107,18 +136,15 @@ impl EventManager {
                 player_uid,
                 skills_window,
             };
-            if let Err(e) = app_handle.emit("skills-update", payload) {
-                error!("Failed to emit skills-update event: {}", e);
-            }
+            safe_emit(app_handle, "skills-update", payload);
         }
     }
 
     /// Emits an encounter reset event.
     pub fn emit_encounter_reset(&self) {
         if let Some(app_handle) = &self.app_handle {
-            match app_handle.emit("reset-encounter", "") {
-                Ok(_) => trace!("Emitted reset-encounter event"),
-                Err(e) => error!("Failed to emit reset-encounter event: {}", e),
+            if safe_emit(app_handle, "reset-encounter", "") {
+                trace!("Emitted reset-encounter event");
             }
         }
     }
@@ -131,9 +157,8 @@ impl EventManager {
     pub fn emit_player_metrics_reset(&self, segment_name: Option<String>) {
         if let Some(app_handle) = &self.app_handle {
             let payload = PlayerMetricsResetPayload { segment_name };
-            match app_handle.emit("reset-player-metrics", payload) {
-                Ok(_) => trace!("Emitted reset-player-metrics event"),
-                Err(e) => error!("Failed to emit reset-player-metrics event: {}", e),
+            if safe_emit(app_handle, "reset-player-metrics", payload) {
+                trace!("Emitted reset-player-metrics event");
             }
         }
     }
@@ -145,9 +170,8 @@ impl EventManager {
     /// * `is_paused` - Whether the encounter is paused.
     pub fn emit_encounter_pause(&self, is_paused: bool) {
         if let Some(app_handle) = &self.app_handle {
-            match app_handle.emit("pause-encounter", is_paused) {
-                Ok(_) => trace!("Emitted pause-encounter event: {}", is_paused),
-                Err(e) => error!("Failed to emit pause-encounter event: {}", e),
+            if safe_emit(app_handle, "pause-encounter", is_paused) {
+                trace!("Emitted pause-encounter event: {}", is_paused);
             }
         }
     }
@@ -160,9 +184,8 @@ impl EventManager {
     pub fn emit_scene_change(&self, scene_name: String) {
         if let Some(app_handle) = &self.app_handle {
             let payload = SceneChangePayload { scene_name };
-            match app_handle.emit("scene-change", payload) {
-                Ok(_) => info!("Emitted scene-change event"),
-                Err(e) => error!("Failed to emit scene-change event: {}", e),
+            if safe_emit(app_handle, "scene-change", payload) {
+                info!("Emitted scene-change event");
             }
         }
     }
@@ -181,9 +204,8 @@ impl EventManager {
             self.dead_boss_names.insert(boss_uid, boss_name.clone());
             if let Some(app_handle) = &self.app_handle {
                 let payload = BossDeathPayload { boss_name };
-                match app_handle.emit("boss-death", payload) {
-                    Ok(_) => info!("Emitted boss-death event for {}", boss_uid),
-                    Err(e) => error!("Failed to emit boss-death event: {}", e),
+                if safe_emit(app_handle, "boss-death", payload) {
+                    info!("Emitted boss-death event for {}", boss_uid);
                 }
             }
             return true;

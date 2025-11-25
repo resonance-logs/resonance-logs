@@ -1,9 +1,9 @@
-use log::{error, warn};
+use log::{trace, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 /// Shared handle that can be stored inside Tauri state.
 pub type SharedDungeonLog = Arc<Mutex<DungeonLog>>;
@@ -257,10 +257,27 @@ mod tests {
 }
 
 /// Emits the provided snapshot if available.
+/// Uses safe emission to handle WebView2 state errors gracefully.
 pub fn emit_if_changed(app_handle: &AppHandle, snapshot: Option<DungeonLog>) {
     if let Some(log) = snapshot {
+        // Check if windows are available before emitting
+        let live_window = app_handle.get_webview_window(crate::WINDOW_LIVE_LABEL);
+        let main_window = app_handle.get_webview_window(crate::WINDOW_MAIN_LABEL);
+
+        if live_window.is_none() && main_window.is_none() {
+            trace!("Skipping log-update emit: no windows available");
+            return;
+        }
+
         if let Err(err) = app_handle.emit("log-update", log) {
-            error!("Failed to emit log-update: {err}");
+            // Check if this is a WebView2 state error (0x8007139F)
+            let error_str = format!("{:?}", err);
+            if error_str.contains("0x8007139F") || error_str.contains("not in the correct state") {
+                // This is expected when windows are minimized/hidden - don't spam logs
+                trace!("WebView2 not ready for log-update (window may be minimized/hidden)");
+            } else {
+                warn!("Failed to emit log-update: {}", err);
+            }
         }
     }
 }

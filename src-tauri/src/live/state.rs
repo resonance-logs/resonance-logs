@@ -4,12 +4,45 @@ use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
 use blueprotobuf_lib::blueprotobuf;
-use log::{error, info, warn};
+use log::{info, trace, warn};
+use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::RwLock;
+
+/// Safely emits an event to the frontend, handling WebView2 state errors gracefully.
+/// This prevents the app from freezing when the WebView is in an invalid state, maybe.
+/// Returns `true` if the event was emitted successfully, `false` otherwise.
+fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload: S) -> bool {
+    // First check if the live window exists and is valid
+    let live_window = app_handle.get_webview_window(crate::WINDOW_LIVE_LABEL);
+    let main_window = app_handle.get_webview_window(crate::WINDOW_MAIN_LABEL);
+
+    // If no windows are available, skip emitting
+    if live_window.is_none() && main_window.is_none() {
+        trace!("Skipping emit for '{}': no windows available", event);
+        return false;
+    }
+
+    // Try to emit the event, catching WebView2 errors
+    match app_handle.emit(event, payload) {
+        Ok(_) => true,
+        Err(e) => {
+            // Check if this is a WebView2 state error (0x8007139F)
+            let error_str = format!("{:?}", e);
+            if error_str.contains("0x8007139F") || error_str.contains("not in the correct state") {
+                // This is expected when windows are minimized/hidden - don't spam logs
+                trace!("WebView2 not ready for '{}' (window may be minimized/hidden)", event);
+            } else {
+                // Log other errors as warnings
+                warn!("Failed to emit '{}': {}", event, e);
+            }
+            false
+        }
+    }
+}
 
 /// Represents the possible events that can be handled by the state manager.
 #[derive(Debug, Clone)]
@@ -1143,9 +1176,7 @@ impl AppStateManager {
                     header_info,
                     is_paused: encounter.is_encounter_paused,
                 };
-                if let Err(e) = app_handle.emit("encounter-update", payload) {
-                    error!("Failed to emit encounter-update event: {}", e);
-                }
+                safe_emit(&app_handle, "encounter-update", payload);
             }
 
             // Emit boss death events using EventManager for deduplication
@@ -1171,9 +1202,7 @@ impl AppStateManager {
                     metric_type: MetricType::Dps,
                     players_window: dps_players,
                 };
-                if let Err(e) = app_handle.emit("players-update", payload) {
-                    error!("Failed to emit players-update event: {}", e);
-                }
+                safe_emit(&app_handle, "players-update", payload);
             }
 
             // Emit heal players update
@@ -1182,9 +1211,7 @@ impl AppStateManager {
                     metric_type: MetricType::Heal,
                     players_window: heal_players,
                 };
-                if let Err(e) = app_handle.emit("players-update", payload) {
-                    error!("Failed to emit players-update event: {}", e);
-                }
+                safe_emit(&app_handle, "players-update", payload);
             }
 
             // Emit tanked players update
@@ -1193,9 +1220,7 @@ impl AppStateManager {
                     metric_type: MetricType::Tanked,
                     players_window: tanked_players,
                 };
-                if let Err(e) = app_handle.emit("players-update", payload) {
-                    error!("Failed to emit players-update event: {}", e);
-                }
+                safe_emit(&app_handle, "players-update", payload);
             }
 
             // Emit skills updates only for subscribed players
@@ -1206,9 +1231,7 @@ impl AppStateManager {
                         player_uid: *entity_uid,
                         skills_window: skills_window.clone(),
                     };
-                    if let Err(e) = app_handle.emit("skills-update", payload) {
-                        error!("Failed to emit skills-update event: {}", e);
-                    }
+                    safe_emit(&app_handle, "skills-update", payload);
                 }
             }
             for (entity_uid, skills_window) in &heal_skill_windows {
@@ -1218,9 +1241,7 @@ impl AppStateManager {
                         player_uid: *entity_uid,
                         skills_window: skills_window.clone(),
                     };
-                    if let Err(e) = app_handle.emit("skills-update", payload) {
-                        error!("Failed to emit skills-update event: {}", e);
-                    }
+                    safe_emit(&app_handle, "skills-update", payload);
                 }
             }
             for (entity_uid, skills_window) in &tanked_skill_windows {
@@ -1230,9 +1251,7 @@ impl AppStateManager {
                         player_uid: *entity_uid,
                         skills_window: skills_window.clone(),
                     };
-                    if let Err(e) = app_handle.emit("skills-update", payload) {
-                        error!("Failed to emit skills-update event: {}", e);
-                    }
+                    safe_emit(&app_handle, "skills-update", payload);
                 }
             }
         }
