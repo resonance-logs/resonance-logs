@@ -45,9 +45,12 @@
   });
 
   onMount(() => {
+    let isDestroyed = false;
+
     if (playerUid) {
       // Fetch initial skills data
       commands.getPlayerSkills(playerUid, "tanked").then(result => {
+        if (isDestroyed) return;
         if (result.status === "ok") {
           skillsWindow = result.data;
         }
@@ -57,15 +60,21 @@
 
       // Listen for updates
         onTankedSkillsUpdate((event: TauriEvent<SkillsUpdatePayload>) => {
+        if (isDestroyed) return;
         if (event.payload.playerUid === playerUid) {
           skillsWindow = event.payload.skillsWindow;
         }
       }).then(fn => {
-        unlisten = fn;
+        if (isDestroyed) {
+          fn();
+        } else {
+          unlisten = fn;
+        }
       });
     }
 
     return () => {
+      isDestroyed = true;
       if (unlisten) {
         unlisten();
       }

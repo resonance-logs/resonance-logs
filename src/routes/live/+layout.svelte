@@ -50,9 +50,11 @@
   let isReconnecting = false;
   let reconnectDelay = 1000; // exponential backoff base
   const DISCONNECT_THRESHOLD = 5000;
+  // Track if component is destroyed to prevent callbacks from firing after unmount
+  let isDestroyed = false;
 
   async function setupEventListeners() {
-    if (isReconnecting || listenersSetupInProgress) return;
+    if (isDestroyed || isReconnecting || listenersSetupInProgress) return;
     listenersSetupInProgress = true;
 
     // If listeners are already attached, skip setup to avoid duplicates.
@@ -64,6 +66,7 @@
     try {
       // Set up unified players listener
       const playersUnlisten = await onPlayersUpdate((event) => {
+        if (isDestroyed) return;
         // console.log("players websocket", event.payload)
         lastEventTime = Date.now();
         hadAnyEvent = true;
@@ -77,16 +80,31 @@
         }
       });
 
+      if (isDestroyed) {
+        playersUnlisten();
+        listenersSetupInProgress = false;
+        return;
+      }
+
       // Set up reset encounter listener
       const resetUnlisten = await onResetEncounter(() => {
+        if (isDestroyed) return;
         clearMeterData();
         clearLiveDungeonLog();
         lastActiveSegmentType = null; // Reset segment tracking
         notificationToast?.showToast('notice', 'Server change detected, resetting log');
       });
 
+      if (isDestroyed) {
+        playersUnlisten();
+        resetUnlisten();
+        listenersSetupInProgress = false;
+        return;
+      }
+
       // Set up dungeon log listener
       const dungeonLogUnlisten = await onDungeonLogUpdate((event) => {
+        if (isDestroyed) return;
         lastEventTime = Date.now();
         hadAnyEvent = true;
 
@@ -116,8 +134,17 @@
         setLiveDungeonLog(dungeonLog);
       });
 
+      if (isDestroyed) {
+        playersUnlisten();
+        resetUnlisten();
+        dungeonLogUnlisten();
+        listenersSetupInProgress = false;
+        return;
+      }
+
       // Set up encounter update listener (pause/resume)
       const encounterUnlisten = await onEncounterUpdate((event) => {
+        if (isDestroyed) return;
         // Treat encounter updates as keep-alive too so reconnect logic doesn't fire
         lastEventTime = Date.now();
         hadAnyEvent = true;
@@ -138,16 +165,37 @@
         lastPauseState = newPaused;
       });
 
+      if (isDestroyed) {
+        playersUnlisten();
+        resetUnlisten();
+        dungeonLogUnlisten();
+        encounterUnlisten();
+        listenersSetupInProgress = false;
+        return;
+      }
+
       // Set up boss death listener
       const bossDeathUnlisten = await onBossDeath((event) => {
+        if (isDestroyed) return;
         // Treat boss death as a keep-alive
         lastEventTime = Date.now();
         hadAnyEvent = true;
         notificationToast?.showToast('notice', `${event.payload.bossName} defeated!`);
       });
 
+      if (isDestroyed) {
+        playersUnlisten();
+        resetUnlisten();
+        dungeonLogUnlisten();
+        encounterUnlisten();
+        bossDeathUnlisten();
+        listenersSetupInProgress = false;
+        return;
+      }
+
       // Set up scene change listener
       const sceneChangeUnlisten = await onSceneChange((event) => {
+        if (isDestroyed) return;
         // Treat scene change as a keep-alive
         lastEventTime = Date.now();
         hadAnyEvent = true;
@@ -155,23 +203,61 @@
         // notificationToast?.showToast('notice', `Scene changed to ${event.payload.sceneName}`);
       });
 
+      if (isDestroyed) {
+        playersUnlisten();
+        resetUnlisten();
+        dungeonLogUnlisten();
+        encounterUnlisten();
+        bossDeathUnlisten();
+        sceneChangeUnlisten();
+        listenersSetupInProgress = false;
+        return;
+      }
+
       // Listen for explicit pause/resume events as a keep-alive as well
       const pauseUnlisten = await onPauseEncounter((event) => {
+        if (isDestroyed) return;
         lastEventTime = Date.now();
         hadAnyEvent = true;
         isPaused.set(!!event.payload);
       });
 
+      if (isDestroyed) {
+        playersUnlisten();
+        resetUnlisten();
+        dungeonLogUnlisten();
+        encounterUnlisten();
+        bossDeathUnlisten();
+        sceneChangeUnlisten();
+        pauseUnlisten();
+        listenersSetupInProgress = false;
+        return;
+      }
+
       console.log("Scene change listener set up");
 
       // Listen for reset-player-metrics events (fired on segment transitions)
       const resetPlayerMetricsUnlisten = await onResetPlayerMetrics((event) => {
+        if (isDestroyed) return;
         // Clear just the meter/player stores without clearing the encounter log
         clearMeterData();
         // If the backend provided a segment name, show it; otherwise simple 'New Segment'
         const segName = event.payload?.segmentName ?? null;
         notificationToast?.showToast('notice', segName ? `New Segment: ${segName}` : 'New Segment');
       });
+
+      if (isDestroyed) {
+        playersUnlisten();
+        resetUnlisten();
+        dungeonLogUnlisten();
+        encounterUnlisten();
+        bossDeathUnlisten();
+        sceneChangeUnlisten();
+        pauseUnlisten();
+        resetPlayerMetricsUnlisten();
+        listenersSetupInProgress = false;
+        return;
+      }
 
       // Combine all unlisten functions
       unlisten = () => {
@@ -191,10 +277,11 @@
     } catch (e) {
       console.error("Failed to set up event listeners:", e);
       listenersSetupInProgress = false;
+      if (isDestroyed) return;
       isReconnecting = true;
       setTimeout(() => {
         isReconnecting = false;
-        setupEventListeners();
+        if (!isDestroyed) setupEventListeners();
       }, reconnectDelay);
       // increase backoff cap at ~10s
       reconnectDelay = Math.min(reconnectDelay * 2, 10_000);
@@ -203,6 +290,7 @@
 
   function startReconnectCheck() {
     reconnectInterval = setInterval(() => {
+      if (isDestroyed) return;
       const now = Date.now();
       if (hadAnyEvent && now - lastEventTime > DISCONNECT_THRESHOLD) {
         console.warn("Live event stream disconnected, attempting reconnection");
@@ -245,11 +333,13 @@
   });
 
   onMount(() => {
+    isDestroyed = false;
     setupEventListeners();
     startReconnectCheck();
 
     // When the window regains focus or visibility, proactively recheck listeners
     const onFocus = () => {
+      if (isDestroyed) return;
       // Attempt a lightweight refresh of listeners to recover from any suspended state
       if (!isReconnecting) {
         if (unlisten) {
@@ -261,12 +351,14 @@
       }
     };
     window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", () => {
+    const onVisibilityChange = () => {
       if (document.visibilityState === "visible") onFocus();
-    });
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     // Poll settings for transparency changes and apply CSS variables / body background
     transparencyInterval = window.setInterval(() => {
+      if (isDestroyed) return;
       try {
         const enabled = !!SETTINGS.accessibility.state.transparency;
         const percent = Number(SETTINGS.accessibility.state.transparentOpacityPercent ?? 2) || 2;
@@ -286,11 +378,12 @@
       }
     }, 200);
     return () => {
+      isDestroyed = true;
       if (reconnectInterval) clearInterval(reconnectInterval);
       if (transparencyInterval) clearInterval(transparencyInterval);
       if (unlisten) unlisten();
       window.removeEventListener("focus", onFocus);
-      // visibilitychange listener is anonymous; it's fine to leave or we can no-op
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       cleanupStores();
     };
   });
