@@ -117,10 +117,11 @@
       await invoke("start_upload", { apiKey: key, baseUrl });
       infoMsg = "Recheck started…";
       // Also manually request a player-data sync to ensure player build data is updated immediately
-      try {
-        await invoke("sync_player_data", { apiKey: key, baseUrl });
-        infoMsg = "Recheck started… rechecking logs";
-      } catch (err) {
+        try {
+          // Set the recheck message up-front so it doesn't overwrite upload completion if upload finishes
+          infoMsg = "Recheck started… rechecking logs";
+          await invoke("sync_player_data", { apiKey: key, baseUrl });
+        } catch (err) {
         // Player data sync may not be available yet; don't block recheck, but surface a helpful message
         const msg = err instanceof Error ? err.message : String(err);
         setError(`Player data sync failed to start: ${msg}`);
