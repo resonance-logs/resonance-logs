@@ -71,6 +71,7 @@ pub fn run() {
             module_extractor::commands::retry_failed_uploads,
             module_extractor::commands::get_unknown_attributes,
             module_extractor::commands::clear_unknown_attributes,
+            uploader::player_data_sync::sync_player_data,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -182,11 +183,17 @@ pub fn run() {
             let auto_upload_state = crate::uploader::AutoUploadState::default();
             app.manage(auto_upload_state.clone());
 
+            // Player data sync state (separate from encounter uploads)
+            let player_data_sync_state = crate::uploader::player_data_sync::PlayerDataSyncState::default();
+            app.manage(player_data_sync_state.clone());
+
             // Start auto-sync timer
             tauri::async_runtime::spawn(crate::module_extractor::commands::start_auto_sync_timer(
                 module_sync_state,
             ));
-            crate::uploader::start_auto_upload_task(app_handle.clone(), auto_upload_state);
+            crate::uploader::start_auto_upload_task(app_handle.clone(), auto_upload_state.clone());
+            // Start player data sync background task (runs every 15 minutes)
+            crate::uploader::player_data_sync::start_player_data_sync_task(app_handle.clone(), player_data_sync_state.clone());
 
             // Live Meter
             // https://v2.tauri.app/learn/splashscreen/#start-some-setup-tasks

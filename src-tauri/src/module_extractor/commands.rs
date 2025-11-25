@@ -3,6 +3,7 @@ use crate::module_extractor::types::{ImportModulesResponse, UnknownAttribute};
 /// Exposes module extraction and upload to the frontend
 use crate::module_extractor::{extract_modules, upload_modules};
 use crate::uploader::AutoUploadState;
+use crate::uploader::player_data_sync::PlayerDataSyncState;
 use blueprotobuf_lib::blueprotobuf::SyncContainerData;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
@@ -98,6 +99,7 @@ pub struct ModuleSyncStatus {
 pub async fn set_module_sync_config(
     state: tauri::State<'_, ModuleSyncState>,
     auto_upload_state: tauri::State<'_, AutoUploadState>,
+    player_data_sync_state: tauri::State<'_, PlayerDataSyncState>,
     enabled: bool,
     api_key: Option<String>,
     base_url: Option<String>,
@@ -139,6 +141,10 @@ pub async fn set_module_sync_config(
     let current_key = state.api_key.read().await.clone();
     let current_base = state.base_url.read().await.clone();
     auto_upload_state
+        .sync_from_settings(current_key.clone(), Some(current_base.clone()))
+        .await;
+    // Also sync player data sync state with the same settings
+    player_data_sync_state
         .sync_from_settings(current_key, Some(current_base))
         .await;
 

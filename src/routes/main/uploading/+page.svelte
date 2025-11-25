@@ -34,7 +34,9 @@
   let busy = $state(false);
   let infoMsg = $state<string | null>(null);
   let apiKeyInput = $state(getApiKey());
-  let lastPersistedKey = apiKeyInput;
+  let lastPersistedKey = $state("");
+
+
   // derived attributes to avoid reactivity glitches
   let type = $derived.by<"text" | "password">(() => (showKey ? "text" : "password"));
   let pct = $derived.by<number>(() => {
@@ -111,8 +113,18 @@
     resetProgress();
     try {
       const baseUrl = getModuleApiBaseUrl();
+      // Start the upload recheck
       await invoke("start_upload", { apiKey: key, baseUrl });
       infoMsg = "Recheck started…";
+      // Also manually request a player-data sync to ensure player build data is updated immediately
+      try {
+        await invoke("sync_player_data", { apiKey: key, baseUrl });
+        infoMsg = "Recheck started… rechecking logs";
+      } catch (err) {
+        // Player data sync may not be available yet; don't block recheck, but surface a helpful message
+        const msg = err instanceof Error ? err.message : String(err);
+        setError(`Player data sync failed to start: ${msg}`);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Uploader not available yet: ${msg}`);
@@ -163,6 +175,8 @@
         setError(e.payload?.message ?? "Unknown upload error");
       })
       .then((un) => unsubs.push(un));
+
+    // player-data-sync events intentionally not handled here — UI removed
 
     return () => {
       for (const un of unsubs) un();
@@ -292,7 +306,7 @@
         class="inline-flex items-center gap-2 rounded-md border border-border bg-popover text-muted-foreground px-4 py-2 hover:bg-muted/40 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         onclick={forceRecheck}
         disabled={busy || !getApiKey()}
-        title="Force recheck all logs with server and upload if valid"
+        title="Force recheck all logs and player data with server and upload if valid"
       >
         <RotateCwIcon class="h-4 w-4" />
         <span>Force Recheck</span>
