@@ -4,7 +4,7 @@
    * It imports the global stylesheet and disables the context menu.
    */
   import "../app.css";
-  import { SETTINGS } from "$lib/settings-store";
+  import { SETTINGS, DEFAULT_FONT_SIZES } from "$lib/settings-store";
   import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
 
   let { children } = $props();
@@ -35,6 +35,19 @@
       } else {
         document.body.classList.remove('transparent-mode');
       }
+    }
+  });
+
+  // Apply custom font sizes to CSS variables
+  $effect(() => {
+    if (typeof document !== 'undefined') {
+      const fontSizes = SETTINGS.accessibility.state.fontSizes ?? DEFAULT_FONT_SIZES;
+      const root = document.documentElement;
+      root.style.setProperty('--font-size-xs', `${fontSizes.xs ?? DEFAULT_FONT_SIZES.xs}px`);
+      root.style.setProperty('--font-size-sm', `${fontSizes.sm ?? DEFAULT_FONT_SIZES.sm}px`);
+      root.style.setProperty('--font-size-base', `${fontSizes.base ?? DEFAULT_FONT_SIZES.base}px`);
+      root.style.setProperty('--font-size-lg', `${fontSizes.lg ?? DEFAULT_FONT_SIZES.lg}px`);
+      root.style.setProperty('--font-size-xl', `${fontSizes.xl ?? DEFAULT_FONT_SIZES.xl}px`);
     }
   });
 })()}

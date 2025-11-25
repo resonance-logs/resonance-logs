@@ -73,6 +73,33 @@ const DEFAULT_GENERAL_SETTINGS = {
   dungeonSegmentsEnabled: true,
 };
 
+export const DEFAULT_CLASS_COLORS: Record<string, string> = {
+  "Stormblade": "#674598",
+  "Frost Mage": "#4de3d1",
+  "Wind Knight": "#0099c6",
+  "Verdant Oracle": "#66aa00",
+  "Heavy Guardian": "#b38915",
+  "Marksman": "#ffee00",
+  "Shield Knight": "#7b9aa2",
+  "Beat Performer": "#ee2e48",
+};
+
+export const DEFAULT_FONT_SIZES = {
+  xs: 10,    // Extra small - labels, hints (default 0.625rem = 10px)
+  sm: 12,    // Small - secondary text (default 0.75rem = 12px)
+  base: 14,  // Base - default text (default 0.875rem = 14px)
+  lg: 16,    // Large - emphasis (default 1rem = 16px)
+  xl: 20,    // Extra large - titles (default 1.25rem = 20px)
+};
+
+export const FONT_SIZE_LABELS: Record<string, string> = {
+  xs: 'Extra Small',
+  sm: 'Small',
+  base: 'Base',
+  lg: 'Large',
+  xl: 'Extra Large',
+};
+
 const DEFAULT_SETTINGS = {
   accessibility: {
     // New theme setting; fallback to 'dark' if missing in existing persisted store
@@ -88,6 +115,10 @@ const DEFAULT_SETTINGS = {
     transparentMode: false,
     // Clickthrough mode
     clickthrough: false,
+    // Custom class colors
+    classColors: { ...DEFAULT_CLASS_COLORS },
+    // Custom font sizes (in pixels)
+    fontSizes: { ...DEFAULT_FONT_SIZES },
   },
   shortcuts: {
     showLiveMeter: "",
