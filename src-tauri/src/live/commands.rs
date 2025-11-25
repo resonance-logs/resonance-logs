@@ -436,6 +436,15 @@ pub async fn reset_player_metrics(
             let original_fight_start_ms = state.encounter.time_fight_start_ms;
 
             // Reset combat state (player metrics)
+            // Grab current active segment name (if any) so it can be included in the
+            // emitted event payload for frontend to display a toast text notification.
+            let active_segment_name = dungeon_log::snapshot(&state.dungeon_log)
+                .and_then(|log| {
+                    log.segments
+                        .iter()
+                        .find(|s| s.ended_at_ms.is_none())
+                        .and_then(|s| s.boss_name.clone())
+                });
             state.encounter.reset_combat_state();
             state.skill_subscriptions.clear();
 
@@ -443,8 +452,10 @@ pub async fn reset_player_metrics(
             state.encounter.time_fight_start_ms = original_fight_start_ms;
 
             // Emit reset event to clear frontend stores
-            if state.event_manager.should_emit_events() {
-                state.event_manager.emit_encounter_reset();
+                if state.event_manager.should_emit_events() {
+                // Emit a player-metrics-only reset event for the current segment.
+                // resets with full encounter resets (e.g., server change/Scene change).
+                state.event_manager.emit_player_metrics_reset(active_segment_name);
 
                 // Emit an encounter update with cleared player data but preserve encounter context
                 let cleared_header = HeaderInfo {

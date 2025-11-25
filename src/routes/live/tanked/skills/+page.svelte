@@ -4,6 +4,7 @@
   import { settings, SETTINGS } from "$lib/settings-store";
   import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
   import { onTankedSkillsUpdate } from "$lib/api";
+  import type { Event as TauriEvent } from "@tauri-apps/api/event";
   import { getTankedPlayers } from "$lib/stores/live-meter-store.svelte";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
@@ -56,7 +57,7 @@
       });
 
       // Listen for updates
-      onTankedSkillsUpdate((event: { payload: SkillsUpdatePayload }) => {
+        onTankedSkillsUpdate((event: TauriEvent<SkillsUpdatePayload>) => {
         if (event.payload.playerUid === playerUid) {
           skillsWindow = event.payload.skillsWindow;
         }

@@ -3,7 +3,7 @@
  *
  * @packageDocumentation
  */
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { listen, type UnlistenFn, type Event } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { commands } from "./bindings";
 
@@ -124,29 +124,29 @@ export type DungeonLog = {
 };
 
 // Event listener functions
-export const onEncounterUpdate = (handler: (event: { payload: EncounterUpdatePayload }) => void): Promise<UnlistenFn> =>
-  listen("encounter-update", handler);
+export const onEncounterUpdate = (handler: (event: Event<EncounterUpdatePayload>) => void): Promise<UnlistenFn> =>
+  listen<EncounterUpdatePayload>("encounter-update", handler);
 
-export const onPlayersUpdate = (handler: (event: { payload: PlayersUpdatePayload }) => void): Promise<UnlistenFn> =>
-  listen("players-update", handler);
+export const onPlayersUpdate = (handler: (event: Event<PlayersUpdatePayload>) => void): Promise<UnlistenFn> =>
+  listen<PlayersUpdatePayload>("players-update", handler);
 
-export const onSkillsUpdate = (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
-  listen("skills-update", handler);
+export const onSkillsUpdate = (handler: (event: Event<SkillsUpdatePayload>) => void): Promise<UnlistenFn> =>
+  listen<SkillsUpdatePayload>("skills-update", handler);
 
-export const onBossDeath = (handler: (event: { payload: BossDeathPayload }) => void): Promise<UnlistenFn> =>
-  listen("boss-death", handler);
+export const onBossDeath = (handler: (event: Event<BossDeathPayload>) => void): Promise<UnlistenFn> =>
+  listen<BossDeathPayload>("boss-death", handler);
 
-export const onSceneChange = (handler: (event: { payload: SceneChangePayload }) => void): Promise<UnlistenFn> =>
-  listen("scene-change", handler);
+export const onSceneChange = (handler: (event: Event<SceneChangePayload>) => void): Promise<UnlistenFn> =>
+  listen<SceneChangePayload>("scene-change", handler);
 
-export const onDungeonLogUpdate = (handler: (event: { payload: DungeonLog }) => void): Promise<UnlistenFn> =>
-  listen("log-update", handler);
+export const onDungeonLogUpdate = (handler: (event: Event<DungeonLog>) => void): Promise<UnlistenFn> =>
+  listen<DungeonLog>("log-update", handler);
 
 // Convenience: factory to create metric-filtered listeners
 export const makeSkillsUpdateFilter =
   (metric: MetricType) =>
-  (handler: (event: { payload: SkillsUpdatePayload }) => void): Promise<UnlistenFn> =>
-    listen("skills-update", (event) => {
+  (handler: (event: Event<SkillsUpdatePayload>) => void): Promise<UnlistenFn> =>
+    listen<SkillsUpdatePayload>("skills-update", (event) => {
       if (event.payload.metricType === metric) handler(event);
     });
 
@@ -157,8 +157,14 @@ export const onTankedSkillsUpdate = makeSkillsUpdateFilter("tanked");
 export const onResetEncounter = (handler: () => void): Promise<UnlistenFn> =>
   listen("reset-encounter", handler);
 
-export const onPauseEncounter = (handler: (event: { payload: boolean }) => void): Promise<UnlistenFn> =>
-  listen("pause-encounter", handler);
+export type PlayerMetricsResetPayload = {
+  segmentName?: string | null;
+};
+export const onResetPlayerMetrics = (handler: (event: Event<PlayerMetricsResetPayload>) => void): Promise<UnlistenFn> =>
+  listen<PlayerMetricsResetPayload>("reset-player-metrics", handler);
+
+export const onPauseEncounter = (handler: (event: Event<boolean>) => void): Promise<UnlistenFn> =>
+  listen<boolean>("pause-encounter", handler);
 
 // Command wrappers (still using generated bindings)
 import type { Result } from "./bindings";

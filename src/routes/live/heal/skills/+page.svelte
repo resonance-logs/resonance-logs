@@ -5,6 +5,7 @@
   import { settings, SETTINGS } from "$lib/settings-store";
   import { commands } from "$lib/bindings";
   import { onHealSkillsUpdate } from "$lib/api";
+  import type { Event as TauriEvent } from "@tauri-apps/api/event";
   import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
   import { historyDpsSkillColumns } from "$lib/history-columns"; // Use same structure as DPS for consistency
@@ -50,7 +51,7 @@
       }
 
       // Set up websocket listener for updates
-      unlisten = await onHealSkillsUpdate((event: { payload: SkillsUpdatePayload }) => {
+      unlisten = await onHealSkillsUpdate((event: TauriEvent<SkillsUpdatePayload>) => {
         // Only update if this is the correct player
         if (event.payload.playerUid.toString() === playerUid) {
           healSkillBreakdownWindow = event.payload.skillsWindow;

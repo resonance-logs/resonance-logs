@@ -123,6 +123,21 @@ impl EventManager {
         }
     }
 
+    /// Emits a reset event specifically for player metrics when a new segment begins.
+    /// This is intentionally separate from an encounter reset so the frontend can
+    /// clear only player metrics without clearing the entire dungeon log.
+    /// Emits a reset event specifically for player metrics when a new segment begins.
+    /// Optionally include a segment name for displaying in UI toasts.
+    pub fn emit_player_metrics_reset(&self, segment_name: Option<String>) {
+        if let Some(app_handle) = &self.app_handle {
+            let payload = PlayerMetricsResetPayload { segment_name };
+            match app_handle.emit("reset-player-metrics", payload) {
+                Ok(_) => trace!("Emitted reset-player-metrics event"),
+                Err(e) => error!("Failed to emit reset-player-metrics event: {}", e),
+            }
+        }
+    }
+
     /// Emits an encounter pause event.
     ///
     /// # Arguments
@@ -262,6 +277,14 @@ pub struct BossDeathPayload {
 pub struct SceneChangePayload {
     /// The name of the new scene.
     pub scene_name: String,
+}
+
+/// The payload for a player metrics reset event (segment transition / partial reset)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerMetricsResetPayload {
+    /// Optional segment name (e.g., boss name) for display in UI
+    pub segment_name: Option<String>,
 }
 
 impl Default for EventManager {

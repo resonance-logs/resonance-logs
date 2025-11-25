@@ -10,7 +10,7 @@
    */
   import { onMount } from "svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter, onDungeonLogUpdate, resetPlayerMetrics } from "$lib/api";
+  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter, onDungeonLogUpdate, onResetPlayerMetrics, resetPlayerMetrics } from "$lib/api";
   import { writable } from "svelte/store";
   import { beforeNavigate, afterNavigate } from "$app/navigation";
 
@@ -106,11 +106,7 @@
             console.error('Failed to reset player metrics:', e);
           });
 
-          // Show notification
-          const segmentName = currentSegmentType === 'boss'
-            ? (activeSegment?.bossName ?? 'Boss Segment')
-            : 'Trash Segment';
-          notificationToast?.showToast('notice', `Switched to ${segmentName}`);
+
         }
 
         // Update last segment type
@@ -168,6 +164,15 @@
 
       console.log("Scene change listener set up");
 
+      // Listen for reset-player-metrics events (fired on segment transitions)
+      const resetPlayerMetricsUnlisten = await onResetPlayerMetrics((event) => {
+        // Clear just the meter/player stores without clearing the encounter log
+        clearMeterData();
+        // If the backend provided a segment name, show it; otherwise simple 'New Segment'
+        const segName = event.payload?.segmentName ?? null;
+        notificationToast?.showToast('notice', segName ? `New Segment: ${segName}` : 'New Segment');
+      });
+
       // Combine all unlisten functions
       unlisten = () => {
         try { playersUnlisten(); } catch {}
@@ -177,9 +182,11 @@
         try { sceneChangeUnlisten(); } catch {}
         try { pauseUnlisten(); } catch {}
         try { dungeonLogUnlisten(); } catch {}
+        try { resetPlayerMetricsUnlisten(); } catch {}
       };
 
       console.log("Event listeners set up for live meter data");
+
       listenersSetupInProgress = false;
     } catch (e) {
       console.error("Failed to set up event listeners:", e);
