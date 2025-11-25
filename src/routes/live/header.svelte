@@ -13,7 +13,7 @@
   import SettingsIcon from "virtual:icons/lucide/settings";
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
   import CrownIcon from "virtual:icons/lucide/crown";
-  import MinimizeIcon from "virtual:icons/lucide/minimize-2";
+  
 
   import { onMount } from "svelte";
   import { page } from "$app/stores";
@@ -144,9 +144,9 @@
     currentSegmentName: null,
   });
   let isEncounterPaused = $state(false);
-  // Use live.general for bossOnlyDps; keep density from accessibility store
+  // Use live.general for bossOnlyDps
   let bossOnlyDpsEnabled = $derived(SETTINGS.live.general.state.bossOnlyDps);
-  let density = $derived(SETTINGS.accessibility.state.density ?? "comfortable");
+  
 
   // const {
   //   screenshotDiv,
@@ -171,25 +171,7 @@
     void setBossOnlyDps(nextValue);
   }
 
-  let densityAnimating = $state(false);
-
-  function triggerDensityAnimation(next: string) {
-    // Shrink while in medium/compact, restore when going back to comfortable
-    densityAnimating = next !== "comfortable";
-    if (next === "comfortable") {
-      // Allow one frame for CSS transition to play back to normal
-      setTimeout(() => {
-        densityAnimating = false;
-      }, 150);
-    }
-  }
-
-  function toggleDensity() {
-    const current = SETTINGS.accessibility.state.density ?? "comfortable";
-    const next = current === "comfortable" ? "medium" : current === "medium" ? "compact" : "comfortable";
-    SETTINGS.accessibility.state.density = next;
-    triggerDensityAnimation(next);
-  }
+  
 
     // When reset encounter button is pressed -> reset boss hp bar info
   function handleResetEncounter() {
@@ -203,23 +185,22 @@
 <!-- 2x2 Grid Header Layout -->
 <header
   data-tauri-drag-region
-  class="grid w-full grid-cols-[1fr_auto] grid-rows-[auto_auto] pb-2
-  {density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-[13px]' : 'text-xs'}"
+  class="grid w-full grid-cols-[1fr_auto] grid-rows-[auto_auto] pb-2 text-sm"
 >
   <!-- Row 1, Col 1: Version + Timer -->
-  <div class="col-start-1 row-start-1 flex items-center overflow-hidden {density === 'comfortable' ? 'gap-4' : 'gap-3'} min-w-0" data-tauri-drag-region>
+  <div class="col-start-1 row-start-1 flex items-center overflow-hidden gap-4 min-w-0" data-tauri-drag-region>
     <div class="flex items-center gap-2 shrink-0">
-      <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-sm' : 'text-xs'} font-bold text-foreground tracking-tight leading-none">Resonance Logs</span>
-      <span class="{density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-medium text-muted-foreground tracking-tight leading-none">v{#await getVersion()}X.Y.Z{:then version}{version}{/await}</span>
+      <span class="text-base font-bold text-foreground tracking-tight leading-none">Resonance Logs</span>
+      <span class="text-sm font-medium text-muted-foreground tracking-tight leading-none">v{#await getVersion()}X.Y.Z{:then version}{version}{/await}</span>
     </div>
   {#if headerInfo.sceneName}
     <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
-    <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-sm' : 'text-xs'} text-muted-foreground font-medium shrink-0 leading-none" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName}</span>
+    <span class="text-base text-muted-foreground font-medium shrink-0 leading-none" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName}</span>
   {/if}
   {#if activeSegmentInfo}
     <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
     <span
-      class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {activeSegmentInfo.type === 'boss' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'} {density === 'comfortable' ? 'text-xs' : 'text-[11px]'}"
+      class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {activeSegmentInfo.type === 'boss' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'} text-xs"
     >
       <span class="font-semibold tracking-wide">{activeSegmentInfo.label}</span>
       <span class="text-muted-foreground">•</span>
@@ -229,84 +210,75 @@
   {/if}
   <div class="h-4 w-px bg-border shrink-0 opacity-60"></div>
     <div class="flex items-center gap-2 shrink-0">
-  <span class="{density === 'comfortable' ? 'text-sm' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-medium text-muted-foreground uppercase tracking-wider leading-none">Timer</span>
-  <span class="{density === 'comfortable' ? 'text-lg' : density === 'medium' ? 'text-base' : 'text-sm'} font-bold text-foreground tabular-nums tracking-tight leading-none" {@attach tooltip(() => 'Time Elapsed')}>{formatElapsed(clientElapsedMs)}</span>
+  <span class="text-sm font-medium text-muted-foreground uppercase tracking-wider leading-none">Timer</span>
+  <span class="text-lg font-bold text-foreground tabular-nums tracking-tight leading-none" {@attach tooltip(() => 'Time Elapsed')}>{formatElapsed(clientElapsedMs)}</span>
     </div>
   </div>
 
   <!-- Row 1, Col 2: Buttons -->
-  <div class="col-start-2 row-start-1 flex items-center justify-self-end {density === 'comfortable' ? 'gap-2' : 'gap-0.5'} shrink-0">
+  <div class="col-start-2 row-start-1 flex items-center justify-self-end gap-2 shrink-0">
     <button
-      class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200"
+      class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg p-2 transition-all duration-200"
       onclick={handleResetEncounter}
       {@attach tooltip(() => 'Reset Encounter')}
     >
-      <RefreshCwIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+      <RefreshCwIcon class="size-5" />
     </button>
     <button
-      class="{isEncounterPaused ? 'text-[oklch(0.65_0.1_145)] bg-[oklch(0.9_0.02_145)]/30' : 'text-muted-foreground'} hover:text-foreground hover:bg-popover/60 rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200"
+      class="{isEncounterPaused ? 'text-[oklch(0.65_0.1_145)] bg-[oklch(0.9_0.02_145)]/30' : 'text-muted-foreground'} hover:text-foreground hover:bg-popover/60 rounded-lg p-2 transition-all duration-200"
       onclick={() => { togglePauseEncounter(); isEncounterPaused = !isEncounterPaused; }}
     >
       {#if isEncounterPaused}
-        <PlayIcon {@attach tooltip(() => 'Resume Encounter')} class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+        <PlayIcon {@attach tooltip(() => 'Resume Encounter')} class="size-5" />
       {:else}
-        <PauseIcon {@attach tooltip(() => 'Pause Encounter')} class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+        <PauseIcon {@attach tooltip(() => 'Pause Encounter')} class="size-5" />
       {/if}
     </button>
     <button
-      class="rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200 {bossOnlyDpsEnabled ? 'text-[oklch(0.75_0.1_95)] bg-[oklch(0.95_0.02_95)]/30 hover:bg-[oklch(0.95_0.02_95)]/50' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+      class="rounded-lg p-2 transition-all duration-200 {bossOnlyDpsEnabled ? 'text-[oklch(0.75_0.1_95)] bg-[oklch(0.95_0.02_95)]/30 hover:bg-[oklch(0.95_0.02_95)]/50' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
       class:boss-only-active={bossOnlyDpsEnabled}
       aria-pressed={bossOnlyDpsEnabled}
       onclick={toggleBossOnlyDamage}
       {@attach tooltip(() => (bossOnlyDpsEnabled ? 'Boss Only Damage Enabled' : 'Enable Boss Only Damage'))}
     >
-      <CrownIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+      <CrownIcon class="size-5" />
     </button>
-    <button
-      class="rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200 {densityAnimating ? 'scale-90' : ''} {density !== 'comfortable' ? 'text-[oklch(0.6_0.1_220)] bg-[oklch(0.9_0.02_220)]/30 hover:bg-[oklch(0.9_0.02_220)]/50' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-      class:compact-mode-active={density !== 'comfortable'}
-      class:density-animating={densityAnimating}
-      aria-pressed={density !== 'comfortable'}
-      onclick={toggleDensity}
-      {@attach tooltip(() => density === 'comfortable' ? 'Density: Comfortable' : density === 'medium' ? 'Density: Medium' : 'Density: Compact')}
-    >
-      <MinimizeIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
-    </button>
+    
     <div class="h-5 w-px bg-neutral-700/60"></div>
     <!-- <button
       class="text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800/60 rounded-lg p-1.5 transition-all duration-200"
       onclick={() => appWindow.setIgnoreCursorEvents(true)}
       {@attach tooltip(() => 'Clickthrough')}
     >
-      <PointerIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+      <PointerIcon class="size-5" />
     </button> -->
     <button
-      class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200"
+      class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg p-2 transition-all duration-200"
       onclick={() => openSettings()}
       {@attach tooltip(() => 'Settings')}
     >
-      <SettingsIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+      <SettingsIcon class="size-5" />
     </button>
     <button
-      class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200"
+      class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg p-2 transition-all duration-200"
       onclick={() => appWindow.hide()}
       {@attach tooltip(() => 'Minimize')}
     >
-      <MinusIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+      <MinusIcon class="size-5" />
     </button>
   </div>
 
   <!-- Row 2, Col 1: Stats summary + Boss Health -->
-  <div class="col-start-1 row-start-2 flex overflow-hidden items-center {density === 'comfortable' ? 'gap-5' : 'gap-4'} min-w-0">
+  <div class="col-start-1 row-start-2 flex overflow-hidden items-center gap-5 min-w-0">
     <!-- Stats -->
-    <div class="flex overflow-hidden items-center {density === 'comfortable' ? 'gap-5' : 'gap-4'}">
+    <div class="flex overflow-hidden items-center gap-5">
       <div class="flex items-center gap-2 shrink-0">
-        <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage Dealt')}>T.DMG</span>
-        <span class="{density === 'comfortable' ? 'text-lg' : density === 'medium' ? 'text-base' : 'text-sm'} font-bold text-foreground" {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span>
+        <span class="text-base font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage Dealt')}>T.DMG</span>
+        <span class="text-lg font-bold text-foreground" {@attach tooltip(() => headerInfo.totalDmg.toLocaleString())}><AbbreviatedNumber num={Number(headerInfo.totalDmg)} /></span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage per Second')}>T.DPS</span>
-        <span class="{density === 'comfortable' ? 'text-lg' : density === 'medium' ? 'text-base' : 'text-sm'} font-bold text-foreground" {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span>
+        <span class="text-base font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage per Second')}>T.DPS</span>
+        <span class="text-lg font-bold text-foreground" {@attach tooltip(() => headerInfo.totalDps.toLocaleString())}><AbbreviatedNumber num={headerInfo.totalDps} /></span>
       </div>
     </div>
 
@@ -315,7 +287,7 @@
 
     <!-- Boss Health -->
     <div class="flex items-center gap-2 shrink-0">
-  <span class=" {density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-xs' : 'text-[11px]'} font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage per Second')}>BOSS</span>
+    <span class="text-base font-bold text-muted-foreground uppercase tracking-wider" {@attach tooltip(() => 'Total Damage per Second')}>BOSS</span>
       <BossHealth />
     </div>
   </div>
@@ -323,17 +295,17 @@
   <!-- Row 2, Col 2: DPS/HEAL/TANKED Tabs (Connected) -->
   <div class="col-start-2 row-start-2 justify-self-end flex items-center border border-border rounded-lg overflow-hidden bg-popover/30 shrink-0 m-1">
     <button
-      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2 py-0.75'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] border-r border-border whitespace-nowrap ${$page.url.pathname.includes('dps') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}`}
+      class={`px-3.5 py-1.5 transition-all duration-200 font-bold tracking-wider uppercase text-[11px] border-r border-border whitespace-nowrap ${$page.url.pathname.includes('dps') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}`}
       aria-current={$page.url.pathname.includes('dps') ? 'page' : undefined}
       onclick={() => goto(resolve('/live/dps'))}
     >DPS</button>
     <button
-      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2 py-0.75'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] border-r border-border whitespace-nowrap ${$page.url.pathname.includes('heal') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}`}
+      class={`px-3.5 py-1.5 transition-all duration-200 font-bold tracking-wider uppercase text-[11px] border-r border-border whitespace-nowrap ${$page.url.pathname.includes('heal') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}`}
       aria-current={$page.url.pathname.includes('heal') ? 'page' : undefined}
       onclick={() => goto(resolve('/live/heal'))}
     >HEAL</button>
     <button
-      class={`${density === 'comfortable' ? 'px-3.5 py-1.5' : density === 'medium' ? 'px-3 py-1' : 'px-2 py-0.75'} transition-all duration-200 font-bold tracking-wider uppercase text-[11px] whitespace-nowrap ${$page.url.pathname.includes('tanked') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}`}
+      class={`px-3.5 py-1.5 transition-all duration-200 font-bold tracking-wider uppercase text-[11px] whitespace-nowrap ${$page.url.pathname.includes('tanked') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}`}
       aria-current={$page.url.pathname.includes('tanked') ? 'page' : undefined}
       onclick={() => goto(resolve('/live/tanked'))}
     >TANKED</button>

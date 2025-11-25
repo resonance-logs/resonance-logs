@@ -106,9 +106,9 @@
     currentSegmentName: null,
   });
   let isEncounterPaused = $state(false);
-  // Use live.general for bossOnlyDps; keep density from accessibility store
+  // Use live.general for bossOnlyDps
   let bossOnlyDpsEnabled = $derived(SETTINGS.live.general.state.bossOnlyDps);
-  let density = $derived(SETTINGS.accessibility.state.density ?? "comfortable");
+  
 
   function toggleBossOnlyDamage() {
     const nextValue = !SETTINGS.live.general.state.bossOnlyDps;
@@ -131,24 +131,24 @@
 >
   <div class="flex gap-2">
     <div class="flex items-center">
-      <span class="{density === 'comfortable' ? 'text-lg' : density === 'medium' ? 'text-base' : 'text-sm'} font-bold text-foreground tabular-nums tracking-tight leading-none" {@attach tooltip(() => 'Time Elapsed')}>{formatElapsed(clientElapsedMs)}</span>
+      <span class="text-lg font-bold text-foreground tabular-nums tracking-tight leading-none" {@attach tooltip(() => 'Time Elapsed')}>{formatElapsed(clientElapsedMs)}</span>
     </div>
     <div class="flex items-center">
-      <span class="{density === 'comfortable' ? 'text-lg' : density === 'medium' ? 'text-base' : 'text-sm'} font-medium shrink-0 leading-none" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName || "Unknown Scene"}</span>
+      <span class="text-lg font-medium shrink-0 leading-none" {@attach tooltip(() => headerInfo.sceneName || "")}>{headerInfo.sceneName || "Unknown Scene"}</span>
       {#if headerInfo.bosses.length > 0 || true}
         <span class="text-muted-foreground font-medium shrink-0 leading-none mx-1">-</span>
-        <span class="{density === 'comfortable' ? 'text-base' : density === 'medium' ? 'text-sm' : 'text-xs'} text-muted-foreground font-medium shrink-0 leading-none align-text-bottom">{headerInfo.bosses[0]?.name || "Unknown Boss"}</span>
+        <span class="text-base text-muted-foreground font-medium shrink-0 leading-none align-text-bottom">{headerInfo.bosses[0]?.name || "Unknown Boss"}</span>
       {/if}
     </div>
   </div>
   <div>
     <button
-      class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg {density === 'comfortable' ? 'p-2' : 'p-1.5'} transition-all duration-200"
+    class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg p-2 transition-all duration-200"
       onclick={handleResetEncounter}
       aria-label="Reset encounter"
       {@attach tooltip(() => 'Reset Encounter')}
     >
-      <RefreshCwIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'}/>
+      <RefreshCwIcon class="size-5"/>
     </button>
 
     <button
@@ -156,9 +156,9 @@
       onclick={() => { togglePauseEncounter(); isEncounterPaused = !isEncounterPaused; }}
     >
       {#if isEncounterPaused}
-        <PlayIcon {@attach tooltip(() => 'Resume Encounter')} class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+        <PlayIcon {@attach tooltip(() => 'Resume Encounter')} class="size-5" />
       {:else}
-        <PauseIcon {@attach tooltip(() => 'Pause Encounter')} class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+        <PauseIcon {@attach tooltip(() => 'Pause Encounter')} class="size-5" />
       {/if}
     </button>
 
@@ -169,7 +169,7 @@
       onclick={toggleBossOnlyDamage}
       {@attach tooltip(() => (bossOnlyDpsEnabled ? 'Boss Only Damage Enabled' : 'Enable Boss Only Damage'))}
     >
-      <CrownIcon class={density === 'comfortable' ? 'size-5' : density === 'medium' ? 'size-4' : 'size-3.5'} />
+      <CrownIcon class="size-5" />
     </button>
   </div>
 </header>

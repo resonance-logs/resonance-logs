@@ -39,21 +39,17 @@
     return historyDpsPlayerColumns.filter(col => settings.state.live.dps.players[col.key]);
   });
 
-  // Track density mode
-  // Restore density feature
-  let density = $derived(settings.state.accessibility.density ?? "comfortable");
-  let isCompact = $derived(density === "compact");
-  let isMedium = $derived(density === "medium");
-  // removed unused isComfortable derived value
+  
+
 </script>
 
 <div class="relative flex flex-col gap-2 overflow-hidden rounded-lg ring-1 ring-border/60 bg-card/30">
   <table class="w-full border-collapse overflow-hidden">
     <thead>
       <tr class="bg-popover/60">
-  <th data-tauri-drag-region class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-left font-medium uppercase tracking-wide text-muted-foreground">Player</th>
+  <th data-tauri-drag-region class="px-3 py-2 text-[11px] text-left font-medium uppercase tracking-wide text-muted-foreground">Player</th>
         {#each visiblePlayerColumns as col (col.key)}
-          <th data-tauri-drag-region class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-right font-medium uppercase tracking-wide text-muted-foreground">{col.header}</th>
+          <th data-tauri-drag-region class="px-3 py-2 text-[11px] text-right font-medium uppercase tracking-wide text-muted-foreground">{col.header}</th>
         {/each}
       </tr>
     </thead>
@@ -73,13 +69,13 @@
         })}
         {@const className = isLocalPlayer ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
         <tr
-          class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-pointer {isCompact ? 'h-7' : isMedium ? 'h-10' : 'h-14'} {isCompact ? 'text-[11px]' : isMedium ? 'text-[12px]' : 'text-[13px]'} group"
+          class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-pointer h-14 text-[13px] group"
           onclick={() => goto(`/live/dps/skills?playerUid=${player.uid}`)}
         >
-          <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} relative z-10">
-            <div class="flex items-center h-full {isCompact ? 'gap-1' : isMedium ? 'gap-1.5' : 'gap-2'}">
+          <td class="px-3 py-3 relative z-10">
+            <div class="flex items-center h-full gap-2">
               <img
-                class="{isCompact ? 'size-4' : isMedium ? 'size-5' : 'size-6'} object-contain"
+                class="size-6 object-contain"
                 src={getClassIcon(className)}
                 alt="Class icon"
                 {@attach tooltip(() => `${player.className}${player.classSpecName ? ' - ' + player.classSpecName : ''}`)}
@@ -95,7 +91,7 @@
             </div>
           </td>
           {#each visiblePlayerColumns as col (col.key)}
-            <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} text-right relative z-10 tabular-nums font-medium text-muted-foreground">
+            <td class="px-3 py-3 text-right relative z-10 tabular-nums font-medium text-muted-foreground">
               {#if col.key === 'totalDmg'}
                 {#if SETTINGS.live.general.state.shortenDps}
                   <AbbreviatedNumber num={player.totalDmg} />

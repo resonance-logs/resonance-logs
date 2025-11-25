@@ -104,7 +104,7 @@ const DEFAULT_SETTINGS = {
   accessibility: {
     // New theme setting; fallback to 'dark' if missing in existing persisted store
     theme: 'dark' as string,
-    density: "comfortable" as "comfortable" | "medium" | "compact",
+    
     // legacy/ux: 'transparency' toggle (used by settings UI) and opacity percent
     blur: false,
     transparency: false,
@@ -306,19 +306,7 @@ export const settings = {
   },
 };
 
-// Derived helpers for accessibility density with backward compatibility
-export type DensityMode = "comfortable" | "medium" | "compact";
-
-export function getAccessibilityDensity(): DensityMode {
-  const state = SETTINGS.accessibility.state as { density?: DensityMode; compactMode?: boolean };
-
-  // If legacy compactMode exists in stored state, map it: true -> compact, false -> comfortable
-  if (typeof state.compactMode === "boolean") {
-    return state.compactMode ? "compact" : "comfortable";
-  }
-  const density = state.density;
-  return density === "medium" || density === "compact" ? density : "comfortable";
-}
+// Accessibility helpers
 
 // Available theme names (keep in sync with CSS classes defined in app.css)
 export const AVAILABLE_THEMES = [

@@ -56,13 +56,6 @@
         bind:selected={SETTINGS.accessibility.state["theme"]}
         values={AVAILABLE_THEMES}
       />
-    </div>
-
-    <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-foreground">Transparency Mode</h2>
-        <p class="text-xs text-muted-foreground mt-1">Enable transparent meter surfaces and adjust opacity.</p>
-      </div>
       <div class="mt-1 space-y-2">
         <SettingsSwitch
           bind:checked={SETTINGS.accessibility.state.transparency}
@@ -85,14 +78,7 @@
           values={["full", "one row", "none",]}
         />
       </div>
-      <div class="mt-1">
-        <SettingsSelect
-          label="Density"
-          description="Choose compactness for live meter"
-          bind:selected={SETTINGS.accessibility.state.density}
-          values={["comfortable","medium","compact"]}
-        />
-      </div>
+      
       <div class="mt-1">
         <SettingsSwitch
           bind:checked={SETTINGS.accessibility.state.clickthrough}
