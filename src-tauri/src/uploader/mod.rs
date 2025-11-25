@@ -1103,7 +1103,7 @@ pub async fn perform_upload(
         .build()
         .map_err(|e| e.to_string())?;
     let mut offset = 0_i64;
-    let batch_size = 10_i64;
+    let batch_size = 1_i64; // Upload encounters one by one
     let mut uploaded = 0_i64;
     let mut current_url_index = 0;
 
@@ -1346,7 +1346,7 @@ pub async fn perform_upload(
         offset += rows.len() as i64;
         // Emit progress for UI to known windows and as a fallback via app.emit
         let progress_payload: serde_json::Value =
-            json!({"uploaded": uploaded, "total": total, "batch": (offset / batch_size)+1});
+            json!({"uploaded": uploaded, "total": total});
         if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
             let _ = w.emit("upload:progress", progress_payload.clone());
         }

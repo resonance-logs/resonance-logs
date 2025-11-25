@@ -11,7 +11,6 @@ export interface UploadProgressState extends Record<string, unknown> {
   uploaded: number;
   total: number;
   status: UploadStatus;
-  inFlightBatch?: number | null;
   lastError?: string | null;
 }
 
@@ -63,7 +62,6 @@ export function resetProgress() {
   UPLOADING.progress.state.uploaded = 0;
   UPLOADING.progress.state.total = 0;
   UPLOADING.progress.state.status = "idle";
-  UPLOADING.progress.state.inFlightBatch = null;
   UPLOADING.progress.state.lastError = null;
 }
 
@@ -71,7 +69,6 @@ export function setUploading(total: number) {
   UPLOADING.progress.state.total = Math.max(0, total);
   UPLOADING.progress.state.uploaded = 0;
   UPLOADING.progress.state.status = total > 0 ? "in-progress" : "idle";
-  UPLOADING.progress.state.inFlightBatch = null;
   UPLOADING.progress.state.lastError = null;
 }
 

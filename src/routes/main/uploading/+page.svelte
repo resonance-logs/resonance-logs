@@ -119,13 +119,9 @@
       .then((un) => unsubs.push(un));
 
     app
-      .listen<{ uploaded: number; total?: number; batch?: number }>(
-        "upload:progress",
-        (e) => {
-          setProgress(e.payload.uploaded, e.payload.total);
-          UPLOADING.progress.state.inFlightBatch = e.payload.batch ?? null;
-        }
-      )
+      .listen<{ uploaded: number; total?: number }>("upload:progress", (e) => {
+        setProgress(e.payload.uploaded, e.payload.total);
+      })
       .then((un) => unsubs.push(un));
 
     app
@@ -285,9 +281,6 @@
     <div class="flex items-center justify-between text-sm">
       <div class="flex items-center gap-3 text-muted-foreground">
         <span class="font-mono">{UPLOADING.progress.state.uploaded} / {UPLOADING.progress.state.total}</span>
-        {#if UPLOADING.progress.state.inFlightBatch != null}
-          <span class="text-muted-foreground">Batch {UPLOADING.progress.state.inFlightBatch}</span>
-        {/if}
       </div>
       <span class="uppercase tracking-wide text-xs text-muted-foreground">{UPLOADING.progress.state.status}</span>
     </div>
