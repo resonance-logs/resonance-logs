@@ -1245,7 +1245,7 @@ pub async fn perform_upload(
                 .iter()
                 .map(|entry| entry.payload.clone())
                 .collect(),
-            client_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+            client_version: Some(env!("APP_VERSION").to_string()),
         };
         let mut processed_ids = duplicate_ids.clone();
 

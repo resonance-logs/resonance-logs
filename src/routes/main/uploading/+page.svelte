@@ -14,6 +14,7 @@
   import EyeIcon from "virtual:icons/lucide/eye";
   import EyeOffIcon from "virtual:icons/lucide/eye-off";
   import RotateCcwIcon from "virtual:icons/lucide/rotate-ccw";
+  import RotateCwIcon from "virtual:icons/lucide/rotate-cw";
   import XIcon from "virtual:icons/lucide/x";
 
   import {
@@ -90,6 +91,31 @@
     } catch {
       // ignore — command will exist in Stage 4
     } finally {
+      busy = false;
+    }
+  }
+
+  async function forceRecheck() {
+    const key = getApiKey();
+    const trimmedInput = apiKeyInput.trim();
+    infoMsg = null;
+    if (!key) {
+      setError("Please enter your API key, click Save, and try again.");
+      return;
+    }
+    if (trimmedInput !== key) {
+      setError("You have unsaved API key changes. Click Save before forcing a recheck.");
+      return;
+    }
+    busy = true;
+    resetProgress();
+    try {
+      const baseUrl = getModuleApiBaseUrl();
+      await invoke("start_upload", { apiKey: key, baseUrl });
+      infoMsg = "Recheck started…";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Uploader not available yet: ${msg}`);
       busy = false;
     }
   }
@@ -261,6 +287,15 @@
       >
         <UploadIcon class="h-4 w-4" />
         <span>Start upload</span>
+      </button>
+      <button
+        class="inline-flex items-center gap-2 rounded-md border border-border bg-popover text-muted-foreground px-4 py-2 hover:bg-muted/40 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        onclick={forceRecheck}
+        disabled={busy || !getApiKey()}
+        title="Force recheck all logs with server and upload if valid"
+      >
+        <RotateCwIcon class="h-4 w-4" />
+        <span>Force Recheck</span>
       </button>
       <button
         class="inline-flex items-center gap-2 rounded-md border border-border bg-popover text-muted-foreground px-4 py-2 hover:bg-muted/40 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
