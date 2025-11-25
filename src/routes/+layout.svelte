@@ -6,6 +6,13 @@
   import "../app.css";
   import { SETTINGS } from "$lib/settings-store";
   import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
+  // Only allow warnings and errors to be printed to console in production builds
+  if (typeof window !== 'undefined' && import.meta.env.PROD) {
+    // Keep warn and error; disable verbose logging
+    console.log = (..._args: any[]) => {};
+    console.debug = (..._args: any[]) => {};
+    console.info = (..._args: any[]) => {};
+  }
 
   let { children } = $props();
   let lastBossOnlySync: boolean | null = null;
