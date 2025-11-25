@@ -21,8 +21,8 @@
   const activeMods = new SvelteSet<string>();
   let mainKey: string | null = $state(null);
 
-  /** Normalize key names */
-  const normalizeKey = (key: string): string =>
+  /** Normalize modifier key names */
+  const normalizeModifier = (key: string): string =>
     (
       ({
         control: "ctrl",
@@ -31,6 +31,20 @@
         shift: "shift",
       }) as Record<string, string>
     )[key.toLowerCase()] ?? key.toLowerCase();
+
+  /** Get the proper key name, handling numpad keys via e.code */
+  function getKeyName(e: KeyboardEvent): string {
+    const code = e.code;
+    
+    // Handle numpad keys - use code directly as it matches the Tauri shortcut format
+    // e.g., "Numpad0", "Numpad1", "NumpadAdd", "NumpadSubtract", etc.
+    if (code.startsWith("Numpad")) {
+      return code;
+    }
+    
+    // For regular keys, use the key value (normalized to lowercase)
+    return e.key.toLowerCase();
+  }
 
   /** Build the display string of the in-progress shortcut */
   function currentShortcutString(): string {
@@ -58,24 +72,24 @@
 
   function handleKeyDown(e: KeyboardEvent) {
     e.preventDefault();
-    const k = normalizeKey(e.key);
+    const modKey = normalizeModifier(e.key);
 
-    if (MODIFIERS.has(k)) {
-      activeMods.add(k);
+    if (MODIFIERS.has(modKey)) {
+      activeMods.add(modKey);
       return;
     }
 
-    // Non-modifier key: set/replace the main key
-    mainKey = k;
+    // Non-modifier key: set/replace the main key (using code for numpad detection)
+    mainKey = getKeyName(e);
   }
 
   function handleKeyUp(e: KeyboardEvent) {
     e.preventDefault();
-    const k = normalizeKey(e.key);
+    const modKey = normalizeModifier(e.key);
 
     // If a modifier was released, just reflect that (remove it) but don't finalize yet
-    if (MODIFIERS.has(k)) {
-      activeMods.delete(k);
+    if (MODIFIERS.has(modKey)) {
+      activeMods.delete(modKey);
       stopEdit();
       return;
     }
