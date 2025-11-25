@@ -4,8 +4,7 @@ use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
 use blueprotobuf_lib::blueprotobuf;
-use log::{info, trace, warn};
-use serde::Serialize;
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::collections::{HashMap, HashSet};
@@ -13,6 +12,27 @@ use std::sync::Arc;
 use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::RwLock;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
+pub enum CaptureMethod {
+    Windivert,
+    Npcap,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct PacketCaptureConfig {
+    pub method: CaptureMethod,
+    pub adapter: Option<String>, // Device name for Npcap
+}
+
+impl Default for PacketCaptureConfig {
+    fn default() -> Self {
+        Self {
+            method: CaptureMethod::Windivert,
+            adapter: None,
+        }
+    }
+}
 
 /// Safely emits an event to the frontend, handling WebView2 state errors gracefully.
 /// This prevents the app from freezing when the WebView is in an invalid state, maybe.

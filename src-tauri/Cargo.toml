@@ -23,6 +23,11 @@ default = ["npcap"]
 npcap = ["dep:pcap"]
 
 
+[features]
+default = ["npcap"]
+npcap = ["dep:pcap"]
+
+
 [dependencies]
 # image-png for frontend
 tauri = { version = "2.9.3", features = ["tray-icon", "image-png"] }
