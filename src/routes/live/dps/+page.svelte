@@ -64,7 +64,8 @@
           player: {
             uid: player.uid,
             name: player.name,
-            className: player.className
+            className: player.className,
+            classSpecName: player.classSpecName
           },
           showYourNameSetting: SETTINGS_YOUR_NAME,
           showOthersNameSetting: SETTINGS_OTHERS_NAME,

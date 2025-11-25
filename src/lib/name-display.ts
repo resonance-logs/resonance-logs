@@ -13,17 +13,23 @@ export interface Player {
   name: string;
   /** Player's class name */
   className: string;
+  /** Player's specialization name (optional) */
+  classSpecName?: string;
 }
 
 /**
  * Settings for name display preferences
  */
-export type NameDisplaySetting = 
-  | "Show Your Name" 
-  | "Show Your Class" 
+export type NameDisplaySetting =
+  | "Show Your Name"
+  | "Show Your Class"
+  | "Show Your Name - Class"
+  | "Show Your Name - Spec"
   | "Hide Your Name"
-  | "Show Others' Name" 
-  | "Show Others' Class" 
+  | "Show Others' Name"
+  | "Show Others' Class"
+  | "Show Others' Name - Class"
+  | "Show Others' Name - Spec"
   | "Hide Others' Name";
 
 /**
@@ -42,10 +48,10 @@ export interface NameDisplayParams {
 
 /**
  * Transforms player name display based on user preferences
- * 
+ *
  * @param params - Object containing player information and display settings
  * @returns The appropriate display name based on the settings
- * 
+ *
  * @example
  * ```typescript
  * const displayName = getDisplayName({
@@ -59,26 +65,47 @@ export interface NameDisplayParams {
  */
 export default function getDisplayName(params: NameDisplayParams): string {
   const { player, showYourNameSetting, showOthersNameSetting, isLocalPlayer } = params;
-  
+
   // Determine which setting to use based on whether this is the local player
   const setting = isLocalPlayer ? showYourNameSetting : showOthersNameSetting;
-  
+
+  // Get the base name to use
+  const baseName = player.name || player.uid.toString();
+
   // Apply the appropriate setting
   switch (setting) {
     case "Show Your Name":
     case "Show Others' Name":
-      return player.name || player.uid.toString();
-    
+      return baseName;
+
     case "Show Your Class":
     case "Show Others' Class":
-      return player.className || player.name || player.uid.toString();
-    
+      return player.className || baseName;
+
+    case "Show Your Name - Class":
+    case "Show Others' Name - Class":
+      if (player.className) {
+        return `${baseName} - ${player.className}`;
+      }
+      return baseName;
+
+    case "Show Your Name - Spec":
+    case "Show Others' Name - Spec":
+      if (player.classSpecName) {
+        return `${baseName} - ${player.classSpecName}`;
+      }
+      // Fallback to class if spec is not available
+      if (player.className) {
+        return `${baseName} - ${player.className}`;
+      }
+      return baseName;
+
     case "Hide Your Name":
     case "Hide Others' Name":
       return player.name ? "" : player.uid.toString();
-    
+
     default:
       // Fallback to name if setting is unrecognized
-      return player.name || player.uid.toString();
+      return baseName;
   }
 }

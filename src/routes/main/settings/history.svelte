@@ -56,8 +56,8 @@
       </button>
       {#if expandedSections.general}
         <div class="px-4 pb-3 space-y-1">
-          <SettingsSelect bind:selected={SETTINGS.history.general.state.showYourName} values={["Show Your Name", "Show Your Class", "Hide Your Name"]} label="Show Your Name" description="Show Your Class = replace your name with your class" />
-          <SettingsSelect bind:selected={SETTINGS.history.general.state.showOthersName} values={["Show Others' Name", "Show Others' Class", "Hide Others' Name"]} label="Show Others' Name" description="Show Others' Class = replace others' name with their class" />
+          <SettingsSelect bind:selected={SETTINGS.history.general.state.showYourName} values={["Show Your Name", "Show Your Class", "Show Your Name - Class", "Show Your Name - Spec", "Hide Your Name"]} label="Show Your Name" description="Show Your Class = replace your name with your class. Name - Class/Spec = show both." />
+          <SettingsSelect bind:selected={SETTINGS.history.general.state.showOthersName} values={["Show Others' Name", "Show Others' Class", "Show Others' Name - Class", "Show Others' Name - Spec", "Hide Others' Name"]} label="Show Others' Name" description="Show Others' Class = replace others' name with their class. Name - Class/Spec = show both." />
           <SettingsSwitch bind:checked={SETTINGS.history.general.state.showYourAbilityScore} label="Your Ability Score" description="Show your ability score" />
           <SettingsSwitch bind:checked={SETTINGS.history.general.state.showOthersAbilityScore} label="Others' Ability Score" description="Show others' ability score" />
           <SettingsSwitch bind:checked={SETTINGS.history.general.state.relativeToTopDPSPlayer} label="Relative to Top DPS - Player" description="Color bars are relative to top DPS player instead of all players. Useful for 20 man or World Bosses." />

@@ -410,7 +410,7 @@
                       {/if}
                     {/if}
                     {getDisplayName({
-                      player: { uid: p.uid, name: p.name, className: p.className },
+                      player: { uid: p.uid, name: p.name, className: p.className, classSpecName: p.classSpecName },
                       showYourNameSetting: settings.state.history.general.showYourName,
                       showOthersNameSetting: settings.state.history.general.showOthersName,
                       isLocalPlayer: p.isLocalPlayer
@@ -470,7 +470,7 @@
           <h2 class="text-xl font-semibold text-foreground">Skill Breakdown</h2>
           <div class="text-sm text-neutral-400">
             Player: {getDisplayName({
-              player: { uid: selectedPlayer.uid, name: selectedPlayer.name, className: selectedPlayer.className },
+              player: { uid: selectedPlayer.uid, name: selectedPlayer.name, className: selectedPlayer.className, classSpecName: selectedPlayer.classSpecName },
               showYourNameSetting: settings.state.history.general.showYourName,
               showOthersNameSetting: settings.state.history.general.showOthersName,
               isLocalPlayer: selectedPlayer.isLocalPlayer
