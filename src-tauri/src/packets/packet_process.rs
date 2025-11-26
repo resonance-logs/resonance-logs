@@ -4,7 +4,7 @@ use crate::packets::parser;
 use crate::packets::utils::BinaryReader;
 use log::debug;
 
-pub async fn process_packet(
+pub fn process_packet(
     mut packets_reader: BinaryReader,
     packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
 ) {
@@ -50,7 +50,7 @@ pub async fn process_packet(
                 if let Some((method_id, payload)) =
                     parser::parse_notify_fragment(&mut reader, is_zstd_compressed != 0)
                 {
-                    if let Err(err) = packet_sender.send((method_id, payload)).await {
+                    if let Err(err) = packet_sender.blocking_send((method_id, payload)) {
                         debug!("Failed to send packet: {err}");
                     }
                 } else {
@@ -181,6 +181,6 @@ mod tests {
             &fs::read_to_string(filename).expect(&format!("Failed to open {filename}")),
         )
         .expect("Invalid JSON in test_packet.json");
-        process_packet(BinaryReader::from(v), packet_sender).await;
+        process_packet(BinaryReader::from(v), packet_sender);
     }
 }

@@ -459,6 +459,60 @@ impl Encounter {
         self.waiting_for_next_boss = false;
         self.last_active_segment_type = None;
     }
+
+    /// Resets player metrics for a segment switch within the same encounter.
+    /// Unlike `reset_combat_state`, this preserves boss HP attributes so the
+    /// boss health bar remains visible when switching from trash to boss segment.
+    ///
+    /// Preserves:
+    /// - entity HP attributes (CurrentHp, MaxHp) for boss health display
+    /// - entity identity fields (name, class, spec, etc.)
+    ///
+    /// Clears:
+    /// - per-entity combat counters and skill maps
+    /// - encounter totals (but NOT time_fight_start_ms - caller handles that)
+    pub fn reset_segment_metrics(&mut self) {
+        // Reset encounter-level combat totals (but NOT timestamps - caller preserves those)
+        self.total_dmg = 0;
+        self.total_heal = 0;
+
+        // Reset per-entity combat stats while preserving identity AND HP attributes
+        for entity in self.entity_uid_to_entity.values_mut() {
+            // Damage
+            entity.total_dmg = 0;
+            entity.crit_total_dmg = 0;
+            entity.crit_hits_dmg = 0;
+            entity.lucky_total_dmg = 0;
+            entity.lucky_hits_dmg = 0;
+            entity.hits_dmg = 0;
+            entity.skill_uid_to_dmg_skill.clear();
+            entity.dmg_to_target.clear();
+            entity.skill_dmg_to_target.clear();
+
+            // NOTE: Do NOT clear HP attributes here - we want to preserve boss HP
+            // for display when switching segments within the same encounter
+
+            // Healing
+            entity.total_heal = 0;
+            entity.crit_total_heal = 0;
+            entity.crit_hits_heal = 0;
+            entity.lucky_total_heal = 0;
+            entity.lucky_hits_heal = 0;
+            entity.hits_heal = 0;
+            entity.skill_uid_to_heal_skill.clear();
+
+            // Taken
+            entity.total_taken = 0;
+            entity.crit_total_taken = 0;
+            entity.crit_hits_taken = 0;
+            entity.lucky_total_taken = 0;
+            entity.lucky_hits_taken = 0;
+            entity.hits_taken = 0;
+            entity.skill_uid_to_taken_skill.clear();
+        }
+
+        // Don't reset attempt tracking or segment type - this is just a metrics reset
+    }
 }
 
 pub mod attr_type {

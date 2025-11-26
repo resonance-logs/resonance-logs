@@ -19,15 +19,58 @@ static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
 static UPLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 const AUTO_UPLOAD_INTERVAL_SECS: u64 = 30;
 
+/// Settings from the moduleSync.json store file
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ModuleSyncSettings {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_auto_upload")]
+    pub auto_upload: bool,
+    #[serde(default)]
+    pub api_key: String,
+    #[serde(default)]
+    pub base_url: String,
+}
+
+fn default_auto_upload() -> bool {
+    true
+}
+
+/// Read the moduleSync settings from the tauri-plugin-svelte store file
+/// This is a blocking operation - call from spawn_blocking or non-async context
+pub(crate) fn read_module_sync_settings_blocking(
+    settings_path: std::path::PathBuf,
+) -> Option<ModuleSyncSettings> {
+    let content = std::fs::read_to_string(&settings_path).ok()?;
+    serde_json::from_str(&content).ok()
+}
+
+/// Get the path to the moduleSync.json settings file
+pub(crate) fn get_module_sync_settings_path(app: &AppHandle) -> Option<std::path::PathBuf> {
+    let app_data_dir = app.path().app_config_dir().ok()?;
+    Some(
+        app_data_dir
+            .join("tauri-plugin-svelte")
+            .join("moduleSync.json"),
+    )
+}
+
 #[derive(Clone, Default)]
 pub struct AutoUploadState {
     api_key: Arc<RwLock<Option<String>>>,
     base_url: Arc<RwLock<Option<String>>>,
+    auto_upload_enabled: Arc<RwLock<bool>>,
     notifier: Arc<Notify>,
 }
 
 impl AutoUploadState {
-    pub async fn sync_from_settings(&self, api_key: Option<String>, base_url: Option<String>) {
+    pub async fn sync_from_settings(
+        &self,
+        api_key: Option<String>,
+        base_url: Option<String>,
+        auto_upload: bool,
+    ) {
         let sanitized_key = api_key.and_then(|k| {
             let trimmed = k.trim().to_string();
             if trimmed.is_empty() {
@@ -47,7 +90,56 @@ impl AutoUploadState {
 
         *self.api_key.write().await = sanitized_key;
         *self.base_url.write().await = sanitized_base;
+        *self.auto_upload_enabled.write().await = auto_upload;
         self.notifier.notify_one();
+    }
+
+    /// Reload settings from the JSON file (non-blocking)
+    pub async fn reload_from_file(&self, app: &AppHandle) {
+        let settings_path = match get_module_sync_settings_path(app) {
+            Some(p) => p,
+            None => {
+                log::debug!("could not determine moduleSync.json settings path");
+                return;
+            }
+        };
+
+        // Read file in a blocking thread to avoid blocking the async runtime
+        let settings = match tauri::async_runtime::spawn_blocking(move || {
+            read_module_sync_settings_blocking(settings_path)
+        })
+        .await
+        {
+            Ok(s) => s,
+            Err(e) => {
+                log::debug!("failed to spawn blocking task for settings read: {}", e);
+                return;
+            }
+        };
+
+        if let Some(settings) = settings {
+            let api_key = if settings.api_key.trim().is_empty() {
+                None
+            } else {
+                Some(settings.api_key.trim().to_string())
+            };
+            let base_url = if settings.base_url.trim().is_empty() {
+                None
+            } else {
+                Some(settings.base_url.trim().to_string())
+            };
+            let has_key = api_key.is_some();
+            *self.api_key.write().await = api_key;
+            *self.base_url.write().await = base_url;
+            *self.auto_upload_enabled.write().await = settings.auto_upload;
+            log::debug!(
+                "reloaded auto upload settings: auto_upload={}, has_api_key={}",
+                settings.auto_upload,
+                has_key
+            );
+        } else {
+            log::debug!("could not read moduleSync.json settings file");
+        }
     }
 
     pub async fn current_api_key(&self) -> Option<String> {
@@ -56,6 +148,10 @@ impl AutoUploadState {
 
     pub async fn current_base_url(&self) -> Option<String> {
         self.base_url.read().await.clone()
+    }
+
+    pub async fn is_auto_upload_enabled(&self) -> bool {
+        *self.auto_upload_enabled.read().await
     }
 
     pub fn notifier(&self) -> Arc<Notify> {
@@ -315,12 +411,18 @@ fn pending_encounter_count() -> Result<i64, String> {
 
 pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
     tauri::async_runtime::spawn(async move {
+        // Load settings once at startup
+        state.reload_from_file(&app).await;
+
         let mut ticker = interval(Duration::from_secs(AUTO_UPLOAD_INTERVAL_SECS));
         let notifier = state.notifier();
         loop {
             tokio::select! {
                 _ = ticker.tick() => {},
-                _ = notifier.notified() => {},
+                _ = notifier.notified() => {
+                    // Settings changed notification - reload settings
+                    state.reload_from_file(&app).await;
+                },
             }
 
             if let Err(err) = maybe_trigger_auto_upload(app.clone(), state.clone()).await {
@@ -331,6 +433,11 @@ pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
 }
 
 async fn maybe_trigger_auto_upload(app: AppHandle, state: AutoUploadState) -> Result<(), String> {
+    // Check if auto-upload is enabled (uses cached value)
+    if !state.is_auto_upload_enabled().await {
+        return Ok(());
+    }
+
     let api_key = match state.current_api_key().await {
         Some(key) => key,
         None => return Ok(()),
@@ -343,6 +450,11 @@ async fn maybe_trigger_auto_upload(app: AppHandle, state: AutoUploadState) -> Re
     if pending == 0 {
         return Ok(());
     }
+
+    log::info!(
+        "auto upload: found {} pending encounter(s), starting upload",
+        pending
+    );
 
     if let Some(guard) = UploadRunGuard::try_acquire() {
         let base_urls = resolve_base_urls(state.current_base_url().await);
@@ -1047,6 +1159,11 @@ fn is_encounter_allowed(enc: &UploadEncounterIn) -> bool {
         None => return false,
     };
 
+    // Never upload overworld encounters
+    if scene_id == 5000 {
+        return false;
+    }
+
     // Must be in allowed scenes
     let scenes = allowed_scenes_min_hp();
     let min_hp = match scenes.iter().find(|(s, _)| *s == scene_id) {
@@ -1081,11 +1198,17 @@ pub async fn perform_upload(
     base_urls: Vec<String>,
 ) -> Result<(), String> {
     CANCEL_FLAG.store(false, Ordering::SeqCst);
-    // Establish sqlite connection via diesel
-    let path = default_db_path();
-    let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-        .map_err(|e| e.to_string())?;
-    let total = count_ended_encounters(&mut conn)?;
+
+    // BLOCKING: Count total
+    let total = tauri::async_runtime::spawn_blocking(|| {
+        let path = default_db_path();
+        let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
+            .map_err(|e| e.to_string())?;
+        count_ended_encounters(&mut conn)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
     // Emit to known windows (main + live) when available, fall back to app.emit
     let started_payload: serde_json::Value = json!({"total": total});
     if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
@@ -1104,12 +1227,19 @@ pub async fn perform_upload(
         .timeout(std::time::Duration::from_secs(30))
         .build()
         .map_err(|e| e.to_string())?;
-    let mut offset = 0_i64;
-    let batch_size = 1_i64; // Upload encounters one by one
+
+    // We process encounters one by one (batch_size = 1).
+    // Since we mark encounters as uploaded (removing them from the pending set),
+    // we always fetch the first pending encounter (offset 0).
+    let batch_size = 1_i64;
     let mut uploaded = 0_i64;
     let mut current_url_index = 0;
 
-    while offset < total {
+    // We loop until we have processed 'total' encounters or run out of pending ones.
+    // Note: 'total' is a snapshot at start. New encounters might finish during upload,
+    // but we only aim to upload the count we saw at start to avoid infinite loops if
+    // encounters are generated faster than upload.
+    while uploaded < total {
         if CANCEL_FLAG.load(Ordering::SeqCst) {
             let err_payload: serde_json::Value = json!({"message": "Upload cancelled"});
             if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
@@ -1121,19 +1251,38 @@ pub async fn perform_upload(
             let _ = app.emit("upload:error", err_payload);
             return Ok(());
         }
-        let rows = load_encounters_slice(&mut conn, offset, batch_size)?;
+
+        // BLOCKING: Load batch (always offset 0)
+        let (rows, payloads, skipped_policy_ids) =
+            tauri::async_runtime::spawn_blocking(move || {
+                let path = default_db_path();
+                let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
+                    .map_err(|e| e.to_string())?;
+                // Always use offset 0 because uploaded encounters are filtered out by the query
+                let rows = load_encounters_slice(&mut conn, 0, batch_size)?;
+                if rows.is_empty() {
+                    return Ok((rows, Vec::new(), Vec::new()));
+                }
+                let mut payloads = Vec::with_capacity(rows.len());
+                let mut skipped = Vec::new();
+                for row in &rows {
+                    let built = build_encounter_payload(&mut conn, row.clone())?;
+                    if is_encounter_allowed(&built) {
+                        payloads.push(PendingEncounter {
+                            id: row.0,
+                            payload: built,
+                        });
+                    } else {
+                        skipped.push(row.0);
+                    }
+                }
+                Ok::<_, String>((rows, payloads, skipped))
+            })
+            .await
+            .map_err(|e| e.to_string())??;
+
         if rows.is_empty() {
             break;
-        }
-        let mut payloads = Vec::with_capacity(rows.len());
-        let mut skipped_policy_ids: Vec<i32> = Vec::new();
-        for row in &rows {
-            let built = build_encounter_payload(&mut conn, row.clone())?;
-            if is_encounter_allowed(&built) {
-                payloads.push(PendingEncounter { id: row.0, payload: built });
-            } else {
-                skipped_policy_ids.push(row.0);
-            }
         }
 
         // Notify UI about any local encounters skipped by upload policy
@@ -1156,6 +1305,7 @@ pub async fn perform_upload(
 
         let mut filtered_payloads = payloads.clone();
         let mut duplicate_ids: Vec<i32> = Vec::new();
+        let mut duplicate_updates: Vec<(i32, i64)> = Vec::new(); // (local_id, remote_id)
 
         if !hashes.is_empty() {
             // Perform preflight duplicate check
@@ -1188,16 +1338,7 @@ pub async fn perform_upload(
                                 if let Some(ref hash) = entry.payload.source_hash {
                                     if let Some(&remote_id) = duplicate_map.get(hash) {
                                         duplicate_ids.push(entry.id);
-                                        // Update local encounter with remote_encounter_id for this duplicate
-                                        use sch::encounters::dsl as e;
-                                        let _ = diesel::update(
-                                            e::encounters.filter(e::id.eq(entry.id)),
-                                        )
-                                        .set((
-                                            e::remote_encounter_id.eq(remote_id),
-                                            e::uploaded_at_ms.eq(now_ms()),
-                                        ))
-                                        .execute(&mut conn);
+                                        duplicate_updates.push((entry.id, remote_id));
                                         return false;
                                     }
                                 }
@@ -1230,15 +1371,46 @@ pub async fn perform_upload(
             }
         }
 
+        // BLOCKING: Update duplicates in DB
+        if !duplicate_updates.is_empty() {
+            let updates = duplicate_updates.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                let path = default_db_path();
+                let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
+                    .map_err(|e| e.to_string())?;
+                use sch::encounters::dsl as e;
+                for (local_id, remote_id) in updates {
+                    let _ = diesel::update(e::encounters.filter(e::id.eq(local_id)))
+                        .set((
+                            e::remote_encounter_id.eq(remote_id),
+                            e::uploaded_at_ms.eq(now_ms()),
+                        ))
+                        .execute(&mut conn);
+                }
+                Ok::<_, String>(())
+            })
+            .await
+            .map_err(|e| e.to_string())??;
+        }
+
         // If no payloads remain for upload (either duplicates or filtered by policy), mark
         // duplicates and policy-skipped encounters as uploaded locally and continue.
         if filtered_payloads.is_empty() {
             // mark duplicates + any policy-skipped rows
             let mut ids: Vec<i32> = payloads.iter().map(|p| p.id).collect();
             ids.extend(skipped_policy_ids.iter());
-            mark_encounters_uploaded(&mut conn, &ids)?;
+
+            // BLOCKING: Mark uploaded
+            tauri::async_runtime::spawn_blocking(move || {
+                let path = default_db_path();
+                let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
+                    .map_err(|e| e.to_string())?;
+                mark_encounters_uploaded(&mut conn, &ids)
+            })
+            .await
+            .map_err(|e| e.to_string())??;
+
             uploaded += rows.len() as i64;
-            offset += rows.len() as i64;
             continue;
         }
 
@@ -1319,36 +1491,54 @@ pub async fn perform_upload(
             return Err(last_error);
         }
 
-        // Map returned remote IDs to local encounter IDs
-        // The server returns IDs in the same order as the uploaded encounters
-        if returned_ids.len() == filtered_payloads.len() {
-            use sch::encounters::dsl as e;
-            for (local_entry, &remote_id) in filtered_payloads.iter().zip(returned_ids.iter()) {
-                let _ = diesel::update(e::encounters.filter(e::id.eq(local_entry.id)))
-                    .set((
-                        e::remote_encounter_id.eq(remote_id),
-                        e::uploaded_at_ms.eq(now_ms()),
-                    ))
-                    .execute(&mut conn);
-            }
-        } else {
-            log::warn!(
-                "Mismatch between uploaded ({}) and returned ({}) encounter IDs. Remote IDs will not be persisted.",
-                filtered_payloads.len(),
-                returned_ids.len()
-            );
-        }
+        // BLOCKING: Update remote IDs and mark uploaded
+        let filtered_ids: Vec<i32> = filtered_payloads.iter().map(|e| e.id).collect();
+        let skipped_ids_clone = skipped_policy_ids.clone();
 
-        // Persist processed ids: duplicates (already present) + uploaded + policy-skipped
-        processed_ids.extend(filtered_payloads.iter().map(|entry| entry.id));
-        processed_ids.extend(skipped_policy_ids.iter());
-        mark_encounters_uploaded(&mut conn, &processed_ids)?;
+        tauri::async_runtime::spawn_blocking(move || {
+            let path = default_db_path();
+            let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
+                .map_err(|e| e.to_string())?;
+            use sch::encounters::dsl as e;
+
+            // Map returned remote IDs to local encounter IDs
+            if returned_ids.len() == filtered_ids.len() {
+                for (local_id, &remote_id) in filtered_ids.iter().zip(returned_ids.iter()) {
+                    let _ = diesel::update(e::encounters.filter(e::id.eq(*local_id)))
+                        .set((
+                            e::remote_encounter_id.eq(remote_id),
+                            e::uploaded_at_ms.eq(now_ms()),
+                        ))
+                        .execute(&mut conn);
+                }
+            } else {
+                log::warn!(
+                    "Mismatch between uploaded ({}) and returned ({}) encounter IDs. Remote IDs will not be persisted.",
+                    filtered_ids.len(),
+                    returned_ids.len()
+                );
+            }
+
+            // Persist processed ids: duplicates (already present) + uploaded + policy-skipped
+            // Note: duplicates were already updated in the previous blocking block, but we need to ensure
+            // they are marked uploaded if not already (they should be).
+            // Actually, duplicates were updated with uploaded_at_ms in the previous block.
+            // So we only need to handle filtered_ids (which we just updated above) and skipped_policy_ids.
+
+            // We need to mark skipped_policy_ids as uploaded.
+            // And filtered_ids were marked uploaded in the loop above.
+            // So we just need to mark skipped_policy_ids.
+
+            mark_encounters_uploaded(&mut conn, &skipped_ids_clone)?;
+
+            Ok::<_, String>(())
+        })
+        .await
+        .map_err(|e| e.to_string())??;
 
         uploaded += rows.len() as i64;
-        offset += rows.len() as i64;
         // Emit progress for UI to known windows and as a fallback via app.emit
-        let progress_payload: serde_json::Value =
-            json!({"uploaded": uploaded, "total": total});
+        let progress_payload: serde_json::Value = json!({"uploaded": uploaded, "total": total});
         if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
             let _ = w.emit("upload:progress", progress_payload.clone());
         }
@@ -1463,5 +1653,36 @@ mod tests {
         };
         let v = serde_json::to_value(&body).expect("serialize");
         assert!(v.get("clientVersion").is_some());
+    }
+
+    #[test]
+    fn blocks_overworld_scene_from_upload() {
+        let encounter = UploadEncounterIn {
+            started_at_ms: 0,
+            ended_at_ms: Some(1),
+            local_player_id: None,
+            total_dmg: Some(0),
+            total_heal: Some(0),
+            scene_id: Some(5000),
+            scene_name: Some("Overworld".to_string()),
+            source_hash: None,
+            attempts: vec![],
+            death_events: vec![],
+            actor_encounter_stats: vec![],
+            damage_skill_stats: vec![],
+            heal_skill_stats: vec![],
+            entities: vec![],
+            encounter_bosses: vec![UploadEncounterBossIn {
+                monster_name: "Dummy".to_string(),
+                hits: 0,
+                total_damage: 0,
+                max_hp: Some(1_000),
+                is_defeated: false,
+            }],
+            detailed_playerdata: vec![],
+            dungeon_segments: vec![],
+        };
+
+        assert!(!is_encounter_allowed(&encounter));
     }
 }

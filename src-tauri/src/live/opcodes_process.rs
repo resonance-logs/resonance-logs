@@ -808,8 +808,19 @@ pub fn process_aoi_sync_delta(
                 }
 
                 // Check for segment type transitions and reset metrics if needed
+                // Prioritize open boss segments over trash - during a boss fight with adds,
+                // we don't want to switch to "trash" just because trash mob damage occurred.
                 let current_segment_type =
                     dungeon_log::snapshot(&runtime.shared_log).and_then(|log| {
+                        // First check for any open boss segment
+                        let open_boss = log.segments.iter().rev().find(|s| {
+                            s.segment_type == dungeon_log::SegmentType::Boss
+                                && s.ended_at_ms.is_none()
+                        });
+                        if open_boss.is_some() {
+                            return Some("boss".to_string());
+                        }
+                        // Fall back to any open segment (trash)
                         log.segments
                             .iter()
                             .rev()
@@ -828,14 +839,9 @@ pub fn process_aoi_sync_delta(
                             encounter.last_active_segment_type, current_type
                         );
 
-                        // Store the original fight start time before reset
-                        let original_fight_start_ms = encounter.time_fight_start_ms;
-
-                        // Reset combat state (live meter) - this clears player metrics but also resets time_fight_start_ms
-                        encounter.reset_combat_state();
-
-                        // Restore the original fight start time to preserve total encounter duration
-                        encounter.time_fight_start_ms = original_fight_start_ms;
+                        // Reset only player metrics, preserving boss HP attributes
+                        // so the boss health bar remains visible during segment switches
+                        encounter.reset_segment_metrics();
 
                         // Update the last segment type
                         encounter.last_active_segment_type = Some(current_type.clone());

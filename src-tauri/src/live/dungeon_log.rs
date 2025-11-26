@@ -62,6 +62,45 @@ impl DungeonLogRuntime {
     }
 }
 
+/// Cached entity info for boss detection when attributes arrive late.
+#[derive(Debug, Clone, Default)]
+struct EntityCache {
+    /// Maps entity_id -> (monster_type_id, boss_name)
+    entities: HashMap<i64, (Option<i64>, Option<String>)>,
+}
+
+impl EntityCache {
+    /// Update cache with entity info from a damage event.
+    fn update(&mut self, event: &DamageEvent) {
+        let entry = self.entities.entry(event.target_id).or_default();
+        if event.target_monster_type_id.is_some() {
+            entry.0 = event.target_monster_type_id;
+        }
+        if event.target_name.is_some() {
+            entry.1 = event.target_name.clone();
+        }
+    }
+
+    /// Check if an entity is known to be a boss from cached info.
+    fn is_known_boss(&self, entity_id: i64) -> bool {
+        self.entities
+            .get(&entity_id)
+            .and_then(|(monster_type_id, _)| *monster_type_id)
+            .map(|id| GLOBAL_BOSS_LIST.contains(&id))
+            .unwrap_or(false)
+    }
+
+    /// Get cached monster type id for an entity.
+    fn get_monster_type_id(&self, entity_id: i64) -> Option<i64> {
+        self.entities.get(&entity_id).and_then(|(id, _)| *id)
+    }
+
+    /// Clear the cache (e.g., on scene change).
+    fn clear(&mut self) {
+        self.entities.clear();
+    }
+}
+
 /// Master container for dungeon segments within a scene.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -82,6 +121,10 @@ pub struct DungeonLog {
     #[serde(skip)]
     #[specta(skip)]
     next_segment_id: u64,
+    /// Cache of entity info for late-arriving attributes.
+    #[serde(skip)]
+    #[specta(skip)]
+    entity_cache: EntityCache,
 }
 
 impl Default for DungeonLog {
@@ -95,6 +138,7 @@ impl Default for DungeonLog {
             active_trash_idx: None,
             last_event_at: None,
             next_segment_id: 1,
+            entity_cache: EntityCache::default(),
         }
     }
 }
@@ -233,6 +277,20 @@ mod tests {
         }
     }
 
+    fn trash_event(timestamp: i64, target_id: i64) -> DamageEvent {
+        DamageEvent {
+            timestamp_ms: timestamp,
+            attacker_id: 1,
+            target_id,
+            target_name: Some("Trash Mob".into()),
+            // Use a monster type that's NOT in the boss list
+            target_monster_type_id: Some(99999),
+            amount: 500,
+            is_boss_target: false,
+            is_killing_blow: false,
+        }
+    }
+
     #[test]
     fn boss_segment_created_and_closed() {
         let mut log = DungeonLog::default();
@@ -253,6 +311,180 @@ mod tests {
         // Segment should remain open to support multi-entity bosses
         assert!(log.segments[0].ended_at_ms.is_none());
         assert_eq!(log.combat_state, CombatState::InCombat);
+    }
+
+    #[test]
+    fn late_arriving_boss_detection_via_entity_cache() {
+        // Test scenario: boss entity_id is damaged before monster_type_id is known
+        // Later, we get the monster_type_id - should be recognized as same boss
+        let mut log = DungeonLog::default();
+        let entity_id = 42;
+
+        // First event: entity is unknown (no monster_type_id), but later identified as boss
+        // via is_boss_target hint (e.g., from EliteStatus attribute)
+        let first_event = DamageEvent {
+            timestamp_ms: 100,
+            attacker_id: 1,
+            target_id: entity_id,
+            target_name: Some("Mystery Boss".into()),
+            target_monster_type_id: None, // Unknown at first
+            amount: 1000,
+            is_boss_target: true, // Identified as boss via other means
+            is_killing_blow: false,
+        };
+
+        let (changed, _, new_boss) = log.apply_damage_event(first_event, Instant::now());
+        assert!(changed, "First boss event should create a segment");
+        assert!(new_boss, "Should be flagged as new boss");
+        assert_eq!(log.segments.len(), 1);
+        assert_eq!(log.segments[0].segment_type, SegmentType::Boss);
+        assert!(
+            log.segments[0].boss_monster_type_id.is_none(),
+            "Monster type should be unknown initially"
+        );
+
+        // Second event: same entity, now we have the monster_type_id
+        // Boss monster type 10010 = Tempest Ogre (known boss)
+        let second_event = DamageEvent {
+            timestamp_ms: 200,
+            attacker_id: 1,
+            target_id: entity_id,
+            target_name: Some("Tempest Ogre".into()),
+            target_monster_type_id: Some(10010), // Now known
+            amount: 1500,
+            is_boss_target: true,
+            is_killing_blow: false,
+        };
+
+        let (changed, _, new_boss) = log.apply_damage_event(second_event, Instant::now());
+        assert!(changed, "Should update segment");
+        assert!(!new_boss, "Should not be flagged as new boss - same entity");
+        assert_eq!(log.segments.len(), 1, "Should still be same segment");
+
+        // Check that segment was updated with monster_type_id
+        assert_eq!(
+            log.segments[0].boss_monster_type_id,
+            Some(10010),
+            "Boss monster type should be backfilled"
+        );
+    }
+
+    #[test]
+    fn entity_cache_helps_identify_boss_on_second_encounter() {
+        // Test: entity is seen once with full info, then later seen without monster_type_id
+        // The cache should help identify it as a boss
+        let mut log = DungeonLog::default();
+        let entity_id = 99;
+
+        // First encounter with full info - Tempest Ogre (boss monster 10010)
+        let first_event = DamageEvent {
+            timestamp_ms: 100,
+            attacker_id: 1,
+            target_id: entity_id,
+            target_name: Some("Tempest Ogre".into()),
+            target_monster_type_id: Some(10010),
+            amount: 1000,
+            is_boss_target: true,
+            is_killing_blow: true, // Boss dies
+        };
+
+        log.apply_damage_event(first_event, Instant::now());
+        assert_eq!(log.segments.len(), 1);
+
+        // Simulate timeout to close the segment
+        log.handle_timeout(
+            Instant::now() + std::time::Duration::from_secs(20),
+            SEGMENT_TIMEOUT,
+        );
+        assert_eq!(log.combat_state, CombatState::Idle);
+
+        // Second encounter - same entity, but this time monster_type_id is missing in packet
+        let second_event = DamageEvent {
+            timestamp_ms: 300,
+            attacker_id: 1,
+            target_id: entity_id,
+            target_name: Some("Tempest Ogre".into()),
+            target_monster_type_id: None, // Missing this time
+            amount: 2000,
+            is_boss_target: false, // Not flagged directly
+            is_killing_blow: false,
+        };
+
+        let (changed, _, new_boss) = log.apply_damage_event(second_event, Instant::now());
+        assert!(changed, "Should create new segment");
+        // The cache should identify this as a boss from previous encounter
+        assert!(
+            log.entity_cache.is_known_boss(entity_id),
+            "Entity should be cached as boss"
+        );
+        // Check if segment was created as boss (via entity cache lookup)
+        assert!(
+            log.segments
+                .iter()
+                .any(|s| s.boss_entity_id == Some(entity_id)),
+            "Should match existing boss segment by entity_id"
+        );
+    }
+
+    #[test]
+    fn boss_and_trash_simultaneously_keeps_boss_segment_active() {
+        // Test scenario: during a boss fight, player hits both the boss and trash mobs
+        // The boss segment should remain the primary segment and not switch to trash
+        let mut log = DungeonLog::default();
+        let boss_id = 100;
+        let trash_id = 200;
+
+        // Start boss fight
+        let (changed, _, new_boss) =
+            log.apply_damage_event(boss_event(100, boss_id, false), Instant::now());
+        assert!(changed);
+        assert!(new_boss, "Should flag as new boss");
+        assert_eq!(log.segments.len(), 1);
+        assert_eq!(log.segments[0].segment_type, SegmentType::Boss);
+        assert_eq!(log.combat_state, CombatState::InCombat);
+        assert!(log.active_segment_idx.is_some(), "Boss should be active segment");
+
+        // Now hit a trash mob while boss fight is ongoing
+        let (changed, boss_died, new_boss) =
+            log.apply_damage_event(trash_event(150, trash_id), Instant::now());
+        assert!(changed, "Trash event should be logged");
+        assert!(!boss_died, "Boss should not have died");
+        assert!(!new_boss, "Should not flag as new boss");
+
+        // Trash segment may be created, but boss segment should still be active
+        assert!(
+            log.active_segment_idx.is_some(),
+            "Active segment should still be set"
+        );
+        let active_idx = log.active_segment_idx.unwrap();
+        assert_eq!(
+            log.segments[active_idx].segment_type,
+            SegmentType::Boss,
+            "Active segment should still be boss"
+        );
+        assert_eq!(log.combat_state, CombatState::InCombat);
+
+        // Continue hitting the boss - should still work on the boss segment
+        let (changed, _, _) =
+            log.apply_damage_event(boss_event(200, boss_id, false), Instant::now());
+        assert!(changed);
+        assert_eq!(
+            log.segments[active_idx].segment_type,
+            SegmentType::Boss,
+            "Active segment should still be boss after more boss damage"
+        );
+
+        // Check that there's still an open boss segment
+        let open_boss_segments: Vec<_> = log
+            .segments
+            .iter()
+            .filter(|s| s.segment_type == SegmentType::Boss && s.ended_at_ms.is_none())
+            .collect();
+        assert_eq!(
+            open_boss_segments.len(),
+            1,
+            "Should have exactly one open boss segment"
+        );
     }
 }
 
@@ -345,15 +577,24 @@ fn lock_log(handle: &SharedDungeonLog) -> Option<MutexGuard<'_, DungeonLog>> {
 }
 
 impl DungeonLog {
-    fn should_treat_as_trash(event: &DamageEvent) -> bool {
+    fn should_treat_as_trash(&self, event: &DamageEvent) -> bool {
         if event.amount <= 0 {
             return false;
         }
 
-        match event.target_monster_type_id {
-            Some(monster_type_id) => !GLOBAL_BOSS_LIST.contains(&monster_type_id),
-            None => false,
+        // First check the event's monster type id
+        if let Some(monster_type_id) = event.target_monster_type_id {
+            return !GLOBAL_BOSS_LIST.contains(&monster_type_id);
         }
+
+        // If no monster type in event, check our cache for this entity
+        if let Some(cached_monster_type_id) = self.entity_cache.get_monster_type_id(event.target_id)
+        {
+            return !GLOBAL_BOSS_LIST.contains(&cached_monster_type_id);
+        }
+
+        // No info available - don't treat as trash (might be a boss we don't know about yet)
+        false
     }
 
     fn is_boss_event(&self, event: &DamageEvent) -> bool {
@@ -361,12 +602,19 @@ impl DungeonLog {
             return true;
         }
 
+        // Check using event's monster type id
         if let Some(monster_type_id) = event.target_monster_type_id {
             if GLOBAL_BOSS_LIST.contains(&monster_type_id) {
                 return true;
             }
         }
 
+        // Check using cached entity info (handles late-arriving attributes)
+        if self.entity_cache.is_known_boss(event.target_id) {
+            return true;
+        }
+
+        // Check if this entity matches any existing boss segment
         self.segments.iter().any(|segment| {
             segment.segment_type == SegmentType::Boss
                 && (segment.boss_entity_id == Some(event.target_id)
@@ -392,6 +640,8 @@ impl DungeonLog {
         };
 
         if scene_changed {
+            // Clear entity cache on scene change
+            self.entity_cache.clear();
             *self = DungeonLog {
                 scene_id,
                 scene_name,
@@ -405,6 +655,9 @@ impl DungeonLog {
 
     fn apply_damage_event(&mut self, event: DamageEvent, now: Instant) -> (bool, bool, bool) {
         self.last_event_at = Some(now);
+
+        // Update entity cache with any new info from this event
+        self.entity_cache.update(&event);
 
         match self.combat_state {
             CombatState::Idle => {
@@ -464,7 +717,10 @@ impl DungeonLog {
         let mut segment = Segment::new(SegmentType::Boss, event.timestamp_ms, self.next_segment_id);
         self.next_segment_id += 1;
         segment.boss_entity_id = Some(event.target_id);
-        segment.boss_monster_type_id = event.target_monster_type_id;
+        // Use event's monster type id, or fall back to cached value
+        segment.boss_monster_type_id = event
+            .target_monster_type_id
+            .or_else(|| self.entity_cache.get_monster_type_id(event.target_id));
         segment.boss_name = event.target_name.clone();
         segment.append_event(event);
         self.segments.push(segment);
@@ -475,7 +731,7 @@ impl DungeonLog {
     }
 
     fn log_trash_event(&mut self, event: DamageEvent) -> bool {
-        if !Self::should_treat_as_trash(&event) {
+        if !self.should_treat_as_trash(&event) {
             return false;
         }
 

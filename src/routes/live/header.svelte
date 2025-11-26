@@ -81,8 +81,10 @@
   onMount(() => {
     let encounterUnlisten: (() => void) | null = null;
     let resetUnlisten: (() => void) | null = null;
+    let isDestroyed = false;
 
     onEncounterUpdate((event) => {
+      if (isDestroyed) return;
       const newHeaderInfo = event.payload.headerInfo;
       const newFightStartTimestamp = newHeaderInfo.fightStartTimestampMs;
 
@@ -102,20 +104,30 @@
         clientElapsedMs = 0;
       }
     }).then((fn) => {
-      encounterUnlisten = fn;
+      if (isDestroyed) {
+        fn();
+      } else {
+        encounterUnlisten = fn;
+      }
     });
 
     // Listen for reset-encounter event (fired on server change)
     onResetEncounter(() => {
+      if (isDestroyed) return;
       resetTimer();
     }).then((fn) => {
-      resetUnlisten = fn;
+      if (isDestroyed) {
+        fn();
+      } else {
+        resetUnlisten = fn;
+      }
     });
 
     // Start the client-side timer loop
     animationFrameId = requestAnimationFrame(updateClientTimer);
 
     return () => {
+      isDestroyed = true;
       if (encounterUnlisten) encounterUnlisten();
       if (resetUnlisten) resetUnlisten();
       if (animationFrameId !== null) {

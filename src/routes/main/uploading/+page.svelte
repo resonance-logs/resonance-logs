@@ -148,38 +148,54 @@
   onMount(() => {
     const app = getCurrentWebviewWindow();
     const unsubs: Array<() => void> = [];
+    let isDestroyed = false;
+
+    // Helper to safely add unsubscribe function only if component isn't destroyed
+    const safeAddUnsub = (un: () => void) => {
+      if (isDestroyed) {
+        // Component was destroyed before listener was set up, clean up immediately
+        un();
+      } else {
+        unsubs.push(un);
+      }
+    };
 
     app
       .listen<{ total?: number }>("upload:started", (e) => {
+        if (isDestroyed) return;
         setUploading(Math.max(0, e.payload?.total ?? 0));
         busy = true;
         infoMsg = "Uploading encounters…";
       })
-      .then((un) => unsubs.push(un));
+      .then(safeAddUnsub);
 
     app
       .listen<{ uploaded: number; total?: number }>("upload:progress", (e) => {
+        if (isDestroyed) return;
         setProgress(e.payload.uploaded, e.payload.total);
       })
-      .then((un) => unsubs.push(un));
+      .then(safeAddUnsub);
 
     app
       .listen("upload:completed", () => {
+        if (isDestroyed) return;
         busy = false;
         infoMsg = "Upload completed.";
       })
-      .then((un) => unsubs.push(un));
+      .then(safeAddUnsub);
 
     app
       .listen<{ message?: string }>("upload:error", (e) => {
+        if (isDestroyed) return;
         busy = false;
         setError(e.payload?.message ?? "Unknown upload error");
       })
-      .then((un) => unsubs.push(un));
+      .then(safeAddUnsub);
 
     // player-data-sync events intentionally not handled here — UI removed
 
     return () => {
+      isDestroyed = true;
       for (const un of unsubs) un();
     };
   });

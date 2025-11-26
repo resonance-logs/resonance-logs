@@ -22,11 +22,8 @@
     })();
   });
 
-  const appWebview = getCurrentWebviewWindow();
-  appWebview.listen<string>("navigate", (event) => {
-    const route = event.payload;
-    goto(route);
-  });
+  // Navigation listener is set up in onMount and properly cleaned up
+  let navigateUnlisten: (() => void) | null = null;
 
   async function openExternalUrl(url: string) {
     try {
@@ -51,17 +48,34 @@
   let showChangelog = $state(false);
   let currentVersion = $state('');
 
-  onMount(async () => {
-    try {
-      const v = await getVersion();
+  onMount(() => {
+    // Set up navigation listener
+    const appWebview = getCurrentWebviewWindow();
+    appWebview.listen<string>("navigate", (event) => {
+      const route = event.payload;
+      goto(route);
+    }).then((unlisten) => {
+      navigateUnlisten = unlisten;
+    });
+
+    // Get app version and check changelog
+    getVersion().then((v) => {
       currentVersion = v;
       // Compare persisted last-seen version with current app version
       if ((SETTINGS.appVersion.state as any).value !== v) {
         showChangelog = true;
       }
-    } catch (err) {
+    }).catch((err) => {
       console.error('Failed to get app version', err);
-    }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      if (navigateUnlisten) {
+        navigateUnlisten();
+        navigateUnlisten = null;
+      }
+    };
   });
 
   function handleClose() {

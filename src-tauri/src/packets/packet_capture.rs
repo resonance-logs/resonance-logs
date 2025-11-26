@@ -21,15 +21,17 @@ pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Ve
     // Use a larger bounded channel to prevent producer backpressure from stalling
     // headroom for bursts without risking unbounded memory growth.
     let (packet_sender, packet_receiver) =
-        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(10);
+        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(1000);
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
-    tauri::async_runtime::spawn(async move {
+
+    // Use std::thread::spawn to avoid blocking the async runtime with WinDivert recv
+    std::thread::spawn(move || {
         loop {
-            read_packets(&packet_sender, &mut restart_receiver).await;
+            read_packets(&packet_sender, &mut restart_receiver);
             // Wait for restart signal
             while !*restart_receiver.borrow() {
-                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                std::thread::sleep(std::time::Duration::from_millis(100));
             }
             // Reset signal to false before next loop
             let _ = restart_sender.send(false);
@@ -40,7 +42,8 @@ pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Ve
 }
 
 #[allow(clippy::too_many_lines)]
-async fn read_packets(
+#[allow(clippy::too_many_lines)]
+fn read_packets(
     packet_sender: &tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
     restart_receiver: &mut watch::Receiver<bool>,
 ) {
@@ -149,10 +152,10 @@ async fn read_packets(
                                                     &mut reassembler,
                                                     Some(seq_end),
                                                 );
-                                                if let Err(err) = packet_sender
-                                                    .send((Pkt::ServerChangeInfo, Vec::new()))
-                                                    .await
-                                                {
+                                                if let Err(err) = packet_sender.blocking_send((
+                                                    Pkt::ServerChangeInfo,
+                                                    Vec::new(),
+                                                )) {
                                                     debug!("Failed to send packet: {err}");
                                                 }
                                             }
@@ -189,9 +192,8 @@ async fn read_packets(
                     let payload_len = u32::try_from(tcp_payload.len()).unwrap_or(u32::MAX);
                     let seq_end = tcp_packet.sequence_number().wrapping_add(payload_len);
                     reset_stream(&mut tcp_reassembler, &mut reassembler, Some(seq_end));
-                    if let Err(err) = packet_sender
-                        .send((Pkt::ServerChangeInfo, Vec::new()))
-                        .await
+                    if let Err(err) =
+                        packet_sender.blocking_send((Pkt::ServerChangeInfo, Vec::new()))
                     {
                         debug!("Failed to send packet: {err}");
                     }
@@ -250,7 +252,7 @@ async fn read_packets(
         }
 
         while let Some(packet) = reassembler.try_next() {
-            process_packet(BinaryReader::from(packet), packet_sender.clone()).await;
+            process_packet(BinaryReader::from(packet), packet_sender.clone());
         }
 
         if defer_reset {
