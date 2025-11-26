@@ -27,8 +27,6 @@
                 "title": "Resonance Logs - Main",
                 "label": "main",
                 "url": "main",
-                "width": 855,
-                "height": 600,
                 "minWidth": 855,
                 "minHeight": 300,
                 "visible": false,
