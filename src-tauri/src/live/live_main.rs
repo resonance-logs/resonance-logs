@@ -146,8 +146,8 @@ pub async fn start(app_handle: AppHandle) {
                 // to avoid long stalls processing large backlogs. This keeps responsiveness
                 // (e.g., ServerChange) while still improving throughput during bursts.
                 let drain_start = Instant::now();
-                let drain_time_budget = Duration::from_millis(10); // small budget to limit latency
-                const MAX_DRAIN: usize = 256; // hard cap
+                let drain_time_budget = Duration::from_millis(20); // small budget to limit latency
+                const MAX_DRAIN: usize = 4096; // hard cap
                 let mut drained = 0usize;
 
                 loop {
