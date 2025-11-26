@@ -4,7 +4,7 @@
    * It imports the global stylesheet and disables the context menu.
    */
   import "../app.css";
-  import { SETTINGS, DEFAULT_FONT_SIZES } from "$lib/settings-store";
+  import { SETTINGS } from "$lib/settings-store";
   import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
   // Only allow warnings and errors to be printed to console in production builds
   if (typeof window !== 'undefined' && import.meta.env.PROD) {
