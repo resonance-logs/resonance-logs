@@ -1,15 +1,15 @@
 {
-  "version": "0.15.2",
-  "notes": "## Log application - 0.15.2\r\n- Added name - spec or name - class setting to live meter and history page\r\n- Uploading only certain dungeons to the website\r\n- Uploading only latest version logs to website\r\n- Reset toast updated for segments\r\n- Theme ui updated for live meter skill page\r\n- Freezing bug fix\r\n",
-  "pub_date": "2025-11-25T06:52:31.246Z",
+  "version": "0.15.3",
+  "notes": "## Log application - 0.15.3\r\n",
+  "pub_date": "2025-11-26T01:03:54.489Z",
   "platforms": {
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1ZiTmkrK1RWa0hMVEw1RitHQi8zTjVtTEovbDR1aStDdWdoa1ZTMWNTSG1FOW1DQnpWZG8rSXNMeE1RdkJrVGxKMUZrOFhvWmFVZmtvb0RNQXc1S0FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MDUzNTQ1CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4yX3g2NC1zZXR1cC5leGUKMC84MmUrMTlubVc4dTB3NllLT3U1ZFRYOE9nejZtUmhNSE4yK2tvdkZBa0cyNzlxMGtWVlg5ZkVGUVZkVzRvWmk1cUQ5RDhzaE1Id2kyaUwxeFgvQ1E9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.2/resonance-logs_0.15.2_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dTWmhyeFl5blJRalVoUDBDWkJWaU1pN2JYdWxINERuWUx6d0NpcWFjMlRDY3pvcFNCQ1pXM0Z1Qm9FYkJPL2xuVUIvcHdqOVhkYXZ1cUJsekRpVEFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MTE5MDI4CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4zX3g2NC1zZXR1cC5leGUKOGNTcVd3QXREU2xRU0FsWlRTRXdHUnBrZytzYXkyQ3poUEd5Q3dvN2VmREVnMkxuMnJmR3cyeWxOcldlanU2cjhqMldNeUFxbklWUzA1NnNUb2U2QWc9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.3/resonance-logs_0.15.3_x64-setup.exe"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1ZiTmkrK1RWa0hMVEw1RitHQi8zTjVtTEovbDR1aStDdWdoa1ZTMWNTSG1FOW1DQnpWZG8rSXNMeE1RdkJrVGxKMUZrOFhvWmFVZmtvb0RNQXc1S0FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MDUzNTQ1CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4yX3g2NC1zZXR1cC5leGUKMC84MmUrMTlubVc4dTB3NllLT3U1ZFRYOE9nejZtUmhNSE4yK2tvdkZBa0cyNzlxMGtWVlg5ZkVGUVZkVzRvWmk1cUQ5RDhzaE1Id2kyaUwxeFgvQ1E9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.2/resonance-logs_0.15.2_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dTWmhyeFl5blJRalVoUDBDWkJWaU1pN2JYdWxINERuWUx6d0NpcWFjMlRDY3pvcFNCQ1pXM0Z1Qm9FYkJPL2xuVUIvcHdqOVhkYXZ1cUJsekRpVEFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MTE5MDI4CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4zX3g2NC1zZXR1cC5leGUKOGNTcVd3QXREU2xRU0FsWlRTRXdHUnBrZytzYXkyQ3poUEd5Q3dvN2VmREVnMkxuMnJmR3cyeWxOcldlanU2cjhqMldNeUFxbklWUzA1NnNUb2U2QWc9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.3/resonance-logs_0.15.3_x64-setup.exe"
     }
   }
 }
