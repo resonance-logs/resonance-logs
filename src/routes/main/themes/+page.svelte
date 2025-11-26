@@ -8,7 +8,7 @@
   import SettingsFilePicker from "../settings/settings-file-picker.svelte";
   import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_LIVE_TABLE_SETTINGS, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS, DEFAULT_HEADER_SETTINGS, HEADER_PRESETS } from "$lib/settings-store";
   import { setClickthrough, CLASS_NAMES, getClassColorRaw } from "$lib/utils.svelte";
-  import { setDungeonSegmentsEnabled } from "$lib/api";
+  import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
   import { onMount } from 'svelte';
   import ChevronDown from "virtual:icons/lucide/chevron-down";
 
@@ -38,10 +38,16 @@
     expandedSections[section] = !expandedSections[section];
   }
 
-  // Sync dungeon segments setting to backend
+  // Sync boss damage setting to backend
   let _mounted = false;
   onMount(() => {
     _mounted = true;
+  });
+
+  $effect(() => {
+    if (_mounted) {
+      void setBossOnlyDps(SETTINGS.live.general.state.bossOnlyDps);
+    }
   });
 
   $effect(() => {
@@ -234,7 +240,7 @@
                     </div>
                     <button onclick={resetCustomThemeColors} class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">Reset</button>
                   </div>
-
+                  
                   {#each categoryOrder as category}
                     {#if colorCategories[category]}
                       <div class="mb-4">
@@ -330,7 +336,7 @@
           {#if expandedSections.classSpecColors}
             <div class="px-4 pb-4 space-y-3">
               <p class="text-xs text-muted-foreground">Customize colors for classes or specializations. Selecting "Spec Colors" enables spec-specific colors when spec is detected.</p>
-
+              
               <!-- Tab buttons for Class/Spec -->
               <div class="flex items-center border border-border rounded-lg overflow-hidden bg-popover/30 w-fit">
                 <button
@@ -393,7 +399,7 @@
           {#if expandedSections.customFonts}
             <div class="px-4 pb-4 space-y-4">
               <p class="text-xs text-muted-foreground">Import custom fonts to replace the default fonts. Fonts should be .woff2, .woff, .ttf, or .otf files.</p>
-
+              
               <!-- Sans-serif Font -->
               <div class="space-y-2 pt-2 border-t border-border/30">
                 <h3 class="text-sm font-semibold text-foreground">Sans-serif Font (UI Text)</h3>
@@ -500,6 +506,7 @@
               <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenTps} label="Shorten TPS Metrics" description="Show TPS values as 5k, 50k, etc." />
               <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
               <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
             </div>
           {/if}
         </div>
@@ -533,6 +540,7 @@
               <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenTps} label="Shorten TPS Metrics" description="Show TPS values as 5k, 50k, etc." />
               <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
               <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
               <SettingsSwitch bind:checked={SETTINGS.live.general.state.dungeonSegmentsEnabled} label="Dungeon Segments" description="Persist a dungeon-wide log with boss and trash segments" />
             </div>
           {/if}
@@ -595,7 +603,7 @@
           {#if expandedSections.headerSettings}
             <div class="px-4 pb-4 space-y-4">
               <p class="text-xs text-muted-foreground">Choose a preset or customize individual header elements.</p>
-
+              
               <!-- Header Preset Selector -->
               <div class="flex items-center border border-border rounded-lg overflow-hidden bg-popover/30 w-fit">
                 <button
@@ -725,7 +733,7 @@
                   <!-- Control Buttons -->
                   <div class="space-y-2 pt-3 border-t border-border/30">
                     <h3 class="text-sm font-semibold text-foreground">Control Buttons</h3>
-
+                    
                     <!-- Reset Button -->
                     <SettingsSwitch
                       bind:checked={SETTINGS.live.headerCustomization.state.showResetButton}
@@ -748,7 +756,7 @@
                         />
                       </div>
                     {/if}
-
+                    
                     <!-- Pause Button -->
                     <SettingsSwitch
                       bind:checked={SETTINGS.live.headerCustomization.state.showPauseButton}
@@ -771,7 +779,30 @@
                         />
                       </div>
                     {/if}
-
+                    
+                    <!-- Boss Only Button -->
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showBossOnlyButton}
+                      label="Show Boss Only Button"
+                      description="Button to toggle boss-only damage mode"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showBossOnlyButton}
+                      <div class="grid grid-cols-2 gap-2 pl-4">
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.bossOnlyButtonSize}
+                          min={12} max={32} step={1}
+                          label="Icon Size"
+                          unit="px"
+                        />
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.bossOnlyButtonPadding}
+                          min={2} max={16} step={1}
+                          label="Padding"
+                          unit="px"
+                        />
+                      </div>
+                    {/if}
+                    
                     <!-- Settings Button -->
                     <SettingsSwitch
                       bind:checked={SETTINGS.live.headerCustomization.state.showSettingsButton}
@@ -794,7 +825,7 @@
                         />
                       </div>
                     {/if}
-
+                    
                     <!-- Minimize Button -->
                     <SettingsSwitch
                       bind:checked={SETTINGS.live.headerCustomization.state.showMinimizeButton}
@@ -962,7 +993,7 @@
           {#if expandedSections.tableSettings}
             <div class="px-4 pb-4 space-y-4">
               <p class="text-xs text-muted-foreground">Choose a preset size or customize individual settings.</p>
-
+              
               <!-- Size Preset Selector -->
               <div class="flex items-center border border-border rounded-lg overflow-hidden bg-popover/30 w-fit">
                 <button

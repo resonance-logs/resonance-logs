@@ -578,6 +578,30 @@ pub fn process_aoi_sync_delta(
                 skill.hits += 1;
                 skill.total_value += actual_value;
 
+                if is_boss_target {
+                    let skill_boss_only = attacker_entity
+                        .skill_uid_to_dmg_skill_boss_only
+                        .entry(skill_uid)
+                        .or_insert_with(|| Skill::default());
+                    if is_crit_local {
+                        attacker_entity.crit_hits_dmg_boss_only += 1;
+                        attacker_entity.crit_total_dmg_boss_only += actual_value;
+                        skill_boss_only.crit_hits += 1;
+                        skill_boss_only.crit_total_value += actual_value;
+                    }
+                    if is_lucky_local {
+                        attacker_entity.lucky_hits_dmg_boss_only += 1;
+                        attacker_entity.lucky_total_dmg_boss_only += actual_value;
+                        skill_boss_only.lucky_hits += 1;
+                        skill_boss_only.lucky_total_value += actual_value;
+                    }
+                    encounter.total_dmg_boss_only += actual_value;
+                    attacker_entity.hits_dmg_boss_only += 1;
+                    attacker_entity.total_dmg_boss_only += actual_value;
+                    skill_boss_only.hits += 1;
+                    skill_boss_only.total_value += actual_value;
+                }
+
                 // Track per-target totals
                 use std::collections::hash_map::Entry;
                 match attacker_entity.dmg_to_target.entry(target_uid) {

@@ -147,7 +147,7 @@ pub async fn start(app_handle: AppHandle) {
                 // (e.g., ServerChange) while still improving throughput during bursts.
                 let drain_start = Instant::now();
                 let drain_time_budget = Duration::from_millis(20); // small budget to limit latency
-                const MAX_DRAIN: usize = 128; // hard cap
+                const MAX_DRAIN: usize = 20; // hard cap
                 let mut drained = 0usize;
 
                 loop {

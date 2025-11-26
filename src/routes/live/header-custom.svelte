@@ -13,6 +13,7 @@
   import MinusIcon from "virtual:icons/lucide/minus";
   import SettingsIcon from "virtual:icons/lucide/settings";
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
+  import CrownIcon from "virtual:icons/lucide/crown";
 
   import { onMount } from "svelte";
   import { page } from "$app/stores";
@@ -23,6 +24,7 @@
     onResetEncounter,
     resetEncounter,
     togglePauseEncounter,
+    setBossOnlyDps,
     type HeaderInfo,
   } from "$lib/api";
   import { tooltip } from "$lib/utils.svelte";
@@ -34,7 +36,7 @@
 
   // Get header settings
   let h = $derived(SETTINGS.live.headerCustomization.state);
-
+  
   // Check if dummy data mode is enabled
   let useDummyData = $derived(SETTINGS.live.general.state.useDummyData);
 
@@ -52,7 +54,7 @@
     if (useDummyData) {
       return DUMMY_SEGMENT_INFO;
     }
-
+    
     if (!activeSegment) return null;
 
     const durationSecs = Math.max(
@@ -171,7 +173,8 @@
     currentSegmentName: null,
   });
   let isEncounterPaused = $state(false);
-
+  let bossOnlyDpsEnabled = $derived(SETTINGS.live.general.state.bossOnlyDps);
+  
   // Display values - use dummy data when enabled
   let displayHeaderInfo = $derived(useDummyData ? DUMMY_HEADER_INFO : headerInfo);
   let displayElapsedMs = $derived(useDummyData ? DUMMY_HEADER_INFO.elapsedMs : clientElapsedMs);
@@ -190,6 +193,12 @@
     }
   }
 
+  function toggleBossOnlyDamage() {
+    const nextValue = !SETTINGS.live.general.state.bossOnlyDps;
+    SETTINGS.live.general.state.bossOnlyDps = nextValue;
+    void setBossOnlyDps(nextValue);
+  }
+
   function handleResetEncounter() {
     resetTimer();
     isEncounterPaused = false;
@@ -198,21 +207,22 @@
 
   // Check if we have any row 1 left content
   let hasRow1Left = $derived(h.showTimer || h.showSceneName || h.showSegmentInfo);
-
+  
   // Check if we have any row 1 right content (buttons)
   let hasRow1Right = $derived(
-    h.showResetButton ||
-    h.showPauseButton ||
-    h.showSettingsButton ||
+    h.showResetButton || 
+    h.showPauseButton || 
+    h.showBossOnlyButton || 
+    h.showSettingsButton || 
     h.showMinimizeButton
   );
-
+  
   // Check if we have any row 2 left content
   let hasRow2Left = $derived(h.showTotalDamage || h.showTotalDps || h.showBossHealth);
-
+  
   // Check if we have any row 2 content at all
   let hasRow2 = $derived(hasRow2Left || h.showNavigationTabs);
-
+  
   // Check if we have any row 1 content at all
   let hasRow1 = $derived(hasRow1Left || hasRow1Right);
 </script>
@@ -248,7 +258,7 @@
             >
           </div>
         {/if}
-
+        
         {#if h.showSceneName && displaySceneName}
           <span
             class="text-muted-foreground font-medium shrink-0 leading-none"
@@ -257,7 +267,7 @@
             >{displaySceneName}</span
           >
         {/if}
-
+        
         {#if h.showSegmentInfo && activeSegmentInfo}
           <span
             class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {activeSegmentInfo.type ===
@@ -291,7 +301,7 @@
             <RefreshCwIcon style="width: {h.resetButtonSize}px; height: {h.resetButtonSize}px" />
           </button>
         {/if}
-
+        
         {#if h.showPauseButton}
           <button
             class="{isEncounterPaused
@@ -310,8 +320,27 @@
             {/if}
           </button>
         {/if}
+        
+        {#if h.showBossOnlyButton}
+          <button
+            class="rounded-lg transition-all duration-200 {bossOnlyDpsEnabled
+              ? 'text-[oklch(0.75_0.1_95)] bg-[oklch(0.95_0.02_95)]/30 hover:bg-[oklch(0.95_0.02_95)]/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+            class:boss-only-active={bossOnlyDpsEnabled}
+            style="padding: {h.bossOnlyButtonPadding}px"
+            aria-pressed={bossOnlyDpsEnabled}
+            onclick={toggleBossOnlyDamage}
+            {@attach tooltip(() =>
+              bossOnlyDpsEnabled
+                ? "Boss Only Damage Enabled"
+                : "Enable Boss Only Damage",
+            )}
+          >
+            <CrownIcon style="width: {h.bossOnlyButtonSize}px; height: {h.bossOnlyButtonSize}px" />
+          </button>
+        {/if}
 
-        {#if (h.showResetButton || h.showPauseButton) && (h.showSettingsButton || h.showMinimizeButton)}
+        {#if (h.showResetButton || h.showPauseButton || h.showBossOnlyButton) && (h.showSettingsButton || h.showMinimizeButton)}
           <div class="h-5 w-px bg-neutral-700/60"></div>
         {/if}
 
@@ -325,7 +354,7 @@
             <SettingsIcon style="width: {h.settingsButtonSize}px; height: {h.settingsButtonSize}px" />
           </button>
         {/if}
-
+        
         {#if h.showMinimizeButton}
           <button
             class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg transition-all duration-200"
@@ -360,7 +389,7 @@
               >
             </div>
           {/if}
-
+          
           {#if h.showTotalDps}
             <div class="flex items-center gap-2 shrink-0">
               <span
@@ -391,8 +420,8 @@
                 {#each displayBosses as boss (boss.uid)}
                   {@const hpPercent = boss.maxHp && boss.currentHp !== null ? Math.min(100, Math.max(0, (boss.currentHp / boss.maxHp) * 100)) : 0}
                   <div class="flex items-center gap-1 whitespace-nowrap">
-                    <span
-                      class="truncate text-neutral-100 font-semibold tracking-tight"
+                    <span 
+                      class="truncate text-neutral-100 font-semibold tracking-tight" 
                       style="font-size: {h.bossHealthNameFontSize}px"
                       {@attach tooltip(() => boss.name)}
                     >{boss.name} -</span>

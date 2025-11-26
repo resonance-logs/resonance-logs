@@ -12,6 +12,7 @@ pub struct Encounter {
     pub time_last_combat_packet_ms: u128, // in ms
     pub time_fight_start_ms: u128,        // in ms
     pub total_dmg: u128,
+    pub total_dmg_boss_only: u128,
     pub total_heal: u128,
     pub local_player_uid: i64,
     pub entity_uid_to_entity: HashMap<i64, Entity>, // key: entity uid
@@ -325,6 +326,14 @@ pub struct Entity {
     pub lucky_hits_dmg: u128,
     pub hits_dmg: u128,
     pub skill_uid_to_dmg_skill: HashMap<i32, Skill>,
+    // Boss-only damage
+    pub total_dmg_boss_only: u128,
+    pub crit_total_dmg_boss_only: u128,
+    pub crit_hits_dmg_boss_only: u128,
+    pub lucky_total_dmg_boss_only: u128,
+    pub lucky_hits_dmg_boss_only: u128,
+    pub hits_dmg_boss_only: u128,
+    pub skill_uid_to_dmg_skill_boss_only: HashMap<i32, Skill>,
     // Healing
     pub total_heal: u128,
     pub crit_total_heal: u128,

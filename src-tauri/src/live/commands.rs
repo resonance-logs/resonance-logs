@@ -84,6 +84,7 @@ pub async fn subscribe_player_skills(
     // Compute and return initial window directly from Encounter
     state_manager
         .with_state(|state| {
+            let boss_only = state.boss_only_dps;
             let segment_elapsed_ms = if state.dungeon_segments_enabled {
                 dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
                     log.segments
@@ -107,6 +108,7 @@ pub async fn subscribe_player_skills(
                 "dps" => event_manager::generate_skills_window_dps(
                     &state.encounter,
                     uid,
+                    boss_only,
                     segment_elapsed_ms,
                 )
                 .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
@@ -174,6 +176,7 @@ pub async fn get_player_skills(
 ) -> Result<crate::live::commands_models::SkillsWindow, String> {
     state_manager
         .with_state(|state| {
+            let boss_only = state.boss_only_dps;
             let segment_elapsed_ms = if state.dungeon_segments_enabled {
                 dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
                     log.segments
@@ -196,6 +199,7 @@ pub async fn get_player_skills(
                 "dps" => event_manager::generate_skills_window_dps(
                     &state.encounter,
                     uid,
+                    boss_only,
                     segment_elapsed_ms,
                 )
                 .ok_or_else(|| format!("No DPS skills found for player {}", uid)),
@@ -215,6 +219,32 @@ pub async fn get_player_skills(
             }
         })
         .await
+}
+
+/// Sets whether to only show boss DPS.
+///
+/// # Arguments
+///
+/// * `enabled` - Whether to enable boss-only DPS.
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_boss_only_dps(
+    enabled: bool,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    state_manager
+        .with_state_mut(|state| {
+            state.boss_only_dps = enabled;
+        })
+        .await;
+    // Recompute and emit updates immediately
+    state_manager.update_and_emit_events().await;
+    Ok(())
 }
 
 /// Enables or disables dungeon segment tracking.

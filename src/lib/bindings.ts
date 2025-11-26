@@ -147,6 +147,26 @@ async unsubscribePlayerSkills(uid: number, skillType: string) : Promise<Result<n
 }
 },
 /**
+ * Sets whether to only show boss DPS.
+ * 
+ * # Arguments
+ * 
+ * * `enabled` - Whether to enable boss-only DPS.
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result.
+ */
+async setBossOnlyDps(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_boss_only_dps", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Enables or disables dungeon segment tracking.
  */
 async setDungeonSegmentsEnabled(enabled: boolean) : Promise<Result<null, string>> {
@@ -530,6 +550,30 @@ luckyTotalHeal: number;
  * The total lucky damage taken by the actor.
  */
 luckyTotalTaken: number; 
+/**
+ * The total damage dealt to bosses by the actor.
+ */
+bossDamageDealt: number; 
+/**
+ * The number of hits dealt to bosses by the actor.
+ */
+bossHitsDealt: number; 
+/**
+ * The number of critical hits dealt to bosses by the actor.
+ */
+bossCritHitsDealt: number; 
+/**
+ * The number of lucky hits dealt to bosses by the actor.
+ */
+bossLuckyHitsDealt: number; 
+/**
+ * The total critical damage dealt to bosses by the actor.
+ */
+bossCritTotalDealt: number; 
+/**
+ * The total lucky damage dealt to bosses by the actor.
+ */
+bossLuckyTotalDealt: number; 
 /**
  * The average DPS snapshot for the actor during the encounter.
  */

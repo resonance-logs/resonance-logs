@@ -84,6 +84,8 @@ pub struct AppState {
     pub skill_subscriptions: HashSet<(i64, String)>,
     /// A handle to the Tauri application instance.
     pub app_handle: AppHandle,
+    /// Whether to only show boss DPS.
+    pub boss_only_dps: bool,
     /// A map of low HP bosses.
     pub low_hp_bosses: HashMap<i64, u128>,
     /// Whether we've already handled the first scene change after startup.
@@ -106,6 +108,7 @@ impl AppState {
             event_manager: EventManager::new(),
             skill_subscriptions: HashSet::new(),
             app_handle,
+            boss_only_dps: false,
             low_hp_bosses: HashMap::new(),
             initial_scene_change_handled: false,
             dungeon_log: dungeon_log::create_shared_log(),
@@ -962,11 +965,12 @@ impl AppStateManager {
     /// Updates and emits events.
     pub async fn update_and_emit_events(&self) {
         // First, read the encounter data to generate all the necessary information
-        let (encounter, should_emit, dungeon_ctx) = {
+        let (encounter, should_emit, boss_only, dungeon_ctx) = {
             let state = self.state.read().await;
             (
                 state.encounter.clone(),
                 state.event_manager.should_emit_events(),
+                state.boss_only_dps,
                 dungeon_runtime_if_enabled(&state),
             )
         };
@@ -1011,9 +1015,10 @@ impl AppStateManager {
 
         // Generate all the data we need without holding the lock
         let header_info_with_deaths =
-            crate::live::event_manager::generate_header_info(&encounter, segment_timing);
+            crate::live::event_manager::generate_header_info(&encounter, boss_only, segment_timing);
         let dps_players = crate::live::event_manager::generate_players_window_dps(
             &encounter,
+            boss_only,
             segment_elapsed_ms,
         );
         let heal_players = crate::live::event_manager::generate_players_window_heal(
@@ -1041,6 +1046,7 @@ impl AppStateManager {
                 if let Some(skills_window) = crate::live::event_manager::generate_skills_window_dps(
                     &encounter,
                     entity_uid,
+                    boss_only,
                     segment_elapsed_ms,
                 ) {
                     dps_skill_windows.push((entity_uid, skills_window));

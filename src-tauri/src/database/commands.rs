@@ -211,6 +211,18 @@ pub struct ActorEncounterStatDto {
     pub lucky_total_heal: i64,
     /// The total lucky damage taken by the actor.
     pub lucky_total_taken: i64,
+    /// The total damage dealt to bosses by the actor.
+    pub boss_damage_dealt: i64,
+    /// The number of hits dealt to bosses by the actor.
+    pub boss_hits_dealt: i64,
+    /// The number of critical hits dealt to bosses by the actor.
+    pub boss_crit_hits_dealt: i64,
+    /// The number of lucky hits dealt to bosses by the actor.
+    pub boss_lucky_hits_dealt: i64,
+    /// The total critical damage dealt to bosses by the actor.
+    pub boss_crit_total_dealt: i64,
+    /// The total lucky damage dealt to bosses by the actor.
+    pub boss_lucky_total_dealt: i64,
     /// The average DPS snapshot for the actor during the encounter.
     pub dps: f64,
     /// The encounter duration in seconds used for the DPS snapshot.
@@ -262,6 +274,12 @@ fn load_actor_stats(
             s::lucky_total_dealt,
             s::lucky_total_heal,
             s::lucky_total_taken,
+            s::boss_damage_dealt,
+            s::boss_hits_dealt,
+            s::boss_crit_hits_dealt,
+            s::boss_lucky_hits_dealt,
+            s::boss_crit_total_dealt,
+            s::boss_lucky_total_dealt,
             s::dps,
             s::duration,
             s::is_local_player,
@@ -295,11 +313,17 @@ fn load_actor_stats(
             i64,
             i64,
             i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
             f64,
             f64,
             i32,
         )>(conn)
-        .map_err(|e: diesel::result::Error| e.to_string())?;
+        .map_err(|e| e.to_string())?;
 
     Ok(rows
         .into_iter()
@@ -328,6 +352,12 @@ fn load_actor_stats(
                 lucky_total_dealt,
                 lucky_total_heal,
                 lucky_total_taken,
+                boss_damage_dealt,
+                boss_hits_dealt,
+                boss_crit_hits_dealt,
+                boss_lucky_hits_dealt,
+                boss_crit_total_dealt,
+                boss_lucky_total_dealt,
                 dps,
                 duration,
                 is_local_player,
@@ -355,6 +385,12 @@ fn load_actor_stats(
                 lucky_total_dealt,
                 lucky_total_heal,
                 lucky_total_taken,
+                boss_damage_dealt,
+                boss_hits_dealt,
+                boss_crit_hits_dealt,
+                boss_lucky_hits_dealt,
+                boss_crit_total_dealt,
+                boss_lucky_total_dealt,
                 dps,
                 duration,
                 is_local_player: is_local_player == 1,
@@ -1156,6 +1192,12 @@ pub fn get_encounter_attempt_actor_stats(
         let mut lucky_hits_dealt: i64 = 0;
         let mut crit_total_dealt: i64 = 0;
         let mut lucky_total_dealt: i64 = 0;
+        let mut boss_total: i64 = 0;
+        let mut boss_hits: i64 = 0;
+        let mut boss_crit_hits: i64 = 0;
+        let mut boss_lucky_hits: i64 = 0;
+        let mut boss_crit_total: i64 = 0;
+        let mut boss_lucky_total: i64 = 0;
 
         for s in dmg_stats {
             dmg_total += s.total_value;
@@ -1164,6 +1206,14 @@ pub fn get_encounter_attempt_actor_stats(
             lucky_hits_dealt += s.lucky_hits as i64;
             crit_total_dealt += s.crit_total;
             lucky_total_dealt += s.lucky_total;
+            if s.monster_name.is_some() {
+                boss_total += s.total_value;
+                boss_hits += s.hits as i64;
+                boss_crit_hits += s.crit_hits as i64;
+                boss_lucky_hits += s.lucky_hits as i64;
+                boss_crit_total += s.crit_total;
+                boss_lucky_total += s.lucky_total;
+            }
         }
 
         // Damage taken (as defender)
@@ -1232,22 +1282,28 @@ pub fn get_encounter_attempt_actor_stats(
             ability_score: ability_score_opt,
             damage_dealt: dmg_total,
             heal_dealt: heal_total,
-            damage_taken,
-            hits_dealt,
-            hits_heal,
-            hits_taken,
-            crit_hits_dealt,
-            crit_hits_heal,
-            crit_hits_taken,
-            lucky_hits_dealt,
-            lucky_hits_heal,
-            lucky_hits_taken,
-            crit_total_dealt,
-            crit_total_heal,
-            crit_total_taken,
-            lucky_total_dealt,
-            lucky_total_heal,
-            lucky_total_taken,
+            damage_taken: damage_taken,
+            hits_dealt: hits_dealt,
+            hits_heal: hits_heal,
+            hits_taken: hits_taken,
+            crit_hits_dealt: crit_hits_dealt,
+            crit_hits_heal: crit_hits_heal,
+            crit_hits_taken: crit_hits_taken,
+            lucky_hits_dealt: lucky_hits_dealt,
+            lucky_hits_heal: lucky_hits_heal,
+            lucky_hits_taken: lucky_hits_taken,
+            crit_total_dealt: crit_total_dealt,
+            crit_total_heal: crit_total_heal,
+            crit_total_taken: crit_total_taken,
+            lucky_total_dealt: lucky_total_dealt,
+            lucky_total_heal: lucky_total_heal,
+            lucky_total_taken: lucky_total_taken,
+            boss_damage_dealt: boss_total,
+            boss_hits_dealt: boss_hits,
+            boss_crit_hits_dealt: boss_crit_hits,
+            boss_lucky_hits_dealt: boss_lucky_hits,
+            boss_crit_total_dealt: boss_crit_total,
+            boss_lucky_total_dealt: boss_lucky_total,
             dps: dps_value,
             duration,
             is_local_player: is_local != 0,

@@ -122,6 +122,18 @@ diesel::table! {
         lucky_total_heal -> BigInt,
         /// The total lucky damage taken by the actor.
         lucky_total_taken -> BigInt,
+        /// The total damage dealt to bosses by the actor.
+        boss_damage_dealt -> BigInt,
+        /// The number of hits dealt to bosses by the actor.
+        boss_hits_dealt -> BigInt,
+        /// The number of critical hits dealt to bosses by the actor.
+        boss_crit_hits_dealt -> BigInt,
+        /// The number of lucky hits dealt to bosses by the actor.
+        boss_lucky_hits_dealt -> BigInt,
+        /// The total critical damage dealt to bosses by the actor.
+        boss_crit_total_dealt -> BigInt,
+        /// The total lucky damage dealt to bosses by the actor.
+        boss_lucky_total_dealt -> BigInt,
         /// The number of revives for the actor during the encounter.
         revives -> BigInt,
         /// The average DPS snapshot for the actor during the encounter.

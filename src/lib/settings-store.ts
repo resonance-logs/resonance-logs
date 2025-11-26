@@ -69,6 +69,7 @@ const DEFAULT_GENERAL_SETTINGS = {
   shortenAbilityScore: true,
   shortenDps: true,
   shortenTps: true,
+  bossOnlyDps: false,
   dungeonSegmentsEnabled: true,
   useDummyData: false,
 };
@@ -131,17 +132,17 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   playerFontSize: 13,
   playerIconSize: 20,
   playerTextColor: "#ffffff",
-
+  
   // Table header settings
   showTableHeader: true,
   tableHeaderHeight: 24,
   tableHeaderFontSize: 11,
   tableHeaderTextColor: "#a1a1aa",
-
+  
   // Abbreviated numbers (K, M, %)
   abbreviatedFontSize: 10,
   abbreviatedColor: "#71717a",
-
+  
   // Skill row settings (separate from player rows)
   skillRowHeight: 24,
   skillFontSize: 12,
@@ -161,58 +162,61 @@ export const DEFAULT_HEADER_SETTINGS = {
   showHeader: true,
   windowPadding: 12, // padding around entire live meter window
   headerPadding: 8, // internal padding within header
-
+  
   // Row 1 elements (left side)
   showTimer: true,
   showSceneName: true,
   showSegmentInfo: true,
-
+  
   // Row 1 elements (right side - control buttons)
   showResetButton: true,
   showPauseButton: true,
+  showBossOnlyButton: true,
   showSettingsButton: true,
   showMinimizeButton: true,
-
+  
   // Row 2 elements (left side - stats)
   showTotalDamage: true,
   showTotalDps: true,
   showBossHealth: true,
-
+  
   // Row 2 elements (right side - navigation tabs)
   showNavigationTabs: true,
-
+  
   // Timer sizing
   timerLabelFontSize: 12,
   timerFontSize: 18,
-
+  
   // Scene name sizing
   sceneNameFontSize: 14,
-
+  
   // Segment info sizing
   segmentFontSize: 12,
-
+  
   // Control button sizing (individual)
   resetButtonSize: 20,
   resetButtonPadding: 8,
   pauseButtonSize: 20,
   pauseButtonPadding: 8,
+  bossOnlyButtonSize: 20,
+  bossOnlyButtonPadding: 8,
   settingsButtonSize: 20,
   settingsButtonPadding: 8,
   minimizeButtonSize: 20,
   minimizeButtonPadding: 8,
-
+  
   // Stats sizing
   totalDamageLabelFontSize: 14,
   totalDamageValueFontSize: 18,
   totalDpsLabelFontSize: 14,
   totalDpsValueFontSize: 18,
   bossHealthLabelFontSize: 14,
-
+  
   // Boss health sizing (granular)
   bossHealthNameFontSize: 14,
   bossHealthValueFontSize: 14,
   bossHealthPercentFontSize: 14,
-
+  
   // Navigation tabs sizing
   navTabFontSize: 11,
   navTabPaddingX: 14,
@@ -230,6 +234,7 @@ export const HEADER_PRESETS = {
     showSegmentInfo: true,
     showResetButton: true,
     showPauseButton: true,
+    showBossOnlyButton: true,
     showSettingsButton: true,
     showMinimizeButton: true,
     showTotalDamage: true,
@@ -244,6 +249,8 @@ export const HEADER_PRESETS = {
     resetButtonPadding: 8,
     pauseButtonSize: 20,
     pauseButtonPadding: 8,
+    bossOnlyButtonSize: 20,
+    bossOnlyButtonPadding: 8,
     settingsButtonSize: 20,
     settingsButtonPadding: 8,
     minimizeButtonSize: 20,
@@ -269,6 +276,7 @@ export const HEADER_PRESETS = {
     showSegmentInfo: false,
     showResetButton: true,
     showPauseButton: true,
+    showBossOnlyButton: true,
     showSettingsButton: false,
     showMinimizeButton: false,
     showTotalDamage: false,
@@ -283,6 +291,8 @@ export const HEADER_PRESETS = {
     resetButtonPadding: 6,
     pauseButtonSize: 18,
     pauseButtonPadding: 6,
+    bossOnlyButtonSize: 18,
+    bossOnlyButtonPadding: 6,
     settingsButtonSize: 18,
     settingsButtonPadding: 6,
     minimizeButtonSize: 18,
@@ -308,6 +318,7 @@ export const HEADER_PRESETS = {
     showSegmentInfo: false,
     showResetButton: false,
     showPauseButton: false,
+    showBossOnlyButton: false,
     showSettingsButton: false,
     showMinimizeButton: false,
     showTotalDamage: false,
@@ -322,6 +333,8 @@ export const HEADER_PRESETS = {
     resetButtonPadding: 8,
     pauseButtonSize: 20,
     pauseButtonPadding: 8,
+    bossOnlyButtonSize: 20,
+    bossOnlyButtonPadding: 8,
     settingsButtonSize: 20,
     settingsButtonPadding: 8,
     minimizeButtonSize: 20,
