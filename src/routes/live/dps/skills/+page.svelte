@@ -4,6 +4,7 @@
   import { settings, SETTINGS } from "$lib/settings-store";
  import { commands } from "$lib/bindings";
   import { onDpsSkillsUpdate } from "$lib/api";
+  import { generateDummySkills, DUMMY_PLAYER_DATA } from '$lib/dummy-data';
   import type { Event as TauriEvent } from "@tauri-apps/api/event";
   import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
@@ -26,6 +27,24 @@
   let maxSkillValue = $state(0);
   let SETTINGS_YOUR_NAME = $state(settings.state.live.general.showYourName);
   let SETTINGS_OTHERS_NAME = $state(settings.state.live.general.showOthersName);
+
+  // Table customization settings for skills
+  let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
+
+  $effect(() => {
+      if (SETTINGS.live.general.state.useDummyData) {
+      const uid = parseInt(playerUid);
+      const player = DUMMY_PLAYER_DATA.find(p => p.uid === uid);
+      const dummyskilldata = player ? generateDummySkills(uid) : [];
+      dpsSkillBreakdownWindow = {
+        currPlayer: player ? [player] : [],
+        skillRows: dummyskilldata
+      };
+    } else {
+      // If dummy data disabled, clear the window so the backend subscription can repopulate
+      dpsSkillBreakdownWindow = { currPlayer: [], skillRows: [] };
+    }
+  })
 
   // Update maxSkillValue when data changes
   $effect(() => {
@@ -106,45 +125,48 @@
 
 <div class="relative flex flex-col">
   <table class="w-full border-collapse">
-    <thead class="z-1 sticky top-0">
-      <tr class="bg-popover/60">
-        <th class="px-2 py-1 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Skill</th>
-        {#each visibleSkillColumns as col (col.key)}
-          <th class="px-2 py-1 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">{col.header}</th>
-        {/each}
-      </tr>
-    </thead>
+    {#if tableSettings.skillShowHeader}
+      <thead class="z-1 sticky top-0">
+        <tr class="bg-popover/60" style="height: {tableSettings.skillHeaderHeight}px;">
+          <th class="px-2 py-1 text-left font-medium uppercase tracking-wider" style="font-size: {tableSettings.skillHeaderFontSize}px; color: {tableSettings.skillHeaderTextColor};">Skill</th>
+          {#each visibleSkillColumns as col (col.key)}
+            <th class="px-2 py-1 text-right font-medium uppercase tracking-wider" style="font-size: {tableSettings.skillHeaderFontSize}px; color: {tableSettings.skillHeaderTextColor};">{col.header}</th>
+          {/each}
+        </tr>
+      </thead>
+    {/if}
     <tbody>
       {#each dpsSkillBreakdownWindow.skillRows as skill (skill.name)}
         {@const currPlayer = dpsSkillBreakdownWindow.currPlayer[0]}
         {#if currPlayer}
           {@const className = currPlayer.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? currPlayer.className : ""}
           <tr
-            class="relative border-t border-border hover:bg-muted/60 transition-colors h-6 text-xs bg-background/40"
+            class="relative border-t border-border hover:bg-muted/60 transition-colors bg-background/40"
+            style="height: {tableSettings.skillRowHeight}px; font-size: {tableSettings.skillFontSize}px;"
           >
-            <td class="px-2 py-1 text-xs text-muted-foreground relative z-10">
+            <td class="px-2 py-1 relative z-10" style="color: {tableSettings.skillTextColor};">
               <div class="flex items-center gap-1 h-full">
                 <span class="truncate">{skill.name}</span>
               </div>
             </td>
             {#each visibleSkillColumns as col (col.key)}
-              <td class="px-2 py-1 text-right text-xs text-muted-foreground relative z-10">
+              <td class="px-2 py-1 text-right relative z-10" style="color: {tableSettings.skillTextColor};">
                 {#if col.key === 'totalDmg'}
                   {#if SETTINGS.live.general.state.shortenDps}
-                    <AbbreviatedNumber num={skill.totalDmg} />
+                    <AbbreviatedNumber num={skill.totalDmg} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
                   {:else}
                     {skill.totalDmg.toLocaleString()}
                   {/if}
                 {:else if col.key === 'dps'}
                   {#if SETTINGS.live.general.state.shortenDps}
-                    <AbbreviatedNumber num={skill.dps} />
+                    <AbbreviatedNumber num={skill.dps} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
                   {:else}
                     {Math.round(skill.dps).toLocaleString()}
                   {/if}
                 {:else if col.key === 'dmgPct'}
-                  <PercentFormat val={skill.dmgPct} fractionDigits={0} />
+                  <PercentFormat val={skill.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
                 {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
-                  <PercentFormat val={skill[col.key]} />
+                  <PercentFormat val={skill[col.key]} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
                 {:else}
                   {col.format(skill[col.key] ?? 0)}
                 {/if}

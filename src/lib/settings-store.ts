@@ -125,6 +125,37 @@ export const DEFAULT_FONT_SIZES = {
   xl: 20,    // Extra large - titles (default 1.25rem = 20px)
 };
 
+// Live table customization defaults
+export const DEFAULT_LIVE_TABLE_SETTINGS = {
+  // Player row settings
+  playerRowHeight: 28,
+  playerFontSize: 13,
+  playerIconSize: 20,
+  playerTextColor: "#ffffff",
+  
+  // Table header settings
+  showTableHeader: true,
+  tableHeaderHeight: 24,
+  tableHeaderFontSize: 11,
+  tableHeaderTextColor: "#a1a1aa",
+  
+  // Abbreviated numbers (K, M, %)
+  abbreviatedFontSize: 10,
+  abbreviatedColor: "#71717a",
+  
+  // Skill row settings (separate from player rows)
+  skillRowHeight: 24,
+  skillFontSize: 12,
+  skillIconSize: 18,
+  skillTextColor: "#ffffff",
+  skillShowHeader: true,
+  skillHeaderHeight: 22,
+  skillHeaderFontSize: 10,
+  skillHeaderTextColor: "#a1a1aa",
+  skillAbbreviatedFontSize: 9,
+  skillAbbreviatedColor: "#71717a",
+};
+
 export const FONT_SIZE_LABELS: Record<string, string> = {
   xs: 'Extra Small',
   sm: 'Small',
@@ -173,6 +204,7 @@ const DEFAULT_SETTINGS = {
     healSkillBreakdown: { ...DEFAULT_STATS },
     tankedPlayers: { ...DEFAULT_STATS },
     tankedSkillBreakdown: { ...DEFAULT_STATS },
+    tableCustomization: { ...DEFAULT_LIVE_TABLE_SETTINGS },
   },
   history: {
     general: { ...DEFAULT_GENERAL_SETTINGS },
@@ -245,6 +277,11 @@ export const SETTINGS = {
         RUNE_STORE_OPTIONS
       ),
     },
+    tableCustomization: new RuneStore(
+      'liveTableCustomization',
+      DEFAULT_SETTINGS.live.tableCustomization,
+      RUNE_STORE_OPTIONS
+    ),
   },
   history: {
     general: new RuneStore(
@@ -313,6 +350,7 @@ export const settings = {
         players: SETTINGS.live.tanked.players.state,
         skills: SETTINGS.live.tanked.skills.state,
       },
+      tableCustomization: SETTINGS.live.tableCustomization.state,
     },
     appVersion: SETTINGS.appVersion.state,
     history: {

@@ -46,6 +46,47 @@
   function toggleSection(section: keyof typeof expandedSections) {
     expandedSections[section] = !expandedSections[section];
   }
+
+  // Type guard to filter column defs that have an `accessorKey` property.
+  // This narrows the column union types coming from @tanstack/table-core
+  // so that TypeScript will allow indexing into settings state objects by
+  // this key in the template. We avoid importing tanstack types directly
+  // to keep the template minimal and self-contained.
+  function hasAccessorKey(col: any): col is { accessorKey: string; meta?: { label?: string; description?: string } } {
+    return !!col && typeof col.accessorKey === 'string';
+  }
+
+  // Create typed arrays with only accessor columns for each table so that
+  // TypeScript can properly narrow and allow indexing into SETTINGS states.
+  const dpsPlayersAccessorCols = dpsPlayersColumnDefs.filter(hasAccessorKey) as Array<{
+    accessorKey: keyof typeof SETTINGS.live.dps.players.state;
+    meta?: { label?: string; description?: string };
+  }>;
+
+  const dpsSkillsAccessorCols = dpsSkillsColumnDefs.filter(hasAccessorKey) as Array<{
+    accessorKey: keyof typeof SETTINGS.live.dps.skillBreakdown.state;
+    meta?: { label?: string; description?: string };
+  }>;
+
+  const healPlayersAccessorCols = healPlayersColumnDefs.filter(hasAccessorKey) as Array<{
+    accessorKey: keyof typeof SETTINGS.live.heal.players.state;
+    meta?: { label?: string; description?: string };
+  }>;
+
+  const healSkillsAccessorCols = healSkillsColumnDefs.filter(hasAccessorKey) as Array<{
+    accessorKey: keyof typeof SETTINGS.live.heal.skillBreakdown.state;
+    meta?: { label?: string; description?: string };
+  }>;
+
+  const tankedPlayersAccessorCols = tankedPlayersColumnDefs.filter(hasAccessorKey) as Array<{
+    accessorKey: keyof typeof SETTINGS.live.tanked.players.state;
+    meta?: { label?: string; description?: string };
+  }>;
+
+  const tankedSkillsAccessorCols = tankedSkillsColumnDefs.filter(hasAccessorKey) as Array<{
+    accessorKey: keyof typeof SETTINGS.live.tanked.skills.state;
+    meta?: { label?: string; description?: string };
+  }>;
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
@@ -93,8 +134,8 @@
       </button>
       {#if expandedSections.dpsPlayers}
         <div class="px-4 pb-3 space-y-1">
-          {#each dpsPlayersColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-            <SettingsSwitch bind:checked={SETTINGS.live.dps.players.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {#each dpsPlayersAccessorCols as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.dps.players.state[col.accessorKey as keyof typeof SETTINGS.live.dps.players.state]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
           {/each}
         </div>
       {/if}
@@ -112,8 +153,8 @@
       </button>
       {#if expandedSections.dpsSkills}
         <div class="px-4 pb-3 space-y-1">
-          {#each dpsSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-            <SettingsSwitch bind:checked={SETTINGS.live.dps.skillBreakdown.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {#each dpsSkillsAccessorCols as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.dps.skillBreakdown.state[col.accessorKey as keyof typeof SETTINGS.live.dps.skillBreakdown.state]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
           {/each}
         </div>
       {/if}
@@ -131,8 +172,8 @@
       </button>
       {#if expandedSections.healPlayers}
         <div class="px-4 pb-3 space-y-1">
-          {#each healPlayersColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-            <SettingsSwitch bind:checked={SETTINGS.live.heal.players.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {#each healPlayersAccessorCols as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.heal.players.state[col.accessorKey as keyof typeof SETTINGS.live.heal.players.state]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
           {/each}
         </div>
       {/if}
@@ -150,8 +191,8 @@
       </button>
       {#if expandedSections.healSkills}
         <div class="px-4 pb-3 space-y-1">
-          {#each healSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-            <SettingsSwitch bind:checked={SETTINGS.live.heal.skillBreakdown.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {#each healSkillsAccessorCols as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.heal.skillBreakdown.state[col.accessorKey as keyof typeof SETTINGS.live.heal.skillBreakdown.state]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
           {/each}
         </div>
       {/if}
@@ -169,8 +210,8 @@
       </button>
       {#if expandedSections.tankedPlayers}
         <div class="px-4 pb-3 space-y-1">
-          {#each tankedPlayersColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-            <SettingsSwitch bind:checked={SETTINGS.live.tanked.players.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {#each tankedPlayersAccessorCols as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.tanked.players.state[col.accessorKey as keyof typeof SETTINGS.live.tanked.players.state]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
           {/each}
         </div>
       {/if}
@@ -188,8 +229,8 @@
       </button>
       {#if expandedSections.tankedSkills}
         <div class="px-4 pb-3 space-y-1">
-          {#each tankedSkillsColumnDefs.filter((col) => col.accessorKey) as col (col.accessorKey)}
-            <SettingsSwitch bind:checked={SETTINGS.live.tanked.skills.state[col.accessorKey]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
+          {#each tankedSkillsAccessorCols as col (col.accessorKey)}
+            <SettingsSwitch bind:checked={SETTINGS.live.tanked.skills.state[col.accessorKey as keyof typeof SETTINGS.live.tanked.skills.state]} label={col.meta?.label ?? "LABEL MISSING"} description={col.meta?.description} />
           {/each}
         </div>
       {/if}

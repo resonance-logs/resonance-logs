@@ -1,4 +1,4 @@
-import type { PlayerRow, SkillRow, PlayersWindow, HeaderInfo, BossHealth } from "$lib/api";
+import type { PlayerRow, SkillRow, PlayersWindow } from "$lib/api";
 
 export const DUMMY_PLAYER_DATA: PlayerRow[] = [
   {
@@ -166,37 +166,5 @@ export function generateDummySkills(playerUid: number): SkillRow[] {
 export function generateDummyPlayersWindow(): PlayersWindow {
   return {
     playerRows: DUMMY_PLAYER_DATA,
-  };
-}
-
-export function generateDummyHeaderInfo(): HeaderInfo {
-  const totalDmg = DUMMY_PLAYER_DATA.reduce((sum, p) => sum + p.totalDmg, 0);
-  const randomElapsedSeconds = Math.floor(Math.random() * 180) + 60; // 60-240 seconds
-  const elapsedMs = randomElapsedSeconds * 1000;
-  const totalDps = Math.floor(totalDmg / (elapsedMs / 1000));
-
-  // Boss with 50% HP remaining (1.5mil / 3mil)
-  const bossMaxHp = 3000000;
-  const bossCurrentHp = 1500000;
-
-  const bosses: BossHealth[] = [
-    {
-      uid: 999999,
-      name: "Test Boss",
-      maxHp: bossMaxHp,
-      currentHp: bossCurrentHp,
-    },
-  ];
-
-  return {
-    totalDps,
-    totalDmg,
-    elapsedMs,
-    fightStartTimestampMs: Date.now() - elapsedMs,
-    bosses,
-    sceneId: 99999,
-    sceneName: "Training Area",
-    currentSegmentType: "boss",
-    currentSegmentName: "Test Boss",
   };
 }

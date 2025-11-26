@@ -3,7 +3,8 @@
   import SettingsSelect from "../settings/settings-select.svelte";
   import SettingsSlider from "../settings/settings-slider.svelte";
   import SettingsSwitch from "../settings/settings-switch.svelte";
-  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES } from "$lib/settings-store";
+  import SettingsColor from "../settings/settings-color.svelte";
+  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_LIVE_TABLE_SETTINGS } from "$lib/settings-store";
   import { setClickthrough, CLASS_NAMES, getClassColorRaw } from "$lib/utils.svelte";
 
   const themesTabs = [
@@ -32,6 +33,10 @@
 
   function resetClassSpecColors() {
     SETTINGS.accessibility.state.classSpecColors = { ...DEFAULT_CLASS_SPEC_COLORS };
+  }
+
+  function resetTableCustomization() {
+    Object.assign(SETTINGS.live.tableCustomization.state, DEFAULT_LIVE_TABLE_SETTINGS);
   }
 </script>
 
@@ -141,6 +146,197 @@
               bind:checked={SETTINGS.live.general.state.useDummyData}
               label="Use Dummy Data"
               description="Inject dummy player data into the live meter for testing and preview purposes"
+            />
+          </div>
+        </div>
+
+        <!-- Player Row Customization -->
+        <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-base font-semibold text-foreground">Player Row Customization</h2>
+              <p class="text-xs text-muted-foreground mt-1">Customize the appearance of player rows in the live meter table.</p>
+            </div>
+            <button onclick={resetTableCustomization} class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">Reset All</button>
+          </div>
+          <div class="space-y-2">
+            <SettingsSlider
+              bind:value={SETTINGS.live.tableCustomization.state.playerRowHeight}
+                min={0} max={100} step={1}
+              label="Row Height"
+              description="Height of each player row in pixels"
+              unit="px"
+            />
+            <SettingsSlider
+              bind:value={SETTINGS.live.tableCustomization.state.playerFontSize}
+                min={0} max={100} step={1}
+              label="Font Size"
+              description="Font size for player names and stats"
+              unit="px"
+            />
+            <SettingsSlider
+              bind:value={SETTINGS.live.tableCustomization.state.playerIconSize}
+                min={0} max={100} step={1}
+              label="Icon Size"
+              description="Size of class/spec icons"
+              unit="px"
+            />
+            <SettingsColor
+              bind:value={SETTINGS.live.tableCustomization.state.playerTextColor}
+              label="Text Color"
+              description="Color of player names and stat values"
+            />
+          </div>
+        </div>
+
+        <!-- Table Header Customization -->
+        <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-semibold text-foreground">Table Header Customization</h2>
+            <p class="text-xs text-muted-foreground mt-1">Customize the table header appearance.</p>
+          </div>
+          <div class="space-y-2">
+            <SettingsSwitch
+              bind:checked={SETTINGS.live.tableCustomization.state.showTableHeader}
+              label="Show Table Header"
+              description="Toggle visibility of the column headers"
+            />
+            {#if SETTINGS.live.tableCustomization.state.showTableHeader}
+              <SettingsSlider
+                bind:value={SETTINGS.live.tableCustomization.state.tableHeaderHeight}
+                  min={0} max={100} step={1}
+                label="Header Height"
+                description="Height of the table header row"
+                unit="px"
+              />
+              <SettingsSlider
+                bind:value={SETTINGS.live.tableCustomization.state.tableHeaderFontSize}
+                  min={0} max={100} step={1}
+                label="Header Font Size"
+                description="Font size for column header text"
+                unit="px"
+              />
+              <SettingsColor
+                bind:value={SETTINGS.live.tableCustomization.state.tableHeaderTextColor}
+                label="Header Text Color"
+                description="Color of column header text"
+              />
+            {/if}
+          </div>
+        </div>
+
+        <!-- Abbreviated Numbers Customization -->
+        <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-semibold text-foreground">Abbreviated Numbers (K, M, %)</h2>
+            <p class="text-xs text-muted-foreground mt-1">Customize the appearance of abbreviated number suffixes.</p>
+          </div>
+          <div class="space-y-2">
+            <SettingsSlider
+              bind:value={SETTINGS.live.tableCustomization.state.abbreviatedFontSize}
+                min={0} max={100} step={1}
+              label="Suffix Font Size"
+              description="Font size for K, M, % symbols"
+              unit="px"
+            />
+            <SettingsColor
+              bind:value={SETTINGS.live.tableCustomization.state.abbreviatedColor}
+              label="Suffix Color"
+              description="Color of K, M, % symbols"
+            />
+          </div>
+        </div>
+
+        <!-- Skill Row Customization -->
+        <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-semibold text-foreground">Skill Row Customization</h2>
+            <p class="text-xs text-muted-foreground mt-1">Customize the appearance of skill breakdown rows (separate from player rows).</p>
+          </div>
+          <div class="space-y-2">
+            <SettingsSlider
+              bind:value={SETTINGS.live.tableCustomization.state.skillRowHeight}
+                min={0} max={100} step={1}
+              label="Skill Row Height"
+              description="Height of each skill row in pixels"
+              unit="px"
+            />
+            <SettingsSlider
+              bind:value={SETTINGS.live.tableCustomization.state.skillFontSize}
+                min={0} max={100} step={1}
+              label="Skill Font Size"
+              description="Font size for skill names and stats"
+              unit="px"
+            />
+            <SettingsSlider
+              bind:value={SETTINGS.live.tableCustomization.state.skillIconSize}
+                min={0} max={100} step={1}
+              label="Skill Icon Size"
+              description="Size of skill icons"
+              unit="px"
+            />
+            <SettingsColor
+              bind:value={SETTINGS.live.tableCustomization.state.skillTextColor}
+              label="Skill Text Color"
+              description="Color of skill names and stat values"
+            />
+          </div>
+        </div>
+
+        <!-- Skill Header Customization -->
+        <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-semibold text-foreground">Skill Table Header Customization</h2>
+            <p class="text-xs text-muted-foreground mt-1">Customize the skill breakdown table header appearance.</p>
+          </div>
+          <div class="space-y-2">
+            <SettingsSwitch
+              bind:checked={SETTINGS.live.tableCustomization.state.skillShowHeader}
+              label="Show Skill Header"
+              description="Toggle visibility of skill table column headers"
+            />
+            {#if SETTINGS.live.tableCustomization.state.skillShowHeader}
+              <SettingsSlider
+                bind:value={SETTINGS.live.tableCustomization.state.skillHeaderHeight}
+                  min={0} max={100} step={1}
+                label="Skill Header Height"
+                description="Height of the skill table header row"
+                unit="px"
+              />
+              <SettingsSlider
+                bind:value={SETTINGS.live.tableCustomization.state.skillHeaderFontSize}
+                  min={0} max={100} step={1}
+                label="Skill Header Font Size"
+                description="Font size for skill column header text"
+                unit="px"
+              />
+              <SettingsColor
+                bind:value={SETTINGS.live.tableCustomization.state.skillHeaderTextColor}
+                label="Skill Header Text Color"
+                description="Color of skill column header text"
+              />
+            {/if}
+          </div>
+        </div>
+
+        <!-- Skill Abbreviated Numbers -->
+        <div class="bg-popover/40 rounded-lg border border-border/50 p-4 space-y-3">
+          <div>
+            <h2 class="text-base font-semibold text-foreground">Skill Abbreviated Numbers</h2>
+            <p class="text-xs text-muted-foreground mt-1">Customize abbreviated number suffixes for skill rows.</p>
+          </div>
+          <div class="space-y-2">
+            <SettingsSlider
+              bind:value={SETTINGS.live.tableCustomization.state.skillAbbreviatedFontSize}
+                min={0} max={100} step={1}
+              label="Skill Suffix Font Size"
+              description="Font size for K, M, % symbols in skill rows"
+              unit="px"
+            />
+            <SettingsColor
+              bind:value={SETTINGS.live.tableCustomization.state.skillAbbreviatedColor}
+              label="Skill Suffix Color"
+              description="Color of K, M, % symbols in skill rows"
             />
           </div>
         </div>
