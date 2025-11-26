@@ -346,9 +346,6 @@
       </div>
     </div>
 
-    <!-- Divider -->
-    <div class=" h-5 w-px bg-border shrink-0 opacity-60"></div>
-
     <!-- Boss Health -->
     <div class="flex items-center gap-2 shrink-0">
       <span
