@@ -277,6 +277,20 @@ mod tests {
         }
     }
 
+    fn trash_event(timestamp: i64, target_id: i64) -> DamageEvent {
+        DamageEvent {
+            timestamp_ms: timestamp,
+            attacker_id: 1,
+            target_id,
+            target_name: Some("Trash Mob".into()),
+            // Use a monster type that's NOT in the boss list
+            target_monster_type_id: Some(99999),
+            amount: 500,
+            is_boss_target: false,
+            is_killing_blow: false,
+        }
+    }
+
     #[test]
     fn boss_segment_created_and_closed() {
         let mut log = DungeonLog::default();
@@ -409,6 +423,67 @@ mod tests {
                 .iter()
                 .any(|s| s.boss_entity_id == Some(entity_id)),
             "Should match existing boss segment by entity_id"
+        );
+    }
+
+    #[test]
+    fn boss_and_trash_simultaneously_keeps_boss_segment_active() {
+        // Test scenario: during a boss fight, player hits both the boss and trash mobs
+        // The boss segment should remain the primary segment and not switch to trash
+        let mut log = DungeonLog::default();
+        let boss_id = 100;
+        let trash_id = 200;
+
+        // Start boss fight
+        let (changed, _, new_boss) =
+            log.apply_damage_event(boss_event(100, boss_id, false), Instant::now());
+        assert!(changed);
+        assert!(new_boss, "Should flag as new boss");
+        assert_eq!(log.segments.len(), 1);
+        assert_eq!(log.segments[0].segment_type, SegmentType::Boss);
+        assert_eq!(log.combat_state, CombatState::InCombat);
+        assert!(log.active_segment_idx.is_some(), "Boss should be active segment");
+
+        // Now hit a trash mob while boss fight is ongoing
+        let (changed, boss_died, new_boss) =
+            log.apply_damage_event(trash_event(150, trash_id), Instant::now());
+        assert!(changed, "Trash event should be logged");
+        assert!(!boss_died, "Boss should not have died");
+        assert!(!new_boss, "Should not flag as new boss");
+
+        // Trash segment may be created, but boss segment should still be active
+        assert!(
+            log.active_segment_idx.is_some(),
+            "Active segment should still be set"
+        );
+        let active_idx = log.active_segment_idx.unwrap();
+        assert_eq!(
+            log.segments[active_idx].segment_type,
+            SegmentType::Boss,
+            "Active segment should still be boss"
+        );
+        assert_eq!(log.combat_state, CombatState::InCombat);
+
+        // Continue hitting the boss - should still work on the boss segment
+        let (changed, _, _) =
+            log.apply_damage_event(boss_event(200, boss_id, false), Instant::now());
+        assert!(changed);
+        assert_eq!(
+            log.segments[active_idx].segment_type,
+            SegmentType::Boss,
+            "Active segment should still be boss after more boss damage"
+        );
+
+        // Check that there's still an open boss segment
+        let open_boss_segments: Vec<_> = log
+            .segments
+            .iter()
+            .filter(|s| s.segment_type == SegmentType::Boss && s.ended_at_ms.is_none())
+            .collect();
+        assert_eq!(
+            open_boss_segments.len(),
+            1,
+            "Should have exactly one open boss segment"
         );
     }
 }
