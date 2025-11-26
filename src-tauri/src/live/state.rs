@@ -333,8 +333,8 @@ impl AppStateManager {
             StateEvent::NotifyReviveUser(data) => {
                 self.process_notify_revive_user(&mut state, data).await;
             }
-            StateEvent::SyncSceneAttrs(data) => {
-                self.process_sync_scene_attrs(&mut state, data).await;
+            StateEvent::SyncSceneAttrs(_) => {
+                // SyncSceneAttrs handling is disabled to possibly remedy crashing bug.
             }
             StateEvent::PauseEncounter(paused) => {
                 state.set_encounter_paused(paused);

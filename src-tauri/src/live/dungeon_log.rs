@@ -11,6 +11,10 @@ pub type SharedDungeonLog = Arc<Mutex<DungeonLog>>;
 /// Global timeout for ending a segment when no events were seen.
 pub const SEGMENT_TIMEOUT: Duration = Duration::from_secs(15);
 
+/// Hard cap on how many raw damage events we keep per segment.
+/// Keeping this at zero prevents unbounded growth and large payloads sent to the UI.
+pub const MAX_SEGMENT_EVENTS: usize = 0;
+
 /// Monster IDs that are considered bosses.
 pub static GLOBAL_BOSS_LIST: LazyLock<HashSet<i64>> = LazyLock::new(|| {
     let data = include_str!("../../meter-data/MonsterNameBoss.json");
@@ -182,7 +186,9 @@ impl Segment {
     fn append_event(&mut self, event: DamageEvent) {
         self.total_damage = self.total_damage.saturating_add(event.amount.max(0));
         self.hit_count = self.hit_count.saturating_add(1);
-        self.events.push(event);
+        if self.events.len() < MAX_SEGMENT_EVENTS {
+            self.events.push(event);
+        }
     }
 
     fn matches_boss_target(&mut self, event: &DamageEvent) -> bool {
