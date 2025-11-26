@@ -4,6 +4,8 @@ mod packets;
 
 use crate::build_app::build_and_run;
 use log::{info, warn};
+#[cfg(windows)]
+use winreg::{enums::*, RegKey};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 #[cfg(windows)]
 use std::process::{Command, Stdio};
@@ -84,6 +86,15 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
             info!("starting app v{}", app.package_info().version);
+            // Warn with WebView2 runtime version (Windows only).
+            #[cfg(windows)]
+            {
+                if let Some(ver) = get_webview2_runtime_version() {
+                    warn!("webview2 version: {}", ver);
+                } else {
+                    warn!("webview2 version: not found");
+                }
+            }
             stop_windivert();
             remove_windivert();
 
@@ -290,6 +301,38 @@ fn run_command_silently(cmd: &mut Command) -> std::io::Result<std::process::Exit
             .stdin(Stdio::null())
             .status()
     }
+}
+
+/// On windows, query the WebView2 runtime version from registry and return it as a string.
+#[cfg(windows)]
+fn get_webview2_runtime_version() -> Option<String> {
+    // GUID used by the installer script
+    const WEBVIEW2_APP_GUID: &str = "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}";
+
+    let reg_paths = [
+        format!(r"SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{}", WEBVIEW2_APP_GUID),
+        format!(r"SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{}", WEBVIEW2_APP_GUID),
+    ];
+
+    // Check HKLM first
+    for path in reg_paths.iter() {
+        let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+        if let Ok(key) = hklm.open_subkey_with_flags(path, KEY_READ) {
+            if let Ok(val) = key.get_value::<String, _>("pv") {
+                return Some(val);
+            }
+        }
+    }
+
+    // Check HKCU as a fallback
+    let hkcu_path = format!(r"SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{}", WEBVIEW2_APP_GUID);
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    if let Ok(key) = hkcu.open_subkey_with_flags(hkcu_path, KEY_READ) {
+        if let Ok(val) = key.get_value::<String, _>("pv") {
+            return Some(val);
+        }
+    }
+    None
 }
 
 // Updater helper: checks for updates and downloads+installs them automatically.
