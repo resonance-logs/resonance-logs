@@ -28,16 +28,17 @@ pub fn start_capture(
     // Use a larger bounded channel to prevent producer backpressure from stalling
     // headroom for bursts without risking unbounded memory growth.
     let (packet_sender, packet_receiver) =
-        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(10);
+        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(1000);
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
 
-    tauri::async_runtime::spawn(async move {
+    // Use std::thread::spawn to avoid blocking the async runtime with WinDivert recv
+    std::thread::spawn(move || {
         loop {
-            read_packets(app_handle.clone(), &packet_sender, &mut restart_receiver).await;
+            read_packets(&packet_sender, &mut restart_receiver);
             // Wait for restart signal
             while !*restart_receiver.borrow() {
-                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                std::thread::sleep(std::time::Duration::from_millis(100));
             }
             // Reset signal to false before next loop
             let _ = restart_sender.send(false);
@@ -48,8 +49,8 @@ pub fn start_capture(
 }
 
 #[allow(clippy::too_many_lines)]
-async fn read_packets(
-    app_handle: tauri::AppHandle,
+#[allow(clippy::too_many_lines)]
+fn read_packets(
     packet_sender: &tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
     restart_receiver: &mut watch::Receiver<bool>,
 ) {
@@ -284,7 +285,7 @@ async fn process_raw_packet(
                             if i >= MAX_FRAG_ITERATIONS {
                                 error!(
                                     "TCP fragment processing stuck after {i} iterations - forcing recovery. \
-                                    remaining={}, line={}",
+                                        remaining={}, line={}",
                                     tcp_payload_reader.remaining(),
                                     line!()
                                 );
@@ -313,7 +314,7 @@ async fn process_raw_packet(
                                             info!(
                                                 "Got Scene Server Address (by change): {curr_server}"
                                             );
-                                            *known_server = Some(curr_server);
+                                            known_server = Some(curr_server);
                                             let payload_len =
                                                 u32::try_from(tcp_payload_reader.len())
                                                     .unwrap_or(u32::MAX);
@@ -321,13 +322,12 @@ async fn process_raw_packet(
                                                 .sequence_number()
                                                 .wrapping_add(payload_len);
                                             reset_stream(
-                                                tcp_reassembler,
-                                                reassembler,
+                                                &mut tcp_reassembler,
+                                                &mut reassembler,
                                                 Some(seq_end),
                                             );
                                             if let Err(err) = packet_sender
-                                                .send((Pkt::ServerChangeInfo, Vec::new()))
-                                                .await
+                                                .blocking_send((Pkt::ServerChangeInfo, Vec::new()))
                                             {
                                                 debug!("Failed to send packet: {err}");
                                             }
@@ -359,19 +359,16 @@ async fn process_raw_packet(
                 && tcp_payload[14..20] == SIGNATURE_2
             {
                 info!("Got Scene Server Address by Login Return Packet: {curr_server}");
-                *known_server = Some(curr_server);
+                known_server = Some(curr_server);
                 let payload_len = u32::try_from(tcp_payload.len()).unwrap_or(u32::MAX);
                 let seq_end = tcp_packet.sequence_number().wrapping_add(payload_len);
-                reset_stream(tcp_reassembler, reassembler, Some(seq_end));
-                if let Err(err) = packet_sender
-                    .send((Pkt::ServerChangeInfo, Vec::new()))
-                    .await
-                {
+                reset_stream(&mut tcp_reassembler, &mut reassembler, Some(seq_end));
+                if let Err(err) = packet_sender.blocking_send((Pkt::ServerChangeInfo, Vec::new())) {
                     debug!("Failed to send packet: {err}");
                 }
             }
         }
-        return;
+        continue;
     }
 
     let sequence_number = tcp_packet.sequence_number();
@@ -420,7 +417,7 @@ async fn process_raw_packet(
     }
 
     while let Some(packet) = reassembler.try_next() {
-        process_packet(BinaryReader::from(packet), packet_sender.clone()).await;
+        process_packet(BinaryReader::from(packet), packet_sender.clone());
     }
 
     if defer_reset {

@@ -1035,6 +1035,7 @@ impl AppStateManager {
             .and_then(|log| {
                 log.segments
                     .iter()
+                    .rev()
                     .find(|s| s.ended_at_ms.is_none())
                     .cloned()
             });

@@ -43,10 +43,14 @@
     return historyDpsSkillColumns.filter(col => settings.state.live.dps.skillBreakdown[col.key]);
   });
 
+  let isDestroyed = false;
+
   async function subscribePlayerSkills() {
+    if (isDestroyed) return;
     try {
       // Subscribe and get initial data
       const result = await commands.subscribePlayerSkills(parseInt(playerUid), "dps");
+      if (isDestroyed) return;
       if (result.status === "ok") {
         dpsSkillBreakdownWindow = result.data;
       } else {
@@ -54,33 +58,42 @@
       }
 
       // Set up websocket listener for updates
-      unlisten = await onDpsSkillsUpdate((event: TauriEvent<SkillsUpdatePayload>) => {
+      const unlistenFn = await onDpsSkillsUpdate((event: TauriEvent<SkillsUpdatePayload>) => {
+        if (isDestroyed) return;
         // Only update if this is the correct player
         if (event.payload.playerUid.toString() === playerUid) {
           dpsSkillBreakdownWindow = event.payload.skillsWindow;
         }
       });
+
+      if (isDestroyed) {
+        unlistenFn();
+      } else {
+        unlisten = unlistenFn;
+      }
     } catch (error) {
       console.error("Failed to subscribe to player skills:", error);
     }
  }
 
   async function unsubscribePlayerSkills() {
+    isDestroyed = true;
     try {
-      // Unsubscribe from backend
-      await commands.unsubscribePlayerSkills(parseInt(playerUid), "dps");
-
-      // Remove websocket listener
+      // Remove websocket listener first
       if (unlisten) {
         unlisten();
         unlisten = null;
       }
+
+      // Unsubscribe from backend
+      await commands.unsubscribePlayerSkills(parseInt(playerUid), "dps");
     } catch (error) {
       console.error("Failed to unsubscribe from player skills:", error);
     }
  }
 
   onMount(() => {
+    isDestroyed = false;
     subscribePlayerSkills();
 
     return () => {

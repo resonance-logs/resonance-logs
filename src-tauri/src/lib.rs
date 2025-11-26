@@ -9,6 +9,8 @@ use specta_typescript::{BigIntExportBehavior, Typescript};
 use std::process::{Command, Stdio};
 
 use chrono_tz;
+#[cfg(not(debug_assertions))]
+use log::LevelFilter;
 use tauri::menu::MenuBuilder;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, WindowEvent};
@@ -359,9 +361,17 @@ fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()> {
             #[cfg(debug_assertions)]
             tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout)
                 .filter(|metadata| metadata.level() <= log::LevelFilter::Trace),
-            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
-                file_name: Some(log_file_name),
-            }),
+            // LogDir target - in debug builds log everything; in release builds only warnings/errors
+            {
+                let target = tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
+                    file_name: Some(log_file_name),
+                });
+                #[cfg(debug_assertions)]
+                let target = target.filter(|metadata| metadata.level() <= log::LevelFilter::Trace);
+                #[cfg(not(debug_assertions))]
+                let target = target.filter(|metadata| metadata.level() <= LevelFilter::Warn);
+                target
+            }
         ])
         .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
         .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(10)); // keep the last 10 logs
