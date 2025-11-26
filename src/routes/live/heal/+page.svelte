@@ -109,7 +109,7 @@
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={SETTINGS.live.general.state.relativeToTopHealPlayer ? maxHeal > 0 ? (player.totalDmg / maxHeal) * 100 : 0 : player.dmgPct} />
+          <TableRowGlow className={className} classSpecName={player.classSpecName} percentage={SETTINGS.live.general.state.relativeToTopHealPlayer ? maxHeal > 0 ? (player.totalDmg / maxHeal) * 100 : 0 : player.dmgPct} />
         </tr>
       {/each}
     </tbody>

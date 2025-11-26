@@ -10,7 +10,7 @@ import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 // import { image } from '@tauri-apps/api';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 
-import { SETTINGS, DEFAULT_CLASS_COLORS } from '$lib/settings-store';
+import { SETTINGS, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_MAP } from '$lib/settings-store';
 
 export const CLASS_MAP: Record<number, string> = {
   1: 'Stormblade',
@@ -25,15 +25,18 @@ export const CLASS_MAP: Record<number, string> = {
 
 export const CLASS_NAMES = Object.values(CLASS_MAP);
 
-export function getClassColor(className: string): string {
-  const customColors = SETTINGS.accessibility.state.classColors ?? DEFAULT_CLASS_COLORS;
-  const color = customColors[className] ?? DEFAULT_CLASS_COLORS[className] ?? "#ffc9ed";
-  return `rgb(from ${color} r g b / 0.6)`;
+export function getClassColorRaw(className: string, classSpecName?: string): string {
+  const useSpec = SETTINGS.accessibility.state.useClassSpecColors;
+  if (useSpec && classSpecName && classSpecName in CLASS_SPEC_MAP) {
+    const specColors = SETTINGS.accessibility.state.classSpecColors ?? DEFAULT_CLASS_SPEC_COLORS;
+    return specColors[classSpecName] ?? DEFAULT_CLASS_SPEC_COLORS[classSpecName] ?? "#ffc9ed";
+  }
+  const classColors = SETTINGS.accessibility.state.classColors ?? DEFAULT_CLASS_COLORS;
+  return classColors[className] ?? DEFAULT_CLASS_COLORS[className] ?? "#ffc9ed";
 }
 
-export function getClassColorRaw(className: string): string {
-  const customColors = SETTINGS.accessibility.state.classColors ?? DEFAULT_CLASS_COLORS;
-  return customColors[className] ?? DEFAULT_CLASS_COLORS[className] ?? "#ffc9ed";
+export function getClassColor(className: string, classSpecName?: string): string {
+  return `rgb(from ${getClassColorRaw(className, classSpecName)} r g b / 0.6)`;
 }
 
 export function getClassIcon(class_name: string): string {

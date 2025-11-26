@@ -113,7 +113,7 @@
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
+          <TableRowGlow className={className} classSpecName={player.classSpecName} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
         </tr>
       {/each}
     </tbody>

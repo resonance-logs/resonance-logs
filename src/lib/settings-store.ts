@@ -85,6 +85,38 @@ export const DEFAULT_CLASS_COLORS: Record<string, string> = {
   "Beat Performer": "#ee2e48",
 };
 
+export const CLASS_SPEC_MAP: Record<string, string> = {
+  "Iaido": "Stormblade", "Moonstrike": "Stormblade",
+  "Icicle": "Frost Mage", "Frostbeam": "Frost Mage",
+  "Vanguard": "Wind Knight", "Skyward": "Wind Knight",
+  "Smite": "Verdant Oracle", "Lifebind": "Verdant Oracle",
+  "Earthfort": "Heavy Guardian", "Block": "Heavy Guardian",
+  "Wildpack": "Marksman", "Falconry": "Marksman",
+  "Recovery": "Shield Knight", "Shield": "Shield Knight",
+  "Dissonance": "Beat Performer", "Concerto": "Beat Performer",
+};
+
+export const CLASS_SPEC_NAMES = Object.keys(CLASS_SPEC_MAP);
+
+export const DEFAULT_CLASS_SPEC_COLORS: Record<string, string> = {
+  // Stormblade
+  "Iaido": "#9b6cf0", "Moonstrike": "#4a2f80",
+  // Frost Mage
+  "Icicle": "#8ff7ee", "Frostbeam": "#2fbfb3",
+  // Wind Knight
+  "Vanguard": "#4ddff6", "Skyward": "#006b8f",
+  // Verdant Oracle
+  "Smite": "#b9f36e", "Lifebind": "#3b6d00",
+  // Heavy Guardian
+  "Earthfort": "#e6c25a", "Block": "#7b5b08",
+  // Marksman
+  "Wildpack": "#fff9a6", "Falconry": "#cab400",
+  // Shield Knight
+  "Recovery": "#b6d1d6", "Shield": "#4f6b70",
+  // Beat Performer
+  "Dissonance": "#ff7b94", "Concerto": "#9f1322",
+};
+
 export const DEFAULT_FONT_SIZES = {
   xs: 10,    // Extra small - labels, hints (default 0.625rem = 10px)
   sm: 12,    // Small - secondary text (default 0.75rem = 12px)
@@ -103,20 +135,16 @@ export const FONT_SIZE_LABELS: Record<string, string> = {
 
 const DEFAULT_SETTINGS = {
   accessibility: {
-    // New theme setting; fallback to 'dark' if missing in existing persisted store
     theme: 'dark' as string,
-    
     blur: false,
     transparency: false,
     transparentOpacityPercent: 2,
     condenseHeader: "all",
-    // backward compatibility flag used in some places
     transparentMode: false,
-    // Clickthrough mode
     clickthrough: false,
-    // Custom class colors
     classColors: { ...DEFAULT_CLASS_COLORS },
-    // Custom font sizes (in pixels)
+    useClassSpecColors: false,
+    classSpecColors: { ...DEFAULT_CLASS_SPEC_COLORS },
     fontSizes: { ...DEFAULT_FONT_SIZES },
   },
   shortcuts: {

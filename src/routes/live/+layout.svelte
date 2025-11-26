@@ -389,32 +389,12 @@
   });
 
   // Watch for dummy data toggle
-  let dummyDataInterval: number | null = null;
   $effect(() => {
-    const useDummyData = SETTINGS.live.general.state.useDummyData;
-
-    if (useDummyData) {
-      // Inject dummy data immediately
+    if (SETTINGS.live.general.state.useDummyData) {
       injectDummyData();
-
-      // Update dummy data periodically to simulate live updates
-      dummyDataInterval = window.setInterval(() => {
-        injectDummyData();
-      }, 1000);
     } else {
-      // Clear the interval when disabled
-      if (dummyDataInterval) {
-        clearInterval(dummyDataInterval);
-        dummyDataInterval = null;
-      }
+      cleanupStores()
     }
-
-    return () => {
-      if (dummyDataInterval) {
-        clearInterval(dummyDataInterval);
-        dummyDataInterval = null;
-      }
-    };
   });
 
   // Blur feature removed; effect removed.
