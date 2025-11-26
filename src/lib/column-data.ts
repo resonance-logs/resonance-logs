@@ -1,6 +1,7 @@
 /**
- * @file This file contains column configurations for the history page tables.
- * This provides a clean way to render columns without repetitive if statements.
+ * Column data shared across history and live views.
+ * This file replaces the previous `history-columns.ts` name to better
+ * reflect its purpose as generic column metadata.
  */
 
 export const historyDpsPlayerColumns = [
@@ -98,7 +99,7 @@ export const historyTankedSkillColumns = [
   { key: 'luckyRate', header: 'LR%', label: 'LR%', description: "Show skill's lucky rate on damage taken", format: (v: number) => (v * 100).toFixed(1) + '%' },
   { key: 'luckyDmgRate', header: 'LDMG%', label: 'LDMG%', description: "Show skill's % damage taken that was lucky", format: (v: number) => (v * 100).toFixed(1) + '%' },
   { key: 'hits', header: 'Hits', label: 'Hits', description: "Show skill's total number of hits taken", format: (v: number) => v.toLocaleString() },
-  { key: 'hitsPerMinute', header: 'HPM', label: 'HPM', description: "Show skill's number of hits taken per minute", format: (v: number) => v.toFixed(1) },
+  { key: 'hitsPerMinute', header: 'HPM', label: 'HPM', description: "Show skill's number of hits per minute", format: (v: number) => v.toFixed(1) },
 ] as const;
 
 export const historyHealSkillColumns = [
@@ -112,3 +113,8 @@ export const historyHealSkillColumns = [
   { key: 'hits', header: 'Hits', label: 'Hits', description: "Show skill's total number of hits", format: (v: number) => v.toLocaleString() },
   { key: 'hitsPerMinute', header: 'HPM', label: 'HPM', description: "Show skill's number of hits per minute", format: (v: number) => v.toFixed(1) },
 ] as const;
+
+// Aliases for live views: reuse history DPS/Heal skill definitions where appropriate
+export const liveDpsPlayerColumns = historyDpsPlayerColumns;
+export const liveDpsSkillColumns = historyDpsSkillColumns;
+export const liveHealSkillColumns = historyHealSkillColumns;

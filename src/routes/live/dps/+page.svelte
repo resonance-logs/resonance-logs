@@ -4,7 +4,7 @@
   import { settings, SETTINGS } from "$lib/settings-store";
   import { getDpsPlayers } from "$lib/stores/live-meter-store.svelte";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
-  import { historyDpsPlayerColumns } from "$lib/history-columns";
+  import { historyDpsPlayerColumns } from "$lib/column-data";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import PercentFormat from "$lib/components/percent-format.svelte";
   import getDisplayName from "$lib/name-display";

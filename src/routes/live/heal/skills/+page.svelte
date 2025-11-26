@@ -7,7 +7,7 @@
   import type { Event as TauriEvent } from "@tauri-apps/api/event";
   import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
-  import { historyDpsSkillColumns } from "$lib/history-columns"; // Use same structure as DPS for consistency
+  import { historyDpsSkillColumns } from "$lib/column-data"; // Use same structure as DPS for consistency
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import PercentFormat from "$lib/components/percent-format.svelte";
 

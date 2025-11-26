@@ -9,7 +9,7 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
-  import { liveTankedSkillColumns } from "$lib/history-columns"; // Use tanked structure for consistency
+  import { liveTankedSkillColumns } from "$lib/column-data"; // Use tanked structure for consistency
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import PercentFormat from "$lib/components/percent-format.svelte";
 

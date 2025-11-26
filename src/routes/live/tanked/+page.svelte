@@ -3,7 +3,7 @@
   import { settings, SETTINGS } from "$lib/settings-store";
   import { getTankedPlayers } from "$lib/stores/live-meter-store.svelte";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
-  import { liveTankedPlayerColumns } from "$lib/history-columns";
+  import { liveTankedPlayerColumns } from "$lib/column-data";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import PercentFormat from "$lib/components/percent-format.svelte";
   import getDisplayName from "$lib/name-display";
