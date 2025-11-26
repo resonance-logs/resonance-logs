@@ -21,7 +21,6 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
-  import { getVersion } from "@tauri-apps/api/app";
   import {
     onEncounterUpdate,
     onResetEncounter,
