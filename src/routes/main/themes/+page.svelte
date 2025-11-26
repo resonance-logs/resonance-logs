@@ -5,8 +5,11 @@
   import SettingsSwitch from "../settings/settings-switch.svelte";
   import SettingsColor from "../settings/settings-color.svelte";
   import SettingsColorAlpha from "../settings/settings-color-alpha.svelte";
+  import SettingsFilePicker from "../settings/settings-file-picker.svelte";
   import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_LIVE_TABLE_SETTINGS, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS, DEFAULT_HEADER_SETTINGS, HEADER_PRESETS } from "$lib/settings-store";
   import { setClickthrough, CLASS_NAMES, getClassColorRaw } from "$lib/utils.svelte";
+  import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
+  import { onMount } from 'svelte';
   import ChevronDown from "virtual:icons/lucide/chevron-down";
 
   const themesTabs = [
@@ -21,15 +24,37 @@
   let expandedSections = $state({
     colorThemes: false,
     classSpecColors: false,
+    backgroundImage: false,
+    customFonts: false,
     transparency: false,
     liveDisplay: false,
+    liveGeneral: false,
     headerSettings: false,
     tableSettings: false,
+    mainGeneral: false,
   });
 
   function toggleSection(section: keyof typeof expandedSections) {
     expandedSections[section] = !expandedSections[section];
   }
+
+  // Sync boss damage setting to backend
+  let _mounted = false;
+  onMount(() => {
+    _mounted = true;
+  });
+
+  $effect(() => {
+    if (_mounted) {
+      void setBossOnlyDps(SETTINGS.live.general.state.bossOnlyDps);
+    }
+  });
+
+  $effect(() => {
+    if (_mounted) {
+      void setDungeonSegmentsEnabled(SETTINGS.live.general.state.dungeonSegmentsEnabled);
+    }
+  });
 
   // Header presets
   type HeaderPreset = 'full' | 'compact' | 'none' | 'custom';
@@ -242,6 +267,62 @@
           {/if}
         </div>
 
+        <!-- Background Image Section (only for custom theme) -->
+        {#if isCustomTheme}
+          <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+            <button
+              type="button"
+              class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+              onclick={() => toggleSection('backgroundImage')}
+            >
+              <h2 class="text-base font-semibold text-foreground">Background Image</h2>
+              <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.backgroundImage ? 'rotate-180' : ''}" />
+            </button>
+            {#if expandedSections.backgroundImage}
+              <div class="px-4 pb-4 space-y-2">
+                <p class="text-xs text-muted-foreground">Use a custom image as the background for both main and live meter windows.</p>
+                <SettingsSwitch
+                  bind:checked={SETTINGS.accessibility.state.backgroundImageEnabled}
+                  label="Enable Background Image"
+                  description="Use an image as the background"
+                />
+                {#if SETTINGS.accessibility.state.backgroundImageEnabled}
+                  <div class="mt-2 space-y-2">
+                    <SettingsFilePicker
+                      label="Select Image"
+                      description="Choose an image file (PNG, JPG, WebP)"
+                      accept="image/*"
+                      value={SETTINGS.accessibility.state.backgroundImage}
+                      onchange={(dataUrl, _fileName) => {
+                        SETTINGS.accessibility.state.backgroundImage = dataUrl;
+                      }}
+                      onclear={() => {
+                        SETTINGS.accessibility.state.backgroundImage = '';
+                      }}
+                    />
+                    <SettingsSelect
+                      label="Image Mode"
+                      description="How the image should fit the window"
+                      bind:selected={SETTINGS.accessibility.state.backgroundImageMode}
+                      values={["cover", "contain"]}
+                    />
+                    {#if SETTINGS.accessibility.state.backgroundImageMode === 'contain'}
+                      <SettingsColorAlpha
+                        label="Contain Fill Color"
+                        description="Background color visible around the contained image"
+                        value={SETTINGS.accessibility.state.backgroundImageContainColor}
+                        oninput={(value: string) => {
+                          SETTINGS.accessibility.state.backgroundImageContainColor = value;
+                        }}
+                      />
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        {/if}
+
         <!-- Class & Spec Colors Section -->
         <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
           <button
@@ -304,17 +385,167 @@
             </div>
           {/if}
         </div>
+
+        <!-- Custom Fonts Section -->
+        <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            onclick={() => toggleSection('customFonts')}
+          >
+            <h2 class="text-base font-semibold text-foreground">Custom Fonts</h2>
+            <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.customFonts ? 'rotate-180' : ''}" />
+          </button>
+          {#if expandedSections.customFonts}
+            <div class="px-4 pb-4 space-y-4">
+              <p class="text-xs text-muted-foreground">Import custom fonts to replace the default fonts. Fonts should be .woff2, .woff, .ttf, or .otf files.</p>
+              
+              <!-- Sans-serif Font -->
+              <div class="space-y-2 pt-2 border-t border-border/30">
+                <h3 class="text-sm font-semibold text-foreground">Sans-serif Font (UI Text)</h3>
+                <p class="text-xs text-muted-foreground">Default: Inter Variable</p>
+                <SettingsSwitch
+                  bind:checked={SETTINGS.accessibility.state.customFontSansEnabled}
+                  label="Enable Custom Sans Font"
+                  description="Use a custom font for UI text"
+                />
+                {#if SETTINGS.accessibility.state.customFontSansEnabled}
+                  <SettingsFilePicker
+                    label="Select Font File"
+                    description="Choose a font file (.woff2, .woff, .ttf, .otf)"
+                    accept=".woff2,.woff,.ttf,.otf"
+                    value={SETTINGS.accessibility.state.customFontSansUrl}
+                    onchange={(dataUrl, fileName) => {
+                      SETTINGS.accessibility.state.customFontSansUrl = dataUrl;
+                      // Extract font name from file name (remove extension)
+                      const fontName = fileName.replace(/\.(woff2?|ttf|otf)$/i, '');
+                      SETTINGS.accessibility.state.customFontSansName = fontName;
+                      // Register the font face
+                      const fontFace = new FontFace(fontName, `url(${dataUrl})`);
+                      fontFace.load().then((loadedFace) => {
+                        document.fonts.add(loadedFace);
+                      }).catch(e => console.error('Failed to load font:', e));
+                    }}
+                    onclear={() => {
+                      SETTINGS.accessibility.state.customFontSansUrl = '';
+                      SETTINGS.accessibility.state.customFontSansName = '';
+                    }}
+                  />
+                  {#if SETTINGS.accessibility.state.customFontSansName}
+                    <p class="text-xs text-muted-foreground pl-3">Loaded: {SETTINGS.accessibility.state.customFontSansName}</p>
+                  {/if}
+                {/if}
+              </div>
+
+              <!-- Monospace Font -->
+              <div class="space-y-2 pt-3 border-t border-border/30">
+                <h3 class="text-sm font-semibold text-foreground">Monospace Font (Numbers, Code)</h3>
+                <p class="text-xs text-muted-foreground">Default: Geist Mono Variable</p>
+                <SettingsSwitch
+                  bind:checked={SETTINGS.accessibility.state.customFontMonoEnabled}
+                  label="Enable Custom Mono Font"
+                  description="Use a custom font for numbers and code"
+                />
+                {#if SETTINGS.accessibility.state.customFontMonoEnabled}
+                  <SettingsFilePicker
+                    label="Select Font File"
+                    description="Choose a font file (.woff2, .woff, .ttf, .otf)"
+                    accept=".woff2,.woff,.ttf,.otf"
+                    value={SETTINGS.accessibility.state.customFontMonoUrl}
+                    onchange={(dataUrl, fileName) => {
+                      SETTINGS.accessibility.state.customFontMonoUrl = dataUrl;
+                      // Extract font name from file name (remove extension)
+                      const fontName = fileName.replace(/\.(woff2?|ttf|otf)$/i, '');
+                      SETTINGS.accessibility.state.customFontMonoName = fontName;
+                      // Register the font face
+                      const fontFace = new FontFace(fontName, `url(${dataUrl})`);
+                      fontFace.load().then((loadedFace) => {
+                        document.fonts.add(loadedFace);
+                      }).catch(e => console.error('Failed to load font:', e));
+                    }}
+                    onclear={() => {
+                      SETTINGS.accessibility.state.customFontMonoUrl = '';
+                      SETTINGS.accessibility.state.customFontMonoName = '';
+                    }}
+                  />
+                  {#if SETTINGS.accessibility.state.customFontMonoName}
+                    <p class="text-xs text-muted-foreground pl-3">Loaded: {SETTINGS.accessibility.state.customFontMonoName}</p>
+                  {/if}
+                {/if}
+              </div>
+            </div>
+          {/if}
+        </div>
       </div>
     </Tabs.Content>
   {:else if activeTab === 'main'}
     <Tabs.Content value="main">
       <div class="space-y-3">
-        <!-- Main tab content will go here -->
+        <!-- Main General Settings (moved from Settings > Past Encounters) -->
+        <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            onclick={() => toggleSection('mainGeneral')}
+          >
+            <h2 class="text-base font-semibold text-foreground">General Settings</h2>
+            <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.mainGeneral ? 'rotate-180' : ''}" />
+          </button>
+          {#if expandedSections.mainGeneral}
+            <div class="px-4 pb-3 space-y-1">
+              <SettingsSelect bind:selected={SETTINGS.history.general.state.showYourName} values={["Show Your Name", "Show Your Class", "Show Your Name - Class", "Show Your Name - Spec", "Hide Your Name"]} label="Show Your Name" description="Show Your Class = replace your name with your class. Name - Class/Spec = show both." />
+              <SettingsSelect bind:selected={SETTINGS.history.general.state.showOthersName} values={["Show Others' Name", "Show Others' Class", "Show Others' Name - Class", "Show Others' Name - Spec", "Hide Others' Name"]} label="Show Others' Name" description="Show Others' Class = replace others' name with their class. Name - Class/Spec = show both." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.showYourAbilityScore} label="Your Ability Score" description="Show your ability score" />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.showOthersAbilityScore} label="Others' Ability Score" description="Show others' ability score" />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.relativeToTopDPSPlayer} label="Relative to Top DPS - Player" description="Color bars are relative to top DPS player instead of all players. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.relativeToTopDPSSkill} label="Relative to Top DPS - Skill" description="Color bars are relative to top DPS skill instead of all skills. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.relativeToTopHealPlayer} label="Relative to Top Heal - Player" description="Color bars are relative to top healing player instead of all players. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.relativeToTopHealSkill} label="Relative to Top - Skill" description="Color bars are relative to top healing skill instead of all skills. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.relativeToTopTankedPlayer} label="Relative to Top Tanked - Player" description="Color bars are relative to top tanked player instead of all players. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.relativeToTopTankedSkill} label="Relative to Top Tanked - Skill" description="Color bars are relative to top tanked skill instead of all skills. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenTps} label="Shorten TPS Metrics" description="Show TPS values as 5k, 50k, etc." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
+              <SettingsSwitch bind:checked={SETTINGS.history.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
+            </div>
+          {/if}
+        </div>
       </div>
     </Tabs.Content>
   {:else if activeTab === 'live'}
     <Tabs.Content value="live">
       <div class="space-y-3">
+        <!-- Live General Settings (moved from Settings > Live) -->
+        <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            onclick={() => toggleSection('liveGeneral')}
+          >
+            <h2 class="text-base font-semibold text-foreground">General Settings</h2>
+            <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.liveGeneral ? 'rotate-180' : ''}" />
+          </button>
+          {#if expandedSections.liveGeneral}
+            <div class="px-4 pb-3 space-y-1">
+              <SettingsSelect bind:selected={SETTINGS.live.general.state.showYourName} values={["Show Your Name", "Show Your Class", "Show Your Name - Class", "Show Your Name - Spec", "Hide Your Name"]} label="Show Your Name" description="Show Your Class = replace your name with your class. Name - Class/Spec = show both." />
+              <SettingsSelect bind:selected={SETTINGS.live.general.state.showOthersName} values={["Show Others' Name", "Show Others' Class", "Show Others' Name - Class", "Show Others' Name - Spec", "Hide Others' Name"]} label="Show Others' Name" description="Show Others' Class = replace others' name with their class. Name - Class/Spec = show both." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.showYourAbilityScore} label="Your Ability Score" description="Show your ability score" />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.showOthersAbilityScore} label="Others' Ability Score" description="Show others' ability score" />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopDPSPlayer} label="Relative to Top DPS - Player" description="Color bars are relative to top DPS player instead of all players. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopDPSSkill} label="Relative to Top DPS - Skill" description="Color bars are relative to top DPS skill instead of all skills. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopHealPlayer} label="Relative to Top Heal - Player" description="Color bars are relative to top healing player instead of all players. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopHealSkill} label="Relative to Top - Skill" description="Color bars are relative to top healing skill instead of all skills. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopTankedPlayer} label="Relative to Top Tanked - Player" description="Color bars are relative to top tanked player instead of all players. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.relativeToTopTankedSkill} label="Relative to Top Tanked - Skill" description="Color bars are relative to top tanked skill instead of all skills. Useful for 20 man or World Bosses." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenTps} label="Shorten TPS Metrics" description="Show TPS values as 5k, 50k, etc." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
+              <SettingsSwitch bind:checked={SETTINGS.live.general.state.dungeonSegmentsEnabled} label="Dungeon Segments" description="Persist a dungeon-wide log with boss and trash segments" />
+            </div>
+          {/if}
+        </div>
+
         <!-- Transparency Settings -->
         <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
           <button

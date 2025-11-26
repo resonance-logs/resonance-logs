@@ -446,6 +446,18 @@ const DEFAULT_SETTINGS = {
     classSpecColors: { ...DEFAULT_CLASS_SPEC_COLORS },
     fontSizes: { ...DEFAULT_FONT_SIZES },
     customThemeColors: { ...DEFAULT_CUSTOM_THEME_COLORS },
+    // Background image settings
+    backgroundImage: '' as string,
+    backgroundImageEnabled: false,
+    backgroundImageMode: 'cover' as 'cover' | 'contain',
+    backgroundImageContainColor: 'rgba(0, 0, 0, 1)',
+    // Custom font settings
+    customFontSansEnabled: false,
+    customFontSansUrl: '' as string,
+    customFontSansName: '' as string,
+    customFontMonoEnabled: false,
+    customFontMonoUrl: '' as string,
+    customFontMonoName: '' as string,
   },
   shortcuts: {
     showLiveMeter: "",
