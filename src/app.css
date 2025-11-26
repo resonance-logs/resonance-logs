@@ -137,6 +137,7 @@
   }
 }
 
+
 /* THEME VARIANTS -------------------------------------------------------- */
 /* Each theme overrides the core semantic tokens. Use data-theme attribute on <html>. */
 /* Settings components (settings-select / settings-switch) rely only on these
@@ -226,7 +227,7 @@ html[data-theme='light'] {
 }
 
 /* Pink UwU Mode */
-html[data-theme='pink-uwu'] {
+html[data-theme='pink'] {
   /* Pink theme using provided hex palette */
   /* Main background */
   --background: #F8E8EE;
@@ -274,7 +275,7 @@ html[data-theme='pink-uwu'] {
 }
 
 /* Green Pastel */
-html[data-theme='green-pastel'] {
+html[data-theme='green'] {
   --background: oklch(0.94 0.03 150);
   --foreground: oklch(0.20 0.03 150);
   --card: oklch(0.95 0.025 150);
@@ -354,7 +355,7 @@ html[data-theme='matcha'] {
 }
 
 /* Pastel Rainbow */
-html[data-theme='pastel-rainbow'] {
+html[data-theme='rainbow'] {
   --background: linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5);
   --foreground: oklch(0.25 0.03 250);
   --card: oklch(0.97 0.02 95);
@@ -393,9 +394,13 @@ html[data-theme='pastel-rainbow'] {
   --toast-shadow: 0 4px 30px -8px rgba(120,120,140,0.28), 0 0 0 1px rgba(140,140,160,0.18);
 }
 
-/* Fallback for gradient background tokens in pastel-rainbow - ensure background-color usage gets a solid color */
-html[data-theme='pastel-rainbow'] body {
-  background: #f7f5fb;
+/* Custom Theme - colors are applied via inline styles from JavaScript */
+html[data-theme='custom'] {
+  /* Base fallbacks - actual values set dynamically via JS */
+  --tooltip-bg: rgba(41, 41, 41, 0.92);
+  --tooltip-border: rgba(74, 74, 74, 0.55);
+  --tooltip-fg: var(--foreground);
+  --toast-shadow: 0 4px 24px -4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
 }
 
 /* TOOLTIP BASE STYLE -------------------------------------------------- */

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { commands } from "$lib/bindings";
-  import { settings } from "$lib/settings-store";
+  import { settings, SETTINGS } from "$lib/settings-store";
   import type { SkillsWindow, SkillsUpdatePayload } from "$lib/api";
   import { onTankedSkillsUpdate } from "$lib/api";
   import type { Event as TauriEvent } from "@tauri-apps/api/event";
@@ -25,6 +25,9 @@
   let SETTINGS_OTHERS_NAME = $state(settings.state.live.general.showOthersName);
   let SETTINGS_SHORTEN_TPS = $state(settings.state.live.general.shortenTps);
   let SETTINGS_RELATIVE_TO_TOP_TANKED_SKILL = $state(settings.state.live.general.relativeToTopTankedSkill);
+
+  // Table customization settings for skills
+  let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
 
   // Update maxTakenSkill when data changes
   $effect(() => {
@@ -105,7 +108,7 @@
       <span class="ml-auto">
       <span class="text-xs">Total: </span>
       {#if SETTINGS_SHORTEN_TPS}
-        <AbbreviatedNumber num={currentPlayer.totalDmg} />
+        <AbbreviatedNumber num={currentPlayer.totalDmg} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
       {:else}
         {currentPlayer.totalDmg.toLocaleString()}
       {/if}
@@ -115,49 +118,52 @@
 
 <div class="relative flex flex-col">
   <table class="w-full border-collapse">
-    <thead class="z-1 sticky top-0">
-      <tr class="bg-popover/60">
-        <th class="px-2 py-1 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Skill</th>
-        {#each visibleSkillColumns as col (col.key)}
-          <th class="px-2 py-1 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">{col.header}</th>
-        {/each}
-      </tr>
-    </thead>
+    {#if tableSettings.skillShowHeader}
+      <thead class="z-1 sticky top-0">
+        <tr class="bg-popover/60" style="height: {tableSettings.skillHeaderHeight}px;">
+          <th class="px-2 py-1 text-left font-medium uppercase tracking-wider" style="font-size: {tableSettings.skillHeaderFontSize}px; color: {tableSettings.skillHeaderTextColor};">Skill</th>
+          {#each visibleSkillColumns as col (col.key)}
+            <th class="px-2 py-1 text-right font-medium uppercase tracking-wider" style="font-size: {tableSettings.skillHeaderFontSize}px; color: {tableSettings.skillHeaderTextColor};">{col.header}</th>
+          {/each}
+        </tr>
+      </thead>
+    {/if}
     <tbody>
       {#each skillsWindow?.skillRows as skill (skill.name)}
         {@const className = currentPlayer?.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currentPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" && currentPlayer ? currentPlayer.className : ""}
         <tr
-          class="relative border-t border-border hover:bg-muted/60 transition-colors h-6 text-xs bg-background/40"
+          class="relative border-t border-border hover:bg-muted/60 transition-colors bg-background/40"
+          style="height: {tableSettings.skillRowHeight}px; font-size: {tableSettings.skillFontSize}px;"
         >
-          <td class="px-2 py-1 text-xs text-muted-foreground relative z-10">
+          <td class="px-2 py-1 relative z-10" style="color: {tableSettings.skillTextColor};">
             <div class="flex items-center gap-1 h-full">
               <span class="truncate">{skill.name}</span>
             </div>
           </td>
           {#each visibleSkillColumns as col (col.key)}
-            <td class="px-2 py-1 text-right text-xs text-muted-foreground relative z-10">
+            <td class="px-2 py-1 text-right relative z-10" style="color: {tableSettings.skillTextColor};">
               {#if col.key === 'totalDmg'}
                 {#if SETTINGS_SHORTEN_TPS}
-                  <AbbreviatedNumber num={skill.totalDmg} />
+                  <AbbreviatedNumber num={skill.totalDmg} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
                 {:else}
                   {skill.totalDmg.toLocaleString()}
                 {/if}
               {:else if col.key === 'dps'}
                 {#if SETTINGS_SHORTEN_TPS}
-                  <AbbreviatedNumber num={skill.dps} />
+                  <AbbreviatedNumber num={skill.dps} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
                 {:else}
                   {skill.dps.toFixed(1)}
                 {/if}
               {:else if col.key === 'dmgPct'}
-                <PercentFormat val={skill.dmgPct} fractionDigits={0} />
+                <PercentFormat val={skill.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
               {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
-                <PercentFormat val={skill[col.key]} />
+                <PercentFormat val={skill[col.key]} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
               {:else}
                 {col.format(skill[col.key] ?? 0)}
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_SKILL ? (maxTakenSkill > 0 ? (skill.totalDmg / maxTakenSkill) * 100 : 0) : skill.dmgPct} />
+          <TableRowGlow className={className} classSpecName={currentPlayer?.classSpecName} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_SKILL ? (maxTakenSkill > 0 ? (skill.totalDmg / maxTakenSkill) * 100 : 0) : skill.dmgPct} />
         </tr>
       {/each}
     </tbody>

@@ -23,6 +23,9 @@
   let SETTINGS_SHORTEN_TPS = $state(settings.state.live.general.shortenTps);
   let SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER = $state(settings.state.live.general.relativeToTopTankedPlayer);
 
+  // Table customization settings
+  let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
+
   // Update maxTaken when data changes
   $effect(() => {
     const players = getTankedPlayers().playerRows;
@@ -42,25 +45,20 @@
     return liveTankedPlayerColumns.filter(col => settings.state.live.tanked.players[col.key]);
   });
 
-  // Track density mode
-  let density = $derived(settings.state.accessibility.density ?? "comfortable");
-
-  // Helper functions for density-based styling
-  let isCompact = $derived(density === "compact");
-  let isMedium = $derived(density === "medium");
-  // removed unused isComfortable derived value
 </script>
 
 <div class="relative flex flex-col gap-2 overflow-hidden rounded-lg ring-1 ring-border/60 bg-card/30 backdrop-blur-sm">
   <table class="w-full border-collapse overflow-hidden">
-    <thead>
-      <tr class="bg-popover/60">
-  <th class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-left font-medium uppercase tracking-wide text-muted-foreground">Player</th>
-        {#each visiblePlayerColumns as col (col.key)}
-          <th class="{isCompact ? 'px-2 py-1 text-[10px]' : isMedium ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-[11px]'} text-right font-medium uppercase tracking-wide text-muted-foreground">{col.header}</th>
-        {/each}
-      </tr>
-    </thead>
+    {#if tableSettings.showTableHeader}
+      <thead>
+        <tr class="bg-popover/60" style="height: {tableSettings.tableHeaderHeight}px;">
+          <th class="px-3 py-1 text-left font-medium uppercase tracking-wide" style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};">Player</th>
+          {#each visiblePlayerColumns as col (col.key)}
+            <th class="px-3 py-1 text-right font-medium uppercase tracking-wide" style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};">{col.header}</th>
+          {/each}
+        </tr>
+      </thead>
+    {/if}
     <tbody>
       {#each tankedData as player (player.uid)}
         {@const isLocalPlayer = player.name.includes("You")}
@@ -77,50 +75,52 @@
         })}
         {@const className = isLocalPlayer ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
         <tr
-          class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-default {isCompact ? 'h-7' : isMedium ? 'h-10' : 'h-14'} {isCompact ? 'text-[11px]' : isMedium ? 'text-[12px]' : 'text-[13px]'} group"
+          class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-default group"
+          style="height: {tableSettings.playerRowHeight}px; font-size: {tableSettings.playerFontSize}px;"
         >
-          <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} relative z-10">
-            <div class="flex items-center h-full {isCompact ? 'gap-1' : isMedium ? 'gap-1.5' : 'gap-2'}">
+          <td class="px-3 py-1 relative z-10">
+            <div class="flex items-center h-full gap-2">
               <img
-                class="{isCompact ? 'size-4' : isMedium ? 'size-5' : 'size-6'} object-contain"
+                style="width: {tableSettings.playerIconSize}px; height: {tableSettings.playerIconSize}px;"
+                class="object-contain"
                 src={getClassIcon(className)}
                 alt="Class icon"
                 {@attach tooltip(() => `${player.className}${player.classSpecName ? ' - ' + player.classSpecName : ''}`)}
               />
               {#if player.abilityScore > 0}
                 {#if SETTINGS.live.general.state.shortenAbilityScore}
-                  <span class="text-muted-foreground tabular-nums"><AbbreviatedNumber num={player.abilityScore} /></span>
+                  <span class="tabular-nums" style="color: {tableSettings.playerTextColor};"><AbbreviatedNumber num={player.abilityScore} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} /></span>
                 {:else}
-                  <span class="text-muted-foreground tabular-nums">{player.abilityScore}</span>
+                  <span class="tabular-nums" style="color: {tableSettings.playerTextColor};">{player.abilityScore}</span>
                 {/if}
               {/if}
-              <span class="truncate font-medium text-foreground">{displayName || `#${player.uid}`}</span>
+              <span class="truncate font-medium" style="color: {tableSettings.playerTextColor};">{displayName || `#${player.uid}`}</span>
             </div>
           </td>
           {#each visiblePlayerColumns as col (col.key)}
-            <td class="{isCompact ? 'px-2 py-1' : isMedium ? 'px-2.5 py-2' : 'px-3 py-3'} text-right relative z-10 tabular-nums font-medium text-muted-foreground">
+            <td class="px-3 py-1 text-right relative z-10 tabular-nums font-medium" style="color: {tableSettings.playerTextColor};">
               {#if col.key === 'totalDmg'}
                 {#if SETTINGS_SHORTEN_TPS}
-                  <AbbreviatedNumber num={player.totalDmg} />
+                  <AbbreviatedNumber num={player.totalDmg} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
                 {:else}
                   {player.totalDmg.toLocaleString()}
                 {/if}
               {:else if col.key === 'dps'}
                 {#if SETTINGS_SHORTEN_TPS}
-                  <AbbreviatedNumber num={player.dps} />
+                  <AbbreviatedNumber num={player.dps} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
                 {:else}
                   {player.dps.toFixed(1)}
                 {/if}
               {:else if col.key === 'dmgPct'}
-                <PercentFormat val={player.dmgPct} fractionDigits={0} />
+                <PercentFormat val={player.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
               {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
-                <PercentFormat val={player[col.key]} />
+                <PercentFormat val={player[col.key]} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
               {:else}
                 {col.format(player[col.key] ?? 0)}
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
+          <TableRowGlow className={className} classSpecName={player.classSpecName} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_PLAYER ? (maxTaken > 0 ? (player.totalDmg / maxTaken) * 100 : 0) : player.dmgPct} />
         </tr>
       {/each}
     </tbody>

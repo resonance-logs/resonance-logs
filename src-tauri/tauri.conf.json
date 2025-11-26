@@ -29,7 +29,8 @@
                 "url": "main",
                 "minWidth": 855,
                 "minHeight": 300,
-                "visible": false
+                "visible": false,
+                "transparent": true
             }
         ],
         "security": {
