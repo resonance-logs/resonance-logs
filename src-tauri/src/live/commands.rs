@@ -89,6 +89,7 @@ pub async fn subscribe_player_skills(
                 dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
                     log.segments
                         .iter()
+                        .rev()
                         .find(|s| s.ended_at_ms.is_none())
                         .map(|segment| {
                             let start_ms = segment.started_at_ms.max(0) as u128;
@@ -180,6 +181,7 @@ pub async fn get_player_skills(
                 dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
                     log.segments
                         .iter()
+                        .rev()
                         .find(|s| s.ended_at_ms.is_none())
                         .map(|segment| {
                             let start_ms = segment.started_at_ms.max(0) as u128;
@@ -442,6 +444,7 @@ pub async fn reset_player_metrics(
                 .and_then(|log| {
                     log.segments
                         .iter()
+                        .rev()
                         .find(|s| s.ended_at_ms.is_none())
                         .and_then(|s| s.boss_name.clone())
                 });
