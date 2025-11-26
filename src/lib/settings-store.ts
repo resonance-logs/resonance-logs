@@ -156,6 +156,203 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   skillAbbreviatedColor: "#71717a",
 };
 
+// Header customization defaults
+export const DEFAULT_HEADER_SETTINGS = {
+  // Layout settings
+  showHeader: true,
+  windowPadding: 12, // padding around entire live meter window
+  headerPadding: 8, // internal padding within header
+  
+  // Row 1 elements (left side)
+  showTimer: true,
+  showSceneName: true,
+  showSegmentInfo: true,
+  
+  // Row 1 elements (right side - control buttons)
+  showResetButton: true,
+  showPauseButton: true,
+  showBossOnlyButton: true,
+  showSettingsButton: true,
+  showMinimizeButton: true,
+  
+  // Row 2 elements (left side - stats)
+  showTotalDamage: true,
+  showTotalDps: true,
+  showBossHealth: true,
+  
+  // Row 2 elements (right side - navigation tabs)
+  showNavigationTabs: true,
+  
+  // Timer sizing
+  timerLabelFontSize: 12,
+  timerFontSize: 18,
+  
+  // Scene name sizing
+  sceneNameFontSize: 14,
+  
+  // Segment info sizing
+  segmentFontSize: 12,
+  
+  // Control button sizing (individual)
+  resetButtonSize: 20,
+  resetButtonPadding: 8,
+  pauseButtonSize: 20,
+  pauseButtonPadding: 8,
+  bossOnlyButtonSize: 20,
+  bossOnlyButtonPadding: 8,
+  settingsButtonSize: 20,
+  settingsButtonPadding: 8,
+  minimizeButtonSize: 20,
+  minimizeButtonPadding: 8,
+  
+  // Stats sizing
+  totalDamageLabelFontSize: 14,
+  totalDamageValueFontSize: 18,
+  totalDpsLabelFontSize: 14,
+  totalDpsValueFontSize: 18,
+  bossHealthLabelFontSize: 14,
+  
+  // Boss health sizing (granular)
+  bossHealthNameFontSize: 14,
+  bossHealthValueFontSize: 14,
+  bossHealthPercentFontSize: 14,
+  
+  // Navigation tabs sizing
+  navTabFontSize: 11,
+  navTabPaddingX: 14,
+  navTabPaddingY: 6,
+};
+
+// Header presets
+export const HEADER_PRESETS = {
+  full: {
+    showHeader: true,
+    windowPadding: 12,
+    headerPadding: 8,
+    showTimer: true,
+    showSceneName: true,
+    showSegmentInfo: true,
+    showResetButton: true,
+    showPauseButton: true,
+    showBossOnlyButton: true,
+    showSettingsButton: true,
+    showMinimizeButton: true,
+    showTotalDamage: true,
+    showTotalDps: true,
+    showBossHealth: true,
+    showNavigationTabs: true,
+    timerLabelFontSize: 12,
+    timerFontSize: 18,
+    sceneNameFontSize: 14,
+    segmentFontSize: 12,
+    resetButtonSize: 20,
+    resetButtonPadding: 8,
+    pauseButtonSize: 20,
+    pauseButtonPadding: 8,
+    bossOnlyButtonSize: 20,
+    bossOnlyButtonPadding: 8,
+    settingsButtonSize: 20,
+    settingsButtonPadding: 8,
+    minimizeButtonSize: 20,
+    minimizeButtonPadding: 8,
+    totalDamageLabelFontSize: 14,
+    totalDamageValueFontSize: 18,
+    totalDpsLabelFontSize: 14,
+    totalDpsValueFontSize: 18,
+    bossHealthLabelFontSize: 14,
+    bossHealthNameFontSize: 14,
+    bossHealthValueFontSize: 14,
+    bossHealthPercentFontSize: 14,
+    navTabFontSize: 11,
+    navTabPaddingX: 14,
+    navTabPaddingY: 6,
+  },
+  compact: {
+    showHeader: true,
+    windowPadding: 8,
+    headerPadding: 4,
+    showTimer: true,
+    showSceneName: true,
+    showSegmentInfo: false,
+    showResetButton: true,
+    showPauseButton: true,
+    showBossOnlyButton: true,
+    showSettingsButton: false,
+    showMinimizeButton: false,
+    showTotalDamage: false,
+    showTotalDps: false,
+    showBossHealth: false,
+    showNavigationTabs: false,
+    timerLabelFontSize: 0,
+    timerFontSize: 16,
+    sceneNameFontSize: 14,
+    segmentFontSize: 11,
+    resetButtonSize: 18,
+    resetButtonPadding: 6,
+    pauseButtonSize: 18,
+    pauseButtonPadding: 6,
+    bossOnlyButtonSize: 18,
+    bossOnlyButtonPadding: 6,
+    settingsButtonSize: 18,
+    settingsButtonPadding: 6,
+    minimizeButtonSize: 18,
+    minimizeButtonPadding: 6,
+    totalDamageLabelFontSize: 12,
+    totalDamageValueFontSize: 16,
+    totalDpsLabelFontSize: 12,
+    totalDpsValueFontSize: 16,
+    bossHealthLabelFontSize: 12,
+    bossHealthNameFontSize: 12,
+    bossHealthValueFontSize: 12,
+    bossHealthPercentFontSize: 12,
+    navTabFontSize: 10,
+    navTabPaddingX: 10,
+    navTabPaddingY: 4,
+  },
+  none: {
+    showHeader: false,
+    windowPadding: 0,
+    headerPadding: 0,
+    showTimer: false,
+    showSceneName: false,
+    showSegmentInfo: false,
+    showResetButton: false,
+    showPauseButton: false,
+    showBossOnlyButton: false,
+    showSettingsButton: false,
+    showMinimizeButton: false,
+    showTotalDamage: false,
+    showTotalDps: false,
+    showBossHealth: false,
+    showNavigationTabs: false,
+    timerLabelFontSize: 12,
+    timerFontSize: 18,
+    sceneNameFontSize: 14,
+    segmentFontSize: 12,
+    resetButtonSize: 20,
+    resetButtonPadding: 8,
+    pauseButtonSize: 20,
+    pauseButtonPadding: 8,
+    bossOnlyButtonSize: 20,
+    bossOnlyButtonPadding: 8,
+    settingsButtonSize: 20,
+    settingsButtonPadding: 8,
+    minimizeButtonSize: 20,
+    minimizeButtonPadding: 8,
+    totalDamageLabelFontSize: 14,
+    totalDamageValueFontSize: 18,
+    totalDpsLabelFontSize: 14,
+    totalDpsValueFontSize: 18,
+    bossHealthLabelFontSize: 14,
+    bossHealthNameFontSize: 14,
+    bossHealthValueFontSize: 14,
+    bossHealthPercentFontSize: 14,
+    navTabFontSize: 11,
+    navTabPaddingX: 14,
+    navTabPaddingY: 6,
+  },
+};
+
 export const FONT_SIZE_LABELS: Record<string, string> = {
   xs: 'Extra Small',
   sm: 'Small',
@@ -242,7 +439,6 @@ const DEFAULT_SETTINGS = {
     blur: false,
     transparency: false,
     transparentOpacityPercent: 2,
-    condenseHeader: "all",
     transparentMode: false,
     clickthrough: false,
     classColors: { ...DEFAULT_CLASS_COLORS },
@@ -278,6 +474,7 @@ const DEFAULT_SETTINGS = {
     tankedPlayers: { ...DEFAULT_STATS },
     tankedSkillBreakdown: { ...DEFAULT_STATS },
     tableCustomization: { ...DEFAULT_LIVE_TABLE_SETTINGS },
+    headerCustomization: { ...DEFAULT_HEADER_SETTINGS },
   },
   history: {
     general: { ...DEFAULT_GENERAL_SETTINGS },
@@ -355,6 +552,11 @@ export const SETTINGS = {
       DEFAULT_SETTINGS.live.tableCustomization,
       RUNE_STORE_OPTIONS
     ),
+    headerCustomization: new RuneStore(
+      'liveHeaderCustomization',
+      DEFAULT_SETTINGS.live.headerCustomization,
+      RUNE_STORE_OPTIONS
+    ),
   },
   history: {
     general: new RuneStore(
@@ -424,6 +626,7 @@ export const settings = {
         skills: SETTINGS.live.tanked.skills.state,
       },
       tableCustomization: SETTINGS.live.tableCustomization.state,
+      headerCustomization: SETTINGS.live.headerCustomization.state,
     },
     appVersion: SETTINGS.appVersion.state,
     history: {

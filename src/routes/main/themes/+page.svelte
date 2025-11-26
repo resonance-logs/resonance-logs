@@ -5,7 +5,7 @@
   import SettingsSwitch from "../settings/settings-switch.svelte";
   import SettingsColor from "../settings/settings-color.svelte";
   import SettingsColorAlpha from "../settings/settings-color-alpha.svelte";
-  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_LIVE_TABLE_SETTINGS, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS } from "$lib/settings-store";
+  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_LIVE_TABLE_SETTINGS, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS, DEFAULT_HEADER_SETTINGS, HEADER_PRESETS } from "$lib/settings-store";
   import { setClickthrough, CLASS_NAMES, getClassColorRaw } from "$lib/utils.svelte";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
 
@@ -23,11 +23,32 @@
     classSpecColors: false,
     transparency: false,
     liveDisplay: false,
+    headerSettings: false,
     tableSettings: false,
   });
 
   function toggleSection(section: keyof typeof expandedSections) {
     expandedSections[section] = !expandedSections[section];
+  }
+
+  // Header presets
+  type HeaderPreset = 'full' | 'compact' | 'none' | 'custom';
+  let headerPreset = $state<HeaderPreset>('full');
+
+  function applyHeaderPreset(preset: 'full' | 'compact' | 'none') {
+    const settings = HEADER_PRESETS[preset];
+    Object.assign(SETTINGS.live.headerCustomization.state, settings);
+  }
+
+  function handleHeaderPresetChange(preset: HeaderPreset) {
+    headerPreset = preset;
+    if (preset !== 'custom') {
+      applyHeaderPreset(preset);
+    }
+  }
+
+  function resetHeaderSettings() {
+    Object.assign(SETTINGS.live.headerCustomization.state, DEFAULT_HEADER_SETTINGS);
   }
 
   // Table size presets
@@ -329,12 +350,6 @@
           </button>
           {#if expandedSections.liveDisplay}
             <div class="px-4 pb-4 space-y-2">
-              <SettingsSelect
-                label="Header Size"
-                description="Choose compactness for header rows"
-                bind:selected={SETTINGS.accessibility.state.condenseHeader}
-                values={["full", "one row", "none",]}
-              />
               <SettingsSwitch
                 bind:checked={SETTINGS.accessibility.state.clickthrough}
                 label="Clickthrough Mode"
@@ -345,6 +360,396 @@
                 label="Use Dummy Data"
                 description="Inject dummy player data into the live meter for testing and preview purposes"
               />
+            </div>
+          {/if}
+        </div>
+
+        <!-- Header Settings -->
+        <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            onclick={() => toggleSection('headerSettings')}
+          >
+            <h2 class="text-base font-semibold text-foreground">Header Settings</h2>
+            <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.headerSettings ? 'rotate-180' : ''}" />
+          </button>
+          {#if expandedSections.headerSettings}
+            <div class="px-4 pb-4 space-y-4">
+              <p class="text-xs text-muted-foreground">Choose a preset or customize individual header elements.</p>
+              
+              <!-- Header Preset Selector -->
+              <div class="flex items-center border border-border rounded-lg overflow-hidden bg-popover/30 w-fit">
+                <button
+                  type="button"
+                  class="px-4 py-2 text-sm font-medium transition-colors {headerPreset === 'full' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+                  onclick={() => handleHeaderPresetChange('full')}
+                >
+                  Full
+                </button>
+                <button
+                  type="button"
+                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {headerPreset === 'compact' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+                  onclick={() => handleHeaderPresetChange('compact')}
+                >
+                  Compact
+                </button>
+                <button
+                  type="button"
+                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {headerPreset === 'none' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+                  onclick={() => handleHeaderPresetChange('none')}
+                >
+                  None
+                </button>
+                <button
+                  type="button"
+                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {headerPreset === 'custom' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+                  onclick={() => handleHeaderPresetChange('custom')}
+                >
+                  Custom
+                </button>
+              </div>
+
+              {#if headerPreset === 'custom'}
+                <!-- Custom Header Settings -->
+                <div class="space-y-4 pt-2 border-t border-border/50">
+                  <!-- Layout & Padding -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <h3 class="text-sm font-semibold text-foreground">Layout & Padding</h3>
+                      <button onclick={resetHeaderSettings} class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">Reset All</button>
+                    </div>
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showHeader}
+                      label="Show Header"
+                      description="Toggle visibility of the entire header"
+                    />
+                    <SettingsSlider
+                      bind:value={SETTINGS.live.headerCustomization.state.windowPadding}
+                      min={0} max={24} step={1}
+                      label="Window Padding"
+                      description="Padding around the entire live meter window"
+                      unit="px"
+                    />
+                    <SettingsSlider
+                      bind:value={SETTINGS.live.headerCustomization.state.headerPadding}
+                      min={0} max={16} step={1}
+                      label="Header Internal Padding"
+                      description="Padding within the header area"
+                      unit="px"
+                    />
+                  </div>
+
+                  <!-- Timer Settings -->
+                  <div class="space-y-2 pt-3 border-t border-border/30">
+                    <h3 class="text-sm font-semibold text-foreground">Timer</h3>
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showTimer}
+                      label="Show Timer"
+                      description="Display the encounter timer"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showTimer}
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.timerLabelFontSize}
+                        min={0} max={20} step={1}
+                        label="Label Font Size"
+                        description="Font size for 'Timer' label (0 to hide)"
+                        unit="px"
+                      />
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.timerFontSize}
+                        min={10} max={32} step={1}
+                        label="Timer Font Size"
+                        description="Font size for the timer value"
+                        unit="px"
+                      />
+                    {/if}
+                  </div>
+
+                  <!-- Scene Name -->
+                  <div class="space-y-2 pt-3 border-t border-border/30">
+                    <h3 class="text-sm font-semibold text-foreground">Scene Name</h3>
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showSceneName}
+                      label="Show Scene Name"
+                      description="Display the current dungeon/scene name"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showSceneName}
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.sceneNameFontSize}
+                        min={10} max={24} step={1}
+                        label="Scene Name Font Size"
+                        description="Font size for scene name"
+                        unit="px"
+                      />
+                    {/if}
+                  </div>
+
+                  <!-- Segment Info -->
+                  <div class="space-y-2 pt-3 border-t border-border/30">
+                    <h3 class="text-sm font-semibold text-foreground">Segment Info</h3>
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showSegmentInfo}
+                      label="Show Segment Info"
+                      description="Display boss/trash segment indicator"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showSegmentInfo}
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.segmentFontSize}
+                        min={8} max={18} step={1}
+                        label="Segment Font Size"
+                        description="Font size for segment badge text"
+                        unit="px"
+                      />
+                    {/if}
+                  </div>
+
+                  <!-- Control Buttons -->
+                  <div class="space-y-2 pt-3 border-t border-border/30">
+                    <h3 class="text-sm font-semibold text-foreground">Control Buttons</h3>
+                    
+                    <!-- Reset Button -->
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showResetButton}
+                      label="Show Reset Button"
+                      description="Button to reset the encounter"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showResetButton}
+                      <div class="grid grid-cols-2 gap-2 pl-4">
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.resetButtonSize}
+                          min={12} max={32} step={1}
+                          label="Icon Size"
+                          unit="px"
+                        />
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.resetButtonPadding}
+                          min={2} max={16} step={1}
+                          label="Padding"
+                          unit="px"
+                        />
+                      </div>
+                    {/if}
+                    
+                    <!-- Pause Button -->
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showPauseButton}
+                      label="Show Pause Button"
+                      description="Button to pause/resume the encounter"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showPauseButton}
+                      <div class="grid grid-cols-2 gap-2 pl-4">
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.pauseButtonSize}
+                          min={12} max={32} step={1}
+                          label="Icon Size"
+                          unit="px"
+                        />
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.pauseButtonPadding}
+                          min={2} max={16} step={1}
+                          label="Padding"
+                          unit="px"
+                        />
+                      </div>
+                    {/if}
+                    
+                    <!-- Boss Only Button -->
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showBossOnlyButton}
+                      label="Show Boss Only Button"
+                      description="Button to toggle boss-only damage mode"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showBossOnlyButton}
+                      <div class="grid grid-cols-2 gap-2 pl-4">
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.bossOnlyButtonSize}
+                          min={12} max={32} step={1}
+                          label="Icon Size"
+                          unit="px"
+                        />
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.bossOnlyButtonPadding}
+                          min={2} max={16} step={1}
+                          label="Padding"
+                          unit="px"
+                        />
+                      </div>
+                    {/if}
+                    
+                    <!-- Settings Button -->
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showSettingsButton}
+                      label="Show Settings Button"
+                      description="Button to open settings window"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showSettingsButton}
+                      <div class="grid grid-cols-2 gap-2 pl-4">
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.settingsButtonSize}
+                          min={12} max={32} step={1}
+                          label="Icon Size"
+                          unit="px"
+                        />
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.settingsButtonPadding}
+                          min={2} max={16} step={1}
+                          label="Padding"
+                          unit="px"
+                        />
+                      </div>
+                    {/if}
+                    
+                    <!-- Minimize Button -->
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showMinimizeButton}
+                      label="Show Minimize Button"
+                      description="Button to minimize the live meter"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showMinimizeButton}
+                      <div class="grid grid-cols-2 gap-2 pl-4">
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.minimizeButtonSize}
+                          min={12} max={32} step={1}
+                          label="Icon Size"
+                          unit="px"
+                        />
+                        <SettingsSlider
+                          bind:value={SETTINGS.live.headerCustomization.state.minimizeButtonPadding}
+                          min={2} max={16} step={1}
+                          label="Padding"
+                          unit="px"
+                        />
+                      </div>
+                    {/if}
+                  </div>
+
+                  <!-- Total Damage -->
+                  <div class="space-y-2 pt-3 border-t border-border/30">
+                    <h3 class="text-sm font-semibold text-foreground">Total Damage</h3>
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showTotalDamage}
+                      label="Show Total Damage"
+                      description="Display total damage dealt"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showTotalDamage}
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.totalDamageLabelFontSize}
+                        min={8} max={20} step={1}
+                        label="Label Font Size"
+                        description="Font size for 'T.DMG' label"
+                        unit="px"
+                      />
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.totalDamageValueFontSize}
+                        min={10} max={32} step={1}
+                        label="Value Font Size"
+                        description="Font size for damage value"
+                        unit="px"
+                      />
+                    {/if}
+                  </div>
+
+                  <!-- Total DPS -->
+                  <div class="space-y-2 pt-3 border-t border-border/30">
+                    <h3 class="text-sm font-semibold text-foreground">Total DPS</h3>
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showTotalDps}
+                      label="Show Total DPS"
+                      description="Display total damage per second"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showTotalDps}
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.totalDpsLabelFontSize}
+                        min={8} max={20} step={1}
+                        label="Label Font Size"
+                        description="Font size for 'T.DPS' label"
+                        unit="px"
+                      />
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.totalDpsValueFontSize}
+                        min={10} max={32} step={1}
+                        label="Value Font Size"
+                        description="Font size for DPS value"
+                        unit="px"
+                      />
+                    {/if}
+                  </div>
+
+                  <!-- Boss Health -->
+                  <div class="space-y-2 pt-3 border-t border-border/30">
+                    <h3 class="text-sm font-semibold text-foreground">Boss Health</h3>
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showBossHealth}
+                      label="Show Boss Health"
+                      description="Display current boss health bar"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showBossHealth}
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.bossHealthLabelFontSize}
+                        min={8} max={20} step={1}
+                        label="Label Font Size"
+                        description="Font size for 'BOSS' label"
+                        unit="px"
+                      />
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.bossHealthNameFontSize}
+                        min={10} max={24} step={1}
+                        label="Boss Name Font Size"
+                        description="Font size for boss name"
+                        unit="px"
+                      />
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.bossHealthValueFontSize}
+                        min={10} max={24} step={1}
+                        label="HP Value Font Size"
+                        description="Font size for HP values (1.5M / 3M)"
+                        unit="px"
+                      />
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.bossHealthPercentFontSize}
+                        min={10} max={24} step={1}
+                        label="Percentage Font Size"
+                        description="Font size for HP percentage"
+                        unit="px"
+                      />
+                    {/if}
+                  </div>
+
+                  <!-- Navigation Tabs -->
+                  <div class="space-y-2 pt-3 border-t border-border/30">
+                    <h3 class="text-sm font-semibold text-foreground">Navigation Tabs (DPS/HEAL/TANKED)</h3>
+                    <SettingsSwitch
+                      bind:checked={SETTINGS.live.headerCustomization.state.showNavigationTabs}
+                      label="Show Navigation Tabs"
+                      description="Display DPS/HEAL/TANKED tab buttons"
+                    />
+                    {#if SETTINGS.live.headerCustomization.state.showNavigationTabs}
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.navTabFontSize}
+                        min={8} max={18} step={1}
+                        label="Tab Font Size"
+                        description="Font size for tab text"
+                        unit="px"
+                      />
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.navTabPaddingX}
+                        min={4} max={24} step={1}
+                        label="Horizontal Padding"
+                        description="Left/right padding inside tabs"
+                        unit="px"
+                      />
+                      <SettingsSlider
+                        bind:value={SETTINGS.live.headerCustomization.state.navTabPaddingY}
+                        min={2} max={16} step={1}
+                        label="Vertical Padding"
+                        description="Top/bottom padding inside tabs"
+                        unit="px"
+                      />
+                    {/if}
+                  </div>
+                </div>
+              {/if}
             </div>
           {/if}
         </div>

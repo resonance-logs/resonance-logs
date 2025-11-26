@@ -1,4 +1,4 @@
-import type { PlayerRow, SkillRow, PlayersWindow } from "$lib/api";
+import type { PlayerRow, SkillRow, PlayersWindow, HeaderInfo } from "$lib/api";
 
 export const DUMMY_PLAYER_DATA: PlayerRow[] = [
   {
@@ -168,3 +168,30 @@ export function generateDummyPlayersWindow(): PlayersWindow {
     playerRows: DUMMY_PLAYER_DATA,
   };
 }
+
+// Dummy header data for preview mode
+export const DUMMY_HEADER_INFO: HeaderInfo = {
+  totalDps: 45833,
+  totalDmg: 2750000,
+  elapsedMs: 4020000, // 67:00
+  fightStartTimestampMs: 0,
+  bosses: [
+    {
+      uid: 999999,
+      name: "Test Boss",
+      currentHp: 1500000,
+      maxHp: 3000000,
+    },
+  ],
+  sceneId: 1001,
+  sceneName: "Test Dungeon",
+  currentSegmentType: "boss",
+  currentSegmentName: "Test Boss",
+};
+
+// Dummy segment info for preview mode
+export const DUMMY_SEGMENT_INFO = {
+  durationSecs: 67,
+  type: "boss" as const,
+  label: "Test Boss",
+};

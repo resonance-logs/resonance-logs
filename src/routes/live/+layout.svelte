@@ -21,8 +21,7 @@
   const scrollPositions = writable<Record<string, number>>({});
 
   import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores, setLiveDungeonLog, clearLiveDungeonLog, injectDummyData } from "$lib/stores/live-meter-store.svelte";
-  import Header from "./header.svelte";
-  import HeaderOneRow from "./header-one-row.svelte"
+  import HeaderCustom from "./header-custom.svelte";
 
   import NotificationToast from "./notification-toast.svelte";
 
@@ -402,12 +401,12 @@
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-  <div class={`flex h-screen flex-col bg-background text-[13px] text-foreground ${ SETTINGS.accessibility.state.condenseHeader === 'none' ?  '' : 'p-3'} rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]`} data-tauri-drag-region>
-    {#if SETTINGS.accessibility.state.condenseHeader == "full"}
-      <Header />
-    {:else if SETTINGS.accessibility.state.condenseHeader == "one row"}
-      <HeaderOneRow/>
-    {/if}
+  <div 
+    class="flex h-screen flex-col bg-background text-[13px] text-foreground rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]" 
+    style="padding: {SETTINGS.live.headerCustomization.state.windowPadding}px"
+    data-tauri-drag-region
+  >
+    <HeaderCustom />
     <main
     bind:this={mainElement}
     class="flex-1 overflow-y-auto gap-4 rounded-lg bg-card/20 border border-border/40"
