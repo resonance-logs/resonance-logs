@@ -2,13 +2,13 @@
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import SettingsSwitch from "./settings-switch.svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
+  import { setDungeonSegmentsEnabled } from "$lib/api";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
   import { liveDpsPlayerColumns, liveDpsSkillColumns, liveHealPlayerColumns, liveHealSkillColumns, liveTankedPlayerColumns, liveTankedSkillColumns } from "$lib/column-data";
 
   const SETTINGS_CATEGORY = "live";
 
-  // Sync boss damage setting to backend when user actually changes it.
+  // Sync dungeon segments setting to backend when user actually changes it.
   // Avoid calling on initial mount because the settings layout mounts all tabs
   // at once which would trigger multiple backend invocations and can stall
   // the live emitter. Only invoke the backend after the component is mounted
@@ -17,12 +17,6 @@
   let _mounted = false;
   onMount(() => {
     _mounted = true;
-  });
-
-  $effect(() => {
-    if (_mounted) {
-      void setBossOnlyDps(SETTINGS.live.general.state.bossOnlyDps);
-    }
   });
 
   $effect(() => {

@@ -84,15 +84,6 @@ export async function registerShortcut(cmdId: string, shortcutKey: string) {
         });
         break;
 
-      case "toggleBossHp":
-        await register(shortcutKey, async (event) => {
-          if (event.state === "Pressed") {
-            const nextValue = !SETTINGS.live.general.state.bossOnlyDps;
-            SETTINGS.live.general.state.bossOnlyDps = nextValue;
-          }
-        });
-        break;
-
       default:
         console.log("Unknown command");
     }

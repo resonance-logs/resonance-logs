@@ -4,7 +4,6 @@
   import { commands } from '$lib/bindings';
   import type { ActorEncounterStatDto, EncounterSummaryDto, SkillsWindow } from '$lib/bindings';
   import { getClassIcon, tooltip, CLASS_MAP } from '$lib/utils.svelte';
-  import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from '$lib/components/table-row-glow.svelte';
   import AbbreviatedNumber from '$lib/components/abbreviated-number.svelte';
   import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns, historyTankedPlayerColumns, historyTankedSkillColumns } from '$lib/column-data';
@@ -32,7 +31,6 @@
 
   // Tab state for encounter view
   let activeTab = $state<'damage' | 'tanked' | 'healing'>('damage');
-  let bossOnlyMode = $state(false);
 
   // Segment state - read-only in the UI
   let segments = $state<Segment[]>([]);
@@ -147,7 +145,6 @@
     const displayActors = actors;
 
     const totalDmg = displayActors.reduce((sum, a) => sum + (a.damageDealt ?? 0), 0);
-    const totalBossDmg = displayActors.reduce((sum, a) => sum + (a.bossDamageDealt ?? 0), 0);
     const totalDamageTaken = displayActors.reduce((sum, a) => sum + (a.damageTaken ?? 0), 0);
     const totalHealing = displayActors.reduce((sum, a) => sum + (a.healDealt ?? 0), 0);
 
@@ -163,12 +160,10 @@
       const hitsHeal = a.hitsHeal || 0;
       const className = getClassName(a.classId);
 
-      const dmgValue = bossOnlyMode ? (a.bossDamageDealt || 0) : (a.damageDealt || 0);
-      const totalDmgValue = bossOnlyMode ? totalBossDmg : totalDmg;
-      const bossCritTotal = a.bossCritTotalDealt || 0;
-      const critTotal = a.critHitsDealt ? (bossOnlyMode ? bossCritTotal : (a.critTotalDealt || 0)) : 0;
-      const bossLuckyTotal = a.bossLuckyTotalDealt || 0;
-      const luckyTotal = a.luckyHitsDealt ? (bossOnlyMode ? bossLuckyTotal : (a.luckyTotalDealt || 0)) : 0;
+      const dmgValue = a.damageDealt || 0;
+      const totalDmgValue = totalDmg;
+      const critTotal = a.critTotalDealt || 0;
+      const luckyTotal = a.luckyTotalDealt || 0;
 
       return {
         uid: a.actorId,
@@ -257,13 +252,6 @@
     } else {
       skillsWindow = null;
       selectedPlayer = null;
-    }
-  });
-
-  $effect(() => {
-    // Reload encounter when bossOnlyMode changes
-    if (bossOnlyMode !== undefined) {
-      loadEncounter();
     }
   });
 </script>
@@ -361,15 +349,6 @@
               Healing
             </button>
           </div>
-
-          <button
-            onclick={() => {if (activeTab === 'damage') bossOnlyMode = !bossOnlyMode}}
-            class="boss-only-toggle transition-colors p-1 {activeTab !== 'damage' ? 'opacity-30 cursor-not-allowed' : 'hover:bg-muted/40 rounded'}"
-            class:boss-only-active={bossOnlyMode && activeTab === 'damage'}
-            title={activeTab !== 'damage' ? "Boss Damage Only (Only for Damage tab)" : bossOnlyMode ? "Boss Damage Only (Active)" : "Boss Damage Only"}
-          >
-            <CrownIcon class="w-[16px] h-[16px] mb-0.25"/>
-          </button>
         </div>
       </div>
     </div>
@@ -522,18 +501,4 @@
     <div class="text-neutral-400">Loading...</div>
   {/if}
 </div>
-
-<style>
-  .boss-only-toggle {
-    transition: color 150ms ease;
-  }
-
-  .boss-only-toggle:hover {
-    color: #facc15;
-  }
-
-  .boss-only-toggle.boss-only-active {
-    color: #facc15;
-  }
-</style>
 

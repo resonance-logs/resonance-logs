@@ -35,13 +35,13 @@
   /** Get the proper key name, handling numpad keys via e.code */
   function getKeyName(e: KeyboardEvent): string {
     const code = e.code;
-    
+
     // Handle numpad keys - use code directly as it matches the Tauri shortcut format
     // e.g., "Numpad0", "Numpad1", "NumpadAdd", "NumpadSubtract", etc.
     if (code.startsWith("Numpad")) {
       return code;
     }
-    
+
     // For regular keys, use the key value (normalized to lowercase)
     return e.key.toLowerCase();
   }
@@ -153,10 +153,6 @@
     {
       id: "resetEncounter",
       label: "Reset Encounter",
-    },
-    {
-      id: "toggleBossHp",
-      label: "Toggle Boss Only Damage",
     },
   ];
 </script>

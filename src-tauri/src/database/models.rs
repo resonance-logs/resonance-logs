@@ -349,18 +349,6 @@ pub struct NewActorEncounterStat {
     pub lucky_total_heal: i64,
     /// The total lucky damage taken by the actor.
     pub lucky_total_taken: i64,
-    /// The total damage dealt to bosses by the actor.
-    pub boss_damage_dealt: i64,
-    /// The number of hits dealt to bosses by the actor.
-    pub boss_hits_dealt: i64,
-    /// The number of critical hits dealt to bosses by the actor.
-    pub boss_crit_hits_dealt: i64,
-    /// The number of lucky hits dealt to bosses by the actor.
-    pub boss_lucky_hits_dealt: i64,
-    /// The total critical damage dealt to bosses by the actor.
-    pub boss_crit_total_dealt: i64,
-    /// The total lucky damage dealt to bosses by the actor.
-    pub boss_lucky_total_dealt: i64,
     /// The number of revives for the actor during the encounter.
     pub revives: i64,
     /// The average DPS snapshot for the actor during the encounter.

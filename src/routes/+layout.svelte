@@ -5,7 +5,7 @@
    */
   import "../app.css";
   import { SETTINGS, DEFAULT_CUSTOM_THEME_COLORS } from "$lib/settings-store";
-  import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
+  import { setDungeonSegmentsEnabled } from "$lib/api";
   // Only allow warnings and errors to be printed to console in production builds
   if (typeof window !== 'undefined' && import.meta.env.PROD) {
     // Keep warn and error; disable verbose logging
@@ -15,7 +15,6 @@
   }
 
   let { children } = $props();
-  let lastBossOnlySync: boolean | null = null;
   let lastDungeonSegmentsSync: boolean | null = null;
 
   // Mapping from camelCase keys to CSS variable names
@@ -83,16 +82,16 @@
       const theme = SETTINGS.accessibility.state.theme ?? 'dark';
       const transparentMode = SETTINGS.accessibility.state.transparentMode ?? false;
       const customThemeColors = SETTINGS.accessibility.state.customThemeColors;
-      
+
       document.documentElement.setAttribute('data-theme', theme);
-      
+
       // Apply or clear custom theme colors based on selected theme
       if (theme === 'custom' && customThemeColors) {
         applyCustomThemeColors(customThemeColors);
       } else {
         clearCustomThemeColors();
       }
-      
+
       try {
         // Mirror into localStorage for early load in app.html script
         const raw = localStorage.getItem('accessibility');
@@ -112,14 +111,6 @@
 })()}
 
 {(() => {
-  $effect(() => {
-    if (typeof window === "undefined") return;
-    const bossOnlyEnabled = Boolean(SETTINGS.live.general.state.bossOnlyDps);
-    if (lastBossOnlySync === bossOnlyEnabled) return;
-    lastBossOnlySync = bossOnlyEnabled;
-    void setBossOnlyDps(bossOnlyEnabled);
-  });
-
   $effect(() => {
     if (typeof window === "undefined") return;
     const segmentsEnabled = Boolean(SETTINGS.live.general.state.dungeonSegmentsEnabled);

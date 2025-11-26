@@ -330,7 +330,6 @@ fn is_boss_target(encounter: &Encounter, target_uid: &i64) -> bool {
 // Helper functions for generating data structures
 pub fn generate_players_window_dps(
     encounter: &Encounter,
-    boss_only: bool,
     segment_elapsed_ms: Option<u128>,
 ) -> PlayersWindow {
     let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
@@ -339,33 +338,17 @@ pub fn generate_players_window_dps(
         player_rows: Vec::new(),
     };
 
-    let total_scope_dmg: u128 = if boss_only {
-        encounter
-            .entity_uid_to_entity
-            .iter()
-            .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
-            .map(|(_, e)| {
-                e.dmg_to_target
-                    .iter()
-                    .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-                    .map(|(_, v)| *v)
-                    .sum::<u128>()
-            })
-            .sum()
-    } else {
-        encounter.total_dmg
-    };
+    let total_scope_dmg: u128 = encounter.total_dmg;
 
     if total_scope_dmg == 0 {
         return players_window;
     }
 
     for (&entity_uid, entity) in &encounter.entity_uid_to_entity {
-        if let Some(player_row) = generate_player_row_filtered(
+        if let Some(player_row) = generate_player_row(
             entity_uid,
             entity,
             encounter,
-            boss_only,
             total_scope_dmg,
             time_elapsed_secs,
         ) {
@@ -545,40 +528,14 @@ pub fn generate_players_window_tanked(
 pub fn generate_skills_window_dps(
     encounter: &Encounter,
     player_uid: i64,
-    boss_only: bool,
     segment_elapsed_ms: Option<u128>,
 ) -> Option<SkillsWindow> {
     let entity = encounter.entity_uid_to_entity.get(&player_uid)?;
     let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
-    // Compute encounter and player totals within scope
-    let total_scope_dmg: u128 = if boss_only {
-        encounter
-            .entity_uid_to_entity
-            .iter()
-            .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
-            .map(|(_, e)| {
-                e.dmg_to_target
-                    .iter()
-                    .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-                    .map(|(_, v)| *v)
-                    .sum::<u128>()
-            })
-            .sum()
-    } else {
-        encounter.total_dmg
-    };
-
-    let player_total: u128 = if boss_only {
-        entity
-            .dmg_to_target
-            .iter()
-            .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-            .map(|(_, v)| *v)
-            .sum()
-    } else {
-        entity.total_dmg
-    };
+    // Compute encounter and player totals
+    let total_scope_dmg: u128 = encounter.total_dmg;
+    let player_total: u128 = entity.total_dmg;
 
     // Player DPS Stats
     #[allow(clippy::cast_precision_loss)]
@@ -627,20 +584,7 @@ pub fn generate_skills_window_dps(
 
     // Skills for this player
     for (&skill_uid, skill) in &entity.skill_uid_to_dmg_skill {
-        let skill_total: u128 = if boss_only {
-            entity
-                .skill_dmg_to_target
-                .get(&skill_uid)
-                .map(|m| {
-                    m.iter()
-                        .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-                        .map(|(_, v)| *v)
-                        .sum()
-                })
-                .unwrap_or(0)
-        } else {
-            skill.total_value
-        };
+        let skill_total: u128 = skill.total_value;
         #[allow(clippy::cast_precision_loss)]
         let skill_row = SkillRow {
             name: Skill::get_skill_name(skill_uid),
@@ -887,11 +831,10 @@ fn resolve_elapsed(encounter: &Encounter, segment_elapsed_ms: Option<u128>) -> (
     (elapsed_ms, elapsed_secs)
 }
 
-pub fn generate_player_row_filtered(
+pub fn generate_player_row(
     entity_uid: i64,
     entity: &Entity,
     encounter: &Encounter,
-    boss_only: bool,
     total_scope_dmg: u128,
     time_elapsed_secs: f64,
 ) -> Option<PlayerRow> {
@@ -902,16 +845,7 @@ pub fn generate_player_row_filtered(
         return None;
     }
 
-    let entity_total: u128 = if boss_only {
-        entity
-            .dmg_to_target
-            .iter()
-            .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-            .map(|(_, v)| *v)
-            .sum()
-    } else {
-        entity.total_dmg
-    };
+    let entity_total: u128 = entity.total_dmg;
     if total_scope_dmg == 0 {
         return None;
     }
@@ -989,29 +923,13 @@ pub fn generate_skill_rows(entity: &Entity, time_elapsed_secs: f64) -> Vec<Skill
 
 pub fn generate_header_info(
     encounter: &Encounter,
-    boss_only: bool,
     segment_timing: Option<(u128, u128)>,
 ) -> Option<(HeaderInfo, Vec<(i64, String)>)> {
     let segment_elapsed_ms = segment_timing.as_ref().map(|(_, elapsed)| *elapsed);
     let segment_start_ms = segment_timing.as_ref().map(|(start, _)| *start);
     let (time_elapsed_ms, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
-    let total_scope_dmg: u128 = if boss_only {
-        encounter
-            .entity_uid_to_entity
-            .iter()
-            .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
-            .map(|(_, e)| {
-                e.dmg_to_target
-                    .iter()
-                    .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-                    .map(|(_, v)| *v)
-                    .sum::<u128>()
-            })
-            .sum()
-    } else {
-        encounter.total_dmg
-    };
+    let total_scope_dmg: u128 = encounter.total_dmg;
 
     // Calculate team DPS for boss death detection
     #[allow(clippy::cast_precision_loss)]
