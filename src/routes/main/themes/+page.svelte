@@ -4,7 +4,8 @@
   import SettingsSlider from "../settings/settings-slider.svelte";
   import SettingsSwitch from "../settings/settings-switch.svelte";
   import SettingsColor from "../settings/settings-color.svelte";
-  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_LIVE_TABLE_SETTINGS } from "$lib/settings-store";
+  import SettingsColorAlpha from "../settings/settings-color-alpha.svelte";
+  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_LIVE_TABLE_SETTINGS, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS } from "$lib/settings-store";
   import { setClickthrough, CLASS_NAMES, getClassColorRaw } from "$lib/utils.svelte";
 
   const themesTabs = [
@@ -14,6 +15,21 @@
   ];
 
   let activeTab = $state('general');
+
+  // Group custom theme colors by category
+  const colorCategories = $derived.by(() => {
+    const categories: Record<string, string[]> = {};
+    for (const [key, info] of Object.entries(CUSTOM_THEME_COLOR_LABELS)) {
+      if (!categories[info.category]) {
+        categories[info.category] = [];
+      }
+      categories[info.category]!.push(key);
+    }
+    return categories;
+  });
+
+  // Category order for display
+  const categoryOrder = ['Base', 'Surfaces', 'Accents', 'Utility', 'Charts', 'Sidebar'];
 
   $effect(() => {
     setClickthrough(SETTINGS.accessibility.state.clickthrough);
@@ -38,6 +54,17 @@
   function resetTableCustomization() {
     Object.assign(SETTINGS.live.tableCustomization.state, DEFAULT_LIVE_TABLE_SETTINGS);
   }
+
+  function updateCustomThemeColor(key: string, value: string) {
+    SETTINGS.accessibility.state.customThemeColors = { ...SETTINGS.accessibility.state.customThemeColors, [key]: value };
+  }
+
+  function resetCustomThemeColors() {
+    SETTINGS.accessibility.state.customThemeColors = { ...DEFAULT_CUSTOM_THEME_COLORS };
+  }
+
+  // Check if custom theme is selected
+  let isCustomTheme = $derived(SETTINGS.accessibility.state.theme === 'custom');
 </script>
 
 <Tabs.Root bind:value={activeTab}>
@@ -61,6 +88,40 @@
             bind:selected={SETTINGS.accessibility.state["theme"]}
             values={AVAILABLE_THEMES}
           />
+
+          {#if isCustomTheme}
+            <div class="mt-3 pt-3 border-t border-border/50">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h3 class="text-sm font-semibold text-foreground">Custom Theme Colors</h3>
+                  <p class="text-xs text-muted-foreground mt-0.5">Customize each color variable (with optional transparency)</p>
+                </div>
+                <button onclick={resetCustomThemeColors} class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">Reset</button>
+              </div>
+              
+              {#each categoryOrder as category}
+                {#if colorCategories[category]}
+                  <div class="mb-4">
+                    <h4 class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 px-1">{category}</h4>
+                    <div class="space-y-1">
+                      {#each colorCategories[category] ?? [] as colorKey}
+                        {@const colorInfo = CUSTOM_THEME_COLOR_LABELS[colorKey]}
+                        {#if colorInfo}
+                          <SettingsColorAlpha
+                            label={colorInfo.label}
+                            description={colorInfo.description}
+                            value={SETTINGS.accessibility.state.customThemeColors?.[colorKey] ?? DEFAULT_CUSTOM_THEME_COLORS[colorKey] ?? 'rgba(128, 128, 128, 1)'}
+                            oninput={(value: string) => updateCustomThemeColor(colorKey, value)}
+                          />
+                        {/if}
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+              {/each}
+            </div>
+          {/if}
+
           <div class="mt-1 space-y-2">
             <SettingsSwitch
               bind:checked={SETTINGS.accessibility.state.transparency}

@@ -164,6 +164,78 @@ export const FONT_SIZE_LABELS: Record<string, string> = {
   xl: 'Extra Large',
 };
 
+// Default custom theme colors (based on dark theme)
+export const DEFAULT_CUSTOM_THEME_COLORS: Record<string, string> = {
+  background: 'rgba(33, 33, 33, 1)',
+  foreground: 'rgba(226, 226, 226, 1)',
+  card: 'rgba(41, 41, 41, 1)',
+  cardForeground: 'rgba(226, 226, 226, 1)',
+  popover: 'rgba(41, 41, 41, 1)',
+  popoverForeground: 'rgba(226, 226, 226, 1)',
+  primary: 'rgba(166, 166, 166, 1)',
+  primaryForeground: 'rgba(33, 33, 33, 1)',
+  secondary: 'rgba(64, 64, 64, 1)',
+  secondaryForeground: 'rgba(226, 226, 226, 1)',
+  muted: 'rgba(56, 56, 56, 1)',
+  mutedForeground: 'rgba(138, 138, 138, 1)',
+  accent: 'rgba(82, 82, 82, 1)',
+  accentForeground: 'rgba(226, 226, 226, 1)',
+  destructive: 'rgba(220, 80, 80, 1)',
+  destructiveForeground: 'rgba(255, 255, 255, 1)',
+  border: 'rgba(74, 74, 74, 1)',
+  input: 'rgba(64, 64, 64, 1)',
+  ring: 'rgba(166, 166, 166, 1)',
+  chart1: 'rgba(166, 166, 166, 1)',
+  chart2: 'rgba(120, 180, 200, 1)',
+  chart3: 'rgba(120, 120, 120, 1)',
+  chart4: 'rgba(100, 100, 100, 1)',
+  chart5: 'rgba(82, 82, 82, 1)',
+  sidebar: 'rgba(38, 38, 38, 1)',
+  sidebarForeground: 'rgba(226, 226, 226, 1)',
+  sidebarPrimary: 'rgba(166, 166, 166, 1)',
+  sidebarPrimaryForeground: 'rgba(33, 33, 33, 1)',
+  sidebarAccent: 'rgba(82, 82, 82, 1)',
+  sidebarAccentForeground: 'rgba(226, 226, 226, 1)',
+  sidebarBorder: 'rgba(74, 74, 74, 1)',
+  sidebarRing: 'rgba(166, 166, 166, 1)',
+};
+
+// Labels for custom theme color variables
+export const CUSTOM_THEME_COLOR_LABELS: Record<string, { label: string; description: string; category: string }> = {
+  background: { label: 'Background', description: 'Main app background color', category: 'Base' },
+  foreground: { label: 'Foreground', description: 'Main text color', category: 'Base' },
+  card: { label: 'Card', description: 'Card/panel background', category: 'Surfaces' },
+  cardForeground: { label: 'Card Text', description: 'Text on cards', category: 'Surfaces' },
+  popover: { label: 'Popover', description: 'Popup/dropdown background', category: 'Surfaces' },
+  popoverForeground: { label: 'Popover Text', description: 'Text in popups', category: 'Surfaces' },
+  primary: { label: 'Primary', description: 'Primary accent color', category: 'Accents' },
+  primaryForeground: { label: 'Primary Text', description: 'Text on primary elements', category: 'Accents' },
+  secondary: { label: 'Secondary', description: 'Secondary accent color', category: 'Accents' },
+  secondaryForeground: { label: 'Secondary Text', description: 'Text on secondary elements', category: 'Accents' },
+  muted: { label: 'Muted', description: 'Muted/subtle background', category: 'Utility' },
+  mutedForeground: { label: 'Muted Text', description: 'Subdued text color', category: 'Utility' },
+  accent: { label: 'Accent', description: 'Highlight accent color', category: 'Accents' },
+  accentForeground: { label: 'Accent Text', description: 'Text on accent elements', category: 'Accents' },
+  destructive: { label: 'Destructive', description: 'Error/danger color', category: 'Utility' },
+  destructiveForeground: { label: 'Destructive Text', description: 'Text on destructive elements', category: 'Utility' },
+  border: { label: 'Border', description: 'Border color', category: 'Utility' },
+  input: { label: 'Input', description: 'Input field background', category: 'Utility' },
+  ring: { label: 'Ring', description: 'Focus ring color', category: 'Utility' },
+  chart1: { label: 'Chart 1', description: 'Chart color 1', category: 'Charts' },
+  chart2: { label: 'Chart 2', description: 'Chart color 2', category: 'Charts' },
+  chart3: { label: 'Chart 3', description: 'Chart color 3', category: 'Charts' },
+  chart4: { label: 'Chart 4', description: 'Chart color 4', category: 'Charts' },
+  chart5: { label: 'Chart 5', description: 'Chart color 5', category: 'Charts' },
+  sidebar: { label: 'Sidebar', description: 'Sidebar background', category: 'Sidebar' },
+  sidebarForeground: { label: 'Sidebar Text', description: 'Sidebar text color', category: 'Sidebar' },
+  sidebarPrimary: { label: 'Sidebar Primary', description: 'Sidebar primary accent', category: 'Sidebar' },
+  sidebarPrimaryForeground: { label: 'Sidebar Primary Text', description: 'Text on sidebar primary', category: 'Sidebar' },
+  sidebarAccent: { label: 'Sidebar Accent', description: 'Sidebar accent color', category: 'Sidebar' },
+  sidebarAccentForeground: { label: 'Sidebar Accent Text', description: 'Text on sidebar accent', category: 'Sidebar' },
+  sidebarBorder: { label: 'Sidebar Border', description: 'Sidebar border color', category: 'Sidebar' },
+  sidebarRing: { label: 'Sidebar Ring', description: 'Sidebar focus ring', category: 'Sidebar' },
+};
+
 const DEFAULT_SETTINGS = {
   accessibility: {
     theme: 'dark' as string,
@@ -177,6 +249,7 @@ const DEFAULT_SETTINGS = {
     useClassSpecColors: false,
     classSpecColors: { ...DEFAULT_CLASS_SPEC_COLORS },
     fontSizes: { ...DEFAULT_FONT_SIZES },
+    customThemeColors: { ...DEFAULT_CUSTOM_THEME_COLORS },
   },
   shortcuts: {
     showLiveMeter: "",
@@ -380,5 +453,6 @@ export const AVAILABLE_THEMES = [
   'pink',
   'green',
   'matcha',
-  'rainbow'
+  'rainbow',
+  'custom'
 ];

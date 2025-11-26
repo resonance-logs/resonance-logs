@@ -394,6 +394,15 @@ html[data-theme='rainbow'] {
   --toast-shadow: 0 4px 30px -8px rgba(120,120,140,0.28), 0 0 0 1px rgba(140,140,160,0.18);
 }
 
+/* Custom Theme - colors are applied via inline styles from JavaScript */
+html[data-theme='custom'] {
+  /* Base fallbacks - actual values set dynamically via JS */
+  --tooltip-bg: rgba(41, 41, 41, 0.92);
+  --tooltip-border: rgba(74, 74, 74, 0.55);
+  --tooltip-fg: var(--foreground);
+  --toast-shadow: 0 4px 24px -4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+}
+
 /* TOOLTIP BASE STYLE -------------------------------------------------- */
 [data-tooltip-content] {
   background: var(--tooltip-bg);
