@@ -105,11 +105,9 @@ const DEFAULT_SETTINGS = {
     // New theme setting; fallback to 'dark' if missing in existing persisted store
     theme: 'dark' as string,
     
-    // legacy/ux: 'transparency' toggle (used by settings UI) and opacity percent
     blur: false,
     transparency: false,
     transparentOpacityPercent: 2,
-    // UI: condense header to reduce header height
     condenseHeader: "all",
     // backward compatibility flag used in some places
     transparentMode: false,

@@ -12,12 +12,6 @@
   --font-sans: "Inter Variable", sans-serif;
   --font-mono: "Geist Mono Variable", monospace;
   --text-tiny: 0.625rem;
-  /* Custom font size variables (overridden via inline styles from settings) */
-  --font-size-xs: 10px;
-  --font-size-sm: 12px;
-  --font-size-base: 14px;
-  --font-size-lg: 16px;
-  --font-size-xl: 20px;
 }
 
 /* Shadcn */
@@ -143,12 +137,6 @@
   }
 }
 
-/* Custom font size utility classes using CSS variables */
-.text-size-xs { font-size: var(--font-size-xs); }
-.text-size-sm { font-size: var(--font-size-sm); }
-.text-size-base { font-size: var(--font-size-base); }
-.text-size-lg { font-size: var(--font-size-lg); }
-.text-size-xl { font-size: var(--font-size-xl); }
 
 /* THEME VARIANTS -------------------------------------------------------- */
 /* Each theme overrides the core semantic tokens. Use data-theme attribute on <html>. */
