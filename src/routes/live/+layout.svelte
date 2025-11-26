@@ -20,7 +20,7 @@
   // Store for scroll positions
   const scrollPositions = writable<Record<string, number>>({});
 
-  import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores, setLiveDungeonLog, clearLiveDungeonLog } from "$lib/stores/live-meter-store.svelte";
+  import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores, setLiveDungeonLog, clearLiveDungeonLog, injectDummyData } from "$lib/stores/live-meter-store.svelte";
   import Header from "./header.svelte";
   import HeaderOneRow from "./header-one-row.svelte"
 
@@ -385,6 +385,35 @@
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       cleanupStores();
+    };
+  });
+
+  // Watch for dummy data toggle
+  let dummyDataInterval: number | null = null;
+  $effect(() => {
+    const useDummyData = SETTINGS.live.general.state.useDummyData;
+
+    if (useDummyData) {
+      // Inject dummy data immediately
+      injectDummyData();
+
+      // Update dummy data periodically to simulate live updates
+      dummyDataInterval = window.setInterval(() => {
+        injectDummyData();
+      }, 1000);
+    } else {
+      // Clear the interval when disabled
+      if (dummyDataInterval) {
+        clearInterval(dummyDataInterval);
+        dummyDataInterval = null;
+      }
+    }
+
+    return () => {
+      if (dummyDataInterval) {
+        clearInterval(dummyDataInterval);
+        dummyDataInterval = null;
+      }
     };
   });
 

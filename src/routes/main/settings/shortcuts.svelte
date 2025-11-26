@@ -163,11 +163,8 @@
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
   <div class="space-y-3">
-  <Alert.Root variant="destructive" class="shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-      <AlertCircleIcon />
-      <Alert.Description>TBD: Make it so that having the same shortcut for Show/Hide is Toggle. For now, a separate Toggle shortcut is available.</Alert.Description>
-    </Alert.Root>
   <Alert.Root class="shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+    <AlertCircleIcon />
       <Alert.Title>Right click to clear shortcuts</Alert.Title>
     </Alert.Root>
   <div class="rounded-lg border bg-card/40 border-border/60 p-4 space-y-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">

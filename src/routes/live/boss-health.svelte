@@ -5,7 +5,7 @@
   import { onMount } from "svelte";
   import { onEncounterUpdate, onResetEncounter, type HeaderInfo } from "$lib/api";
   import { tooltip } from "$lib/utils.svelte";
-  
+
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
 
   let headerInfo: HeaderInfo = $state({
@@ -13,21 +13,14 @@
     totalDmg: 0,
     elapsedMs: 0,
     fightStartTimestampMs: 0,
-    bosses: [
-      // {
-      //   uid: 1,
-      //   currentHp: 20,
-      //   maxHp: 50,
-      //   name: "Boss Example"
-      // }
-    ],
+    bosses: [],
     sceneId: null,
     sceneName: null,
     currentSegmentType: null,
     currentSegmentName: null,
   });
 
-  
+
 
   onMount(() => {
     let encounterUnlisten: (() => void) | null = null;

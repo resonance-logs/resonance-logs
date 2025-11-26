@@ -71,6 +71,7 @@ const DEFAULT_GENERAL_SETTINGS = {
   shortenTps: true,
   bossOnlyDps: false,
   dungeonSegmentsEnabled: true,
+  useDummyData: false,
 };
 
 export const DEFAULT_CLASS_COLORS: Record<string, string> = {
@@ -310,8 +311,8 @@ export const settings = {
 export const AVAILABLE_THEMES = [
   'dark',
   'light',
-  'pink-uwu',
-  'green-pastel',
+  'pink',
+  'green',
   'matcha',
-  'pastel-rainbow'
+  'rainbow'
 ];

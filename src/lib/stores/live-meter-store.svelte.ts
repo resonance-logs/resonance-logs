@@ -4,6 +4,7 @@
  */
 import type { PlayersWindow } from "$lib/api";
 import { RuneStore } from '@tauri-store/svelte';
+import { generateDummyPlayersWindow } from "$lib/dummy-data";
 
 // Live meter data store using RuneStore with improved cleanup
 const dpsPlayersStore = new RuneStore<PlayersWindow>(
@@ -62,47 +63,6 @@ export function getTankedPlayers() {
     return tankedPlayersStore.state;
 }
 
-export function generateMockPlayers(): PlayersWindow {
-    const classes = [
-        { name: "Stormblade", spec: "Iaido" },
-        { name: "Frost Mage", spec: "Icicle" },
-        { name: "Wind Knight", spec: "Vanguard" },
-        { name: "Verdant Oracle", spec: "Smite" },
-        { name: "Heavy Guardian", spec: "Earthfort" },
-        { name: "Marksman", spec: "Wildpack" },
-        { name: "Shield Knight", spec: "Recovery" },
-        { name: "Beat Performer", spec: "Dissonance" },
-    ];
-
-    const playerRows = classes.map((cls, idx) => ({
-        uid: idx + 1,
-        name: cls.name,
-        className: cls.name,
-        classSpecName: cls.spec,
-        abilityScore: Math.floor(Math.random() * 5000) + 1000,
-        totalDmg: Math.floor(Math.random() * 10000000) + 1000000,
-        dps: Math.floor(Math.random() * 5000000) + 500000,
-        dmgPct: Math.random() * 15 + 1,
-        critRate: Math.random() * 80 + 10,
-        critDmgRate: Math.random() * 60 + 20,
-        luckyRate: Math.random() * 30 + 5,
-        luckyDmgRate: Math.random() * 20 + 5,
-        hits: Math.floor(Math.random() * 5000) + 500,
-        hitsPerMinute: Math.floor(Math.random() * 200) + 50
-    }));
-
-    // Sort by totalDmg descending
-    playerRows.sort((a, b) => b.totalDmg - a.totalDmg);
-
-    return { playerRows };
-}
-
-// Load mock data on store initialization
-// setTimeout(() => {
-//     setDpsPlayers(generateMockPlayers());
-//     setHealPlayers(generateMockPlayers());
-//     setTankedPlayers(generateMockPlayers());
-// }, 1);
 
 // Live dungeon segments state
 let liveDungeonLog = $state<import('$lib/api').DungeonLog | null>(null);
@@ -117,4 +77,12 @@ export function getLiveDungeonLog() {
 
 export function clearLiveDungeonLog() {
     liveDungeonLog = null;
+}
+
+// Dummy data injection
+export function injectDummyData() {
+    const dummyData = generateDummyPlayersWindow();
+    setDpsPlayers(dummyData);
+    setHealPlayers(dummyData);
+    setTankedPlayers(dummyData);
 }
