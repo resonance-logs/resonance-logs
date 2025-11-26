@@ -280,7 +280,7 @@
             </button>
             {#if expandedSections.backgroundImage}
               <div class="px-4 pb-4 space-y-2">
-                <p class="text-xs text-muted-foreground">Use a custom image as the background for both main and live meter windows.</p>
+                <p class="text-xs text-muted-foreground">Use a custom image as the background for both main and live meter windows. NOTE: You must set your background as semi-transparent for this image to show.</p>
                 <SettingsSwitch
                   bind:checked={SETTINGS.accessibility.state.backgroundImageEnabled}
                   label="Enable Background Image"
