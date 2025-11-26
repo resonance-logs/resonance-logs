@@ -48,6 +48,13 @@
       <div class="px-4 py-3 text-sm text-muted-foreground">
         <p>General settings have been moved to <span class="font-medium text-foreground">Themes → Live</span>.</p>
       </div>
+      <div class="px-4 pb-3">
+        <SettingsSwitch
+          bind:checked={SETTINGS.live.general.state.useDummyData}
+          label="Use Dummy Data"
+          description="Inject dummy player data into the live meter for testing and preview purposes"
+        />
+      </div>
     </div>
 
     <!-- DPS - Player Settings -->

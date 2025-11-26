@@ -578,11 +578,6 @@
                 label="Clickthrough Mode"
                 description={SETTINGS.accessibility.state.clickthrough ? 'Clickthrough Enabled - Mouse clicks pass through window' : 'Enable Clickthrough Mode'}
               />
-              <SettingsSwitch
-                bind:checked={SETTINGS.live.general.state.useDummyData}
-                label="Use Dummy Data"
-                description="Inject dummy player data into the live meter for testing and preview purposes"
-              />
             </div>
           {/if}
         </div>
