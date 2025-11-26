@@ -155,10 +155,6 @@
       label: "Reset Encounter",
     },
     {
-      id: "hardReset",
-      label: "TEMP FIX: Hard Reset",
-    },
-    {
       id: "toggleBossHp",
       label: "Toggle Boss Only Damage",
     },
