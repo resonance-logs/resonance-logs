@@ -453,7 +453,6 @@
     }
   });
 
-  // Blur feature removed; effect removed.
 </script>
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->

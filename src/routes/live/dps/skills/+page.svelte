@@ -17,12 +17,6 @@
   let dpsSkillBreakdownWindow: SkillsWindow = $state({ currPlayer: [], skillRows: [] });
   let unlisten: (() => void) | null = null;
 
-  // Update data when window changes
-  $effect(() => {
-    // currPlayerData = dpsSkillBreakdownWindow.currPlayer;
-    // skillRowsData = dpsSkillBreakdownWindow.skillRows;
-  });
-
   // Optimize derived calculations to avoid recalculation on every render
   let maxSkillValue = $state(0);
   let SETTINGS_YOUR_NAME = $state(settings.state.live.general.showYourName);

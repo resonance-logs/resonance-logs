@@ -11,7 +11,7 @@ use diesel::sqlite::SqliteConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
-use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::sync::mpsc::{self, Sender};
 
 use crate::database::models as m;
 use crate::database::schema as sch;
@@ -27,7 +27,11 @@ pub const MIGRATIONS: EmbeddedMigrations = diesel_migrations::embed_migrations!(
 // Sentinel value for unknown skill IDs in aggregated stats
 const UNKNOWN_SKILL_ID_SENTINEL: i32 = -1;
 
-static DB_SENDER: Lazy<Mutex<Option<UnboundedSender<DbTask>>>> = Lazy::new(|| Mutex::new(None));
+static DB_SENDER: Lazy<Mutex<Option<Sender<DbTask>>>> = Lazy::new(|| Mutex::new(None));
+
+// Bounded channel capacity for DB task queue. Prevents unbounded memory
+// growth when producers outpace the writer thread.
+const BATCH_QUEUE_CAPACITY: usize = 5_000;
 
 // Batch configuration: collect up to this many events or wait up to this many ms (whichever
 // comes first) before flushing to the DB. Chosen by user: 50ms window.
@@ -125,11 +129,10 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
             .ok();
     }
 
-    // Spawn writer worker using an unbounded channel (grow-on-demand) and batch
-    // incoming tasks for up to BATCH_MAX_WAIT_MS or until BATCH_MAX_EVENTS is
-    // reached. Using an unbounded channel avoids silent drops on overflow and
-    // satisfies the requirement to "increase queue size" when under pressure.
-    let (tx, mut rx) = mpsc::unbounded_channel::<DbTask>();
+    // Spawn writer worker using a bounded channel to avoid unbounded memory
+    // growth if producers are faster than the writer. Tasks will be dropped
+    // (with a warning) when the queue is full to protect process memory.
+    let (tx, mut rx) = mpsc::channel::<DbTask>(BATCH_QUEUE_CAPACITY);
     {
         let mut guard = DB_SENDER.lock();
         *guard = Some(tx.clone());
@@ -384,9 +387,10 @@ pub fn enqueue(task: DbTask) {
     // fire-and-forget; drop if not initialized
     let guard = DB_SENDER.lock();
     if let Some(tx) = guard.as_ref() {
-        if let Err(e) = tx.send(task) {
-            // Unbounded sender should not overflow; an error means the receiver was dropped.
-            log::warn!("DB queue send failed (receiver closed): {}", e);
+        // Use try_send so producers don't block; if the queue is full we drop
+        // the task and log a warning to protect process memory.
+        if let Err(e) = tx.try_send(task) {
+            log::warn!("DB queue full or closed, dropping task: {}", e);
         }
     }
 }
