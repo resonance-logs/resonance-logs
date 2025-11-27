@@ -73,9 +73,6 @@
     // Poll settings for transparency changes and apply CSS variables / body background
     transparencyInterval = window.setInterval(() => {
       try {
-        const enabled = !!SETTINGS.accessibility.state.transparency;
-        const percent = Number(SETTINGS.accessibility.state.transparentOpacityPercent ?? 2) || 2;
-        const opacity = String(percent / 100);
         
         // Apply background image if enabled and custom theme
         const bgImageEnabled = SETTINGS.accessibility.state.backgroundImageEnabled;
@@ -94,19 +91,7 @@
           } else {
             document.body.style.backgroundColor = '';
           }
-        } else if (enabled) {
-          // Transparency mode - make background fully transparent
-          document.documentElement.classList.add('transparent-mode');
-          document.documentElement.style.setProperty('--bg-opacity', opacity);
-          document.body.style.background = 'transparent';
-          document.body.style.backgroundImage = '';
-        } else {
-          document.documentElement.classList.remove('transparent-mode');
-          document.body.style.background = '';
-          document.body.style.backgroundImage = '';
-          document.body.style.backgroundColor = '';
         }
-        
         // Apply custom fonts if enabled
         const sansEnabled = SETTINGS.accessibility.state.customFontSansEnabled;
         const sansName = SETTINGS.accessibility.state.customFontSansName;

@@ -100,13 +100,6 @@
         parsed.theme = theme;
         localStorage.setItem('accessibility', JSON.stringify(parsed));
       } catch {}
-
-      // Mirror transparent mode into body class so window background becomes transparent
-      if (transparentMode) {
-        document.body.classList.add('transparent-mode');
-      } else {
-        document.body.classList.remove('transparent-mode');
-      }
     }
   });
 })()}
