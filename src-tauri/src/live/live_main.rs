@@ -35,7 +35,8 @@ pub async fn start(app_handle: AppHandle) {
     let heartbeat_duration = Duration::from_secs(2);
 
     // 1. Start capturing packets and send to rx
-    let mut rx = packets::packet_capture::start_capture(); // Since live meter is not critical, it's ok to just log it // TODO: maybe bubble an error up to the frontend instead?
+    let method = get_capture_method(&app_handle);
+    let mut rx = packets::packet_capture::start_capture(method);
 
     // 2. Use the channel to receive packets back and process them
     loop {
@@ -119,15 +120,6 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     }
                 }
-                // packets::opcodes::Pkt::SyncSceneAttrs => {
-                //     match blueprotobuf::SyncSceneAttrs::decode(Bytes::from(data)) {
-                //         Ok(v) => Some(StateEvent::SyncSceneAttrs(v)),
-                //         Err(e) => {
-                //             warn!("Error decoding SyncSceneAttrs.. ignoring: {e}");
-                //             None
-                //         }
-                //     }
-                // }
                 _ => {
                     trace!("Unhandled packet opcode: {op:?}");
                     None
@@ -143,11 +135,9 @@ pub async fn start(app_handle: AppHandle) {
                 }
 
                 // Drain additional queued packets quickly but with a strict time budget
-                // to avoid long stalls processing large backlogs. This keeps responsiveness
-                // (e.g., ServerChange) while still improving throughput during bursts.
                 let drain_start = Instant::now();
-                let drain_time_budget = Duration::from_millis(20); // small budget to limit latency
-                const MAX_DRAIN: usize = 20; // hard cap
+                let drain_time_budget = Duration::from_millis(20);
+                const MAX_DRAIN: usize = 20;
                 let mut drained = 0usize;
 
                 loop {
@@ -161,7 +151,6 @@ pub async fn start(app_handle: AppHandle) {
                     match rx.try_recv() {
                         Ok((op, data)) => {
                             if let Some(event) = decode_event(op, data) {
-                                // If a ServerChange is encountered, handle it and break quickly
                                 let is_server_change = matches!(event, StateEvent::ServerChange);
                                 state_manager.handle_event(event).await;
                                 drained += 1;
@@ -188,13 +177,11 @@ pub async fn start(app_handle: AppHandle) {
                 }
             }
             Ok(None) => {
-                // Channel closed, exit loop
                 warn!("Packet capture channel closed, exiting live meter loop");
                 break;
             }
             Err(_) => {
-                // Timeout occurred - no packets received within heartbeat_duration
-                // Emit events anyway to keep frontend connection alive
+                // Timeout occurred
                 let now = Instant::now();
                 if now.duration_since(last_emit_time) >= emit_throttle_duration {
                     last_emit_time = now;
@@ -203,4 +190,35 @@ pub async fn start(app_handle: AppHandle) {
             }
         }
     }
+}
+
+fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod {
+    use packets::packet_capture::CaptureMethod;
+
+    let app_data_dir = app.path().app_local_data_dir().ok();
+    if let Some(dir) = app_data_dir {
+        let path = dir.join("packetCapture.json");
+        if path.exists() {
+            if let Ok(file) = std::fs::File::open(path) {
+                if let Ok(json) = serde_json::from_reader::<_, serde_json::Value>(file) {
+                    let method = json
+                        .get("method")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("WinDivert");
+                    let device = json
+                        .get("npcapDevice")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+
+                    if method == "Npcap" {
+                        info!("Using Npcap capture method with device: {}", device);
+                        return CaptureMethod::Npcap(device.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    info!("Using WinDivert capture method (default)");
+    CaptureMethod::WinDivert
 }

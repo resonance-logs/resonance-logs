@@ -441,6 +441,17 @@ async syncPlayerData(apiKey: string, baseUrl: string | null) : Promise<Result<nu
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getNetworkDevices() : Promise<Result<Device[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_network_devices") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async checkNpcapStatus() : Promise<boolean> {
+    return await TAURI_INVOKE("check_npcap_status");
 }
 }
 
@@ -615,6 +626,7 @@ export type CombatState = "idle" | "inCombat"
  * Discrete damage occurrence stored on a segment.
  */
 export type DamageEvent = { timestampMs: number; attackerId: number; targetId: number; targetName: string | null; targetMonsterTypeId: number | null; amount: number; isBossTarget: boolean; isKillingBlow: boolean }
+export type Device = { name: string; description: string | null }
 /**
  * Master container for dungeon segments within a scene.
  */

@@ -67,6 +67,8 @@ pub fn run() {
             uploader::start_upload,
             uploader::cancel_upload_cmd,
             uploader::player_data_sync::sync_player_data,
+            packets::npcap::get_network_devices,
+            packets::npcap::check_npcap_status,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -362,7 +364,7 @@ fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()> {
                 #[cfg(not(debug_assertions))]
                 let target = target.filter(|metadata| metadata.level() <= LevelFilter::Warn);
                 target
-            }
+            },
         ])
         .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
         .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(10)); // keep the last 10 logs
@@ -399,7 +401,11 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
         // Always disable clickthrough when showing window from tray
         if window.label() == WINDOW_LIVE_LABEL {
             if let Err(e) = window.set_ignore_cursor_events(false) {
-                warn!("failed to set ignore_cursor_events for {}: {}", window.label(), e);
+                warn!(
+                    "failed to set ignore_cursor_events for {}: {}",
+                    window.label(),
+                    e
+                );
             }
         }
     }
@@ -439,22 +445,37 @@ fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
                 let Some(live_meter_window) = tray_app.get_webview_window(WINDOW_LIVE_LABEL) else {
                     return;
                 };
-                if let Err(e) = live_meter_window.set_size(Size::Logical(LogicalSize { width: 500.0, height: 350.0 })) {
+                if let Err(e) = live_meter_window.set_size(Size::Logical(LogicalSize {
+                    width: 500.0,
+                    height: 350.0,
+                })) {
                     warn!("failed to resize live window: {}", e);
                 }
-                if let Err(e) = live_meter_window.set_position(Position::Logical(LogicalPosition { x: 100.0, y: 100.0 })) {
+                if let Err(e) = live_meter_window
+                    .set_position(Position::Logical(LogicalPosition { x: 100.0, y: 100.0 }))
+                {
                     warn!("failed to set position for live window: {}", e);
                 }
-                if let Err(e) = live_meter_window.show() { warn!("failed to show live window: {}", e); }
-                if let Err(e) = live_meter_window.unminimize() { warn!("failed to unminimize live window: {}", e); }
-                if let Err(e) = live_meter_window.set_focus() { warn!("failed to focus live window: {}", e); }
-                if let Err(e) = live_meter_window.set_ignore_cursor_events(false) { warn!("failed to set ignore_cursor_events for live window: {}", e); }
+                if let Err(e) = live_meter_window.show() {
+                    warn!("failed to show live window: {}", e);
+                }
+                if let Err(e) = live_meter_window.unminimize() {
+                    warn!("failed to unminimize live window: {}", e);
+                }
+                if let Err(e) = live_meter_window.set_focus() {
+                    warn!("failed to focus live window: {}", e);
+                }
+                if let Err(e) = live_meter_window.set_ignore_cursor_events(false) {
+                    warn!("failed to set ignore_cursor_events for live window: {}", e);
+                }
             }
             "clickthrough" => {
                 let Some(live_meter_window) = tray_app.get_webview_window(WINDOW_LIVE_LABEL) else {
                     return;
                 };
-                if let Err(e) = live_meter_window.set_ignore_cursor_events(false) { warn!("failed to set ignore_cursor_events for live window: {}", e); }
+                if let Err(e) = live_meter_window.set_ignore_cursor_events(false) {
+                    warn!("failed to set ignore_cursor_events for live window: {}", e);
+                }
             }
             "quit" => {
                 stop_windivert();
@@ -496,7 +517,9 @@ fn on_window_event_fn(window: &Window, event: &WindowEvent) {
         WindowEvent::CloseRequested { api, .. } => {
             api.prevent_close(); // don't close it, just hide it
             if window.label() == WINDOW_MAIN_LABEL {
-                if let Err(e) = window.hide() { warn!("failed to hide main window: {}", e); }
+                if let Err(e) = window.hide() {
+                    warn!("failed to hide main window: {}", e);
+                }
             }
         }
         WindowEvent::Focused(focused) if !focused => {
