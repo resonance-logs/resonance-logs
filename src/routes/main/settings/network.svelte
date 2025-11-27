@@ -1,11 +1,9 @@
 <script lang="ts">
-    import * as Tabs from "$lib/components/ui/tabs/index.js";
     import SettingsSelect from "./settings-select.svelte";
+    import SettingsDropdown from "./settings-dropdown.svelte";
     import { SETTINGS } from "$lib/settings-store";
     import { invoke } from "@tauri-apps/api/core";
     import { onMount } from "svelte";
-
-    const SETTINGS_CATEGORY = "network";
 
     type Device = {
         name: string;
@@ -33,11 +31,6 @@
         loadDevices();
     });
 
-    let methodOptions = [
-        { value: "WinDivert", label: "WinDivert (Default)" },
-        { value: "Npcap", label: "Npcap" },
-    ];
-
     let deviceOptions = $derived(
         devices.map((d) => ({
             value: d.name,
@@ -46,49 +39,45 @@
     );
 </script>
 
-<Tabs.Content value={SETTINGS_CATEGORY}>
-    <div class="space-y-3">
-        <div
-            class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]"
-        >
-            <div class="px-4 py-3">
-                <h2 class="text-base font-semibold text-foreground mb-2">
-                    Packet Capture
-                </h2>
+<div class="space-y-3">
+    <div
+        class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]"
+    >
+        <div class="px-4 py-3">
+            <h2 class="text-base font-semibold text-foreground mb-2">
+                Packet Capture
+            </h2>
 
-                <SettingsSelect
-                    bind:value={SETTINGS.packetCapture.state.method}
-                    label="Capture Method"
-                    description="Select the method used to capture network packets. Requires application restart."
-                    options={methodOptions}
-                />
+            <SettingsSelect
+                bind:selected={SETTINGS.packetCapture.state.method}
+                label="Capture Method"
+                description="Select the method used to capture network packets. Requires application restart."
+                values={["WinDivert", "Npcap"]}
+            />
 
-                {#if SETTINGS.packetCapture.state.method === "Npcap"}
-                    {#if !npcapInstalled}
-                        <div
-                            class="mt-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm"
-                        >
-                            Npcap is not detected. Please install Npcap from <a
-                                href="https://npcap.com/"
-                                target="_blank"
-                                class="underline">npcap.com</a
-                            > to use this feature.
-                        </div>
-                    {:else}
-                        <SettingsSelect
-                            bind:value={
-                                SETTINGS.packetCapture.state.npcapDevice
-                            }
-                            label="Network Device"
-                            description="Select the network adapter to capture traffic from."
-                            options={deviceOptions}
-                            placeholder={loading
-                                ? "Loading devices..."
-                                : "Select a device"}
-                        />
-                    {/if}
+            {#if SETTINGS.packetCapture.state.method === "Npcap"}
+                {#if !npcapInstalled}
+                    <div
+                        class="mt-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm"
+                    >
+                        Npcap is not detected. Please install Npcap from <a
+                            href="https://npcap.com/"
+                            target="_blank"
+                            class="underline">npcap.com</a
+                        > to use this feature.
+                    </div>
+                {:else}
+                    <SettingsDropdown
+                        bind:selected={SETTINGS.packetCapture.state.npcapDevice}
+                        label="Network Device"
+                        description="Select the network adapter to capture traffic from."
+                        options={deviceOptions}
+                        placeholder={loading
+                            ? "Loading devices..."
+                            : "Select a device"}
+                    />
                 {/if}
-            </div>
+            {/if}
         </div>
     </div>
-</Tabs.Content>
+</div>
