@@ -20,7 +20,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.2178 0 0);
+  --background-main: oklch(0.2178 0 0);
+  --background-live: oklch(0.2178 0 0);
   --foreground: oklch(0.8853 0 0);
   --card: oklch(0.2435 0 0);
   --card-foreground: oklch(0.8853 0 0);
@@ -75,7 +76,8 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
+  --color-background-main: var(--background-main);
+  --color-background-live: var(--background-live);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -132,7 +134,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    background: var(--background);
+    background: var(--background-main);
     color: var(--foreground);
   }
 }
@@ -147,7 +149,8 @@
 
 /* Dark (default) */
 html[data-theme='dark'] {
-  --background: oklch(0.2178 0 0);
+  --background-main: oklch(0.2178 0 0);
+  --background-live: oklch(0.2178 0 0);
   --foreground: oklch(0.8853 0 0);
   --card: oklch(0.2435 0 0);
   --card-foreground: oklch(0.8853 0 0);
@@ -188,7 +191,8 @@ html[data-theme='dark'] {
 
 /* Light Mode */
 html[data-theme='light'] {
-  --background: oklch(0.985 0.01 95);
+  --background-main: oklch(0.985 0.01 95);
+  --background-live: oklch(0.985 0.01 95);
   --foreground: oklch(0.19 0.02 250);
   --card: oklch(0.97 0.01 95);
   --card-foreground: var(--foreground);
@@ -230,7 +234,8 @@ html[data-theme='light'] {
 html[data-theme='pink'] {
   /* Pink theme using provided hex palette */
   /* Main background */
-  --background: #F8E8EE;
+  --background-main: #F8E8EE;
+  --background-live: #F8E8EE;
   /* Foreground text chosen for contrast (slightly deeper rose) */
   --foreground: #582F3B;
   /* Surfaces */
@@ -276,7 +281,8 @@ html[data-theme='pink'] {
 
 /* Green Pastel */
 html[data-theme='green'] {
-  --background: oklch(0.94 0.03 150);
+  --background-main: oklch(0.94 0.03 150);
+  --background-live: oklch(0.94 0.03 150);
   --foreground: oklch(0.20 0.03 150);
   --card: oklch(0.95 0.025 150);
   --card-foreground: var(--foreground);
@@ -316,7 +322,8 @@ html[data-theme='green'] {
 
 /* Green Tea Matcha */
 html[data-theme='matcha'] {
-  --background: oklch(0.90 0.03 125);
+  --background-main: oklch(0.90 0.03 125);
+  --background-live: oklch(0.90 0.03 125);
   --foreground: oklch(0.24 0.04 125);
   --card: oklch(0.92 0.03 125);
   --card-foreground: var(--foreground);
@@ -356,7 +363,8 @@ html[data-theme='matcha'] {
 
 /* Pastel Rainbow */
 html[data-theme='rainbow'] {
-  --background: linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5);
+  --background-main: linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5);
+  --background-live: linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5);
   --foreground: oklch(0.25 0.03 250);
   --card: oklch(0.97 0.02 95);
   --card-foreground: var(--foreground);
@@ -465,8 +473,12 @@ html[data-theme='custom'] {
   --bg-opacity: 0.02;
 }
 
-.transparent-mode .bg-background {
-  background-color: color-mix(in srgb, var(--background) calc(var(--bg-opacity) * 100%), transparent) !important;
+.transparent-mode .bg-background-main {
+  background-color: color-mix(in srgb, var(--background-main) calc(var(--bg-opacity) * 100%), transparent) !important;
+}
+
+.transparent-mode .bg-background-live {
+  background-color: color-mix(in srgb, var(--background-live) calc(var(--bg-opacity) * 100%), transparent) !important;
 }
 
 .transparent-mode .bg-card,

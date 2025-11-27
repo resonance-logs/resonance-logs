@@ -20,7 +20,8 @@
 
   // Mapping from camelCase keys to CSS variable names
   const customThemeKeyToCssVar: Record<string, string> = {
-    background: '--background',
+    backgroundMain: '--background-main',
+    backgroundLive: '--background-live',
     foreground: '--foreground',
     card: '--card',
     cardForeground: '--card-foreground',

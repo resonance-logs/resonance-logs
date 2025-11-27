@@ -154,7 +154,7 @@
   }
 </script>
 
-<div class="flex h-screen flex-col bg-background text-foreground p-3 gap-3">
+<div class="flex h-screen flex-col bg-background-main text-foreground p-3 gap-3">
   <!-- Top Navigation Bar -->
   <nav class="bg-card/50 rounded-lg border border-border/50 shrink-0">
     <div class="flex items-center justify-between px-4 py-2.5">

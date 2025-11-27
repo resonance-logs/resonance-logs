@@ -458,7 +458,7 @@
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
   <div 
-    class="flex h-screen flex-col bg-background text-[13px] text-foreground rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]" 
+    class="flex h-screen flex-col bg-background-live text-[13px] text-foreground rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]" 
     style="padding: {SETTINGS.live.headerCustomization.state.windowPadding}px"
     data-tauri-drag-region
   >

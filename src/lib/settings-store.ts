@@ -363,7 +363,8 @@ export const FONT_SIZE_LABELS: Record<string, string> = {
 
 // Default custom theme colors (based on dark theme)
 export const DEFAULT_CUSTOM_THEME_COLORS: Record<string, string> = {
-  background: 'rgba(33, 33, 33, 1)',
+  backgroundMain: 'rgba(33, 33, 33, 1)',
+  backgroundLive: 'rgba(33, 33, 33, 1)',
   foreground: 'rgba(226, 226, 226, 1)',
   card: 'rgba(41, 41, 41, 1)',
   cardForeground: 'rgba(226, 226, 226, 1)',
@@ -399,7 +400,8 @@ export const DEFAULT_CUSTOM_THEME_COLORS: Record<string, string> = {
 
 // Labels for custom theme color variables
 export const CUSTOM_THEME_COLOR_LABELS: Record<string, { label: string; description: string; category: string }> = {
-  background: { label: 'Background', description: 'Main app background color', category: 'Base' },
+  backgroundMain: { label: 'Background (Main)', description: 'Background color for main window', category: 'Base' },
+  backgroundLive: { label: 'Background (Live)', description: 'Background color for live meter', category: 'Base' },
   foreground: { label: 'Foreground', description: 'Main text color', category: 'Base' },
   card: { label: 'Card', description: 'Card/panel background', category: 'Surfaces' },
   cardForeground: { label: 'Card Text', description: 'Text on cards', category: 'Surfaces' },
