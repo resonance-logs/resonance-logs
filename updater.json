@@ -1,15 +1,15 @@
 {
-  "version": "0.15.3",
-  "notes": "## Log application - 0.15.3\r\n",
-  "pub_date": "2025-11-26T01:03:54.489Z",
+  "version": "0.16.0",
+  "notes": "## Log application - 0.16.0\r\n\r\n### Added \r\n- fully customizable ui\r\n  - header\r\n  - themes\r\n  - table\r\n  - fonts\r\n  - bg image\r\n- theme import/export feature\r\n  - export all theme settings (color theme, custom colors, class/spec colors, fonts, bg image, table, header) to JSON\r\n  - import theme presets from JSON filesimporting / exporting themes\r\n\r\n### Fixes\r\n- Whitescreen freezing bug fix?\r\n  - make sure you have webview2 updated & microsoft edge installed\r\n  - if you still have this issue, please join the discord & send a message in #issues (link on website / github)\r\n- numpad not working for shortcuts fix\r\n",
+  "pub_date": "2025-11-26T19:03:46.431Z",
   "platforms": {
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dTWmhyeFl5blJRalVoUDBDWkJWaU1pN2JYdWxINERuWUx6d0NpcWFjMlRDY3pvcFNCQ1pXM0Z1Qm9FYkJPL2xuVUIvcHdqOVhkYXZ1cUJsekRpVEFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MTE5MDI4CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4zX3g2NC1zZXR1cC5leGUKOGNTcVd3QXREU2xRU0FsWlRTRXdHUnBrZytzYXkyQ3poUEd5Q3dvN2VmREVnMkxuMnJmR3cyeWxOcldlanU2cjhqMldNeUFxbklWUzA1NnNUb2U2QWc9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.3/resonance-logs_0.15.3_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2ZmOXkwM0NycmVtRGMreFI4U1UrdEpHeFZxd2kxdGhJazV6MnNVWGNDMml5YWwvUGpkYnVOWnJFVmRyT1A3NUZPRlVXQnFocHR2ejRvK1FJQ3JGZmc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MTgzODE5CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNi4wX3g2NC1zZXR1cC5leGUKODZhQjlnS0YvMi9nTGdSWVBKYzUwQTdFZEVJQ25CVUJnUGp2Qk1CUW9Ja3RpYk11RXcxTnROdXF4U2FtVmhHT2pVbFI2YnJJNjRVZDl0ejlyKzRLQVE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.16.0/resonance-logs_0.16.0_x64-setup.exe"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dTWmhyeFl5blJRalVoUDBDWkJWaU1pN2JYdWxINERuWUx6d0NpcWFjMlRDY3pvcFNCQ1pXM0Z1Qm9FYkJPL2xuVUIvcHdqOVhkYXZ1cUJsekRpVEFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MTE5MDI4CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNS4zX3g2NC1zZXR1cC5leGUKOGNTcVd3QXREU2xRU0FsWlRTRXdHUnBrZytzYXkyQ3poUEd5Q3dvN2VmREVnMkxuMnJmR3cyeWxOcldlanU2cjhqMldNeUFxbklWUzA1NnNUb2U2QWc9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.15.3/resonance-logs_0.15.3_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2ZmOXkwM0NycmVtRGMreFI4U1UrdEpHeFZxd2kxdGhJazV6MnNVWGNDMml5YWwvUGpkYnVOWnJFVmRyT1A3NUZPRlVXQnFocHR2ejRvK1FJQ3JGZmc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MTgzODE5CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNi4wX3g2NC1zZXR1cC5leGUKODZhQjlnS0YvMi9nTGdSWVBKYzUwQTdFZEVJQ25CVUJnUGp2Qk1CUW9Ja3RpYk11RXcxTnROdXF4U2FtVmhHT2pVbFI2YnJJNjRVZDl0ejlyKzRLQVE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.16.0/resonance-logs_0.16.0_x64-setup.exe"
     }
   }
 }
