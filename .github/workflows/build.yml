@@ -59,6 +59,19 @@ jobs:
             'EOF'
           ) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Determine release type
+        id: release_type
+        run: |
+          $tag = $env:GITHUB_REF -replace 'refs/tags/', ''
+          # Check for semver pre-release (hyphen followed by anything)
+          if ($tag -match 'v?\d+\.\d+\.\d+-.+') {
+            echo "IS_PRERELEASE=true" >> $env:GITHUB_ENV
+            Write-Host "Detected prerelease tag: $tag"
+          } else {
+            echo "IS_PRERELEASE=false" >> $env:GITHUB_ENV
+            Write-Host "Detected stable release tag: $tag"
+          }
+
       - name: build and release tauri-apps
         uses: tauri-apps/tauri-action@v0
         id: tauri
@@ -73,7 +86,7 @@ jobs:
           releaseName: 'v__VERSION__'
           releaseBody: ${{ env.RELEASE_BODY }}
           releaseDraft: false
-          prerelease: false
+          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
           args: ${{ matrix.args }}
 
       - name: Force publish GitHub release
@@ -81,6 +94,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           APP_VERSION: ${{ steps.tauri.outputs.appVersion }}
+          IS_PRERELEASE: ${{ env.IS_PRERELEASE }}
         with:
           script: |
             const refTag = process.env.GITHUB_REF?.replace('refs/tags/', '');
@@ -127,7 +141,7 @@ jobs:
                 repo: context.repo.repo,
                 release_id: rel.data.id,
                 draft: false,
-                make_latest: 'true',
+                make_latest: process.env.IS_PRERELEASE === 'true' ? 'false' : 'true',
               });
               core.info(`Published release for ${tag}`);
             } else {
@@ -148,6 +162,7 @@ jobs:
           path: src-tauri/target/debug/bundle/
 
       - name: Update updater.json
+        if: ${{ env.IS_PRERELEASE == 'false' }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -167,7 +182,7 @@ jobs:
           git push origin main
 
       - name: Upload latest.json to release
-        if: ${{ success() }}
+        if: ${{ success() && env.IS_PRERELEASE == 'false' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
