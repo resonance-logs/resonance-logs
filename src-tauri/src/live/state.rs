@@ -34,7 +34,10 @@ fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload:
             let error_str = format!("{:?}", e);
             if error_str.contains("0x8007139F") || error_str.contains("not in the correct state") {
                 // This is expected when windows are minimized/hidden - don't spam logs
-                trace!("WebView2 not ready for '{}' (window may be minimized/hidden)", event);
+                trace!(
+                    "WebView2 not ready for '{}' (window may be minimized/hidden)",
+                    event
+                );
             } else {
                 // Log other errors as warnings
                 warn!("Failed to emit '{}': {}", event, e);
@@ -620,6 +623,8 @@ impl AppStateManager {
                 .map(|g| format!("Scene GUID: {}", g))
                 .unwrap_or_else(|| "Unknown Scene".to_string());
 
+            // Explicitly set scene_id to None for fallback scene change
+            state.encounter.current_scene_id = None;
             state.encounter.current_scene_name = Some(fallback_name.clone());
             if state.event_manager.should_emit_events() {
                 info!("Emitting fallback scene change event: {}", fallback_name);
