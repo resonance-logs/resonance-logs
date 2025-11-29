@@ -57,6 +57,8 @@ dirs = "6.0.0"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 sha2 = "0.10"
 hex = "0.4"
+libloading = "0.9.0"
+libc = "0.2.177"
 
 [dependencies.blueprotobuf-lib]
 path = "./src/blueprotobuf-lib"
