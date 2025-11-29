@@ -195,11 +195,25 @@ pub async fn start(app_handle: AppHandle) {
 fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod {
     use packets::packet_capture::CaptureMethod;
 
-    let app_data_dir = app.path().app_local_data_dir().ok();
-    if let Some(dir) = app_data_dir {
-        let path = dir.join("packetCapture.json");
-        if path.exists() {
-            if let Ok(file) = std::fs::File::open(path) {
+
+    let filename_candidates = ["packetCapture.json", "packetCapture.bin", "packetCapture"];
+    let mut dir_candidates = Vec::new();
+    if let Some(dir) = app.path().app_data_dir().ok() {
+        dir_candidates.push(dir.clone());
+        dir_candidates.push(dir.join("stores"));
+    }
+    if let Some(dir) = app.path().app_local_data_dir().ok() {
+        dir_candidates.push(dir.clone());
+        dir_candidates.push(dir.join("stores"));
+    }
+
+    for dir in dir_candidates.into_iter() {
+        for file_name in filename_candidates {
+            let path = dir.join(file_name);
+            if !path.exists() {
+                continue;
+            }
+            if let Ok(file) = std::fs::File::open(&path) {
                 if let Ok(json) = serde_json::from_reader::<_, serde_json::Value>(file) {
                     let method = json
                         .get("method")
@@ -210,14 +224,69 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
                         .and_then(|v| v.as_str())
                         .unwrap_or("");
 
+                    info!(
+                        "Packet capture config found at {} (method={}, device={})",
+                        path.display(),
+                        method,
+                        device
+                    );
+
                     if method == "Npcap" {
                         info!("Using Npcap capture method with device: {}", device);
                         return CaptureMethod::Npcap(device.to_string());
+                    } else {
+                        info!("Using WinDivert capture method (from config)");
+                        return CaptureMethod::WinDivert;
+                    }
+                } else {
+                    warn!("Failed to parse packet capture config at {}", path.display());
+                }
+            }
+        }
+
+        // If specific filenames failed, try any file starting with packetCapture*
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if !name.starts_with("packetCapture") {
+                        continue;
+                    }
+                }
+                if let Ok(file) = std::fs::File::open(&path) {
+                    if let Ok(json) = serde_json::from_reader::<_, serde_json::Value>(file) {
+                        let method = json
+                            .get("method")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("WinDivert");
+                        let device = json
+                            .get("npcapDevice")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+
+                        info!(
+                            "Packet capture config found at {} (method={}, device={})",
+                            path.display(),
+                            method,
+                            device
+                        );
+
+                        if method == "Npcap" {
+                            info!("Using Npcap capture method with device: {}", device);
+                            return CaptureMethod::Npcap(device.to_string());
+                        } else {
+                            info!("Using WinDivert capture method (from config)");
+                            return CaptureMethod::WinDivert;
+                        }
+                    } else {
+                        warn!("Failed to parse packet capture config at {}", path.display());
                     }
                 }
             }
         }
     }
+
+    warn!("No packetCapture config found in app data dirs; falling back to WinDivert");
 
     info!("Using WinDivert capture method (default)");
     CaptureMethod::WinDivert

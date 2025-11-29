@@ -3,6 +3,7 @@ use log::{debug, error, info};
 use std::ffi::{CStr, CString};
 use std::ptr;
 use std::sync::Arc;
+use std::sync::OnceLock;
 
 // Type definitions for pcap functions
 type PcapFindAllDevs = unsafe extern "C" fn(*mut *mut PcapIf, *mut i8) -> i32;
@@ -119,6 +120,7 @@ pub fn check_npcap_status() -> bool {
 pub struct NpcapCapture {
     handle: *mut PcapT,
     lib: Arc<Library>,
+    data_link: i32,
 }
 
 unsafe impl Send for NpcapCapture {}
@@ -133,6 +135,8 @@ impl NpcapCapture {
                 .map_err(|e| e.to_string())?;
             let get_err: Symbol<PcapGetErr> =
                 context.lib.get(b"pcap_geterr").map_err(|e| e.to_string())?;
+            let data_link_fn: Symbol<PcapDataLink> =
+                context.lib.get(b"pcap_datalink").map_err(|e| e.to_string())?;
 
             let device_c = CString::new(device_name).map_err(|e| e.to_string())?;
             let mut errbuf = [0i8; 256];
@@ -146,11 +150,25 @@ impl NpcapCapture {
                     .into_owned());
             }
 
+            let data_link = data_link_fn(handle);
+            static LOGGED_DLT: OnceLock<i32> = OnceLock::new();
+            if LOGGED_DLT.set(data_link).is_ok() {
+                info!(
+                    "Npcap datalink type for device {}: {}",
+                    device_name, data_link
+                );
+            }
+
             Ok(Self {
                 handle,
                 lib: context.lib,
+                data_link,
             })
         }
+    }
+
+    pub fn datalink(&self) -> i32 {
+        self.data_link
     }
 
     pub fn next_packet(&self) -> Result<Option<Vec<u8>>, String> {

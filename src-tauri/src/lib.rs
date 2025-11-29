@@ -22,6 +22,7 @@ use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use tauri_specta::{Builder, collect_commands};
 mod database;
 mod uploader; // stage 4 upload logic
+use serde_json::json;
 
 /// The label for the live window.
 pub const WINDOW_LIVE_LABEL: &str = "live";
@@ -67,6 +68,7 @@ pub fn run() {
             uploader::start_upload,
             uploader::cancel_upload_cmd,
             uploader::player_data_sync::sync_player_data,
+            packet_settings_commands::save_packet_capture_settings,
             packets::npcap::get_network_devices,
             packets::npcap::check_npcap_status,
         ]);
@@ -198,6 +200,46 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init()) // used to open URLs in the default browser
         .plugin(tauri_plugin_svelte::init()); // used for settings file
     build_and_run(tauri_builder);
+}
+
+mod packet_settings_commands {
+    use super::*;
+
+    #[tauri::command]
+    #[specta::specta]
+    pub fn save_packet_capture_settings(
+        method: String,
+        npcap_device: String,
+        app_handle: tauri::AppHandle,
+    ) -> Result<(), String> {
+        let app_data_dirs = [
+            app_handle.path().app_data_dir(),
+            app_handle.path().app_local_data_dir(),
+        ];
+        let mut last_err = None;
+
+        for dir in app_data_dirs.into_iter().flatten() {
+            let target_dir = dir.join("stores");
+            if let Err(e) = std::fs::create_dir_all(&target_dir) {
+                last_err = Some(format!("create_dir_all {}: {}", target_dir.display(), e));
+                continue;
+            }
+            let path = target_dir.join("packetCapture.json");
+            let payload = json!({
+                "method": method,
+                "npcapDevice": npcap_device,
+            });
+            match std::fs::write(&path, serde_json::to_vec_pretty(&payload).map_err(|e| e.to_string())?) {
+                Ok(_) => {
+                    info!("Saved packet capture config to {}", path.display());
+                    return Ok(());
+                }
+                Err(e) => last_err = Some(format!("write {}: {}", path.display(), e)),
+            }
+        }
+
+        Err(last_err.unwrap_or_else(|| "Failed to save packet capture config".to_string()))
+    }
 }
 
 /// Starts the WinDivert driver.

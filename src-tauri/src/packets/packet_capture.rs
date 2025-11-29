@@ -9,6 +9,7 @@ use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
 use log::{debug, error, info, warn};
 use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 use tokio::sync::watch;
 use windivert::WinDivert;
 use windivert::prelude::NetworkLayer;
@@ -18,6 +19,12 @@ use windivert::prelude::WinDivertFlags;
 static RESTART_SENDER: OnceCell<watch::Sender<bool>> = OnceCell::new();
 
 const MAX_BACKTRACK_BYTES: u32 = 2 * 1024 * 1024; // 2 MiB safety window before considering a reset
+
+// Common libpcap datalink constants we care about.
+const DLT_NULL: i32 = 0;
+const DLT_EN10MB: i32 = 1;
+const DLT_RAW: i32 = 12;
+const DLT_LOOP: i32 = 108;
 
 #[derive(Clone, Debug)]
 pub enum CaptureMethod {
@@ -71,26 +78,53 @@ impl NpcapSource {
         info!("Npcap handle opened for device: {}", device);
         Ok(Self { capture })
     }
+
+    fn strip_l2(&self, data: &[u8]) -> Option<Vec<u8>> {
+        match self.capture.datalink() {
+            DLT_EN10MB => {
+                if data.len() > 14 && data[12] == 0x08 && data[13] == 0x00 {
+                    Some(data[14..].to_vec())
+                } else {
+                    None
+                }
+            }
+            DLT_RAW => Some(data.to_vec()),
+            DLT_NULL | DLT_LOOP => {
+                if data.len() <= 4 {
+                    return None;
+                }
+                let family = u32::from_ne_bytes([data[0], data[1], data[2], data[3]]);
+                match family {
+                    2 => Some(data[4..].to_vec()), // AF_INET on Windows
+                    23 | 24 => None,               // IPv6 families, ignored for now
+                    other => {
+                        static LOGGED_FAMILY: OnceLock<u32> = OnceLock::new();
+                        if LOGGED_FAMILY.set(other).is_ok() {
+                            warn!(
+                                "Unsupported DLT_NULL/LOOP family {} (datalink {}), dropping packets",
+                                other,
+                                self.capture.datalink()
+                            );
+                        }
+                        None
+                    }
+                }
+            }
+            other => {
+                static LOGGED_DLT: OnceLock<i32> = OnceLock::new();
+                if LOGGED_DLT.set(other).is_ok() {
+                    warn!("Unsupported Npcap datalink type {}, dropping packets", other);
+                }
+                None
+            }
+        }
+    }
 }
 
 impl PacketSource for NpcapSource {
     fn next_packet(&mut self) -> Result<Option<Vec<u8>>, String> {
         match self.capture.next_packet()? {
-            Some(data) => {
-                // Strip Ethernet header (14 bytes)
-                if data.len() > 14 {
-                    // Check if it's IPv4 (EtherType 0x0800)
-                    // Ethernet header: Dst(6) + Src(6) + Type(2)
-                    if data[12] == 0x08 && data[13] == 0x00 {
-                        Ok(Some(data[14..].to_vec()))
-                    } else {
-                        // Not IPv4, ignore
-                        Ok(None)
-                    }
-                } else {
-                    Ok(None)
-                }
-            }
+            Some(data) => Ok(self.strip_l2(&data)),
             None => Ok(None),
         }
     }
@@ -105,6 +139,11 @@ pub fn start_capture(
         tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(20);
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
+
+    match &method {
+        CaptureMethod::WinDivert => info!("Starting packet capture with WinDivert"),
+        CaptureMethod::Npcap(dev) => info!("Starting packet capture with Npcap on device '{}'", dev),
+    }
 
     // Use std::thread::spawn to avoid blocking the async runtime with WinDivert recv
     std::thread::spawn(move || {

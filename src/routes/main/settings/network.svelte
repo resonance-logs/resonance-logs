@@ -4,6 +4,7 @@
     import { SETTINGS } from "$lib/settings-store";
     import { invoke } from "@tauri-apps/api/core";
     import { onMount } from "svelte";
+    import { untrack } from "svelte";
 
     type Device = {
         name: string;
@@ -13,6 +14,10 @@
     let devices = $state<Device[]>([]);
     let npcapInstalled = $state(false);
     let loading = $state(false);
+    let mounted = $state(false);
+    // Track initial values to detect actual user changes
+    let initialMethod = $state<string | null>(null);
+    let initialDevice = $state<string | null>(null);
 
     async function loadDevices() {
         loading = true;
@@ -28,7 +33,34 @@
     }
 
     onMount(() => {
+        // Capture initial values before marking as mounted
+        // Use untrack to avoid reactive dependencies
+        untrack(() => {
+            initialMethod = SETTINGS.packetCapture.state.method;
+            initialDevice = SETTINGS.packetCapture.state.npcapDevice;
+        });
+        mounted = true;
         loadDevices();
+    });
+
+    $effect(() => {
+        if (!mounted) return;
+        const method = SETTINGS.packetCapture.state.method;
+        const device = SETTINGS.packetCapture.state.npcapDevice;
+
+        // Skip saving if values haven't changed from initial (prevents overwriting on mount)
+        if (initialMethod !== null && method === initialMethod && device === initialDevice) {
+            return;
+        }
+
+        // Update tracked values for future comparisons
+        initialMethod = method;
+        initialDevice = device;
+
+        invoke("save_packet_capture_settings", {
+            method,
+            npcapDevice: device,
+        }).catch((e) => console.error("Failed to save packet capture settings", e));
     });
 
     let deviceOptions = $derived(
