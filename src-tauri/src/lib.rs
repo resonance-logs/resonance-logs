@@ -63,6 +63,8 @@ pub fn run() {
             database::commands::get_encounter_player_skills,
             database::commands::get_encounter_segments,
             database::commands::delete_encounter,
+            database::commands::delete_encounters,
+            database::commands::toggle_favorite_encounter,
             database::commands::get_recent_players_command,
             database::commands::get_player_name_command,
             uploader::start_upload,
@@ -229,7 +231,10 @@ mod packet_settings_commands {
                 "method": method,
                 "npcapDevice": npcap_device,
             });
-            match std::fs::write(&path, serde_json::to_vec_pretty(&payload).map_err(|e| e.to_string())?) {
+            match std::fs::write(
+                &path,
+                serde_json::to_vec_pretty(&payload).map_err(|e| e.to_string())?,
+            ) {
                 Ok(_) => {
                     info!("Saved packet capture config to {}", path.display());
                     return Ok(());

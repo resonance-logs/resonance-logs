@@ -60,6 +60,8 @@ diesel::table! {
         uploaded_at_ms -> Nullable<BigInt>,
         /// The encounter ID on the remote website/server after successful upload.
         remote_encounter_id -> Nullable<BigInt>,
+        /// Whether the encounter is favorited.
+        is_favorite -> Integer,
     }
 }
 

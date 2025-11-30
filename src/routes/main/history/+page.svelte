@@ -1,15 +1,18 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { commands } from '$lib/bindings';
-	import type { EncounterSummaryDto, EncounterFiltersDto } from '$lib/bindings';
-	import { getClassIcon, tooltip, CLASS_MAP } from '$lib/utils.svelte';
-	import UnifiedSearch from '$lib/components/unified-search.svelte';
-	import FilterChips from '$lib/components/filter-chips.svelte';
+	import { onMount } from "svelte";
+	import { goto } from "$app/navigation";
+	import { commands } from "$lib/bindings";
+	import type {
+		EncounterSummaryDto,
+		EncounterFiltersDto,
+	} from "$lib/bindings";
+	import { getClassIcon, tooltip, CLASS_MAP } from "$lib/utils.svelte";
+	import UnifiedSearch from "$lib/components/unified-search.svelte";
+	import FilterChips from "$lib/components/filter-chips.svelte";
 
 	const classOptions = Object.entries(CLASS_MAP).map(([id, name]) => ({
 		id: Number(id),
-		name
+		name,
 	}));
 
 	let encounters = $state<EncounterSummaryDto[]>([]);
@@ -27,31 +30,32 @@
 	let selectedBosses = $state<string[]>([]);
 	let selectedEncounters = $state<string[]>([]);
 	let selectedPlayerNames = $state<string[]>([]);
-	let searchValue = $state('');
-	let searchType = $state<'boss' | 'player' | 'encounter'>('encounter');
+	let searchValue = $state("");
+	let searchType = $state<"boss" | "player" | "encounter">("encounter");
 	let isLoadingBossNames = $state(false);
 
 	// Class filters
 	let selectedClassIds = $state<number[]>([]);
 	let showClassDropdown = $state(false);
+	let showFavoritesOnly = $state(false);
 	let classDropdownRef: HTMLDivElement | null = null;
 	let classButtonRef: HTMLButtonElement | null = null;
 
 	function getClassName(classId: number | null): string {
-		if (!classId) return '';
-		return CLASS_MAP[classId] ?? '';
+		if (!classId) return "";
+		return CLASS_MAP[classId] ?? "";
 	}
 
 	async function loadSceneNames() {
 		try {
 			const res = await commands.getUniqueSceneNames();
-			if (res.status === 'ok') {
+			if (res.status === "ok") {
 				availableEncounterNames = res.data.names ?? [];
 			} else {
 				availableEncounterNames = [];
 			}
 		} catch (e) {
-			console.error('loadSceneNames error', e);
+			console.error("loadSceneNames error", e);
 			availableEncounterNames = [];
 		}
 	}
@@ -60,13 +64,13 @@
 		isLoadingBossNames = true;
 		try {
 			const res = await commands.getUniqueBossNames();
-			if (res.status === 'ok') {
+			if (res.status === "ok") {
 				availableBossNames = res.data.names ?? [];
 			} else {
 				throw new Error(String(res.error));
 			}
 		} catch (e) {
-			console.error('loadBossNames error', e);
+			console.error("loadBossNames error", e);
 			availableBossNames = [];
 		} finally {
 			isLoadingBossNames = false;
@@ -82,25 +86,28 @@
 				bossNames: selectedBosses.length > 0 ? selectedBosses : null,
 				playerName: null,
 				encounterNames: null,
-				playerNames: selectedPlayerNames.length > 0 ? selectedPlayerNames : null,
+				playerNames:
+					selectedPlayerNames.length > 0 ? selectedPlayerNames : null,
 				classIds: selectedClassIds.length > 0 ? selectedClassIds : null,
 				dateFromMs: null,
-				dateToMs: null
+				dateToMs: null,
+				isFavorite: showFavoritesOnly ? true : null,
 			};
 
 			const hasFilters =
 				filterPayload.bossNames !== null ||
 				filterPayload.playerNames !== null ||
-				filterPayload.classIds !== null;
+				filterPayload.classIds !== null ||
+				filterPayload.isFavorite !== null;
 
 			const res = await commands.getRecentEncountersFiltered(
 				pageSize,
 				offset,
-				hasFilters ? filterPayload : null
+				hasFilters ? filterPayload : null,
 			);
 
-			if (res.status === 'ok') {
-				console.log("encounter data", res.data)
+			if (res.status === "ok") {
+				console.log("encounter data", res.data);
 				encounters = res.data.rows ?? [];
 				totalCount = res.data.totalCount ?? 0;
 				errorMsg = null;
@@ -109,7 +116,7 @@
 				throw new Error(String(res.error));
 			}
 		} catch (e) {
-			console.error('loadEncounters error', e);
+			console.error("loadEncounters error", e);
 			errorMsg = String(e);
 			encounters = [];
 			totalCount = 0;
@@ -118,13 +125,16 @@
 		}
 	}
 
-	function handleSearchSelect(name: string, type: 'boss' | 'player' | 'encounter') {
-		if (type === 'boss') {
+	function handleSearchSelect(
+		name: string,
+		type: "boss" | "player" | "encounter",
+	) {
+		if (type === "boss") {
 			if (!selectedBosses.includes(name)) {
 				selectedBosses = [...selectedBosses, name];
 				loadEncounters(0);
 			}
-		} else if (type === 'encounter') {
+		} else if (type === "encounter") {
 			if (!selectedEncounters.includes(name)) {
 				selectedEncounters = [...selectedEncounters, name];
 				loadEncounters(0);
@@ -148,7 +158,9 @@
 	}
 
 	function removePlayerNameFilter(playerName: string) {
-		selectedPlayerNames = selectedPlayerNames.filter((name) => name !== playerName);
+		selectedPlayerNames = selectedPlayerNames.filter(
+			(name) => name !== playerName,
+		);
 		loadEncounters(0);
 	}
 
@@ -193,17 +205,22 @@
 		selectedPlayerNames = [];
 		selectedClassIds = [];
 		selectedEncounters = [];
+		showFavoritesOnly = false;
 		loadEncounters(0);
 	}
 
-    const hasActiveFilters = $derived(
-        selectedBosses.length > 0 || selectedPlayerNames.length > 0 || selectedClassIds.length > 0 || selectedEncounters.length > 0
-    );
+	const hasActiveFilters = $derived(
+		selectedBosses.length > 0 ||
+			selectedPlayerNames.length > 0 ||
+			selectedClassIds.length > 0 ||
+			selectedEncounters.length > 0 ||
+			showFavoritesOnly,
+	);
 
 	onMount(() => {
-	loadBossNames();
-	loadSceneNames();
-	loadEncounters(0);
+		loadBossNames();
+		loadSceneNames();
+		loadEncounters(0);
 
 		function handleDocumentClick(event: MouseEvent) {
 			const target = event.target as HTMLElement;
@@ -218,10 +235,10 @@
 			}
 		}
 
-		document.addEventListener('click', handleDocumentClick);
+		document.addEventListener("click", handleDocumentClick);
 
 		return () => {
-			document.removeEventListener('click', handleDocumentClick);
+			document.removeEventListener("click", handleDocumentClick);
 		};
 	});
 
@@ -230,13 +247,13 @@
 		const secs = Math.max(0, Math.round((end - startMs) / 1000));
 		const m = Math.floor(secs / 60);
 		const s = secs % 60;
-		return `${m}:${s.toString().padStart(2, '0')}`;
+		return `${m}:${s.toString().padStart(2, "0")}`;
 	}
 
 	function fmtDate(ms: number) {
 		try {
 			const date = new Date(ms);
-			return date.toLocaleDateString('en-CA');
+			return date.toLocaleDateString("en-CA");
 		} catch {
 			return String(ms);
 		}
@@ -245,7 +262,11 @@
 	function fmtTime(ms: number) {
 		try {
 			const date = new Date(ms);
-			return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+			return date.toLocaleTimeString("en-US", {
+				hour: "numeric",
+				minute: "2-digit",
+				hour12: true,
+			});
 		} catch {
 			return String(ms);
 		}
@@ -255,6 +276,45 @@
 		goto(`/main/history/${enc.id}`);
 	}
 
+	async function handleToggleFavorite(
+		e: MouseEvent,
+		enc: EncounterSummaryDto,
+	) {
+		e.stopPropagation();
+		try {
+			const newStatus = !enc.isFavorite;
+			// Optimistic update
+			enc.isFavorite = newStatus;
+			await commands.toggleFavoriteEncounter(enc.id, newStatus);
+		} catch (e) {
+			console.error("Failed to toggle favorite", e);
+			// Revert on error
+			enc.isFavorite = !enc.isFavorite;
+		}
+	}
+
+	async function handleDeleteEncounter(
+		e: MouseEvent,
+		enc: EncounterSummaryDto,
+	) {
+		e.stopPropagation();
+		if (
+			!confirm(
+				"Are you sure you want to delete this encounter? This action cannot be undone.",
+			)
+		) {
+			return;
+		}
+		try {
+			await commands.deleteEncounter(enc.id);
+			// Remove from list
+			encounters = encounters.filter((e) => e.id !== enc.id);
+			totalCount--;
+		} catch (e) {
+			console.error("Failed to delete encounter", e);
+			alert("Failed to delete encounter: " + e);
+		}
+	}
 </script>
 
 <div class="">
@@ -270,9 +330,9 @@
 				<UnifiedSearch
 					id="unified-search"
 					bind:value={searchValue}
-					bind:searchType={searchType}
-					availableBossNames={availableBossNames}
-					availableEncounterNames={availableEncounterNames}
+					bind:searchType
+					{availableBossNames}
+					{availableEncounterNames}
 					onSelect={handleSearchSelect}
 					disabled={isLoadingBossNames}
 				/>
@@ -280,13 +340,23 @@
 
 			<!-- Class Filter Dropdown -->
 			<div class="relative">
-							<button
-								bind:this={classButtonRef}
-								onclick={() => showClassDropdown = !showClassDropdown}
-								class="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-popover hover:bg-muted/40 transition-colors text-sm text-muted-foreground hover:text-foreground"
-							>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+				<button
+					bind:this={classButtonRef}
+					onclick={() => (showClassDropdown = !showClassDropdown)}
+					class="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-popover hover:bg-muted/40 transition-colors text-sm text-muted-foreground hover:text-foreground"
+				>
+					<svg
+						class="w-4 h-4"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+						/>
 					</svg>
 					<span>Classes</span>
 				</button>
@@ -298,24 +368,42 @@
 					>
 						<div class="p-3 space-y-1">
 							{#each classOptions as option}
-												<button
-													onclick={() => toggleClassFilter(option.id, !selectedClassIds.includes(option.id))}
-													class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors {selectedClassIds.includes(option.id) ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'}"
-												>
+								<button
+									onclick={() =>
+										toggleClassFilter(
+											option.id,
+											!selectedClassIds.includes(
+												option.id,
+											),
+										)}
+									class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors {selectedClassIds.includes(
+										option.id,
+									)
+										? 'bg-primary/15 text-primary'
+										: 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'}"
+								>
 									<span>{option.name}</span>
 									{#if selectedClassIds.includes(option.id)}
-										<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-											<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+										<svg
+											class="w-4 h-4"
+											fill="currentColor"
+											viewBox="0 0 20 20"
+										>
+											<path
+												fill-rule="evenodd"
+												d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+												clip-rule="evenodd"
+											/>
 										</svg>
 									{/if}
 								</button>
 							{/each}
 
 							{#if selectedClassIds.length > 0}
-												<button
-													onclick={clearAllClassFilters}
-													class="w-full px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors text-left"
-												>
+								<button
+									onclick={clearAllClassFilters}
+									class="w-full px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors text-left"
+								>
 									Clear class filters
 								</button>
 							{/if}
@@ -324,13 +412,40 @@
 				{/if}
 			</div>
 
+			<!-- Favorites Toggle -->
+			<button
+				onclick={() => {
+					showFavoritesOnly = !showFavoritesOnly;
+					loadEncounters(0);
+				}}
+				class="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border transition-colors text-sm {showFavoritesOnly
+					? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500'
+					: 'bg-popover text-muted-foreground hover:bg-muted/40 hover:text-foreground'}"
+				title="Show only favorites"
+			>
+				<svg
+					class="w-4 h-4"
+					fill={showFavoritesOnly ? "currentColor" : "none"}
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+					/>
+				</svg>
+				<span>Favorites</span>
+			</button>
+
 			<!-- Clear All Filters Button -->
 			{#if hasActiveFilters}
-							<button
-								onclick={clearAllFilters}
-								class="px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-destructive transition-colors"
-								title="Clear all active filters"
-							>
+				<button
+					onclick={clearAllFilters}
+					class="px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-destructive transition-colors"
+					title="Clear all active filters"
+				>
 					Clear All
 				</button>
 			{/if}
@@ -339,13 +454,32 @@
 		<!-- Active Filters Chips -->
 		{#if hasActiveFilters}
 			<div class="flex flex-wrap items-center gap-1.5">
+				{#if showFavoritesOnly}
+					<span
+						class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/10 text-yellow-500 leading-tight border border-yellow-500/30"
+					>
+						<span>Favorites Only</span>
+						<button
+							onclick={() => {
+								showFavoritesOnly = false;
+								loadEncounters(0);
+							}}
+							class="hover:text-yellow-600 transition-colors"
+							aria-label="Remove favorites filter"
+						>
+							✕
+						</button>
+					</span>
+				{/if}
 				{#each selectedBosses as boss}
-								<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60">
-									<span class="text-muted-foreground/70">B:</span>
+					<span
+						class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60"
+					>
+						<span class="text-muted-foreground/70">B:</span>
 						{boss}
 						<button
 							onclick={() => removeBossFilter(boss)}
-							  class="text-muted-foreground/70 hover:text-destructive transition-colors"
+							class="text-muted-foreground/70 hover:text-destructive transition-colors"
 							aria-label={`Remove ${boss} filter`}
 						>
 							✕
@@ -353,12 +487,14 @@
 					</span>
 				{/each}
 				{#each selectedPlayerNames as player}
-								<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60">
-									<span class="text-muted-foreground/70">P:</span>
+					<span
+						class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60"
+					>
+						<span class="text-muted-foreground/70">P:</span>
 						{player}
 						<button
 							onclick={() => removePlayerNameFilter(player)}
-							  class="text-muted-foreground/70 hover:text-destructive transition-colors"
+							class="text-muted-foreground/70 hover:text-destructive transition-colors"
 							aria-label={`Remove ${player} filter`}
 						>
 							✕
@@ -366,12 +502,14 @@
 					</span>
 				{/each}
 				{#each selectedClassIds as classId}
-								<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60">
-									<span class="text-muted-foreground/70">C:</span>
+					<span
+						class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60"
+					>
+						<span class="text-muted-foreground/70">C:</span>
 						{CLASS_MAP[classId]}
 						<button
 							onclick={() => removeClassFilter(classId)}
-							  class="text-muted-foreground/70 hover:text-destructive transition-colors"
+							class="text-muted-foreground/70 hover:text-destructive transition-colors"
 							aria-label={`Remove ${CLASS_MAP[classId]} filter`}
 						>
 							✕
@@ -379,12 +517,14 @@
 					</span>
 				{/each}
 				{#each selectedEncounters as encounter}
-								<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60">
-									<span class="text-muted-foreground/70">E:</span>
+					<span
+						class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-popover text-muted-foreground leading-tight border border-border/60"
+					>
+						<span class="text-muted-foreground/70">E:</span>
 						{encounter}
 						<button
 							onclick={() => removeBossFilter(encounter)}
-							  class="text-muted-foreground/70 hover:text-destructive transition-colors"
+							class="text-muted-foreground/70 hover:text-destructive transition-colors"
 							aria-label={`Remove ${encounter} filter`}
 						>
 							✕
@@ -395,7 +535,9 @@
 		{/if}
 	</div>
 
-	<div class="overflow-x-auto rounded border border-border/60 bg-card/30 relative">
+	<div
+		class="overflow-x-auto rounded border border-border/60 bg-card/30 relative"
+	>
 		<div class="absolute top-2 right-3 z-10">
 			<button
 				onclick={() => loadEncounters(page)}
@@ -411,7 +553,12 @@
 					viewBox="0 0 24 24"
 					stroke="currentColor"
 				>
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+					/>
 				</svg>
 			</button>
 		</div>
@@ -419,11 +566,33 @@
 		<table class="w-full border-collapse" style="min-width: 740px;">
 			<thead>
 				<tr class="bg-popover/60">
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-10">ID</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-80">Encounter</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-[400px]">Players</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-12">Duration</th>
-					<th class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48">Date</th>
+					<th
+						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-10"
+						>Fav</th
+					>
+					<th
+						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-10"
+						>ID</th
+					>
+					<th
+						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-80"
+						>Encounter</th
+					>
+					<th
+						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-[400px]"
+						>Players</th
+					>
+					<th
+						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-12"
+						>Duration</th
+					>
+					<th
+						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-48"
+						>Date</th
+					>
+					<th
+						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-10"
+					></th>
 				</tr>
 			</thead>
 			<tbody class="bg-background/40">
@@ -431,60 +600,167 @@
 					<tr
 						class="border-t border-border/40 hover:bg-muted/60 transition-colors"
 					>
-						<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>{enc.id}</td>
-						<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>
+						<td
+							class="px-3 py-2 text-sm text-muted-foreground cursor-pointer"
+							onclick={() => onView(enc)}
+						>
+							<button
+								class="hover:text-yellow-400 transition-colors"
+								class:text-yellow-400={enc.isFavorite}
+								class:text-muted-foreground={!enc.isFavorite}
+								onclick={(e) => handleToggleFavorite(e, enc)}
+								title={enc.isFavorite
+									? "Unfavorite"
+									: "Favorite"}
+							>
+								<svg
+									class="w-5 h-5"
+									fill={enc.isFavorite
+										? "currentColor"
+										: "none"}
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+									/>
+								</svg>
+							</button>
+						</td>
+						<td
+							class="px-3 py-2 text-sm text-muted-foreground cursor-pointer"
+							onclick={() => onView(enc)}>{enc.id}</td
+						>
+						<td
+							class="px-3 py-2 text-sm text-muted-foreground cursor-pointer"
+							onclick={() => onView(enc)}
+						>
 							<div class="space-y-1">
 								<div>
 									{#if enc.sceneName}
-										<span class="text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">{enc.sceneName}</span>
+										<span
+											class="text-xs bg-muted px-1.5 py-0.5 rounded text-foreground"
+											>{enc.sceneName}</span
+										>
 									{:else}
-										<span class="text-muted-foreground text-xs opacity-70">No scene</span>
+										<span
+											class="text-muted-foreground text-xs opacity-70"
+											>No scene</span
+										>
 									{/if}
 								</div>
 								<div>
 									{#if enc.bosses.length > 0}
 										<div class="flex flex-wrap gap-1">
-											<span class="text-xs py-0.5 rounded px-1.5">{enc.bosses[0]?.monsterName}</span>
+											<span
+												class="text-xs py-0.5 rounded px-1.5"
+												>{enc.bosses[0]
+													?.monsterName}</span
+											>
 										</div>
 									{:else}
-										<span class="inline-block text-muted-foreground text-xs opacity-70 py-0.5 px-1.5">No boss</span>
+										<span
+											class="inline-block text-muted-foreground text-xs opacity-70 py-0.5 px-1.5"
+											>No boss</span
+										>
 									{/if}
 								</div>
 							</div>
 						</td>
-							<td class="px-3 py-2 text-sm text-muted-foreground max-w-[400px] cursor-pointer" onclick={() => onView(enc)}>
-								{#if enc.players.length > 0}
-									{@const sortedPlayers = [...enc.players].sort((a, b) => {
-										const aHasClass = a.classId !== null && a.classId !== undefined && a.classId !== 0;
-										const bHasClass = b.classId !== null && b.classId !== undefined && b.classId !== 0;
+						<td
+							class="px-3 py-2 text-sm text-muted-foreground max-w-[400px] cursor-pointer"
+							onclick={() => onView(enc)}
+						>
+							{#if enc.players.length > 0}
+								{@const sortedPlayers = [...enc.players].sort(
+									(a, b) => {
+										const aHasClass =
+											a.classId !== null &&
+											a.classId !== undefined &&
+											a.classId !== 0;
+										const bHasClass =
+											b.classId !== null &&
+											b.classId !== undefined &&
+											b.classId !== 0;
 										if (aHasClass && !bHasClass) return -1;
 										if (!aHasClass && bHasClass) return 1;
 										return 0;
-									})}
-									<div class="flex gap-1 items-center">
-										{#each sortedPlayers.slice(0, 8) as player}
-											<img
-												class="size-7 object-contain flex-shrink-0"
-												src={getClassIcon(getClassName(player.classId))}
-												alt="Class icon"
-												{@attach tooltip(() => player.isLocalPlayer ? `${player.name} (You)` : player.name)}
-											/>
-										{/each}
-										{#if enc.players.length > 8}
-											<span class="text-xs text-muted-foreground ml-1">+{enc.players.length - 8} more</span>
-										{/if}
-									</div>
-								{:else}
-									<span class="text-muted-foreground text-xs opacity-70">No players</span>
-								{/if}
-							</td>
-							<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>{fmtDuration(enc.startedAtMs, enc.endedAtMs)}</td>
-							<td class="px-3 py-2 text-sm text-muted-foreground cursor-pointer" onclick={() => onView(enc)}>
-								<div class="leading-snug">
-									<div>{fmtDate(enc.startedAtMs)}</div>
-									<div class="text-xs text-muted-foreground opacity-70">{fmtTime(enc.startedAtMs)}</div>
+									},
+								)}
+								<div class="flex gap-1 items-center">
+									{#each sortedPlayers.slice(0, 8) as player}
+										<img
+											class="size-7 object-contain flex-shrink-0"
+											src={getClassIcon(
+												getClassName(player.classId),
+											)}
+											alt="Class icon"
+											{@attach tooltip(() =>
+												player.isLocalPlayer
+													? `${player.name} (You)`
+													: player.name,
+											)}
+										/>
+									{/each}
+									{#if enc.players.length > 8}
+										<span
+											class="text-xs text-muted-foreground ml-1"
+											>+{enc.players.length - 8} more</span
+										>
+									{/if}
 								</div>
-							</td>
+							{:else}
+								<span
+									class="text-muted-foreground text-xs opacity-70"
+									>No players</span
+								>
+							{/if}
+						</td>
+						<td
+							class="px-3 py-2 text-sm text-muted-foreground cursor-pointer"
+							onclick={() => onView(enc)}
+							>{fmtDuration(enc.startedAtMs, enc.endedAtMs)}</td
+						>
+						<td
+							class="px-3 py-2 text-sm text-muted-foreground cursor-pointer"
+							onclick={() => onView(enc)}
+						>
+							<div class="leading-snug">
+								<div>{fmtDate(enc.startedAtMs)}</div>
+								<div
+									class="text-xs text-muted-foreground opacity-70"
+								>
+									{fmtTime(enc.startedAtMs)}
+								</div>
+							</div>
+						</td>
+						<td
+							class="px-3 py-2 text-sm text-muted-foreground cursor-pointer text-right"
+							onclick={() => onView(enc)}
+						>
+							<button
+								class="text-muted-foreground hover:text-red-500 transition-colors p-1"
+								onclick={(e) => handleDeleteEncounter(e, enc)}
+								title="Delete Encounter"
+							>
+								<svg
+									class="w-4 h-4"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+									/>
+								</svg>
+							</button>
+						</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -495,56 +771,106 @@
 	<div class="flex items-center justify-between mt-4 gap-4">
 		<div class="flex items-center gap-3 text-sm text-muted-foreground">
 			<span>Rows per page:</span>
-					<input
-						type="number"
-						bind:value={pageSize}
-						min="5"
-						max="100"
-						class="w-16 px-2 py-1 bg-popover border border-border rounded text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-						onchange={() => loadEncounters(0)}
-					/>
-			<span>Showing {page * pageSize + 1} - {Math.min((page + 1) * pageSize, totalCount)} of {totalCount}</span>
+			<input
+				type="number"
+				bind:value={pageSize}
+				min="5"
+				max="100"
+				class="w-16 px-2 py-1 bg-popover border border-border rounded text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+				onchange={() => loadEncounters(0)}
+			/>
+			<span
+				>Showing {page * pageSize + 1} - {Math.min(
+					(page + 1) * pageSize,
+					totalCount,
+				)} of {totalCount}</span
+			>
 		</div>
 
 		<div class="flex items-center gap-1 ml-auto">
-					<button
-						onclick={() => loadEncounters(0)}
-						disabled={page === 0}
-						class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+			<button
+				onclick={() => loadEncounters(0)}
+				disabled={page === 0}
+				class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 				aria-label="First page"
 			>
-				<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+				<svg
+					class="w-5 h-5"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+					/>
 				</svg>
 			</button>
-					<button
-						onclick={() => loadEncounters(page - 1)}
-						disabled={page === 0}
-						class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+			<button
+				onclick={() => loadEncounters(page - 1)}
+				disabled={page === 0}
+				class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 				aria-label="Previous page"
 			>
-				<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+				<svg
+					class="w-5 h-5"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M15 19l-7-7 7-7"
+					/>
 				</svg>
 			</button>
-					<button
-						onclick={() => loadEncounters(page + 1)}
-						disabled={(page + 1) * pageSize >= totalCount}
-						class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+			<button
+				onclick={() => loadEncounters(page + 1)}
+				disabled={(page + 1) * pageSize >= totalCount}
+				class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 				aria-label="Next page"
 			>
-				<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+				<svg
+					class="w-5 h-5"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M9 5l7 7-7 7"
+					/>
 				</svg>
 			</button>
-					<button
-						onclick={() => loadEncounters(Math.floor((totalCount - 1) / pageSize))}
-						disabled={(page + 1) * pageSize >= totalCount}
-						class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+			<button
+				onclick={() =>
+					loadEncounters(Math.floor((totalCount - 1) / pageSize))}
+				disabled={(page + 1) * pageSize >= totalCount}
+				class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
 				aria-label="Last page"
 			>
-				<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+				<svg
+					class="w-5 h-5"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M13 5l7 7-7 7M5 5l7 7-7 7"
+					/>
 				</svg>
 			</button>
 		</div>

@@ -33,8 +33,10 @@ pub struct EncounterSummaryDto {
     pub players: Vec<PlayerInfoDto>,
     /// A list of actor encounter stats.
     pub actors: Vec<ActorEncounterStatDto>,
-    /// The encounter ID on the remote website/server (if uploaded).
+    /// The encounter ID on the remote website/server after successful upload.
     pub remote_encounter_id: Option<i64>,
+    /// Whether the encounter is favorited.
+    pub is_favorite: bool,
 }
 
 /// A DTO representing an attempt (phase) within an encounter.
@@ -87,6 +89,8 @@ pub struct EncounterFiltersDto {
     pub date_from_ms: Option<i64>,
     /// The end date to filter by in milliseconds since the Unix epoch.
     pub date_to_ms: Option<i64>,
+    /// Whether to filter by favorite encounters.
+    pub is_favorite: Option<bool>,
 }
 
 /// The result of a query for boss names.
@@ -147,6 +151,8 @@ pub struct EncounterWithDetailsDto {
     pub bosses: Vec<BossSummaryDto>,
     /// A list of players in the encounter.
     pub players: Vec<PlayerInfoDto>,
+    /// Whether the encounter is favorited.
+    pub is_favorite: bool,
 }
 
 /// Information about a player.
@@ -538,6 +544,13 @@ pub fn get_recent_encounters_filtered(
     let mut encounter_id_filters: Option<HashSet<i32>> = None;
 
     if let Some(ref filter) = filters {
+        if let Some(is_fav) = filter.is_favorite {
+            if is_fav {
+                encounter_query = encounter_query.filter(e::is_favorite.eq(1));
+                count_query = count_query.filter(e::is_favorite.eq(1));
+            }
+        }
+
         if let Some(ref boss_names) = filter.boss_names {
             if !boss_names.is_empty() {
                 let boss_ids: HashSet<i32> = eb::encounter_bosses
@@ -673,6 +686,7 @@ pub fn get_recent_encounters_filtered(
         Option<String>,
         f64,
         Option<i64>,
+        i32,
     )> = encounter_query
         .order(e::started_at_ms.desc())
         .select((
@@ -685,6 +699,7 @@ pub fn get_recent_encounters_filtered(
             e::scene_name,
             e::duration,
             e::remote_encounter_id,
+            e::is_favorite,
         ))
         .limit(limit as i64)
         .offset(offset as i64)
@@ -700,7 +715,7 @@ pub fn get_recent_encounters_filtered(
     // Collect boss and player data for each encounter
     let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
 
-    for (id, started, ended, td, th, scene_id, scene_name, duration, remote_id) in rows {
+    for (id, started, ended, td, th, scene_id, scene_name, duration, remote_id, is_fav) in rows {
         // Get unique boss entries (name + max_hp) from the materialized encounter_bosses
         let boss_rows: Vec<(String, Option<i64>, i32)> = eb::encounter_bosses
             .filter(eb::encounter_id.eq(id))
@@ -752,6 +767,7 @@ pub fn get_recent_encounters_filtered(
             players: player_data,
             actors: Vec::new(),
             remote_encounter_id: remote_id,
+            is_favorite: is_fav != 0,
         });
     }
 
@@ -786,6 +802,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
         Option<String>,
         f64,
         Option<i64>,
+        i32,
     )> = e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .order(e::started_at_ms.desc())
@@ -799,6 +816,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             e::scene_name,
             e::duration,
             e::remote_encounter_id,
+            e::is_favorite,
         ))
         .limit(limit as i64)
         .offset(offset as i64)
@@ -814,7 +832,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
     // Collect boss and player data for each encounter
     let mut mapped: Vec<EncounterSummaryDto> = Vec::new();
 
-    for (id, started, ended, td, th, scene_id, scene_name, duration, remote_id) in rows {
+    for (id, started, ended, td, th, scene_id, scene_name, duration, remote_id, is_fav) in rows {
         use sch::actor_encounter_stats::dsl as s;
         use sch::encounter_bosses::dsl as eb;
         use std::collections::HashSet;
@@ -870,6 +888,7 @@ pub fn get_recent_encounters(limit: i32, offset: i32) -> Result<RecentEncounters
             players: player_data,
             actors: Vec::new(),
             remote_encounter_id: remote_id,
+            is_favorite: is_fav != 0,
         });
     }
 
@@ -1002,6 +1021,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         Option<String>,
         f64,
         Option<i64>,
+        i32,
     ) = e::encounters
         .filter(e::id.eq(encounter_id))
         .select((
@@ -1014,6 +1034,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
             e::scene_name,
             e::duration,
             e::remote_encounter_id,
+            e::is_favorite,
         ))
         .first(&mut conn)
         .map_err(|er| er.to_string())?;
@@ -1063,6 +1084,7 @@ pub fn get_encounter_by_id(encounter_id: i32) -> Result<EncounterSummaryDto, Str
         players,
         actors,
         remote_encounter_id: row.8,
+        is_favorite: row.9 != 0,
     })
 }
 
@@ -1719,6 +1741,7 @@ pub fn get_recent_encounters_with_details(
         Option<i64>,
         Option<i32>,
         Option<String>,
+        i32,
     )> = e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .order(e::started_at_ms.desc())
@@ -1730,6 +1753,7 @@ pub fn get_recent_encounters_with_details(
             e::total_heal,
             e::scene_id,
             e::scene_name,
+            e::is_favorite,
         ))
         .limit(limit as i64)
         .offset(offset as i64)
@@ -1738,7 +1762,7 @@ pub fn get_recent_encounters_with_details(
 
     let mut results = Vec::new();
 
-    for (id, started_at_ms, ended_at_ms, total_dmg, total_heal, scene_id, scene_name) in
+    for (id, started_at_ms, ended_at_ms, total_dmg, total_heal, scene_id, scene_name, is_fav) in
         encounter_rows
     {
         // Get unique boss entries (name + max_hp + defeated) from the materialized encounter_bosses
@@ -1789,6 +1813,7 @@ pub fn get_recent_encounters_with_details(
             scene_name,
             bosses: boss_entries,
             players: player_data,
+            is_favorite: is_fav != 0,
         });
     }
 
@@ -2114,4 +2139,46 @@ pub fn get_encounter_segments(encounter_id: i32) -> Result<Vec<m::DungeonSegment
         .map_err(|e| e.to_string())?;
 
     Ok(segments)
+}
+
+/// Deletes multiple encounters by ID.
+///
+/// # Arguments
+///
+/// * `ids` - The IDs of the encounters to delete.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
+#[tauri::command]
+#[specta::specta]
+pub fn delete_encounters(ids: Vec<i32>) -> Result<(), String> {
+    let mut conn = get_conn()?;
+    use sch::encounters::dsl as e;
+    diesel::delete(e::encounters.filter(e::id.eq_any(ids)))
+        .execute(&mut conn)
+        .map_err(|er| er.to_string())?;
+    Ok(())
+}
+
+/// Toggles the favorite status of an encounter.
+///
+/// # Arguments
+///
+/// * `id` - The ID of the encounter.
+/// * `is_favorite` - The new favorite status.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result indicating success or failure.
+#[tauri::command]
+#[specta::specta]
+pub fn toggle_favorite_encounter(id: i32, is_favorite: bool) -> Result<(), String> {
+    let mut conn = get_conn()?;
+    use sch::encounters::dsl as e;
+    diesel::update(e::encounters.filter(e::id.eq(id)))
+        .set(e::is_favorite.eq(if is_favorite { 1 } else { 0 }))
+        .execute(&mut conn)
+        .map_err(|er| er.to_string())?;
+    Ok(())
 }
