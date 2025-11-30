@@ -378,6 +378,45 @@ async deleteEncounter(encounterId: number) : Promise<Result<null, string>> {
 }
 },
 /**
+ * Deletes multiple encounters by ID.
+ * 
+ * # Arguments
+ * 
+ * * `ids` - The IDs of the encounters to delete.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result indicating success or failure.
+ */
+async deleteEncounters(ids: number[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_encounters", { ids }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Toggles the favorite status of an encounter.
+ * 
+ * # Arguments
+ * 
+ * * `id` - The ID of the encounter.
+ * * `is_favorite` - The new favorite status.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result indicating success or failure.
+ */
+async toggleFavoriteEncounter(id: number, isFavorite: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_favorite_encounter", { id, isFavorite }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * A Tauri command to get a list of recent players.
  * 
  * # Arguments
@@ -441,6 +480,25 @@ async syncPlayerData(apiKey: string, baseUrl: string | null) : Promise<Result<nu
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async savePacketCaptureSettings(method: string, npcapDevice: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_packet_capture_settings", { method, npcapDevice }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getNetworkDevices() : Promise<Result<Device[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_network_devices") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async checkNpcapStatus() : Promise<boolean> {
+    return await TAURI_INVOKE("check_npcap_status");
 }
 }
 
@@ -615,6 +673,7 @@ export type CombatState = "idle" | "inCombat"
  * Discrete damage occurrence stored on a segment.
  */
 export type DamageEvent = { timestampMs: number; attackerId: number; targetId: number; targetName: string | null; targetMonsterTypeId: number | null; amount: number; isBossTarget: boolean; isKillingBlow: boolean }
+export type Device = { name: string; description: string | null }
 /**
  * Master container for dungeon segments within a scene.
  */
@@ -694,7 +753,11 @@ dateFromMs: number | null;
 /**
  * The end date to filter by in milliseconds since the Unix epoch.
  */
-dateToMs: number | null }
+dateToMs: number | null; 
+/**
+ * Whether to filter by favorite encounters.
+ */
+isFavorite: boolean | null }
 /**
  * A summary of an encounter.
  */
@@ -744,9 +807,13 @@ players: PlayerInfoDto[];
  */
 actors: ActorEncounterStatDto[]; 
 /**
- * The encounter ID on the remote website/server (if uploaded).
+ * The encounter ID on the remote website/server after successful upload.
  */
-remoteEncounterId: number | null }
+remoteEncounterId: number | null; 
+/**
+ * Whether the encounter is favorited.
+ */
+isFavorite: boolean }
 /**
  * Information about a player.
  */

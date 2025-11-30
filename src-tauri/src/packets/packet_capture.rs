@@ -1,4 +1,5 @@
 use crate::packets;
+use crate::packets::npcap::NpcapCapture;
 use crate::packets::opcodes::Pkt;
 use crate::packets::packet_process::process_packet;
 use crate::packets::reassembler::Reassembler;
@@ -8,8 +9,10 @@ use etherparse::SlicedPacket;
 use etherparse::TransportSlice::Tcp;
 use log::{debug, error, info, warn};
 use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 use tokio::sync::watch;
 use windivert::WinDivert;
+use windivert::prelude::NetworkLayer;
 use windivert::prelude::WinDivertFlags;
 
 // Global sender for restart signal
@@ -17,7 +20,119 @@ static RESTART_SENDER: OnceCell<watch::Sender<bool>> = OnceCell::new();
 
 const MAX_BACKTRACK_BYTES: u32 = 2 * 1024 * 1024; // 2 MiB safety window before considering a reset
 
-pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
+// Common libpcap datalink constants we care about.
+const DLT_NULL: i32 = 0;
+const DLT_EN10MB: i32 = 1;
+const DLT_RAW: i32 = 12;
+const DLT_LOOP: i32 = 108;
+
+#[derive(Clone, Debug)]
+pub enum CaptureMethod {
+    WinDivert,
+    Npcap(String),
+}
+
+trait PacketSource: Send {
+    fn next_packet(&mut self) -> Result<Option<Vec<u8>>, String>;
+}
+
+struct WinDivertSource {
+    handle: WinDivert<NetworkLayer>,
+    buffer: Vec<u8>,
+}
+
+impl WinDivertSource {
+    fn new() -> Result<Self, String> {
+        let handle = WinDivert::network(
+            "!loopback && ip && tcp",
+            0,
+            WinDivertFlags::new().set_sniff(),
+        )
+        .map_err(|e| format!("Failed to initialize WinDivert: {}", e))?;
+
+        info!("WinDivert handle opened!");
+
+        Ok(Self {
+            handle,
+            buffer: vec![0u8; 10 * 1024 * 1024],
+        })
+    }
+}
+
+impl PacketSource for WinDivertSource {
+    fn next_packet(&mut self) -> Result<Option<Vec<u8>>, String> {
+        self.handle
+            .recv(Some(&mut self.buffer))
+            .map(|packet| Some(packet.data.to_vec()))
+            .map_err(|e| e.to_string())
+    }
+}
+
+struct NpcapSource {
+    capture: NpcapCapture,
+}
+
+impl NpcapSource {
+    fn new(device: &str) -> Result<Self, String> {
+        let capture = NpcapCapture::new(device)?;
+        info!("Npcap handle opened for device: {}", device);
+        Ok(Self { capture })
+    }
+
+    fn strip_l2(&self, data: &[u8]) -> Option<Vec<u8>> {
+        match self.capture.datalink() {
+            DLT_EN10MB => {
+                if data.len() > 14 && data[12] == 0x08 && data[13] == 0x00 {
+                    Some(data[14..].to_vec())
+                } else {
+                    None
+                }
+            }
+            DLT_RAW => Some(data.to_vec()),
+            DLT_NULL | DLT_LOOP => {
+                if data.len() <= 4 {
+                    return None;
+                }
+                let family = u32::from_ne_bytes([data[0], data[1], data[2], data[3]]);
+                match family {
+                    2 => Some(data[4..].to_vec()), // AF_INET on Windows
+                    23 | 24 => None,               // IPv6 families, ignored for now
+                    other => {
+                        static LOGGED_FAMILY: OnceLock<u32> = OnceLock::new();
+                        if LOGGED_FAMILY.set(other).is_ok() {
+                            warn!(
+                                "Unsupported DLT_NULL/LOOP family {} (datalink {}), dropping packets",
+                                other,
+                                self.capture.datalink()
+                            );
+                        }
+                        None
+                    }
+                }
+            }
+            other => {
+                static LOGGED_DLT: OnceLock<i32> = OnceLock::new();
+                if LOGGED_DLT.set(other).is_ok() {
+                    warn!("Unsupported Npcap datalink type {}, dropping packets", other);
+                }
+                None
+            }
+        }
+    }
+}
+
+impl PacketSource for NpcapSource {
+    fn next_packet(&mut self) -> Result<Option<Vec<u8>>, String> {
+        match self.capture.next_packet()? {
+            Some(data) => Ok(self.strip_l2(&data)),
+            None => Ok(None),
+        }
+    }
+}
+
+pub fn start_capture(
+    method: CaptureMethod,
+) -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
     // Use a larger bounded channel to prevent producer backpressure from stalling
     // headroom for bursts without risking unbounded memory growth.
     let (packet_sender, packet_receiver) =
@@ -25,10 +140,15 @@ pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Ve
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
 
+    match &method {
+        CaptureMethod::WinDivert => info!("Starting packet capture with WinDivert"),
+        CaptureMethod::Npcap(dev) => info!("Starting packet capture with Npcap on device '{}'", dev),
+    }
+
     // Use std::thread::spawn to avoid blocking the async runtime with WinDivert recv
     std::thread::spawn(move || {
         loop {
-            read_packets(&packet_sender, &mut restart_receiver);
+            read_packets(&packet_sender, &mut restart_receiver, method.clone());
             // Wait for restart signal
             while !*restart_receiver.borrow() {
                 std::thread::sleep(std::time::Duration::from_millis(100));
@@ -42,33 +162,44 @@ pub fn start_capture() -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Ve
 }
 
 #[allow(clippy::too_many_lines)]
-#[allow(clippy::too_many_lines)]
 fn read_packets(
     packet_sender: &tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
     restart_receiver: &mut watch::Receiver<bool>,
+    method: CaptureMethod,
 ) {
-    let windivert = match WinDivert::network(
-        "!loopback && ip && tcp", // todo: idk why but filtering by port just crashes the program, investigate?
-        0,
-        WinDivertFlags::new().set_sniff(),
-    ) {
-        Ok(windivert_handle) => {
-            info!("WinDivert handle opened!");
-            Some(windivert_handle)
-        }
-        Err(e) => {
-            error!("Failed to initialize WinDivert: {}", e);
-            return;
-        }
-    }
-    .expect("Failed to initialize WinDivert"); // if windivert doesn't work just exit early - todo: maybe we want to log this with a match so its clearer?
-    let mut windivert_buffer = vec![0u8; 10 * 1024 * 1024];
+    let mut source: Box<dyn PacketSource> = match method {
+        CaptureMethod::WinDivert => match WinDivertSource::new() {
+            Ok(s) => Box::new(s),
+            Err(e) => {
+                error!("{}", e);
+                return;
+            }
+        },
+        CaptureMethod::Npcap(device) => match NpcapSource::new(&device) {
+            Ok(s) => Box::new(s),
+            Err(e) => {
+                error!("Failed to initialize Npcap: {}", e);
+                return;
+            }
+        },
+    };
+
     let mut known_server: Option<Server> = None; // nothing at start
     let mut tcp_reassembler: TCPReassembler = TCPReassembler::new();
     let mut reassembler = Reassembler::new();
-    while let Ok(packet) = windivert.recv(Some(&mut windivert_buffer)) {
+
+    loop {
+        let packet_data = match source.next_packet() {
+            Ok(Some(data)) => data,
+            Ok(None) => continue, // Timeout or ignored packet
+            Err(e) => {
+                error!("Packet capture error: {}", e);
+                break; // Exit loop on error? Or retry?
+            }
+        };
+
         // info!("{}", line!());
-        let Ok(network_slices) = SlicedPacket::from_ip(packet.data.as_ref()) else {
+        let Ok(network_slices) = SlicedPacket::from_ip(&packet_data) else {
             continue; // if it's not ip, go next packet
         };
         // info!("{}", line!());

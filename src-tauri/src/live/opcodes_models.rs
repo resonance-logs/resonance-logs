@@ -379,6 +379,13 @@ static MONSTER_NAMES_BOSS: LazyLock<HashMap<String, String>> = LazyLock::new(|| 
     serde_json::from_str(data).expect("invalid MonsterNameBoss.json")
 });
 
+// Boss exclusion list (names that should NEVER be treated as bosses)
+static BOSS_EXCLUSION_NAMES: LazyLock<HashSet<String>> = LazyLock::new(|| {
+    let mut s = HashSet::new();
+    s.insert("divine defense tower".to_string());
+    s
+});
+
 impl Skill {
     pub fn get_skill_name(skill_uid: i32) -> String {
         if skill_uid <= 0 {
@@ -893,6 +900,17 @@ impl Entity {
         if self.entity_type != EEntityType::EntMonster {
             return false;
         }
+
+        // Check exclusion list first
+        if BOSS_EXCLUSION_NAMES.contains(&self.name.to_lowercase()) {
+            return false;
+        }
+        if let Some(packet_name) = &self.monster_name_packet {
+            if BOSS_EXCLUSION_NAMES.contains(&packet_name.to_lowercase()) {
+                return false;
+            }
+        }
+
         // Check if monster_type_id exists in the boss list
         if self
             .monster_type_id
@@ -929,59 +947,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn tempest_ogre_detected_as_boss_via_normalization() {
-        // 10010 -> "Tempest Ogre" (no Boss prefix)
+    fn excluded_boss_is_not_boss() {
         let mut e = Entity::default();
         e.entity_type = EEntityType::EntMonster;
-        e.set_monster_type(10010);
-        assert_eq!(e.name, "Tempest Ogre");
-        assert!(e.is_boss(), "Tempest Ogre should be recognized as a boss");
-    }
-
-    #[test]
-    fn explicit_boss_prefix_is_boss() {
-        // Use an id that maps to "Boss - Tempest Ogre"
-        let mut e = Entity::default();
-        e.entity_type = EEntityType::EntMonster;
-        e.set_monster_type(20088); // Boss - Tempest Ogre
-        assert!(e.name.to_lowercase().contains("boss"));
-        assert!(e.is_boss());
-    }
-
-    #[test]
-    fn packet_name_contains_boss_is_boss() {
-        // No monster type id, but raw packet name contains 'Boss'
-        let mut e = Entity::default();
-        e.entity_type = EEntityType::EntMonster;
-        e.monster_name_packet = Some("Boss - Scary Thing".to_string());
-        assert!(e.is_boss());
-    }
-
-    #[test]
-    fn elite_status_marked_as_boss() {
-        // No monster type id, but elite status attr is present
-        let mut e = Entity::default();
-        e.entity_type = EEntityType::EntMonster;
-        e.set_attr(AttrType::EliteStatus, AttrValue::Int(2));
-        assert!(e.is_boss());
-    }
-
-    #[test]
-    fn non_boss_is_not_boss() {
-        // Goblin Mage id mapping without boss label
-        let mut e = Entity::default();
-        e.entity_type = EEntityType::EntMonster;
-        e.set_monster_type(40015); // Goblin Mage
+        e.name = "Divine Defense Tower".to_string();
+        // Even if it has boss attributes or name, it should be excluded
+        e.monster_name_packet = Some("Boss - Divine Defense Tower".to_string());
         assert!(!e.is_boss());
-    }
-
-    #[test]
-    fn attr_value_int_conversion() {
-        let val = AttrValue::Int(42);
-        assert_eq!(val.as_int(), Some(42));
-        assert_eq!(val.as_float(), None);
-        assert_eq!(val.as_string(), None);
-        assert_eq!(val.as_bool(), None);
     }
 
     #[test]

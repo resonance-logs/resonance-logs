@@ -143,6 +143,8 @@ pub struct EncounterRow {
     pub uploaded_at_ms: Option<i64>,
     /// The encounter ID on the remote website/server after successful upload.
     pub remote_encounter_id: Option<i64>,
+    /// Whether the encounter is favorited.
+    pub is_favorite: i32,
 }
 
 /// Represents a new encounter to be inserted into the `encounters` table.
