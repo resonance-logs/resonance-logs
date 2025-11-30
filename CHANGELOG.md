@@ -5,6 +5,7 @@
 - Added support for Npcap packet capture
 - Added log favoriting
 - Added ability to delete logs
+- Added wipe detection setting
 
 ## How to use Npcap
 - Open the settings tab
