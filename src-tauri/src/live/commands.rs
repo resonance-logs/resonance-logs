@@ -440,14 +440,13 @@ pub async fn reset_player_metrics(
             // Reset combat state (player metrics)
             // Grab current active segment name (if any) so it can be included in the
             // emitted event payload for frontend to display a toast text notification.
-            let active_segment_name = dungeon_log::snapshot(&state.dungeon_log)
-                .and_then(|log| {
-                    log.segments
-                        .iter()
-                        .rev()
-                        .find(|s| s.ended_at_ms.is_none())
-                        .and_then(|s| s.boss_name.clone())
-                });
+            let active_segment_name = dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
+                log.segments
+                    .iter()
+                    .rev()
+                    .find(|s| s.ended_at_ms.is_none())
+                    .and_then(|s| s.boss_name.clone())
+            });
             state.encounter.reset_combat_state();
             state.skill_subscriptions.clear();
 
@@ -455,10 +454,12 @@ pub async fn reset_player_metrics(
             state.encounter.time_fight_start_ms = original_fight_start_ms;
 
             // Emit reset event to clear frontend stores
-                if state.event_manager.should_emit_events() {
+            if state.event_manager.should_emit_events() {
                 // Emit a player-metrics-only reset event for the current segment.
                 // resets with full encounter resets (e.g., server change/Scene change).
-                state.event_manager.emit_player_metrics_reset(active_segment_name);
+                state
+                    .event_manager
+                    .emit_player_metrics_reset(active_segment_name);
 
                 // Emit an encounter update with cleared player data but preserve encounter context
                 let cleared_header = HeaderInfo {
@@ -480,5 +481,30 @@ pub async fn reset_player_metrics(
         .await;
 
     info!("Player metrics reset for segment transition");
+    Ok(())
+}
+
+/// Sets whether wipe detection is enabled.
+///
+/// # Arguments
+///
+/// * `enabled` - Whether to enable wipe detection.
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_wipe_detection_enabled(
+    enabled: bool,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    state_manager
+        .with_state_mut(|state| {
+            state.attempt_config.enable_wipe_detection = enabled;
+        })
+        .await;
+    info!("Wipe detection enabled: {}", enabled);
     Ok(())
 }

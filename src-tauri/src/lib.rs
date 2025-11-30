@@ -52,6 +52,7 @@ pub fn run() {
             live::commands::unsubscribe_player_skills,
             live::commands::set_boss_only_dps,
             live::commands::set_dungeon_segments_enabled,
+            live::commands::set_wipe_detection_enabled,
             live::commands::get_dungeon_log,
             database::commands::get_recent_encounters,
             database::commands::get_unique_scene_names,

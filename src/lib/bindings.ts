@@ -178,6 +178,26 @@ async setDungeonSegmentsEnabled(enabled: boolean) : Promise<Result<null, string>
 }
 },
 /**
+ * Sets whether wipe detection is enabled.
+ * 
+ * # Arguments
+ * 
+ * * `enabled` - Whether to enable wipe detection.
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result.
+ */
+async setWipeDetectionEnabled(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_wipe_detection_enabled", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Returns the current dungeon log snapshot for the frontend.
  */
 async getDungeonLog() : Promise<Result<DungeonLog, string>> {

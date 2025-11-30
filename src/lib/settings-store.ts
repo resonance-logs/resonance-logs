@@ -71,6 +71,7 @@ const DEFAULT_GENERAL_SETTINGS = {
   shortenTps: true,
   bossOnlyDps: false,
   dungeonSegmentsEnabled: true,
+  wipeDetection: true,
   useDummyData: false,
 };
 

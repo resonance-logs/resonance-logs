@@ -367,6 +367,7 @@ pub fn process_sync_to_me_delta_info(
     encounter: &mut Encounter,
     sync_to_me_delta_info: blueprotobuf::SyncToMeDeltaInfo,
     dungeon_runtime: Option<&DungeonLogRuntime>,
+    config: &AttemptConfig,
 ) -> Option<()> {
     let delta_info = match sync_to_me_delta_info.delta_info {
         Some(info) => info,
@@ -381,7 +382,7 @@ pub fn process_sync_to_me_delta_info(
     }
 
     if let Some(base_delta) = delta_info.base_delta {
-        process_aoi_sync_delta(encounter, base_delta, dungeon_runtime);
+        process_aoi_sync_delta(encounter, base_delta, dungeon_runtime, config);
     }
 
     Some(())
@@ -391,6 +392,7 @@ pub fn process_aoi_sync_delta(
     encounter: &mut Encounter,
     aoi_sync_delta: blueprotobuf::AoiSyncDelta,
     dungeon_runtime: Option<&DungeonLogRuntime>,
+    config: &AttemptConfig,
 ) -> Option<()> {
     let target_uuid = aoi_sync_delta.uuid?; // UUID =/= uid (have to >> 16)
     let target_uid = target_uuid >> 16;
@@ -873,8 +875,7 @@ pub fn process_aoi_sync_delta(
         .as_millis();
 
     // Check for wipe condition after recording deaths
-    let config = AttemptConfig::default();
-    if check_wipe_condition(encounter, &config) {
+    if check_wipe_condition(encounter, config) {
         let boss_hp = encounter
             .entity_uid_to_entity
             .values()
@@ -897,7 +898,7 @@ pub fn process_aoi_sync_delta(
         }
 
         // Check for HP rollback
-        if check_hp_rollback_condition(encounter, Some(boss_hp_pct), &config) {
+        if check_hp_rollback_condition(encounter, Some(boss_hp_pct), config) {
             let boss_hp = encounter
                 .entity_uid_to_entity
                 .values()

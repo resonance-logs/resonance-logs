@@ -1,4 +1,5 @@
 use crate::database::{DbTask, enqueue, now_ms};
+use crate::live::attempt_detector::AttemptConfig;
 use crate::live::dungeon_log::{self, DungeonLogRuntime, SegmentType, SharedDungeonLog};
 use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
@@ -97,6 +98,8 @@ pub struct AppState {
     pub dungeon_log: SharedDungeonLog,
     /// Feature flag for dungeon segment tracking.
     pub dungeon_segments_enabled: bool,
+    /// Configuration for attempt detection.
+    pub attempt_config: AttemptConfig,
 }
 
 impl AppState {
@@ -116,6 +119,7 @@ impl AppState {
             initial_scene_change_handled: false,
             dungeon_log: dungeon_log::create_shared_log(),
             dungeon_segments_enabled: true,
+            attempt_config: AttemptConfig::default(),
         }
     }
 
@@ -766,6 +770,7 @@ impl AppStateManager {
             &mut state.encounter,
             sync_to_me_delta_info,
             dungeon_ctx.as_ref(),
+            &state.attempt_config,
         );
     }
 
@@ -778,8 +783,12 @@ impl AppStateManager {
         let dungeon_ctx = dungeon_runtime_if_enabled(state);
         for aoi_sync_delta in sync_near_delta_info.delta_infos {
             // Missing fields are normal, no need to log
-            let _ =
-                process_aoi_sync_delta(&mut state.encounter, aoi_sync_delta, dungeon_ctx.as_ref());
+            let _ = process_aoi_sync_delta(
+                &mut state.encounter,
+                aoi_sync_delta,
+                dungeon_ctx.as_ref(),
+                &state.attempt_config,
+            );
         }
     }
 

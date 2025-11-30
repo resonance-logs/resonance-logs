@@ -2,7 +2,7 @@
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import SettingsSwitch from "./settings-switch.svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
+  import { setBossOnlyDps, setDungeonSegmentsEnabled, setWipeDetectionEnabled } from "$lib/api";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
   import { liveDpsPlayerColumns, liveDpsSkillColumns, liveHealPlayerColumns, liveHealSkillColumns, liveTankedPlayerColumns, liveTankedSkillColumns } from "$lib/column-data";
 
@@ -28,6 +28,12 @@
   $effect(() => {
     if (_mounted) {
       void setDungeonSegmentsEnabled(SETTINGS.live.general.state.dungeonSegmentsEnabled);
+    }
+  });
+
+  $effect(() => {
+    if (_mounted) {
+      void setWipeDetectionEnabled(SETTINGS.live.general.state.wipeDetection);
     }
   });
 
@@ -59,6 +65,11 @@
           bind:checked={SETTINGS.live.general.state.useDummyData}
           label="Use Dummy Data"
           description="Inject dummy player data into the live meter for testing and preview purposes"
+        />
+        <SettingsSwitch
+          bind:checked={SETTINGS.live.general.state.wipeDetection}
+          label="Wipe Detection"
+          description="Automatically split attempts when the party wipes (all members dead)"
         />
       </div>
     </div>

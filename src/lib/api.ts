@@ -145,10 +145,10 @@ export const onDungeonLogUpdate = (handler: (event: Event<DungeonLog>) => void):
 // Convenience: factory to create metric-filtered listeners
 export const makeSkillsUpdateFilter =
   (metric: MetricType) =>
-  (handler: (event: Event<SkillsUpdatePayload>) => void): Promise<UnlistenFn> =>
-    listen<SkillsUpdatePayload>("skills-update", (event) => {
-      if (event.payload.metricType === metric) handler(event);
-    });
+    (handler: (event: Event<SkillsUpdatePayload>) => void): Promise<UnlistenFn> =>
+      listen<SkillsUpdatePayload>("skills-update", (event) => {
+        if (event.payload.metricType === metric) handler(event);
+      });
 
 export const onDpsSkillsUpdate = makeSkillsUpdateFilter("dps");
 export const onHealSkillsUpdate = makeSkillsUpdateFilter("heal");
@@ -180,6 +180,9 @@ export const setBossOnlyDps = (enabled: boolean): Promise<void> => invoke("set_b
 
 export const setDungeonSegmentsEnabled = (enabled: boolean): Promise<void> =>
   invoke("set_dungeon_segments_enabled", { enabled });
+
+export const setWipeDetectionEnabled = (enabled: boolean): Promise<void> =>
+  invoke("set_wipe_detection_enabled", { enabled });
 
 export const getDungeonLog = (): Promise<DungeonLog> => invoke("get_dungeon_log");
 
