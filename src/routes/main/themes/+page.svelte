@@ -913,28 +913,28 @@
                     {#if SETTINGS.live.headerCustomization.state.showBossHealth}
                       <SettingsSlider
                         bind:value={SETTINGS.live.headerCustomization.state.bossHealthLabelFontSize}
-                        min={8} max={20} step={1}
+                        min={0} max={20} step={1}
                         label="Label Font Size"
                         description="Font size for 'BOSS' label"
                         unit="px"
                       />
                       <SettingsSlider
                         bind:value={SETTINGS.live.headerCustomization.state.bossHealthNameFontSize}
-                        min={10} max={24} step={1}
+                        min={0} max={24} step={1}
                         label="Boss Name Font Size"
                         description="Font size for boss name"
                         unit="px"
                       />
                       <SettingsSlider
                         bind:value={SETTINGS.live.headerCustomization.state.bossHealthValueFontSize}
-                        min={10} max={24} step={1}
+                        min={0} max={24} step={1}
                         label="HP Value Font Size"
                         description="Font size for HP values (1.5M / 3M)"
                         unit="px"
                       />
                       <SettingsSlider
                         bind:value={SETTINGS.live.headerCustomization.state.bossHealthPercentFontSize}
-                        min={10} max={24} step={1}
+                        min={0} max={24} step={1}
                         label="Percentage Font Size"
                         description="Font size for HP percentage"
                         unit="px"
