@@ -31,6 +31,7 @@
     liveGeneral: false,
     headerSettings: false,
     tableSettings: false,
+    tableRowSettings: false,
     mainGeneral: false,
   });
 
@@ -387,6 +388,64 @@
         </div>
 
         <!-- Custom Fonts Section -->
+        <!-- Table Row Settings (moved from Live > Table Settings) -->
+        <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            onclick={() => toggleSection('tableRowSettings')}
+          >
+            <h2 class="text-base font-semibold text-foreground">Table Row Settings</h2>
+            <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.tableRowSettings ? 'rotate-180' : ''}" />
+          </button>
+          {#if expandedSections.tableRowSettings}
+            <div class="px-4 pb-4 space-y-3">
+              <p class="text-xs text-muted-foreground">Controls for table row appearance and highlight mode. These settings apply to all live tables.</p>
+              <div class="mt-2 space-y-2">
+                <h4 class="text-sm font-medium text-foreground">Player Row</h4>
+                <SettingsSlider
+                  bind:value={SETTINGS.live.tableCustomization.state.playerRowHeight}
+                  min={0} max={100} step={1}
+                  label="Row Height"
+                  description="Height of each player row in pixels"
+                  unit="px"
+                />
+                <SettingsSlider
+                  bind:value={SETTINGS.live.tableCustomization.state.playerFontSize}
+                  min={0} max={100} step={1}
+                  label="Font Size"
+                  description="Font size for player names and stats"
+                  unit="px"
+                />
+                <SettingsSlider
+                  bind:value={SETTINGS.live.tableCustomization.state.playerIconSize}
+                  min={0} max={100} step={1}
+                  label="Icon Size"
+                  description="Size of class/spec icons"
+                  unit="px"
+                />
+                <SettingsColor
+                  bind:value={SETTINGS.live.tableCustomization.state.playerTextColor}
+                  label="Text Color"
+                  description="Color of player names and stat values"
+                />
+
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-muted-foreground">Mode</span>
+                  <div class="flex items-center gap-1">
+                    <button type="button" class="px-2 py-1 text-xs rounded {SETTINGS.live.tableCustomization.state.rowGlowMode === 'gradient-underline' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-popover/30'}" onclick={() => SETTINGS.live.tableCustomization.state.rowGlowMode = 'gradient-underline'}>Gradient w/ Underline</button>
+                    <button type="button" class="px-2 py-1 text-xs rounded {SETTINGS.live.tableCustomization.state.rowGlowMode === 'gradient' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-popover/30'}" onclick={() => SETTINGS.live.tableCustomization.state.rowGlowMode = 'gradient'}>Gradient</button>
+                    <button type="button" class="px-2 py-1 text-xs rounded {SETTINGS.live.tableCustomization.state.rowGlowMode === 'solid' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-popover/30'}" onclick={() => SETTINGS.live.tableCustomization.state.rowGlowMode = 'solid'}>Solid</button>
+                  </div>
+                </div>
+
+                <SettingsSlider bind:value={SETTINGS.live.tableCustomization.state.rowBorderRadius} min={0} max={24} step={1} label="Row Border Radius" description="Rounded corner radius for row highlights" unit="px" />
+                <SettingsSlider bind:value={SETTINGS.live.tableCustomization.state.rowBorderWidth} min={0} max={8} step={1} label="Custom Border Width" description="Width of the inner custom border (0 = disabled)" unit="px" />
+                <SettingsColor bind:value={SETTINGS.live.tableCustomization.state.rowBorderColor} label="Custom Border Color" description="Color used for the inner custom border" />
+              </div>
+            </div>
+          {/if}
+        </div>
         <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
           <button
             type="button"
@@ -1035,32 +1094,8 @@
                       <h3 class="text-sm font-semibold text-foreground">Player Row</h3>
                       <button onclick={resetTableCustomization} class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">Reset All</button>
                     </div>
-                    <SettingsSlider
-                      bind:value={SETTINGS.live.tableCustomization.state.playerRowHeight}
-                      min={0} max={100} step={1}
-                      label="Row Height"
-                      description="Height of each player row in pixels"
-                      unit="px"
-                    />
-                    <SettingsSlider
-                      bind:value={SETTINGS.live.tableCustomization.state.playerFontSize}
-                      min={0} max={100} step={1}
-                      label="Font Size"
-                      description="Font size for player names and stats"
-                      unit="px"
-                    />
-                    <SettingsSlider
-                      bind:value={SETTINGS.live.tableCustomization.state.playerIconSize}
-                      min={0} max={100} step={1}
-                      label="Icon Size"
-                      description="Size of class/spec icons"
-                      unit="px"
-                    />
-                    <SettingsColor
-                      bind:value={SETTINGS.live.tableCustomization.state.playerTextColor}
-                      label="Text Color"
-                      description="Color of player names and stat values"
-                    />
+                    <p class="text-xs text-muted-foreground">Player row appearance controls have moved to <strong>General → Table Row Settings</strong>.</p>
+                    
                   </div>
 
                   <!-- Table Header Customization -->

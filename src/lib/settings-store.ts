@@ -155,6 +155,20 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   skillHeaderTextColor: "#a1a1aa",
   skillAbbreviatedFontSize: 9,
   skillAbbreviatedColor: "#71717a",
+  // Row glow / highlight customization
+  // modes: 'gradient-underline' (gradient + neon underline), 'gradient' (gradient only), 'solid' (solid color fill)
+  rowGlowMode: 'gradient-underline' as 'gradient-underline' | 'gradient' | 'solid',
+  // opacity applied to the fill (0-1)
+  rowGlowOpacity: 0.15,
+  // border height in pixels for the neon underline effect
+  rowGlowBorderHeight: 2,
+  // box-shadow spread/blur for the neon border
+  rowGlowSpread: 8,
+  // Note: glow always uses the detected class/spec color.
+  // Row border customization
+  rowBorderRadius: 6,
+  rowBorderWidth: 0,
+  rowBorderColor: 'rgba(255,255,255,0.0)',
 };
 
 // Header customization defaults
