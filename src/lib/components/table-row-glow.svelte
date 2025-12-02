@@ -5,22 +5,24 @@
   let {
     className,
     classSpecName = "",
-    percentage
+    percentage,
+    isSkill = false
   }: {
     className: string;
     classSpecName?: string;
     percentage: number;
+    isSkill?: boolean;
   } = $props();
 
   let classColor = $derived(getClassColor(className, classSpecName));
 
   // derive customization from live table settings using runes-friendly $derived
-  // glow is always enabled and always uses class/spec color
-  let mode = $derived(SETTINGS.live.tableCustomization.state.rowGlowMode);
-  let opacity = $derived(SETTINGS.live.tableCustomization.state.rowGlowOpacity);
+  // Choose skill-specific settings when rendering skill rows
+  let mode = $derived.by(() => isSkill ? SETTINGS.live.tableCustomization.state.skillRowGlowMode : SETTINGS.live.tableCustomization.state.rowGlowMode);
+  let opacity = $derived.by(() => isSkill ? SETTINGS.live.tableCustomization.state.skillRowGlowOpacity : SETTINGS.live.tableCustomization.state.rowGlowOpacity);
   let borderHeight = $derived(SETTINGS.live.tableCustomization.state.rowGlowBorderHeight);
   let spread = $derived(SETTINGS.live.tableCustomization.state.rowGlowSpread);
-  let rowBorderRadius = $derived(SETTINGS.live.tableCustomization.state.rowBorderRadius);
+  let rowBorderRadius = $derived.by(() => isSkill ? SETTINGS.live.tableCustomization.state.skillRowBorderRadius : SETTINGS.live.tableCustomization.state.rowBorderRadius);
   
 
   // glowColor is always the class/spec color

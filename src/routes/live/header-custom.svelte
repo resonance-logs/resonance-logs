@@ -227,7 +227,7 @@
   let hasRow1 = $derived(hasRow1Left || hasRow1Right);
 </script>
 
-{#if h.showHeader && (hasRow1 || hasRow2)}
+{#if (hasRow1 || hasRow2)}
   <header
     data-tauri-drag-region
     class="grid w-full grid-cols-[1fr_auto] text-sm"

@@ -166,7 +166,7 @@
                 {/if}
               </td>
             {/each}
-            <TableRowGlow className={className} classSpecName={currPlayer.classSpecName} percentage={SETTINGS.live.general.state.relativeToTopDPSSkill ? maxSkillValue > 0 ? (skill.totalDmg / maxSkillValue) * 100 : 0 : skill.dmgPct} />
+            <TableRowGlow isSkill={true} className={className} classSpecName={currPlayer.classSpecName} percentage={SETTINGS.live.general.state.relativeToTopDPSSkill ? maxSkillValue > 0 ? (skill.totalDmg / maxSkillValue) * 100 : 0 : skill.dmgPct} />
           </tr>
         {/if}
       {/each}

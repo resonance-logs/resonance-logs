@@ -6,7 +6,7 @@
   import SettingsColor from "../settings/settings-color.svelte";
   import SettingsColorAlpha from "../settings/settings-color-alpha.svelte";
   import SettingsFilePicker from "../settings/settings-file-picker.svelte";
-  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_LIVE_TABLE_SETTINGS, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS, DEFAULT_HEADER_SETTINGS, HEADER_PRESETS } from "$lib/settings-store";
+  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS, DEFAULT_HEADER_SETTINGS, HEADER_PRESETS } from "$lib/settings-store";
   import { setClickthrough, CLASS_NAMES, getClassColorRaw } from "$lib/utils.svelte";
   import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
   import { onMount } from 'svelte';
@@ -30,6 +30,7 @@
     headerSettings: false,
     tableSettings: false,
     tableRowSettings: false,
+    skillTableSettings: false,
   });
 
   function toggleSection(section: keyof typeof expandedSections) {
@@ -74,72 +75,7 @@
     Object.assign(SETTINGS.live.headerCustomization.state, DEFAULT_HEADER_SETTINGS);
   }
 
-  // Table size presets
-  type TableSizePreset = 'large' | 'medium' | 'small' | 'custom';
-  let tableSizePreset = $state<TableSizePreset>('medium');
-
-  const TABLE_PRESETS = {
-    large: {
-      playerRowHeight: 36,
-      playerFontSize: 15,
-      playerIconSize: 24,
-      showTableHeader: true,
-      tableHeaderHeight: 28,
-      tableHeaderFontSize: 13,
-      abbreviatedFontSize: 12,
-      skillRowHeight: 32,
-      skillFontSize: 14,
-      skillIconSize: 22,
-      skillShowHeader: true,
-      skillHeaderHeight: 26,
-      skillHeaderFontSize: 12,
-      skillAbbreviatedFontSize: 11,
-    },
-    medium: {
-      playerRowHeight: 28,
-      playerFontSize: 13,
-      playerIconSize: 20,
-      showTableHeader: true,
-      tableHeaderHeight: 24,
-      tableHeaderFontSize: 11,
-      abbreviatedFontSize: 10,
-      skillRowHeight: 24,
-      skillFontSize: 12,
-      skillIconSize: 18,
-      skillShowHeader: true,
-      skillHeaderHeight: 22,
-      skillHeaderFontSize: 10,
-      skillAbbreviatedFontSize: 9,
-    },
-    small: {
-      playerRowHeight: 22,
-      playerFontSize: 11,
-      playerIconSize: 16,
-      showTableHeader: true,
-      tableHeaderHeight: 20,
-      tableHeaderFontSize: 9,
-      abbreviatedFontSize: 8,
-      skillRowHeight: 18,
-      skillFontSize: 10,
-      skillIconSize: 14,
-      skillShowHeader: true,
-      skillHeaderHeight: 18,
-      skillHeaderFontSize: 8,
-      skillAbbreviatedFontSize: 7,
-    },
-  };
-
-  function applyTablePreset(preset: 'large' | 'medium' | 'small') {
-    const settings = TABLE_PRESETS[preset];
-    Object.assign(SETTINGS.live.tableCustomization.state, settings);
-  }
-
-  function handlePresetChange(preset: TableSizePreset) {
-    tableSizePreset = preset;
-    if (preset !== 'custom') {
-      applyTablePreset(preset);
-    }
-  }
+  // Table size presets removed — sliders shown by default
 
   // Class/Spec colors tab state - 'class' or 'spec'
   let colorMode = $state<'class' | 'spec'>('class');
@@ -184,9 +120,7 @@
     SETTINGS.accessibility.state.classSpecColors = { ...DEFAULT_CLASS_SPEC_COLORS };
   }
 
-  function resetTableCustomization() {
-    Object.assign(SETTINGS.live.tableCustomization.state, DEFAULT_LIVE_TABLE_SETTINGS);
-  }
+  
 
   function updateCustomThemeColor(key: string, value: string) {
     SETTINGS.accessibility.state.customThemeColors = { ...SETTINGS.accessibility.state.customThemeColors, [key]: value };
@@ -198,6 +132,8 @@
 
   // Check if custom theme is selected
   let isCustomTheme = $derived(SETTINGS.accessibility.state.theme === 'custom');
+  // expose table customization state as any for optional skill-specific keys
+  const tableCustomizationState: any = SETTINGS.live.tableCustomization.state;
 </script>
 
 <Tabs.Root bind:value={activeTab}>
@@ -265,61 +201,7 @@
           {/if}
         </div>
 
-        <!-- Background Image Section (only for custom theme) -->
-        {#if isCustomTheme}
-          <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
-            <button
-              type="button"
-              class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
-              onclick={() => toggleSection('backgroundImage')}
-            >
-              <h2 class="text-base font-semibold text-foreground">Background Image</h2>
-              <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.backgroundImage ? 'rotate-180' : ''}" />
-            </button>
-            {#if expandedSections.backgroundImage}
-              <div class="px-4 pb-4 space-y-2">
-                <p class="text-xs text-muted-foreground">Use a custom image as the background for both main and live meter windows. NOTE: You must set your background as semi-transparent for this image to show.</p>
-                <SettingsSwitch
-                  bind:checked={SETTINGS.accessibility.state.backgroundImageEnabled}
-                  label="Enable Background Image"
-                  description="Use an image as the background"
-                />
-                {#if SETTINGS.accessibility.state.backgroundImageEnabled}
-                  <div class="mt-2 space-y-2">
-                    <SettingsFilePicker
-                      label="Select Image"
-                      description="Choose an image file (PNG, JPG, WebP)"
-                      accept="image/*"
-                      value={SETTINGS.accessibility.state.backgroundImage}
-                      onchange={(dataUrl, _fileName) => {
-                        SETTINGS.accessibility.state.backgroundImage = dataUrl;
-                      }}
-                      onclear={() => {
-                        SETTINGS.accessibility.state.backgroundImage = '';
-                      }}
-                    />
-                    <SettingsSelect
-                      label="Image Mode"
-                      description="How the image should fit the window"
-                      bind:selected={SETTINGS.accessibility.state.backgroundImageMode}
-                      values={["cover", "contain"]}
-                    />
-                    {#if SETTINGS.accessibility.state.backgroundImageMode === 'contain'}
-                      <SettingsColorAlpha
-                        label="Contain Fill Color"
-                        description="Background color visible around the contained image"
-                        value={SETTINGS.accessibility.state.backgroundImageContainColor}
-                        oninput={(value: string) => {
-                          SETTINGS.accessibility.state.backgroundImageContainColor = value;
-                        }}
-                      />
-                    {/if}
-                  </div>
-                {/if}
-              </div>
-            {/if}
-          </div>
-        {/if}
+        
 
         <!-- Class & Spec Colors Section -->
         <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
@@ -392,7 +274,7 @@
             class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
             onclick={() => toggleSection('tableRowSettings')}
           >
-            <h2 class="text-base font-semibold text-foreground">Table Row Settings</h2>
+            <h2 class="text-base font-semibold text-foreground">Player Table Settings</h2>
             <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.tableRowSettings ? 'rotate-180' : ''}" />
           </button>
           {#if expandedSections.tableRowSettings}
@@ -445,9 +327,224 @@
 
                 <SettingsSlider bind:value={SETTINGS.live.tableCustomization.state.rowBorderRadius} min={0} max={24} step={1} label="Row Border Radius" description="Rounded corner radius for row highlights" unit="px" />
               </div>
+              <!-- Table Header & Number Styling -->
+              <div class="space-y-4 pt-4 border-t border-border/30">
+                
+
+                <!-- Table Header Customization -->
+                <div class="space-y-2 pt-3 border-t border-border/30">
+                  <h3 class="text-sm font-semibold text-foreground">Table Header</h3>
+                  <SettingsSwitch
+                    bind:checked={SETTINGS.live.tableCustomization.state.showTableHeader}
+                    label="Show Table Header"
+                    description="Toggle visibility of the column headers"
+                  />
+                  {#if SETTINGS.live.tableCustomization.state.showTableHeader}
+                    <SettingsSlider
+                      bind:value={SETTINGS.live.tableCustomization.state.tableHeaderHeight}
+                      min={0} max={100} step={1}
+                      label="Header Height"
+                      description="Height of the table header row"
+                      unit="px"
+                    />
+                    <SettingsSlider
+                      bind:value={SETTINGS.live.tableCustomization.state.tableHeaderFontSize}
+                      min={0} max={100} step={1}
+                      label="Header Font Size"
+                      description="Font size for column header text"
+                      unit="px"
+                    />
+                    <SettingsColor
+                      bind:value={SETTINGS.live.tableCustomization.state.tableHeaderTextColor}
+                      label="Header Text Color"
+                      description="Color of column header text"
+                    />
+                  {/if}
+                </div>
+
+                <!-- Abbreviated Numbers -->
+                <div class="space-y-2 pt-3 border-t border-border/30">
+                  <h3 class="text-sm font-semibold text-foreground">Abbreviated Numbers (K, M, %)</h3>
+                  <SettingsSlider
+                    bind:value={SETTINGS.live.tableCustomization.state.abbreviatedFontSize}
+                    min={0} max={100} step={1}
+                    label="Suffix Font Size"
+                    description="Font size for K, M, % symbols"
+                    unit="px"
+                  />
+                  <SettingsColor
+                    bind:value={SETTINGS.live.tableCustomization.state.abbreviatedColor}
+                    label="Suffix Color"
+                    description="Color of K, M, % symbols"
+                  />
+                </div>
+              </div>
             </div>
           {/if}
         </div>
+        <!-- Skill Table Settings -->
+        <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+          <button
+            type="button"
+            class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            onclick={() => toggleSection('skillTableSettings')}
+          >
+            <h2 class="text-base font-semibold text-foreground">Skill Table Settings</h2>
+            <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.skillTableSettings ? 'rotate-180' : ''}" />
+          </button>
+          {#if expandedSections.skillTableSettings}
+            <div class="px-4 pb-4 space-y-4">
+              <p class="text-xs text-muted-foreground">Customize skill table sizing, header and abbreviated number styling.</p>
+
+              <div class="space-y-2 pt-3 border-t border-border/30">
+                <h3 class="text-sm font-semibold text-foreground">Skill Row</h3>
+                <SettingsSlider
+                  bind:value={SETTINGS.live.tableCustomization.state.skillRowHeight}
+                  min={0} max={100} step={1}
+                  label="Skill Row Height"
+                  description="Height of each skill row in pixels"
+                  unit="px"
+                />
+                <SettingsSlider
+                  bind:value={SETTINGS.live.tableCustomization.state.skillFontSize}
+                  min={0} max={100} step={1}
+                  label="Skill Font Size"
+                  description="Font size for skill names and stats"
+                  unit="px"
+                />
+                <SettingsSlider
+                  bind:value={SETTINGS.live.tableCustomization.state.skillIconSize}
+                  min={0} max={100} step={1}
+                  label="Skill Icon Size"
+                  description="Size of skill icons"
+                  unit="px"
+                />
+                <SettingsColor
+                  bind:value={SETTINGS.live.tableCustomization.state.skillTextColor}
+                  label="Skill Text Color"
+                  description="Color of skill names and stat values"
+                />
+                <div class="flex items-center gap-2 mt-2">
+                  <span class="text-sm text-muted-foreground">Mode</span>
+                  <div class="flex items-center gap-1">
+                    <button type="button" class="px-2 py-1 text-xs rounded {tableCustomizationState.skillRowGlowMode === 'gradient-underline' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-popover/30'}" onclick={() => tableCustomizationState.skillRowGlowMode = 'gradient-underline'}>Gradient w/ Underline</button>
+                    <button type="button" class="px-2 py-1 text-xs rounded {tableCustomizationState.skillRowGlowMode === 'gradient' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-popover/30'}" onclick={() => tableCustomizationState.skillRowGlowMode = 'gradient'}>Gradient</button>
+                    <button type="button" class="px-2 py-1 text-xs rounded {tableCustomizationState.skillRowGlowMode === 'solid' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-popover/30'}" onclick={() => tableCustomizationState.skillRowGlowMode = 'solid'}>Solid</button>
+                  </div>
+                </div>
+
+                <SettingsSlider
+                  bind:value={tableCustomizationState.skillRowGlowOpacity}
+                  min={0} max={1} step={0.01}
+                  label="Skill Row Glow Opacity"
+                  description="Opacity applied to the skill row glow fill (0 = transparent, 1 = opaque)"
+                />
+
+                <SettingsSlider bind:value={tableCustomizationState.skillRowBorderRadius} min={0} max={24} step={1} label="Skill Row Border Radius" description="Rounded corner radius for skill row highlights" unit="px" />
+              </div>
+
+              <div class="space-y-2 pt-3 border-t border-border/30">
+                <h3 class="text-sm font-semibold text-foreground">Skill Table Header</h3>
+                <SettingsSwitch
+                  bind:checked={SETTINGS.live.tableCustomization.state.skillShowHeader}
+                  label="Show Skill Header"
+                  description="Toggle visibility of skill table column headers"
+                />
+                {#if SETTINGS.live.tableCustomization.state.skillShowHeader}
+                  <SettingsSlider
+                    bind:value={SETTINGS.live.tableCustomization.state.skillHeaderHeight}
+                    min={0} max={100} step={1}
+                    label="Skill Header Height"
+                    description="Height of the skill table header row"
+                    unit="px"
+                  />
+                  <SettingsSlider
+                    bind:value={SETTINGS.live.tableCustomization.state.skillHeaderFontSize}
+                    min={0} max={100} step={1}
+                    label="Skill Header Font Size"
+                    description="Font size for skill column header text"
+                    unit="px"
+                  />
+                  <SettingsColor
+                    bind:value={SETTINGS.live.tableCustomization.state.skillHeaderTextColor}
+                    label="Skill Header Text Color"
+                    description="Color of skill column header text"
+                  />
+                {/if}
+              </div>
+
+              <div class="space-y-2 pt-3 border-t border-border/30">
+                <h3 class="text-sm font-semibold text-foreground">Skill Abbreviated Numbers</h3>
+                <SettingsSlider
+                  bind:value={SETTINGS.live.tableCustomization.state.skillAbbreviatedFontSize}
+                  min={0} max={100} step={1}
+                  label="Skill Suffix Font Size"
+                  description="Font size for K, M, % symbols in skill rows"
+                  unit="px"
+                />
+                <SettingsColor
+                  bind:value={SETTINGS.live.tableCustomization.state.skillAbbreviatedColor}
+                  label="Skill Suffix Color"
+                  description="Color of K, M, % symbols in skill rows"
+                />
+              </div>
+            </div>
+          {/if}
+        </div>
+        {#if isCustomTheme}
+          <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
+            <button
+              type="button"
+              class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+              onclick={() => toggleSection('backgroundImage')}
+            >
+              <h2 class="text-base font-semibold text-foreground">Background Image</h2>
+              <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.backgroundImage ? 'rotate-180' : ''}" />
+            </button>
+            {#if expandedSections.backgroundImage}
+              <div class="px-4 pb-4 space-y-2">
+                <p class="text-xs text-muted-foreground">Use a custom image as the background for both main and live meter windows. NOTE: You must set your background as semi-transparent for this image to show.</p>
+                <SettingsSwitch
+                  bind:checked={SETTINGS.accessibility.state.backgroundImageEnabled}
+                  label="Enable Background Image"
+                  description="Use an image as the background"
+                />
+                {#if SETTINGS.accessibility.state.backgroundImageEnabled}
+                  <div class="mt-2 space-y-2">
+                    <SettingsFilePicker
+                      label="Select Image"
+                      description="Choose an image file (PNG, JPG, WebP)"
+                      accept="image/*"
+                      value={SETTINGS.accessibility.state.backgroundImage}
+                      onchange={(dataUrl, _fileName) => {
+                        SETTINGS.accessibility.state.backgroundImage = dataUrl;
+                      }}
+                      onclear={() => {
+                        SETTINGS.accessibility.state.backgroundImage = '';
+                      }}
+                    />
+                    <SettingsSelect
+                      label="Image Mode"
+                      description="How the image should fit the window"
+                      bind:selected={SETTINGS.accessibility.state.backgroundImageMode}
+                      values={["cover", "contain"]}
+                    />
+                    {#if SETTINGS.accessibility.state.backgroundImageMode === 'contain'}
+                      <SettingsColorAlpha
+                        label="Contain Fill Color"
+                        description="Background color visible around the contained image"
+                        value={SETTINGS.accessibility.state.backgroundImageContainColor}
+                        oninput={(value: string) => {
+                          SETTINGS.accessibility.state.backgroundImageContainColor = value;
+                        }}
+                      />
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        {/if}
         <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
           <button
             type="button"
@@ -644,11 +741,6 @@
                       <h3 class="text-sm font-semibold text-foreground">Layout & Padding</h3>
                       <button onclick={resetHeaderSettings} class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">Reset All</button>
                     </div>
-                    <SettingsSwitch
-                      bind:checked={SETTINGS.live.headerCustomization.state.showHeader}
-                      label="Show Header"
-                      description="Toggle visibility of the entire header"
-                    />
                     <SettingsSlider
                       bind:value={SETTINGS.live.headerCustomization.state.windowPadding}
                       min={0} max={24} step={1}
@@ -979,196 +1071,7 @@
           {/if}
         </div>
 
-        <!-- Table Settings -->
-        <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
-          <button
-            type="button"
-            class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
-            onclick={() => toggleSection('tableSettings')}
-          >
-            <h2 class="text-base font-semibold text-foreground">Table Settings</h2>
-            <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.tableSettings ? 'rotate-180' : ''}" />
-          </button>
-          {#if expandedSections.tableSettings}
-            <div class="px-4 pb-4 space-y-4">
-              <p class="text-xs text-muted-foreground">Choose a preset size or customize individual settings.</p>
-              
-              <!-- Size Preset Selector -->
-              <div class="flex items-center border border-border rounded-lg overflow-hidden bg-popover/30 w-fit">
-                <button
-                  type="button"
-                  class="px-4 py-2 text-sm font-medium transition-colors {tableSizePreset === 'large' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-                  onclick={() => handlePresetChange('large')}
-                >
-                  Large
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {tableSizePreset === 'medium' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-                  onclick={() => handlePresetChange('medium')}
-                >
-                  Medium
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {tableSizePreset === 'small' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-                  onclick={() => handlePresetChange('small')}
-                >
-                  Small
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {tableSizePreset === 'custom' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-                  onclick={() => handlePresetChange('custom')}
-                >
-                  Custom
-                </button>
-              </div>
-
-              {#if tableSizePreset === 'custom'}
-                <!-- Custom Settings -->
-                <div class="space-y-4 pt-2 border-t border-border/50">
-                  <!-- Player Row Customization -->
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                      <h3 class="text-sm font-semibold text-foreground">Player Row</h3>
-                      <button onclick={resetTableCustomization} class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">Reset All</button>
-                    </div>
-                    <p class="text-xs text-muted-foreground">Player row appearance controls have moved to <strong>General → Table Row Settings</strong>.</p>
-                    
-                  </div>
-
-                  <!-- Table Header Customization -->
-                  <div class="space-y-2 pt-3 border-t border-border/30">
-                    <h3 class="text-sm font-semibold text-foreground">Table Header</h3>
-                    <SettingsSwitch
-                      bind:checked={SETTINGS.live.tableCustomization.state.showTableHeader}
-                      label="Show Table Header"
-                      description="Toggle visibility of the column headers"
-                    />
-                    {#if SETTINGS.live.tableCustomization.state.showTableHeader}
-                      <SettingsSlider
-                        bind:value={SETTINGS.live.tableCustomization.state.tableHeaderHeight}
-                        min={0} max={100} step={1}
-                        label="Header Height"
-                        description="Height of the table header row"
-                        unit="px"
-                      />
-                      <SettingsSlider
-                        bind:value={SETTINGS.live.tableCustomization.state.tableHeaderFontSize}
-                        min={0} max={100} step={1}
-                        label="Header Font Size"
-                        description="Font size for column header text"
-                        unit="px"
-                      />
-                      <SettingsColor
-                        bind:value={SETTINGS.live.tableCustomization.state.tableHeaderTextColor}
-                        label="Header Text Color"
-                        description="Color of column header text"
-                      />
-                    {/if}
-                  </div>
-
-                  <!-- Abbreviated Numbers -->
-                  <div class="space-y-2 pt-3 border-t border-border/30">
-                    <h3 class="text-sm font-semibold text-foreground">Abbreviated Numbers (K, M, %)</h3>
-                    <SettingsSlider
-                      bind:value={SETTINGS.live.tableCustomization.state.abbreviatedFontSize}
-                      min={0} max={100} step={1}
-                      label="Suffix Font Size"
-                      description="Font size for K, M, % symbols"
-                      unit="px"
-                    />
-                    <SettingsColor
-                      bind:value={SETTINGS.live.tableCustomization.state.abbreviatedColor}
-                      label="Suffix Color"
-                      description="Color of K, M, % symbols"
-                    />
-                  </div>
-
-                  <!-- Skill Row Customization -->
-                  <div class="space-y-2 pt-3 border-t border-border/30">
-                    <h3 class="text-sm font-semibold text-foreground">Skill Row</h3>
-                    <SettingsSlider
-                      bind:value={SETTINGS.live.tableCustomization.state.skillRowHeight}
-                      min={0} max={100} step={1}
-                      label="Skill Row Height"
-                      description="Height of each skill row in pixels"
-                      unit="px"
-                    />
-                    <SettingsSlider
-                      bind:value={SETTINGS.live.tableCustomization.state.skillFontSize}
-                      min={0} max={100} step={1}
-                      label="Skill Font Size"
-                      description="Font size for skill names and stats"
-                      unit="px"
-                    />
-                    <SettingsSlider
-                      bind:value={SETTINGS.live.tableCustomization.state.skillIconSize}
-                      min={0} max={100} step={1}
-                      label="Skill Icon Size"
-                      description="Size of skill icons"
-                      unit="px"
-                    />
-                    <SettingsColor
-                      bind:value={SETTINGS.live.tableCustomization.state.skillTextColor}
-                      label="Skill Text Color"
-                      description="Color of skill names and stat values"
-                    />
-                  </div>
-
-                  <!-- Skill Header Customization -->
-                  <div class="space-y-2 pt-3 border-t border-border/30">
-                    <h3 class="text-sm font-semibold text-foreground">Skill Table Header</h3>
-                    <SettingsSwitch
-                      bind:checked={SETTINGS.live.tableCustomization.state.skillShowHeader}
-                      label="Show Skill Header"
-                      description="Toggle visibility of skill table column headers"
-                    />
-                    {#if SETTINGS.live.tableCustomization.state.skillShowHeader}
-                      <SettingsSlider
-                        bind:value={SETTINGS.live.tableCustomization.state.skillHeaderHeight}
-                        min={0} max={100} step={1}
-                        label="Skill Header Height"
-                        description="Height of the skill table header row"
-                        unit="px"
-                      />
-                      <SettingsSlider
-                        bind:value={SETTINGS.live.tableCustomization.state.skillHeaderFontSize}
-                        min={0} max={100} step={1}
-                        label="Skill Header Font Size"
-                        description="Font size for skill column header text"
-                        unit="px"
-                      />
-                      <SettingsColor
-                        bind:value={SETTINGS.live.tableCustomization.state.skillHeaderTextColor}
-                        label="Skill Header Text Color"
-                        description="Color of skill column header text"
-                      />
-                    {/if}
-                  </div>
-
-                  <!-- Skill Abbreviated Numbers -->
-                  <div class="space-y-2 pt-3 border-t border-border/30">
-                    <h3 class="text-sm font-semibold text-foreground">Skill Abbreviated Numbers</h3>
-                    <SettingsSlider
-                      bind:value={SETTINGS.live.tableCustomization.state.skillAbbreviatedFontSize}
-                      min={0} max={100} step={1}
-                      label="Skill Suffix Font Size"
-                      description="Font size for K, M, % symbols in skill rows"
-                      unit="px"
-                    />
-                    <SettingsColor
-                      bind:value={SETTINGS.live.tableCustomization.state.skillAbbreviatedColor}
-                      label="Skill Suffix Color"
-                      description="Color of K, M, % symbols in skill rows"
-                    />
-                  </div>
-                </div>
-              {/if}
-            </div>
-          {/if}
-        </div>
+        
       </div>
     </Tabs.Content>
   {/if}

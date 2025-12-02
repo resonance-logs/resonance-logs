@@ -155,6 +155,10 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   skillHeaderTextColor: "#a1a1aa",
   skillAbbreviatedFontSize: 9,
   skillAbbreviatedColor: "#71717a",
+  // Skill-specific row glow / highlight customization (separate from player rows)
+  skillRowGlowMode: 'gradient-underline' as 'gradient-underline' | 'gradient' | 'solid',
+  skillRowGlowOpacity: 0.15,
+  skillRowBorderRadius: 6,
   // Row glow / highlight customization
   // modes: 'gradient-underline' (gradient + neon underline), 'gradient' (gradient only), 'solid' (solid color fill)
   rowGlowMode: 'gradient-underline' as 'gradient-underline' | 'gradient' | 'solid',
@@ -172,7 +176,6 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
 // Header customization defaults
 export const DEFAULT_HEADER_SETTINGS = {
   // Layout settings
-  showHeader: true,
   windowPadding: 12, // padding around entire live meter window
   headerPadding: 8, // internal padding within header
 
@@ -239,7 +242,6 @@ export const DEFAULT_HEADER_SETTINGS = {
 // Header presets
 export const HEADER_PRESETS = {
   full: {
-    showHeader: true,
     windowPadding: 12,
     headerPadding: 8,
     showTimer: true,
@@ -281,7 +283,6 @@ export const HEADER_PRESETS = {
     navTabPaddingY: 6,
   },
   compact: {
-    showHeader: true,
     windowPadding: 8,
     headerPadding: 4,
     showTimer: true,
@@ -323,7 +324,6 @@ export const HEADER_PRESETS = {
     navTabPaddingY: 4,
   },
   none: {
-    showHeader: false,
     windowPadding: 0,
     headerPadding: 0,
     showTimer: false,
