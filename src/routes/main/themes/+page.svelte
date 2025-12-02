@@ -436,9 +436,14 @@
                   </div>
                 </div>
 
+                <SettingsSlider
+                  bind:value={SETTINGS.live.tableCustomization.state.rowGlowOpacity}
+                  min={0} max={1} step={0.01}
+                  label="Row Glow Opacity"
+                  description="Opacity applied to the row glow fill (0 = transparent, 1 = opaque)"
+                />
+
                 <SettingsSlider bind:value={SETTINGS.live.tableCustomization.state.rowBorderRadius} min={0} max={24} step={1} label="Row Border Radius" description="Rounded corner radius for row highlights" unit="px" />
-                <SettingsSlider bind:value={SETTINGS.live.tableCustomization.state.rowBorderWidth} min={0} max={8} step={1} label="Custom Border Width" description="Width of the inner custom border (0 = disabled)" unit="px" />
-                <SettingsColor bind:value={SETTINGS.live.tableCustomization.state.rowBorderColor} label="Custom Border Color" description="Color used for the inner custom border" />
               </div>
             </div>
           {/if}

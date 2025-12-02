@@ -167,8 +167,6 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   // Note: glow always uses the detected class/spec color.
   // Row border customization
   rowBorderRadius: 6,
-  rowBorderWidth: 0,
-  rowBorderColor: 'rgba(255,255,255,0.0)',
 };
 
 // Header customization defaults

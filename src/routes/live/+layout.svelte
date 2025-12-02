@@ -465,7 +465,7 @@
     <HeaderCustom />
     <main
     bind:this={mainElement}
-    class="flex-1 overflow-y-auto gap-4 rounded-lg bg-card/20 border border-border/40"
+    class="flex-1 overflow-y-auto gap-4 rounded-lg bg-card/20"
     >
     {@render children()}
   </main>
