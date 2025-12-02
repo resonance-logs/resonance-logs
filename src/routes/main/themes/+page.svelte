@@ -6,7 +6,7 @@
   import SettingsColor from "../settings/settings-color.svelte";
   import SettingsColorAlpha from "../settings/settings-color-alpha.svelte";
   import SettingsFilePicker from "../settings/settings-file-picker.svelte";
-  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS, DEFAULT_HEADER_SETTINGS, HEADER_PRESETS } from "$lib/settings-store";
+  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS } from "$lib/settings-store";
   import { setClickthrough, CLASS_NAMES, getClassColorRaw } from "$lib/utils.svelte";
   import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
   import { onMount } from 'svelte';
@@ -55,25 +55,7 @@
     }
   });
 
-  // Header presets
-  type HeaderPreset = 'full' | 'compact' | 'none' | 'custom';
-  let headerPreset = $state<HeaderPreset>('full');
-
-  function applyHeaderPreset(preset: 'full' | 'compact' | 'none') {
-    const settings = HEADER_PRESETS[preset];
-    Object.assign(SETTINGS.live.headerCustomization.state, settings);
-  }
-
-  function handleHeaderPresetChange(preset: HeaderPreset) {
-    headerPreset = preset;
-    if (preset !== 'custom') {
-      applyHeaderPreset(preset);
-    }
-  }
-
-  function resetHeaderSettings() {
-    Object.assign(SETTINGS.live.headerCustomization.state, DEFAULT_HEADER_SETTINGS);
-  }
+  
 
   // Table size presets removed — sliders shown by default
 
@@ -698,48 +680,12 @@
           </button>
           {#if expandedSections.headerSettings}
             <div class="px-4 pb-4 space-y-4">
-              <p class="text-xs text-muted-foreground">Choose a preset or customize individual header elements.</p>
-              
-              <!-- Header Preset Selector -->
-              <div class="flex items-center border border-border rounded-lg overflow-hidden bg-popover/30 w-fit">
-                <button
-                  type="button"
-                  class="px-4 py-2 text-sm font-medium transition-colors {headerPreset === 'full' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-                  onclick={() => handleHeaderPresetChange('full')}
-                >
-                  Full
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {headerPreset === 'compact' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-                  onclick={() => handleHeaderPresetChange('compact')}
-                >
-                  Compact
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {headerPreset === 'none' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-                  onclick={() => handleHeaderPresetChange('none')}
-                >
-                  None
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-2 text-sm font-medium transition-colors border-l border-border {headerPreset === 'custom' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-                  onclick={() => handleHeaderPresetChange('custom')}
-                >
-                  Custom
-                </button>
-              </div>
-
-              {#if headerPreset === 'custom'}
-                <!-- Custom Header Settings -->
-                <div class="space-y-4 pt-2 border-t border-border/50">
+              <!-- Custom Header Settings -->
+              <div class="space-y-4 pt-2 border-t border-border/50">
                   <!-- Layout & Padding -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <h3 class="text-sm font-semibold text-foreground">Layout & Padding</h3>
-                      <button onclick={resetHeaderSettings} class="px-3 py-1.5 text-xs font-medium rounded-md bg-muted hover:bg-muted/80 text-muted-foreground transition-colors">Reset All</button>
                     </div>
                     <SettingsSlider
                       bind:value={SETTINGS.live.headerCustomization.state.windowPadding}
@@ -1066,7 +1012,6 @@
                     {/if}
                   </div>
                 </div>
-              {/if}
             </div>
           {/if}
         </div>
