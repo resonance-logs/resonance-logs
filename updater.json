@@ -1,15 +1,15 @@
 {
-  "version": "0.16.1",
-  "notes": "## Log application - 0.16.1\r\n\r\n### Fixes\r\n - Fixed issue where transparency setting was affecting main page & live meter\r\n - Seperated bg colors for live meter & main page\r\n",
-  "pub_date": "2025-11-27T01:32:07.102Z",
+  "version": "0.17.1",
+  "notes": "## New Features\r\n\r\n- Added support for Npcap packet capture\r\n- Added log favoriting\r\n- Added ability to delete logs\r\n- Added wipe detection setting\r\n",
+  "pub_date": "2025-12-03T17:47:01.598Z",
   "platforms": {
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1FhdlJ6MHhTbWFqTiszaDJwbVZ1R0dVeVBzSDlnRjJ1b2FWSDFheW10MWVkdi9BWU5MbjJSZDNyR1hEeng5OWhWK1J0RUhZdDFMdXZ3MFVSR3l3YWdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MjA3MTIxCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNi4xX3g2NC1zZXR1cC5leGUKMUtnUzl0Y0V0K0pGRDQ5U3E4SlRzaklqeFIxdElGMTZtSUZzckFTUGVVQlVzazhUWE1sOE41UytlMzh3UkdHTjV5TUs4dWlEV1pQcVhoYWNsUjN1Q0E9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.16.1/resonance-logs_0.16.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2Nqbmh6NmsxMDlGV3o5bVFBM2xEZUJDY241bGF4L0ROSHAwTG9DNktzNnA5cExNWmJqckxVSXFoeDJML1JZNGxCVlQyZWpKcHQzZ0IvNExHd0pZbndnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0Nzg0MDEyCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNy4xX3g2NC1zZXR1cC5leGUKNGlWYTFtU0g4Qk1wTStCRGJiUjZvZmVRQzZSSXhRMWxpSnFIN3ViVW1sUUtwR2EzNUUzS0l3emdhbDBWL1FPT2RtVUZQT25wblg0dGpjT1ErSGt2QUE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.17.1/resonance-logs_0.17.1_x64-setup.exe"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1FhdlJ6MHhTbWFqTiszaDJwbVZ1R0dVeVBzSDlnRjJ1b2FWSDFheW10MWVkdi9BWU5MbjJSZDNyR1hEeng5OWhWK1J0RUhZdDFMdXZ3MFVSR3l3YWdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0MjA3MTIxCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNi4xX3g2NC1zZXR1cC5leGUKMUtnUzl0Y0V0K0pGRDQ5U3E4SlRzaklqeFIxdElGMTZtSUZzckFTUGVVQlVzazhUWE1sOE41UytlMzh3UkdHTjV5TUs4dWlEV1pQcVhoYWNsUjN1Q0E9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.16.1/resonance-logs_0.16.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2Nqbmh6NmsxMDlGV3o5bVFBM2xEZUJDY241bGF4L0ROSHAwTG9DNktzNnA5cExNWmJqckxVSXFoeDJML1JZNGxCVlQyZWpKcHQzZ0IvNExHd0pZbndnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0Nzg0MDEyCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNy4xX3g2NC1zZXR1cC5leGUKNGlWYTFtU0g4Qk1wTStCRGJiUjZvZmVRQzZSSXhRMWxpSnFIN3ViVW1sUUtwR2EzNUUzS0l3emdhbDBWL1FPT2RtVUZQT25wblg0dGpjT1ErSGt2QUE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.17.1/resonance-logs_0.17.1_x64-setup.exe"
     }
   }
 }
