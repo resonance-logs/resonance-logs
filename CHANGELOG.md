@@ -10,6 +10,7 @@
 ## Bug Fixes
 
 - Fixed segment spam for some content
+- Fixed Shield and Recovery spec detection
 
 ## How to use Npcap
 - Open the settings tab
