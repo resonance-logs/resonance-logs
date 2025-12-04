@@ -366,7 +366,7 @@
   });
 
   // Category order for display
-  const categoryOrder = ['Base', 'Surfaces', 'Accents', 'Utility'];
+  const categoryOrder = ['Base', 'Surfaces', 'Accents', 'Tables', 'Utility'];
 
   $effect(() => {
     setClickthrough(SETTINGS.accessibility.state.clickthrough);
@@ -561,11 +561,6 @@
                   description="Size of class/spec icons"
                   unit="px"
                 />
-                <SettingsColor
-                  bind:value={SETTINGS.live.tableCustomization.state.playerTextColor}
-                  label="Text Color"
-                  description="Color of player names and stat values"
-                />
 
                 <div class="flex items-center gap-2">
                   <span class="text-sm text-muted-foreground">Mode</span>
@@ -630,11 +625,6 @@
                     description="Font size for K, M, % symbols"
                     unit="px"
                   />
-                  <SettingsColor
-                    bind:value={SETTINGS.live.tableCustomization.state.abbreviatedColor}
-                    label="Suffix Color"
-                    description="Color of K, M, % symbols"
-                  />
                 </div>
               </div>
             </div>
@@ -676,11 +666,6 @@
                   label="Skill Icon Size"
                   description="Size of skill icons"
                   unit="px"
-                />
-                <SettingsColor
-                  bind:value={SETTINGS.live.tableCustomization.state.skillTextColor}
-                  label="Skill Text Color"
-                  description="Color of skill names and stat values"
                 />
                 <div class="flex items-center gap-2 mt-2">
                   <span class="text-sm text-muted-foreground">Mode</span>
@@ -739,11 +724,6 @@
                   label="Skill Suffix Font Size"
                   description="Font size for K, M, % symbols in skill rows"
                   unit="px"
-                />
-                <SettingsColor
-                  bind:value={SETTINGS.live.tableCustomization.state.skillAbbreviatedColor}
-                  label="Skill Suffix Color"
-                  description="Color of K, M, % symbols in skill rows"
                 />
               </div>
             </div>
