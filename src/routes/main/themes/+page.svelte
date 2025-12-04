@@ -15,7 +15,294 @@
   const themesTabs = [
     { id: "general", label: "General" },
     { id: "live", label: "Live" },
+    { id: "presets", label: "Presets" },
   ];
+
+  // === COLOR THEME PRESETS (matching CSS data-theme selectors) ===
+  const COLOR_PRESETS: Record<string, { name: string; description: string; theme: string; preview: { bg: string; primary: string; accent: string; fg: string } }> = {
+    dark: {
+      name: "Dark",
+      description: "Clean dark theme with neutral grays",
+      theme: 'dark',
+      preview: { bg: '#212121', primary: '#a6a6a6', accent: '#525252', fg: '#e2e2e2' }
+    },
+    light: {
+      name: "Light",
+      description: "Bright theme for daylight use",
+      theme: 'light',
+      preview: { bg: '#fbfbf9', primary: '#5b7fc7', accent: '#d4a84a', fg: '#2a2e40' }
+    },
+    pink: {
+      name: "Pink UwU",
+      description: "Cute pastel pink aesthetic",
+      theme: 'pink',
+      preview: { bg: '#F8E8EE', primary: '#F2BED1', accent: '#F2BED1', fg: '#582F3B' }
+    },
+    green: {
+      name: "Green Pastel",
+      description: "Soft green nature tones",
+      theme: 'green',
+      preview: { bg: '#e0f0e0', primary: '#6fbf6f', accent: '#7fcf8f', fg: '#1a2a1a' }
+    },
+    matcha: {
+      name: "Matcha",
+      description: "Earthy green tea vibes",
+      theme: 'matcha',
+      preview: { bg: '#d8e8d0', primary: '#5a9f5a', accent: '#6ab06a', fg: '#283828' }
+    },
+    rainbow: {
+      name: "Pastel Rainbow",
+      description: "Colorful gradient background",
+      theme: 'rainbow',
+      preview: { bg: 'linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5)', primary: '#b87fd0', accent: '#d09050', fg: '#383848' }
+    },
+  };
+
+  // === SIZE PRESETS ===
+  const SIZE_PRESETS: Record<string, { name: string; description: string; table: Record<string, number | string | boolean>; header: Record<string, number | boolean> }> = {
+    compact: {
+      name: "Compact",
+      description: "Minimal - no padding, no header",
+      table: {
+        playerRowHeight: 20,
+        playerFontSize: 10,
+        playerIconSize: 14,
+        showTableHeader: false,
+        tableHeaderHeight: 18,
+        tableHeaderFontSize: 8,
+        abbreviatedFontSize: 7,
+        skillRowHeight: 18,
+        skillFontSize: 9,
+        skillIconSize: 12,
+        skillShowHeader: false,
+        skillHeaderHeight: 16,
+        skillHeaderFontSize: 7,
+        skillAbbreviatedFontSize: 6,
+        rowGlowMode: 'gradient-underline',
+        skillRowGlowMode: 'gradient-underline',
+        rowGlowOpacity: 0.5,
+        skillRowGlowOpacity: 0.5,
+        rowBorderRadius: 0,
+        skillRowBorderRadius: 0,
+      },
+      header: {
+        windowPadding: 0,
+        headerPadding: 4,
+        timerLabelFontSize: 9,
+        timerFontSize: 12,
+        sceneNameFontSize: 10,
+        segmentFontSize: 9,
+        resetButtonSize: 14,
+        resetButtonPadding: 4,
+        pauseButtonSize: 14,
+        pauseButtonPadding: 4,
+        bossOnlyButtonSize: 14,
+        bossOnlyButtonPadding: 4,
+        settingsButtonSize: 14,
+        settingsButtonPadding: 4,
+        minimizeButtonSize: 14,
+        minimizeButtonPadding: 4,
+        totalDamageLabelFontSize: 9,
+        totalDamageValueFontSize: 12,
+        totalDpsLabelFontSize: 9,
+        totalDpsValueFontSize: 12,
+        bossHealthLabelFontSize: 9,
+        bossHealthNameFontSize: 10,
+        bossHealthValueFontSize: 10,
+        bossHealthPercentFontSize: 10,
+        navTabFontSize: 8,
+        navTabPaddingX: 6,
+        navTabPaddingY: 3,
+      }
+    },
+    small: {
+      name: "Small",
+      description: "Compact layout for more rows",
+      table: {
+        playerRowHeight: 22,
+        playerFontSize: 11,
+        playerIconSize: 16,
+        showTableHeader: true,
+        tableHeaderHeight: 20,
+        tableHeaderFontSize: 9,
+        abbreviatedFontSize: 8,
+        skillRowHeight: 20,
+        skillFontSize: 10,
+        skillIconSize: 14,
+        skillShowHeader: true,
+        skillHeaderHeight: 18,
+        skillHeaderFontSize: 8,
+        skillAbbreviatedFontSize: 7,
+        rowGlowMode: 'gradient-underline',
+        skillRowGlowMode: 'gradient-underline',
+        rowGlowOpacity: 0.5,
+        skillRowGlowOpacity: 0.5,
+        rowBorderRadius: 0,
+        skillRowBorderRadius: 0,
+      },
+      header: {
+        windowPadding: 6,
+        headerPadding: 6,
+        timerLabelFontSize: 10,
+        timerFontSize: 14,
+        sceneNameFontSize: 11,
+        segmentFontSize: 10,
+        resetButtonSize: 16,
+        resetButtonPadding: 6,
+        pauseButtonSize: 16,
+        pauseButtonPadding: 6,
+        bossOnlyButtonSize: 16,
+        bossOnlyButtonPadding: 6,
+        settingsButtonSize: 16,
+        settingsButtonPadding: 6,
+        minimizeButtonSize: 16,
+        minimizeButtonPadding: 6,
+        totalDamageLabelFontSize: 10,
+        totalDamageValueFontSize: 14,
+        totalDpsLabelFontSize: 10,
+        totalDpsValueFontSize: 14,
+        bossHealthLabelFontSize: 10,
+        bossHealthNameFontSize: 11,
+        bossHealthValueFontSize: 11,
+        bossHealthPercentFontSize: 11,
+        navTabFontSize: 9,
+        navTabPaddingX: 8,
+        navTabPaddingY: 4,
+      }
+    },
+    medium: {
+      name: "Medium",
+      description: "Balanced size for most displays",
+      table: {
+        playerRowHeight: 28,
+        playerFontSize: 13,
+        playerIconSize: 20,
+        showTableHeader: true,
+        tableHeaderHeight: 24,
+        tableHeaderFontSize: 11,
+        abbreviatedFontSize: 10,
+        skillRowHeight: 24,
+        skillFontSize: 12,
+        skillIconSize: 18,
+        skillShowHeader: true,
+        skillHeaderHeight: 22,
+        skillHeaderFontSize: 10,
+        skillAbbreviatedFontSize: 9,
+        rowGlowMode: 'gradient-underline',
+        skillRowGlowMode: 'gradient-underline',
+        rowGlowOpacity: 0.5,
+        skillRowGlowOpacity: 0.5,
+        rowBorderRadius: 0,
+        skillRowBorderRadius: 0,
+      },
+      header: {
+        windowPadding: 12,
+        headerPadding: 8,
+        timerLabelFontSize: 12,
+        timerFontSize: 18,
+        sceneNameFontSize: 14,
+        segmentFontSize: 12,
+        resetButtonSize: 20,
+        resetButtonPadding: 8,
+        pauseButtonSize: 20,
+        pauseButtonPadding: 8,
+        bossOnlyButtonSize: 20,
+        bossOnlyButtonPadding: 8,
+        settingsButtonSize: 20,
+        settingsButtonPadding: 8,
+        minimizeButtonSize: 20,
+        minimizeButtonPadding: 8,
+        totalDamageLabelFontSize: 14,
+        totalDamageValueFontSize: 18,
+        totalDpsLabelFontSize: 14,
+        totalDpsValueFontSize: 18,
+        bossHealthLabelFontSize: 12,
+        bossHealthNameFontSize: 14,
+        bossHealthValueFontSize: 14,
+        bossHealthPercentFontSize: 14,
+        navTabFontSize: 11,
+        navTabPaddingX: 12,
+        navTabPaddingY: 6,
+      }
+    },
+    large: {
+      name: "Large",
+      description: "Larger UI for high-res displays",
+      table: {
+        playerRowHeight: 36,
+        playerFontSize: 16,
+        playerIconSize: 26,
+        showTableHeader: true,
+        tableHeaderHeight: 30,
+        tableHeaderFontSize: 13,
+        abbreviatedFontSize: 12,
+        skillRowHeight: 30,
+        skillFontSize: 14,
+        skillIconSize: 22,
+        skillShowHeader: true,
+        skillHeaderHeight: 26,
+        skillHeaderFontSize: 12,
+        skillAbbreviatedFontSize: 11,
+        rowGlowMode: 'gradient-underline',
+        skillRowGlowMode: 'gradient-underline',
+        rowGlowOpacity: 0.5,
+        skillRowGlowOpacity: 0.5,
+        rowBorderRadius: 0,
+        skillRowBorderRadius: 0,
+      },
+      header: {
+        windowPadding: 16,
+        headerPadding: 12,
+        timerLabelFontSize: 14,
+        timerFontSize: 24,
+        sceneNameFontSize: 18,
+        segmentFontSize: 14,
+        resetButtonSize: 26,
+        resetButtonPadding: 10,
+        pauseButtonSize: 26,
+        pauseButtonPadding: 10,
+        bossOnlyButtonSize: 26,
+        bossOnlyButtonPadding: 10,
+        settingsButtonSize: 26,
+        settingsButtonPadding: 10,
+        minimizeButtonSize: 26,
+        minimizeButtonPadding: 10,
+        totalDamageLabelFontSize: 16,
+        totalDamageValueFontSize: 24,
+        totalDpsLabelFontSize: 16,
+        totalDpsValueFontSize: 24,
+        bossHealthLabelFontSize: 14,
+        bossHealthNameFontSize: 18,
+        bossHealthValueFontSize: 18,
+        bossHealthPercentFontSize: 18,
+        navTabFontSize: 13,
+        navTabPaddingX: 16,
+        navTabPaddingY: 8,
+      }
+    },
+  };
+
+  function applyColorPreset(presetKey: string) {
+    const preset = COLOR_PRESETS[presetKey];
+    if (preset) {
+      // Save to settings (which will trigger the $effect to apply it)
+      SETTINGS.accessibility.state.theme = preset.theme;
+    }
+  }
+
+  function applySizePreset(presetKey: string) {
+    const preset = SIZE_PRESETS[presetKey];
+    if (preset) {
+      // Apply table settings
+      for (const [key, value] of Object.entries(preset.table)) {
+        (SETTINGS.live.tableCustomization.state as any)[key] = value;
+      }
+      // Apply header settings
+      for (const [key, value] of Object.entries(preset.header)) {
+        (SETTINGS.live.headerCustomization.state as any)[key] = value;
+      }
+    }
+  }
 
   let activeTab = $state('general');
 
@@ -980,6 +1267,82 @@
         </div>
 
         
+      </div>
+    </Tabs.Content>
+
+  {:else if activeTab === 'presets'}
+    <Tabs.Content value="presets">
+      <div class="space-y-6">
+        <!-- Color Theme Presets -->
+        <div class="space-y-3">
+          <div>
+            <h2 class="text-base font-semibold text-foreground">Color Themes</h2>
+            <p class="text-xs text-muted-foreground mt-0.5">Choose a color preset to apply instantly</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            {#each Object.entries(COLOR_PRESETS) as [key, preset]}
+              <button
+                type="button"
+                class="group relative flex flex-col items-start p-4 rounded-lg border border-border/60 bg-card/40 hover:bg-card/60 hover:border-primary/50 transition-all text-left"
+                onclick={() => applyColorPreset(key)}
+              >
+                <!-- Color preview dots -->
+                <div class="flex gap-1.5 mb-2">
+                  <span class="w-4 h-4 rounded-full border border-black/20" style="background: {preset.preview.bg}"></span>
+                  <span class="w-4 h-4 rounded-full border border-black/20" style="background: {preset.preview.primary}"></span>
+                  <span class="w-4 h-4 rounded-full border border-black/20" style="background: {preset.preview.accent}"></span>
+                  <span class="w-4 h-4 rounded-full border border-black/20" style="background: {preset.preview.fg}"></span>
+                </div>
+                <span class="text-sm font-medium text-foreground">{preset.name}</span>
+                <span class="text-xs text-muted-foreground mt-0.5">{preset.description}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+
+        <!-- Size Presets -->
+        <div class="space-y-3 pt-4 border-t border-border/50">
+          <div>
+            <h2 class="text-base font-semibold text-foreground">Size Presets</h2>
+            <p class="text-xs text-muted-foreground mt-0.5">Adjust table and header sizing for your display</p>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            {#each Object.entries(SIZE_PRESETS) as [key, preset]}
+              <button
+                type="button"
+                class="group flex flex-col items-center justify-center p-4 rounded-lg border border-border/60 bg-card/40 hover:bg-card/60 hover:border-primary/50 transition-all"
+                onclick={() => applySizePreset(key)}
+              >
+                <!-- Size indicator -->
+                <div class="flex items-end gap-0.5 mb-2 h-6">
+                  {#if key === 'compact'}
+                    <span class="w-2 h-2 bg-primary/60 rounded-sm"></span>
+                    <span class="w-2 h-3 bg-primary/40 rounded-sm"></span>
+                    <span class="w-2 h-4 bg-primary/20 rounded-sm"></span>
+                    <span class="w-2 h-5 bg-primary/10 rounded-sm"></span>
+                  {:else if key === 'small'}
+                    <span class="w-2 h-2 bg-primary/40 rounded-sm"></span>
+                    <span class="w-2 h-3 bg-primary/60 rounded-sm"></span>
+                    <span class="w-2 h-4 bg-primary/30 rounded-sm"></span>
+                    <span class="w-2 h-5 bg-primary/10 rounded-sm"></span>
+                  {:else if key === 'medium'}
+                    <span class="w-2 h-2 bg-primary/20 rounded-sm"></span>
+                    <span class="w-2 h-3 bg-primary/40 rounded-sm"></span>
+                    <span class="w-2 h-4 bg-primary/60 rounded-sm"></span>
+                    <span class="w-2 h-5 bg-primary/30 rounded-sm"></span>
+                  {:else}
+                    <span class="w-2 h-2 bg-primary/10 rounded-sm"></span>
+                    <span class="w-2 h-3 bg-primary/20 rounded-sm"></span>
+                    <span class="w-2 h-4 bg-primary/40 rounded-sm"></span>
+                    <span class="w-2 h-5 bg-primary/60 rounded-sm"></span>
+                  {/if}
+                </div>
+                <span class="text-sm font-medium text-foreground">{preset.name}</span>
+                <span class="text-xs text-muted-foreground mt-0.5 text-center">{preset.description}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
       </div>
     </Tabs.Content>
   {/if}

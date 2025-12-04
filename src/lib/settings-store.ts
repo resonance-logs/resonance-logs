@@ -158,7 +158,7 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   // Skill-specific row glow / highlight customization (separate from player rows)
   skillRowGlowMode: 'gradient-underline' as 'gradient-underline' | 'gradient' | 'solid',
   skillRowGlowOpacity: 0.15,
-  skillRowBorderRadius: 6,
+  skillRowBorderRadius: 0,
   // Row glow / highlight customization
   // modes: 'gradient-underline' (gradient + neon underline), 'gradient' (gradient only), 'solid' (solid color fill)
   rowGlowMode: 'gradient-underline' as 'gradient-underline' | 'gradient' | 'solid',
@@ -170,7 +170,7 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   rowGlowSpread: 8,
   // Note: glow always uses the detected class/spec color.
   // Row border customization
-  rowBorderRadius: 6,
+  rowBorderRadius: 0,
 };
 
 // (Header preset constants removed - header defaults inlined into DEFAULT_SETTINGS)
@@ -235,6 +235,7 @@ const DEFAULT_SETTINGS = {
   accessibility: {
     blur: false,
     clickthrough: false,
+    theme: 'dark' as string,
     classColors: { ...DEFAULT_CLASS_COLORS },
     useClassSpecColors: false,
     classSpecColors: { ...DEFAULT_CLASS_SPEC_COLORS },
