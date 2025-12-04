@@ -19,42 +19,175 @@
   ];
 
   // === COLOR THEME PRESETS (matching CSS data-theme selectors) ===
-  const COLOR_PRESETS: Record<string, { name: string; description: string; theme: string; preview: { bg: string; primary: string; accent: string; fg: string } }> = {
+  // Color presets now include full variable mappings (from CSS data-theme blocks)
+  const COLOR_PRESETS: Record<string, { name: string; description: string; theme: string; preview?: { bg: string; primary: string; accent: string; fg: string }; vars?: Record<string, string> }> = {
     dark: {
       name: "Dark",
       description: "Clean dark theme with neutral grays",
       theme: 'dark',
-      preview: { bg: '#212121', primary: '#a6a6a6', accent: '#525252', fg: '#e2e2e2' }
+      preview: { bg: '#212121', primary: '#a6a6a6', accent: '#525252', fg: '#e2e2e2' },
+      vars: {
+        backgroundMain: 'oklch(0.2178 0 0)',
+        backgroundLive: 'oklch(0.2178 0 0)',
+        foreground: 'oklch(0.8853 0 0)',
+        card: 'oklch(0.2435 0 0)',
+        cardForeground: 'oklch(0.8853 0 0)',
+        popover: 'oklch(0.2435 0 0)',
+        popoverForeground: 'oklch(0.8853 0 0)',
+        primary: 'oklch(0.7058 0 0)',
+        primaryForeground: 'oklch(0.2178 0 0)',
+        secondary: 'oklch(0.3092 0 0)',
+        secondaryForeground: 'oklch(0.8853 0 0)',
+        muted: 'oklch(0.2850 0 0)',
+        mutedForeground: 'oklch(0.5999 0 0)',
+        accent: 'oklch(0.3715 0 0)',
+        accentForeground: 'oklch(0.8853 0 0)',
+        destructive: 'oklch(0.6591 0.1530 22.1703)',
+        destructiveForeground: 'oklch(1 0 0)',
+        border: 'oklch(0.3290 0 0)',
+        input: 'oklch(0.3092 0 0)',
+        ring: 'oklch(0.7058 0 0)'
+      }
     },
     light: {
       name: "Light",
       description: "Bright theme for daylight use",
       theme: 'light',
-      preview: { bg: '#fbfbf9', primary: '#5b7fc7', accent: '#d4a84a', fg: '#2a2e40' }
+      preview: { bg: '#fbfbf9', primary: '#5b7fc7', accent: '#d4a84a', fg: '#2a2e40' },
+      vars: {
+        backgroundMain: 'oklch(0.985 0.01 95)',
+        backgroundLive: 'oklch(0.985 0.01 95)',
+        foreground: 'oklch(0.19 0.02 250)',
+        card: 'oklch(0.97 0.01 95)',
+        cardForeground: 'oklch(0.19 0.02 250)',
+        popover: 'oklch(0.97 0.01 95)',
+        popoverForeground: 'oklch(0.19 0.02 250)',
+        primary: 'oklch(0.65 0.12 250)',
+        primaryForeground: 'oklch(0.99 0.01 95)',
+        secondary: 'oklch(0.92 0.02 95)',
+        secondaryForeground: 'oklch(0.34 0.04 250)',
+        muted: 'oklch(0.9 0.015 95)',
+        mutedForeground: 'oklch(0.48 0.02 240)',
+        accent: 'oklch(0.78 0.14 60)',
+        accentForeground: 'oklch(0.18 0.03 250)',
+        destructive: 'oklch(0.62 0.24 25)',
+        destructiveForeground: 'oklch(0.98 0.01 95)',
+        border: 'oklch(0.88 0.02 95)',
+        input: 'oklch(0.94 0.015 95)',
+        ring: 'oklch(0.65 0.12 250)'
+      }
     },
     pink: {
       name: "Pink UwU",
       description: "Cute pastel pink aesthetic",
       theme: 'pink',
-      preview: { bg: '#F8E8EE', primary: '#F2BED1', accent: '#F2BED1', fg: '#582F3B' }
+      preview: { bg: '#F8E8EE', primary: '#F2BED1', accent: '#F2BED1', fg: '#582F3B' },
+      vars: {
+        backgroundMain: '#F8E8EE',
+        backgroundLive: '#F8E8EE',
+        foreground: '#582F3B',
+        card: '#F9F5F6',
+        cardForeground: '#582F3B',
+        popover: '#F9F5F6',
+        popoverForeground: '#582F3B',
+        primary: '#F2BED1',
+        primaryForeground: '#402028',
+        secondary: '#FDCEDF',
+        secondaryForeground: '#5A2F3D',
+        muted: '#F9F5F6',
+        mutedForeground: '#7A5461',
+        accent: '#F2BED1',
+        accentForeground: '#402028',
+        destructive: '#D35D6E',
+        destructiveForeground: '#FFF9FB',
+        border: '#F2BED1',
+        input: '#FDCEDF',
+        ring: '#F2BED1'
+      }
     },
     green: {
       name: "Green Pastel",
       description: "Soft green nature tones",
       theme: 'green',
-      preview: { bg: '#e0f0e0', primary: '#6fbf6f', accent: '#7fcf8f', fg: '#1a2a1a' }
+      preview: { bg: '#e0f0e0', primary: '#6fbf6f', accent: '#7fcf8f', fg: '#1a2a1a' },
+      vars: {
+        backgroundMain: 'oklch(0.94 0.03 150)',
+        backgroundLive: 'oklch(0.94 0.03 150)',
+        foreground: 'oklch(0.20 0.03 150)',
+        card: 'oklch(0.95 0.025 150)',
+        cardForeground: 'oklch(0.20 0.03 150)',
+        popover: 'oklch(0.95 0.025 150)',
+        popoverForeground: 'oklch(0.20 0.03 150)',
+        primary: 'oklch(0.75 0.09 150)',
+        primaryForeground: 'oklch(0.98 0.015 95)',
+        secondary: 'oklch(0.90 0.02 145)',
+        secondaryForeground: 'oklch(0.34 0.04 160)',
+        muted: 'oklch(0.90 0.02 150)',
+        mutedForeground: 'oklch(0.42 0.03 140)',
+        accent: 'oklch(0.78 0.08 160)',
+        accentForeground: 'oklch(0.22 0.03 160)',
+        destructive: 'oklch(0.62 0.24 25)',
+        destructiveForeground: 'oklch(0.99 0.01 95)',
+        border: 'oklch(0.86 0.02 150)',
+        input: 'oklch(0.92 0.015 150)',
+        ring: 'oklch(0.75 0.09 150)'
+      }
     },
     matcha: {
       name: "Matcha",
       description: "Earthy green tea vibes",
       theme: 'matcha',
-      preview: { bg: '#d8e8d0', primary: '#5a9f5a', accent: '#6ab06a', fg: '#283828' }
+      preview: { bg: '#d8e8d0', primary: '#5a9f5a', accent: '#6ab06a', fg: '#283828' },
+      vars: {
+        backgroundMain: 'oklch(0.90 0.03 125)',
+        backgroundLive: 'oklch(0.90 0.03 125)',
+        foreground: 'oklch(0.24 0.04 125)',
+        card: 'oklch(0.92 0.03 125)',
+        cardForeground: 'oklch(0.24 0.04 125)',
+        popover: 'oklch(0.92 0.03 125)',
+        popoverForeground: 'oklch(0.24 0.04 125)',
+        primary: 'oklch(0.70 0.11 125)',
+        primaryForeground: 'oklch(0.98 0.015 95)',
+        secondary: 'oklch(0.88 0.02 125)',
+        secondaryForeground: 'oklch(0.36 0.05 125)',
+        muted: 'oklch(0.87 0.02 125)',
+        mutedForeground: 'oklch(0.42 0.03 130)',
+        accent: 'oklch(0.74 0.10 135)',
+        accentForeground: 'oklch(0.25 0.04 125)',
+        destructive: 'oklch(0.62 0.24 25)',
+        destructiveForeground: 'oklch(0.99 0.01 95)',
+        border: 'oklch(0.84 0.02 125)',
+        input: 'oklch(0.90 0.02 125)',
+        ring: 'oklch(0.70 0.11 125)'
+      }
     },
     rainbow: {
       name: "Pastel Rainbow",
       description: "Colorful gradient background",
       theme: 'rainbow',
-      preview: { bg: 'linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5)', primary: '#b87fd0', accent: '#d09050', fg: '#383848' }
+      preview: { bg: 'linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5)', primary: '#b87fd0', accent: '#d09050', fg: '#383848' },
+      vars: {
+        backgroundMain: 'linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5)',
+        backgroundLive: 'linear-gradient(120deg,#ffe5ec,#e0f7fa,#f3e8ff,#e9fbd5)',
+        foreground: 'oklch(0.25 0.03 250)',
+        card: 'oklch(0.97 0.02 95)',
+        cardForeground: 'oklch(0.25 0.03 250)',
+        popover: 'oklch(0.97 0.02 95)',
+        popoverForeground: 'oklch(0.25 0.03 250)',
+        primary: 'oklch(0.72 0.14 300)',
+        primaryForeground: 'oklch(0.99 0.01 95)',
+        secondary: 'oklch(0.80 0.10 140)',
+        secondaryForeground: 'oklch(0.28 0.03 240)',
+        muted: 'oklch(0.90 0.02 95)',
+        mutedForeground: 'oklch(0.45 0.03 250)',
+        accent: 'oklch(0.78 0.13 40)',
+        accentForeground: 'oklch(0.22 0.03 250)',
+        destructive: 'oklch(0.60 0.22 25)',
+        destructiveForeground: 'oklch(0.99 0.01 95)',
+        border: 'oklch(0.88 0.02 95)',
+        input: 'oklch(0.94 0.02 95)',
+        ring: 'oklch(0.72 0.14 300)'
+      }
     },
   };
 
@@ -285,8 +418,11 @@
   function applyColorPreset(presetKey: string) {
     const preset = COLOR_PRESETS[presetKey];
     if (preset) {
-      // Save to settings (which will trigger the $effect to apply it)
-      SETTINGS.accessibility.state.theme = preset.theme;
+
+      SETTINGS.accessibility.state.customThemeColors = {
+        ...SETTINGS.accessibility.state.customThemeColors,
+        ...preset.vars,
+      };
     }
   }
 

@@ -243,7 +243,6 @@ const DEFAULT_SETTINGS = {
   accessibility: {
     blur: false,
     clickthrough: false,
-    theme: 'dark' as string,
     classColors: { ...DEFAULT_CLASS_COLORS },
     useClassSpecColors: false,
     classSpecColors: { ...DEFAULT_CLASS_SPEC_COLORS },
