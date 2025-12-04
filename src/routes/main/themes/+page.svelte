@@ -20,7 +20,7 @@
 
   // === COLOR THEME PRESETS (matching CSS data-theme selectors) ===
   // Color presets now include full variable mappings (from CSS data-theme blocks)
-  const COLOR_PRESETS: Record<string, { name: string; description: string; theme: string; preview?: { bg: string; primary: string; accent: string; fg: string }; vars?: Record<string, string> }> = {
+  const COLOR_PRESETS: Record<string, { name: string; description: string; theme: string; preview: { bg: string; primary: string; accent: string; fg: string }; vars?: Record<string, string> }> = {
     dark: {
       name: "Dark",
       description: "Clean dark theme with neutral grays",
@@ -46,7 +46,14 @@
         destructiveForeground: 'oklch(1 0 0)',
         border: 'oklch(0.3290 0 0)',
         input: 'oklch(0.3092 0 0)',
-        ring: 'oklch(0.7058 0 0)'
+        ring: 'oklch(0.7058 0 0)',
+        tooltipBg: 'oklch(0.275 0 0 / 0.92)',
+        tooltipBorder: 'oklch(0.38 0 0 / 0.55)',
+        tooltipFg: 'oklch(0.8853 0 0)',
+        playerTextColor: '#ffffff',
+        skillTextColor: '#ffffff',
+        abbreviatedColor: '#71717a',
+        skillAbbreviatedColor: '#71717a'
       }
     },
     light: {
@@ -74,7 +81,14 @@
         destructiveForeground: 'oklch(0.98 0.01 95)',
         border: 'oklch(0.88 0.02 95)',
         input: 'oklch(0.94 0.015 95)',
-        ring: 'oklch(0.65 0.12 250)'
+        ring: 'oklch(0.65 0.12 250)',
+        tooltipBg: 'oklch(0.86 0.01 95 / 0.96)',
+        tooltipBorder: 'oklch(0.78 0.02 95 / 0.65)',
+        tooltipFg: 'oklch(0.19 0.02 250)',
+        playerTextColor: '#2a2e40',
+        skillTextColor: '#2a2e40',
+        abbreviatedColor: '#71717a',
+        skillAbbreviatedColor: '#71717a'
       }
     },
     pink: {
@@ -102,7 +116,14 @@
         destructiveForeground: '#FFF9FB',
         border: '#F2BED1',
         input: '#FDCEDF',
-        ring: '#F2BED1'
+        ring: '#F2BED1',
+        tooltipBg: '#F2BED1EE',
+        tooltipBorder: '#F2BED1',
+        tooltipFg: '#582F3B',
+        playerTextColor: '#582F3B',
+        skillTextColor: '#582F3B',
+        abbreviatedColor: '#7A5461',
+        skillAbbreviatedColor: '#7A5461'
       }
     },
     green: {
@@ -130,7 +151,14 @@
         destructiveForeground: 'oklch(0.99 0.01 95)',
         border: 'oklch(0.86 0.02 150)',
         input: 'oklch(0.92 0.015 150)',
-        ring: 'oklch(0.75 0.09 150)'
+        ring: 'oklch(0.75 0.09 150)',
+        tooltipBg: 'oklch(0.90 0.02 150 / 0.96)',
+        tooltipBorder: 'oklch(0.80 0.02 150 / 0.55)',
+        tooltipFg: 'oklch(0.20 0.03 150)',
+        playerTextColor: '#1a2a1a',
+        skillTextColor: '#1a2a1a',
+        abbreviatedColor: '#71717a',
+        skillAbbreviatedColor: '#71717a'
       }
     },
     matcha: {
@@ -158,7 +186,14 @@
         destructiveForeground: 'oklch(0.99 0.01 95)',
         border: 'oklch(0.84 0.02 125)',
         input: 'oklch(0.90 0.02 125)',
-        ring: 'oklch(0.70 0.11 125)'
+        ring: 'oklch(0.70 0.11 125)',
+        tooltipBg: 'oklch(0.88 0.02 125 / 0.96)',
+        tooltipBorder: 'oklch(0.78 0.02 125 / 0.55)',
+        tooltipFg: 'oklch(0.24 0.04 125)',
+        playerTextColor: '#283828',
+        skillTextColor: '#283828',
+        abbreviatedColor: '#71717a',
+        skillAbbreviatedColor: '#71717a'
       }
     },
     rainbow: {
@@ -186,7 +221,14 @@
         destructiveForeground: 'oklch(0.99 0.01 95)',
         border: 'oklch(0.88 0.02 95)',
         input: 'oklch(0.94 0.02 95)',
-        ring: 'oklch(0.72 0.14 300)'
+        ring: 'oklch(0.72 0.14 300)',
+        tooltipBg: 'oklch(0.93 0.02 95 / 0.94)',
+        tooltipBorder: 'oklch(0.83 0.02 95 / 0.5)',
+        tooltipFg: 'oklch(0.25 0.03 250)',
+        playerTextColor: '#383848',
+        skillTextColor: '#383848',
+        abbreviatedColor: '#71717a',
+        skillAbbreviatedColor: '#71717a'
       }
     },
   };
@@ -502,7 +544,7 @@
   });
 
   // Category order for display
-  const categoryOrder = ['Base', 'Surfaces', 'Accents', 'Tables', 'Utility'];
+  const categoryOrder = ['Base', 'Surfaces', 'Tooltip', 'Accents', 'Tables', 'Utility'];
 
   $effect(() => {
     setClickthrough(SETTINGS.accessibility.state.clickthrough);

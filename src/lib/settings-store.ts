@@ -205,6 +205,9 @@ export const DEFAULT_CUSTOM_THEME_COLORS: Record<string, string> = {
   border: 'rgba(74, 74, 74, 1)',
   input: 'rgba(64, 64, 64, 1)',
   ring: 'rgba(166, 166, 166, 1)',
+  tooltipBg: 'rgba(33, 33, 33, 0.92)',
+  tooltipBorder: 'rgba(74, 74, 74, 0.55)',
+  tooltipFg: 'rgba(226, 226, 226, 1)',
   playerTextColor: '#ffffff',
   skillTextColor: '#ffffff',
   abbreviatedColor: '#71717a',
@@ -235,8 +238,11 @@ export const CUSTOM_THEME_COLOR_LABELS: Record<string, { label: string; descript
   ring: { label: 'Ring', description: 'Focus ring color', category: 'Utility' },
   playerTextColor: { label: 'Player Text', description: 'Color for player names and values in tables', category: 'Tables' },
   skillTextColor: { label: 'Skill Text', description: 'Color for skill names and values in skill tables', category: 'Tables' },
-  abbreviatedColor: { label: 'Suffix Color', description: 'Color of K, M, % suffixes in tables', category: 'Tables' },
+  abbreviatedColor: { label: 'Player Suffix Color', description: 'Color of K, M, % suffixes in player tables', category: 'Tables' },
   skillAbbreviatedColor: { label: 'Skill Suffix Color', description: 'Color of K, M, % suffixes in skill rows', category: 'Tables' },
+  tooltipBg: { label: 'Tooltip Background', description: 'Background color for tooltips', category: 'Tooltip' },
+  tooltipBorder: { label: 'Tooltip Border', description: 'Border color for tooltips', category: 'Tooltip' },
+  tooltipFg: { label: 'Tooltip Text', description: 'Text color for tooltips', category: 'Tooltip' },
 };
 
 const DEFAULT_SETTINGS = {

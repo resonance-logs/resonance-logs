@@ -43,6 +43,10 @@
   --tooltip-bg: oklch(0.275 0 0 / 0.92);
   --tooltip-border: oklch(0.38 0 0 / 0.55);
   --tooltip-fg: var(--foreground);
+  --player-text-color: #ffffff;
+  --skill-text-color: #ffffff;
+  --abbreviated-color: #71717a;
+  --skill-abbreviated-color: #71717a;
   --toast-shadow: 0 4px 24px -4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
   --font-sans: Inter, sans-serif;
   --font-serif: Georgia, serif;
@@ -141,7 +145,7 @@
 
 [data-tooltip-arrow] {
   background: var(--tooltip-bg);
-  box-shadow: 0 0 0 1px var(--tooltip-border);
+  box-shadow: none;
 }
 .tippy-box[data-theme~='resonance'] {
   background: var(--tooltip-bg);
@@ -157,7 +161,7 @@
 }
 .tippy-box[data-theme~='resonance'] > .tippy-arrow::before {
   color: var(--tooltip-bg);
-  box-shadow: 0 0 0 1px var(--tooltip-border);
+  box-shadow: none;
 }
 
 .toast-root {
