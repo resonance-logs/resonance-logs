@@ -78,29 +78,19 @@
 <svelte:window oncontextmenu={(e) => e.preventDefault()} />
 
 <!-- Apply theme on the document element -->
-{(() => {
+  {(() => {
   $effect(() => {
     if (typeof document !== 'undefined') {
-      const theme = SETTINGS.accessibility.state.theme ?? 'dark';
-      const transparentMode = SETTINGS.accessibility.state.transparentMode ?? false;
       const customThemeColors = SETTINGS.accessibility.state.customThemeColors;
-      
-      document.documentElement.setAttribute('data-theme', theme);
-      
-      // Apply or clear custom theme colors based on selected theme
-      if (theme === 'custom' && customThemeColors) {
+
+      // Always operate in 'custom' theme mode. Apply any custom colors if present.
+      document.documentElement.setAttribute('data-theme', 'custom');
+
+      if (customThemeColors) {
         applyCustomThemeColors(customThemeColors);
       } else {
         clearCustomThemeColors();
       }
-      
-      try {
-        // Mirror into localStorage for early load in app.html script
-        const raw = localStorage.getItem('accessibility');
-        const parsed = raw ? JSON.parse(raw) : {};
-        parsed.theme = theme;
-        localStorage.setItem('accessibility', JSON.stringify(parsed));
-      } catch {}
     }
   });
 })()}

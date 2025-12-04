@@ -981,7 +981,11 @@ names: string[] }
 /**
  * Represents an individual combat segment (boss or trash).
  */
-export type Segment = { id: number; segmentType: SegmentType; bossEntityId: number | null; bossMonsterTypeId: number | null; bossName: string | null; startedAtMs: number; endedAtMs: number | null; totalDamage: number; hitCount: number; events: DamageEvent[] }
+export type Segment = { id: number; segmentType: SegmentType; 
+/**
+ * Primary boss entity ID (first one seen) - kept for backwards compatibility
+ */
+bossEntityId: number | null; bossMonsterTypeId: number | null; bossName: string | null; startedAtMs: number; endedAtMs: number | null; totalDamage: number; hitCount: number; events: DamageEvent[] }
 export type SegmentType = "boss" | "trash"
 /**
  * Represents a row in the skills window.

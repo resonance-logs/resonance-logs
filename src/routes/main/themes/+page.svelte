@@ -6,7 +6,7 @@
   import SettingsColor from "../settings/settings-color.svelte";
   import SettingsColorAlpha from "../settings/settings-color-alpha.svelte";
   import SettingsFilePicker from "../settings/settings-file-picker.svelte";
-  import { SETTINGS, AVAILABLE_THEMES, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS } from "$lib/settings-store";
+  import { SETTINGS, DEFAULT_CLASS_COLORS, DEFAULT_CLASS_SPEC_COLORS, CLASS_SPEC_NAMES, DEFAULT_CUSTOM_THEME_COLORS, CUSTOM_THEME_COLOR_LABELS } from "$lib/settings-store";
   import { setClickthrough, CLASS_NAMES, getClassColorRaw } from "$lib/utils.svelte";
   import { setBossOnlyDps, setDungeonSegmentsEnabled } from "$lib/api";
   import { onMount } from 'svelte';
@@ -25,7 +25,6 @@
     classSpecColors: false,
     backgroundImage: false,
     customFonts: false,
-    transparency: false,
     liveDisplay: false,
     headerSettings: false,
     tableSettings: false,
@@ -112,8 +111,7 @@
     SETTINGS.accessibility.state.customThemeColors = { ...DEFAULT_CUSTOM_THEME_COLORS };
   }
 
-  // Check if custom theme is selected
-  let isCustomTheme = $derived(SETTINGS.accessibility.state.theme === 'custom');
+  // NOTE: preset theme selector removed — always show custom theme controls here
   // expose table customization state as any for optional skill-specific keys
   const tableCustomizationState: any = SETTINGS.live.tableCustomization.state;
 </script>
@@ -140,15 +138,7 @@
           </button>
           {#if expandedSections.colorThemes}
             <div class="px-4 pb-4 space-y-3">
-              <SettingsSelect
-                label="Theme"
-                description="Choose one of the built-in themes"
-                bind:selected={SETTINGS.accessibility.state["theme"]}
-                values={AVAILABLE_THEMES}
-              />
-
-              {#if isCustomTheme}
-                <div class="mt-3 pt-3 border-t border-border/50">
+              <div class="mt-3 pt-3 border-t border-border/50">
                   <div class="flex items-center justify-between mb-3">
                     <div>
                       <h3 class="text-sm font-semibold text-foreground">Custom Theme Colors</h3>
@@ -178,7 +168,6 @@
                     {/if}
                   {/each}
                 </div>
-              {/if}
             </div>
           {/if}
         </div>
@@ -473,7 +462,6 @@
             </div>
           {/if}
         </div>
-        {#if isCustomTheme}
           <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
             <button
               type="button"
@@ -526,7 +514,6 @@
               </div>
             {/if}
           </div>
-        {/if}
         <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
           <button
             type="button"
@@ -622,30 +609,6 @@
   {:else if activeTab === 'live'}
     <Tabs.Content value="live">
       <div class="space-y-3">
-        
-
-        <!-- Transparency Settings -->
-        <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">
-          <button
-            type="button"
-            class="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
-            onclick={() => toggleSection('transparency')}
-          >
-            <h2 class="text-base font-semibold text-foreground">Transparency Settings</h2>
-            <ChevronDown class="w-5 h-5 text-muted-foreground transition-transform duration-200 {expandedSections.transparency ? 'rotate-180' : ''}" />
-          </button>
-          {#if expandedSections.transparency}
-            <div class="px-4 pb-4 space-y-2">
-              <p class="text-xs text-muted-foreground">Make the live meter window transparent.</p>
-              <SettingsSwitch
-                bind:checked={SETTINGS.accessibility.state.transparency}
-                label="Transparent Mode"
-                description={SETTINGS.accessibility.state.transparency ? 'Transparent Mode Enabled' : 'Enable Transparent Mode'}
-              />
-              <SettingsSlider bind:value={SETTINGS.accessibility.state["transparentOpacityPercent"]} min={0} max={100} step={1} label="Transparency Opacity" description="Lower values make the meter more see-through. 0% is fully transparent." unit="%" />
-            </div>
-          {/if}
-        </div>
 
         <!-- Live Meter Display Settings -->
         <div class="rounded-lg border bg-card/40 border-border/60 overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)]">

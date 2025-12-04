@@ -259,11 +259,7 @@ export const CUSTOM_THEME_COLOR_LABELS: Record<string, { label: string; descript
 
 const DEFAULT_SETTINGS = {
   accessibility: {
-    theme: 'dark' as string,
     blur: false,
-    transparency: false,
-    transparentOpacityPercent: 2,
-    transparentMode: false,
     clickthrough: false,
     classColors: { ...DEFAULT_CLASS_COLORS },
     useClassSpecColors: false,
@@ -530,13 +526,4 @@ export const settings = {
 
 // Accessibility helpers
 
-// Available theme names (keep in sync with CSS classes defined in app.css)
-export const AVAILABLE_THEMES = [
-  'dark',
-  'light',
-  'pink',
-  'green',
-  'matcha',
-  'rainbow',
-  'custom'
-];
+// Theme selection removed — app uses only the `custom` theme controlled by customThemeColors

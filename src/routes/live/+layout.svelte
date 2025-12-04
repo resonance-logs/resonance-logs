@@ -28,8 +28,8 @@
   let { children } = $props();
   // let screenshotDiv: HTMLDivElement | undefined = $state();
 
-  // transparency handled via polling effect below
-  let transparencyInterval: number | null = null;
+  // Polling for background image and fonts (transparency removed)
+  let bgAndFontInterval: number | null = null;
 
   let notificationToast: NotificationToast;
   let mainElement: HTMLElement | undefined = undefined;
@@ -355,22 +355,17 @@
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    // Poll settings for transparency changes and apply CSS variables / body background
-    transparencyInterval = window.setInterval(() => {
+    // Poll settings for background image and custom fonts (transparency removed)
+    bgAndFontInterval = window.setInterval(() => {
       if (isDestroyed) return;
       try {
-        const enabled = !!SETTINGS.accessibility.state.transparency;
-        const percent = Number(SETTINGS.accessibility.state.transparentOpacityPercent ?? 2) || 2;
-        const opacity = String(percent / 100);
-        
-        // Apply background image if enabled (for custom theme)
+        // Apply background image if enabled (theme-agnostic)
         const bgImageEnabled = SETTINGS.accessibility.state.backgroundImageEnabled;
         const bgImage = SETTINGS.accessibility.state.backgroundImage;
         const bgMode = SETTINGS.accessibility.state.backgroundImageMode || 'cover';
         const bgContainColor = SETTINGS.accessibility.state.backgroundImageContainColor || 'rgba(0, 0, 0, 1)';
-        const isCustomTheme = SETTINGS.accessibility.state.theme === 'custom';
-        
-        if (isCustomTheme && bgImageEnabled && bgImage) {
+
+        if (bgImageEnabled && bgImage) {
           document.body.style.backgroundImage = `url('${bgImage}')`;
           document.body.style.backgroundSize = bgMode;
           document.body.style.backgroundPosition = 'center';
@@ -380,16 +375,8 @@
           } else {
             document.body.style.backgroundColor = '';
           }
-          document.documentElement.classList.remove('transparent-mode');
-        } else if (enabled) {
-          // Add root-level class so our CSS rules apply
-          document.documentElement.classList.add('transparent-mode');
-          document.documentElement.style.setProperty('--bg-opacity', opacity);
-          // Make the page background fully transparent so the window shows through
-          document.body.style.background = 'transparent';
-          document.body.style.backgroundImage = '';
         } else {
-          document.documentElement.classList.remove('transparent-mode');
+          // Clear any background image settings
           document.body.style.background = '';
           document.body.style.backgroundImage = '';
           document.body.style.backgroundColor = '';
@@ -436,7 +423,7 @@
     return () => {
       isDestroyed = true;
       if (reconnectInterval) clearInterval(reconnectInterval);
-      if (transparencyInterval) clearInterval(transparencyInterval);
+      if (bgAndFontInterval) clearInterval(bgAndFontInterval);
       if (unlisten) unlisten();
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
