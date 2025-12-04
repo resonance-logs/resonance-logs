@@ -336,6 +336,10 @@
     setupEventListeners();
     startReconnectCheck();
 
+    // Make html and body transparent for the live overlay window
+    document.documentElement.style.background = 'transparent';
+    document.body.style.background = 'transparent';
+
     // When the window regains focus or visibility, proactively recheck listeners
     const onFocus = () => {
       if (isDestroyed) return;
@@ -373,13 +377,13 @@
           if (bgMode === 'contain') {
             document.body.style.backgroundColor = bgContainColor;
           } else {
-            document.body.style.backgroundColor = '';
+            document.body.style.backgroundColor = 'transparent';
           }
         } else {
-          // Clear any background image settings
-          document.body.style.background = '';
+          // Keep transparent background for the live overlay window
           document.body.style.backgroundImage = '';
-          document.body.style.backgroundColor = '';
+          document.body.style.background = 'transparent';
+          document.documentElement.style.background = 'transparent';
         }
         
         // Apply custom fonts if enabled
