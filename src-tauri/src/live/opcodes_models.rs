@@ -663,8 +663,8 @@ pub mod class {
             220112 | 2203622 => ClassSpec::Falconry,
             2292 | 1700820 | 1700825 | 1700827 => ClassSpec::Wildpack,
 
-            2406 => ClassSpec::Recovery,
-            2405 => ClassSpec::Shield,
+            2406 => ClassSpec::Shield,
+            2405 => ClassSpec::Recovery,
 
             2306 => ClassSpec::Dissonance,
             2307 | 2361 | 55302 => ClassSpec::Concerto,

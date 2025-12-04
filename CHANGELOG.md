@@ -7,6 +7,11 @@
 - Added ability to delete logs
 - Added wipe detection setting
 
+## Bug Fixes
+
+- Fixed segment spam for some content
+- Fixed Shield and Recovery spec detection
+
 ## How to use Npcap
 - Open the settings tab
 - Go to the Network tab (Select "Npcap" as the capture method)
