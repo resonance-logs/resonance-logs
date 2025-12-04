@@ -79,7 +79,7 @@
   });
 
   // Category order for display
-  const categoryOrder = ['Base', 'Surfaces', 'Accents', 'Utility', 'Charts', 'Sidebar'];
+  const categoryOrder = ['Base', 'Surfaces', 'Accents', 'Utility'];
 
   $effect(() => {
     setClickthrough(SETTINGS.accessibility.state.clickthrough);

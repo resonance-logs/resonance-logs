@@ -205,19 +205,6 @@ export const DEFAULT_CUSTOM_THEME_COLORS: Record<string, string> = {
   border: 'rgba(74, 74, 74, 1)',
   input: 'rgba(64, 64, 64, 1)',
   ring: 'rgba(166, 166, 166, 1)',
-  chart1: 'rgba(166, 166, 166, 1)',
-  chart2: 'rgba(120, 180, 200, 1)',
-  chart3: 'rgba(120, 120, 120, 1)',
-  chart4: 'rgba(100, 100, 100, 1)',
-  chart5: 'rgba(82, 82, 82, 1)',
-  sidebar: 'rgba(38, 38, 38, 1)',
-  sidebarForeground: 'rgba(226, 226, 226, 1)',
-  sidebarPrimary: 'rgba(166, 166, 166, 1)',
-  sidebarPrimaryForeground: 'rgba(33, 33, 33, 1)',
-  sidebarAccent: 'rgba(82, 82, 82, 1)',
-  sidebarAccentForeground: 'rgba(226, 226, 226, 1)',
-  sidebarBorder: 'rgba(74, 74, 74, 1)',
-  sidebarRing: 'rgba(166, 166, 166, 1)',
 };
 
 // Labels for custom theme color variables
@@ -242,19 +229,6 @@ export const CUSTOM_THEME_COLOR_LABELS: Record<string, { label: string; descript
   border: { label: 'Border', description: 'Border color', category: 'Utility' },
   input: { label: 'Input', description: 'Input field background', category: 'Utility' },
   ring: { label: 'Ring', description: 'Focus ring color', category: 'Utility' },
-  chart1: { label: 'Chart 1', description: 'Chart color 1', category: 'Charts' },
-  chart2: { label: 'Chart 2', description: 'Chart color 2', category: 'Charts' },
-  chart3: { label: 'Chart 3', description: 'Chart color 3', category: 'Charts' },
-  chart4: { label: 'Chart 4', description: 'Chart color 4', category: 'Charts' },
-  chart5: { label: 'Chart 5', description: 'Chart color 5', category: 'Charts' },
-  sidebar: { label: 'Sidebar', description: 'Sidebar background', category: 'Sidebar' },
-  sidebarForeground: { label: 'Sidebar Text', description: 'Sidebar text color', category: 'Sidebar' },
-  sidebarPrimary: { label: 'Sidebar Primary', description: 'Sidebar primary accent', category: 'Sidebar' },
-  sidebarPrimaryForeground: { label: 'Sidebar Primary Text', description: 'Text on sidebar primary', category: 'Sidebar' },
-  sidebarAccent: { label: 'Sidebar Accent', description: 'Sidebar accent color', category: 'Sidebar' },
-  sidebarAccentForeground: { label: 'Sidebar Accent Text', description: 'Text on sidebar accent', category: 'Sidebar' },
-  sidebarBorder: { label: 'Sidebar Border', description: 'Sidebar border color', category: 'Sidebar' },
-  sidebarRing: { label: 'Sidebar Ring', description: 'Sidebar focus ring', category: 'Sidebar' },
 };
 
 const DEFAULT_SETTINGS = {
