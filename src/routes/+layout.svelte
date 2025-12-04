@@ -46,19 +46,6 @@
     skillTextColor: '--skill-text-color',
     abbreviatedColor: '--abbreviated-color',
     skillAbbreviatedColor: '--skill-abbreviated-color',
-    chart1: '--chart-1',
-    chart2: '--chart-2',
-    chart3: '--chart-3',
-    chart4: '--chart-4',
-    chart5: '--chart-5',
-    sidebar: '--sidebar',
-    sidebarForeground: '--sidebar-foreground',
-    sidebarPrimary: '--sidebar-primary',
-    sidebarPrimaryForeground: '--sidebar-primary-foreground',
-    sidebarAccent: '--sidebar-accent',
-    sidebarAccentForeground: '--sidebar-accent-foreground',
-    sidebarBorder: '--sidebar-border',
-    sidebarRing: '--sidebar-ring',
   };
 
   // Apply custom theme colors to CSS variables
