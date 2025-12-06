@@ -1164,6 +1164,16 @@ fn is_encounter_allowed(enc: &UploadEncounterIn) -> bool {
         return false;
     }
 
+    // Must have ended_at and be at least 30 seconds long
+    let ended = match enc.ended_at_ms {
+        Some(e) => e,
+        None => return false,
+    };
+    let duration_ms = ended - enc.started_at_ms;
+    if duration_ms < 30_000 {
+        return false;
+    }
+
     // Must be in allowed scenes
     let scenes = allowed_scenes_min_hp();
     let min_hp = match scenes.iter().find(|(s, _)| *s == scene_id) {
@@ -1180,6 +1190,13 @@ fn is_encounter_allowed(enc: &UploadEncounterIn) -> bool {
     for b in &enc.encounter_bosses {
         let max_hp = b.max_hp.unwrap_or(0);
         if max_hp >= min_hp {
+            // If total_dmg is present, require it to exceed the boss max HP.
+            // Mirror server logic: if total_dmg is provided and <= max_hp, disallow.
+            if let Some(total) = enc.total_dmg {
+                if total <= max_hp {
+                    return false;
+                }
+            }
             return true;
         }
     }
