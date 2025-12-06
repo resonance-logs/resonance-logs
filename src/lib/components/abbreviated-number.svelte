@@ -32,5 +32,5 @@
 </script>
 
 <span title={fullNumberString} class="whitespace-nowrap inline-flex items-baseline gap-0.5">
-  {abbreviatedNumberTuple[0]}<span class="text-tiny text-gray-300" style={suffixStyle || undefined}>{abbreviatedNumberTuple[1]}</span>
+  {abbreviatedNumberTuple[0]}<span class="text-tiny text-muted-foreground" style={suffixStyle || undefined}>{abbreviatedNumberTuple[1]}</span>
 </span>

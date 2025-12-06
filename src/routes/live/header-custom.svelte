@@ -420,16 +420,16 @@
                 {#each displayBosses as boss (boss.uid)}
                   {@const hpPercent = boss.maxHp && boss.currentHp !== null ? Math.min(100, Math.max(0, (boss.currentHp / boss.maxHp) * 100)) : 0}
                   <div class="flex items-center gap-1 whitespace-nowrap">
-                    <span 
-                      class="truncate text-neutral-100 font-semibold tracking-tight" 
+                    <span
+                      class="truncate text-foreground font-semibold tracking-tight"
                       style="font-size: {h.bossHealthNameFontSize}px"
                       {@attach tooltip(() => boss.name)}
                     >{boss.name} -</span>
-                    <span class="tabular-nums font-semibold text-neutral-100" style="font-size: {h.bossHealthValueFontSize}px">
+                    <span class="tabular-nums font-semibold text-foreground" style="font-size: {h.bossHealthValueFontSize}px">
                       <AbbreviatedNumber num={boss.currentHp !== null ? boss.currentHp : 0} />
                       {#if boss.maxHp}
                         <span> / <AbbreviatedNumber num={boss.maxHp} /></span>
-                        <span class="text-rose-400 ml-1" style="font-size: {h.bossHealthPercentFontSize}px">({hpPercent.toFixed(1)}%)</span>
+                        <span class="text-destructive ml-1" style="font-size: {h.bossHealthPercentFontSize}px">({hpPercent.toFixed(1)}%)</span>
                       {/if}
                     </span>
                   </div>
@@ -446,22 +446,22 @@
     <!-- Row 2, Col 2: DPS/HEAL/TANKED Tabs -->
     {#if h.showNavigationTabs}
       <div
-        class="col-start-2 row-start-2 justify-self-end flex items-center border border-border rounded-lg overflow-hidden bg-popover/30 shrink-0"
+        class="col-start-2 row-start-2 justify-self-end flex items-stretch border border-border rounded-lg overflow-hidden bg-popover/30 shrink-0"
       >
         <button
-          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap {$page.url.pathname.includes('dps') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap h-full flex items-center {$page.url.pathname.includes('dps') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
           style="font-size: {h.navTabFontSize}px; padding: {h.navTabPaddingY}px {h.navTabPaddingX}px"
           aria-current={$page.url.pathname.includes("dps") ? "page" : undefined}
           onclick={() => goto(resolve("/live/dps"))}>DPS</button
         >
         <button
-          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap {$page.url.pathname.includes('heal') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap h-full flex items-center {$page.url.pathname.includes('heal') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
           style="font-size: {h.navTabFontSize}px; padding: {h.navTabPaddingY}px {h.navTabPaddingX}px"
           aria-current={$page.url.pathname.includes("heal") ? "page" : undefined}
           onclick={() => goto(resolve("/live/heal"))}>HEAL</button
         >
         <button
-          class="transition-all duration-200 font-bold tracking-wider uppercase whitespace-nowrap {$page.url.pathname.includes('tanked') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+          class="transition-all duration-200 font-bold tracking-wider uppercase whitespace-nowrap h-full flex items-center {$page.url.pathname.includes('tanked') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
           style="font-size: {h.navTabFontSize}px; padding: {h.navTabPaddingY}px {h.navTabPaddingX}px"
           aria-current={$page.url.pathname.includes("tanked") ? "page" : undefined}
           onclick={() => goto(resolve("/live/tanked"))}>TANKED</button

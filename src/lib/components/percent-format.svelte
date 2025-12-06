@@ -24,5 +24,5 @@
 
 <span class="whitespace-nowrap inline-flex items-baseline gap-1">
   {typeof val === "number" ? val.toFixed(fractionDigits) : val}
-  <span class="text-tiny text-gray-300" style={suffixStyle || undefined}>%</span>
+  <span class="text-tiny text-muted-foreground" style={suffixStyle || undefined}>%</span>
 </span>

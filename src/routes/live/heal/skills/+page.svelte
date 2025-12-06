@@ -121,7 +121,7 @@
         {#if currPlayer}
           {@const className = currPlayer.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? currPlayer.className : ""}
           <tr
-            class="relative border-t border-border hover:bg-muted/60 transition-colors bg-background/40"
+            class="relative hover:bg-muted/60 transition-colors bg-background/40"
             style="height: {tableSettings.skillRowHeight}px; font-size: {tableSettings.skillFontSize}px;"
           >
             <td class="px-2 py-1 relative z-10" style="color: {tableSettings.skillTextColor};">
