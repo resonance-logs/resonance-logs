@@ -381,7 +381,9 @@ pub async fn reset_encounter(
         // Use the centralized state event handler so that the EndEncounter DB task
         // is enqueued and all side-effects (emit events, clear subscriptions) are
         // handled consistently.
-        state_manager.handle_event(StateEvent::ResetEncounter).await;
+        state_manager
+            .handle_event(StateEvent::ResetEncounter { is_manual: true })
+            .await;
         info!("encounter reset via command");
     });
     Ok(())

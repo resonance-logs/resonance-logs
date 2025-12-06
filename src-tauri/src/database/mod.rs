@@ -278,6 +278,8 @@ pub enum DbTask {
     EndEncounter {
         ended_at_ms: i64,
         defeated_bosses: Option<Vec<String>>,
+        /// Whether this encounter was manually reset by the user.
+        is_manually_reset: bool,
     },
 
     /// A task to end any encounters that never received an explicit end.
@@ -400,11 +402,15 @@ fn finalize_encounter(
     encounter_id: i32,
     ended_at_ms: i64,
     defeated_bosses: Option<Vec<String>>,
+    is_manually_reset: bool,
 ) -> Result<(), String> {
     use sch::encounters::dsl as e;
 
     diesel::update(e::encounters.filter(e::id.eq(encounter_id)))
-        .set(e::ended_at_ms.eq(ended_at_ms))
+        .set((
+            e::ended_at_ms.eq(ended_at_ms),
+            e::is_manually_reset.eq(if is_manually_reset { 1 } else { 0 }),
+        ))
         .execute(conn)
         .map_err(|er| er.to_string())?;
 
@@ -548,9 +554,10 @@ fn handle_task(
         DbTask::EndEncounter {
             ended_at_ms,
             defeated_bosses,
+            is_manually_reset,
         } => {
             if let Some(id) = current_encounter_id.take() {
-                finalize_encounter(conn, id, ended_at_ms, defeated_bosses)?;
+                finalize_encounter(conn, id, ended_at_ms, defeated_bosses, is_manually_reset)?;
             }
             *current_encounter_start_ms = None;
         }
@@ -563,7 +570,7 @@ fn handle_task(
                 .map_err(|er| er.to_string())?;
 
             for encounter_id in open_encounters {
-                finalize_encounter(conn, encounter_id, ended_at_ms, None)?;
+                finalize_encounter(conn, encounter_id, ended_at_ms, None, false)?;
             }
 
             *current_encounter_id = None;
@@ -1609,6 +1616,7 @@ mod tests {
             DbTask::EndEncounter {
                 ended_at_ms: 4_600,
                 defeated_bosses: None,
+                is_manually_reset: false,
             },
             &mut enc_opt,
             &mut enc_start_opt,
@@ -1770,6 +1778,7 @@ mod tests {
             DbTask::EndEncounter {
                 ended_at_ms: 10_500,
                 defeated_bosses: None,
+                is_manually_reset: false,
             },
             &mut enc_opt,
             &mut enc_start_opt,

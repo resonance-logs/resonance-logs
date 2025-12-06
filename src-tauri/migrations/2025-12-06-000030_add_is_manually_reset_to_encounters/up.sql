@@ -1,0 +1,1 @@
+ALTER TABLE encounters ADD COLUMN is_manually_reset INTEGER NOT NULL DEFAULT 0;

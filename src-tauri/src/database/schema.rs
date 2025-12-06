@@ -62,6 +62,8 @@ diesel::table! {
         remote_encounter_id -> Nullable<BigInt>,
         /// Whether the encounter is favorited.
         is_favorite -> Integer,
+        /// Whether this encounter was manually reset by the user (should not be uploaded).
+        is_manually_reset -> Integer,
     }
 }
 

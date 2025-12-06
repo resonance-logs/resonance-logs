@@ -73,8 +73,11 @@ pub enum StateEvent {
     SyncSceneAttrs(blueprotobuf::SyncSceneAttrs),
     /// A pause encounter event.
     PauseEncounter(bool),
-    /// A reset encounter event.
-    ResetEncounter,
+    /// A reset encounter event. Contains whether this was a manual reset by the user.
+    ResetEncounter {
+        /// Whether this was a manual reset by the user (true) vs automatic (false).
+        is_manual: bool,
+    },
 }
 
 /// Represents the state of the application.
@@ -346,8 +349,8 @@ impl AppStateManager {
             StateEvent::PauseEncounter(paused) => {
                 state.set_encounter_paused(paused);
             }
-            StateEvent::ResetEncounter => {
-                self.reset_encounter(&mut state).await;
+            StateEvent::ResetEncounter { is_manual } => {
+                self.reset_encounter(&mut state, is_manual).await;
             }
         }
     }
@@ -369,6 +372,7 @@ impl AppStateManager {
             } else {
                 Some(defeated)
             },
+            is_manually_reset: false,
         });
         on_server_change(&mut state.encounter);
 
@@ -521,7 +525,7 @@ impl AppStateManager {
                     self.snapshot_segment_and_reset_live_meter(state).await;
                 } else {
                     info!("Standard mode: ending active encounter");
-                    self.reset_encounter(state).await;
+                    self.reset_encounter(state, false).await;
                 }
             }
 
@@ -803,7 +807,7 @@ impl AppStateManager {
         }
     }
 
-    async fn reset_encounter(&self, state: &mut AppState) {
+    async fn reset_encounter(&self, state: &mut AppState, is_manual: bool) {
         // Persist dungeon segments if enabled
         if state.dungeon_segments_enabled {
             dungeon_log::persist_segments(&state.dungeon_log, true);
@@ -818,6 +822,7 @@ impl AppStateManager {
             } else {
                 Some(defeated)
             },
+            is_manually_reset: is_manual,
         });
         state.encounter.reset_combat_state();
         state.skill_subscriptions.clear();

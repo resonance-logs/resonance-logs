@@ -145,6 +145,8 @@ pub struct EncounterRow {
     pub remote_encounter_id: Option<i64>,
     /// Whether the encounter is favorited.
     pub is_favorite: i32,
+    /// Whether the encounter was manually reset (should not be uploaded).
+    pub is_manually_reset: i32,
 }
 
 /// Represents a new encounter to be inserted into the `encounters` table.
