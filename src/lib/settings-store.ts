@@ -155,204 +155,25 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   skillHeaderTextColor: "#a1a1aa",
   skillAbbreviatedFontSize: 9,
   skillAbbreviatedColor: "#71717a",
+  // Skill-specific row glow / highlight customization (separate from player rows)
+  skillRowGlowMode: 'gradient-underline' as 'gradient-underline' | 'gradient' | 'solid',
+  skillRowGlowOpacity: 0.15,
+  skillRowBorderRadius: 0,
+  // Row glow / highlight customization
+  // modes: 'gradient-underline' (gradient + neon underline), 'gradient' (gradient only), 'solid' (solid color fill)
+  rowGlowMode: 'gradient-underline' as 'gradient-underline' | 'gradient' | 'solid',
+  // opacity applied to the fill (0-1)
+  rowGlowOpacity: 0.15,
+  // border height in pixels for the neon underline effect
+  rowGlowBorderHeight: 2,
+  // box-shadow spread/blur for the neon border
+  rowGlowSpread: 8,
+  // Note: glow always uses the detected class/spec color.
+  // Row border customization
+  rowBorderRadius: 0,
 };
 
-// Header customization defaults
-export const DEFAULT_HEADER_SETTINGS = {
-  // Layout settings
-  showHeader: true,
-  windowPadding: 12, // padding around entire live meter window
-  headerPadding: 8, // internal padding within header
-
-  // Row 1 elements (left side)
-  showTimer: true,
-  showSceneName: true,
-  showSegmentInfo: true,
-
-  // Row 1 elements (right side - control buttons)
-  showResetButton: true,
-  showPauseButton: true,
-  showBossOnlyButton: true,
-  showSettingsButton: true,
-  showMinimizeButton: true,
-
-  // Row 2 elements (left side - stats)
-  showTotalDamage: true,
-  showTotalDps: true,
-  showBossHealth: true,
-
-  // Row 2 elements (right side - navigation tabs)
-  showNavigationTabs: true,
-
-  // Timer sizing
-  timerLabelFontSize: 12,
-  timerFontSize: 18,
-
-  // Scene name sizing
-  sceneNameFontSize: 14,
-
-  // Segment info sizing
-  segmentFontSize: 12,
-
-  // Control button sizing (individual)
-  resetButtonSize: 20,
-  resetButtonPadding: 8,
-  pauseButtonSize: 20,
-  pauseButtonPadding: 8,
-  bossOnlyButtonSize: 20,
-  bossOnlyButtonPadding: 8,
-  settingsButtonSize: 20,
-  settingsButtonPadding: 8,
-  minimizeButtonSize: 20,
-  minimizeButtonPadding: 8,
-
-  // Stats sizing
-  totalDamageLabelFontSize: 14,
-  totalDamageValueFontSize: 18,
-  totalDpsLabelFontSize: 14,
-  totalDpsValueFontSize: 18,
-  bossHealthLabelFontSize: 14,
-
-  // Boss health sizing (granular)
-  bossHealthNameFontSize: 14,
-  bossHealthValueFontSize: 14,
-  bossHealthPercentFontSize: 14,
-
-  // Navigation tabs sizing
-  navTabFontSize: 11,
-  navTabPaddingX: 14,
-  navTabPaddingY: 6,
-};
-
-// Header presets
-export const HEADER_PRESETS = {
-  full: {
-    showHeader: true,
-    windowPadding: 12,
-    headerPadding: 8,
-    showTimer: true,
-    showSceneName: true,
-    showSegmentInfo: true,
-    showResetButton: true,
-    showPauseButton: true,
-    showBossOnlyButton: true,
-    showSettingsButton: true,
-    showMinimizeButton: true,
-    showTotalDamage: true,
-    showTotalDps: true,
-    showBossHealth: true,
-    showNavigationTabs: true,
-    timerLabelFontSize: 12,
-    timerFontSize: 18,
-    sceneNameFontSize: 14,
-    segmentFontSize: 12,
-    resetButtonSize: 20,
-    resetButtonPadding: 8,
-    pauseButtonSize: 20,
-    pauseButtonPadding: 8,
-    bossOnlyButtonSize: 20,
-    bossOnlyButtonPadding: 8,
-    settingsButtonSize: 20,
-    settingsButtonPadding: 8,
-    minimizeButtonSize: 20,
-    minimizeButtonPadding: 8,
-    totalDamageLabelFontSize: 14,
-    totalDamageValueFontSize: 18,
-    totalDpsLabelFontSize: 14,
-    totalDpsValueFontSize: 18,
-    bossHealthLabelFontSize: 14,
-    bossHealthNameFontSize: 14,
-    bossHealthValueFontSize: 14,
-    bossHealthPercentFontSize: 14,
-    navTabFontSize: 11,
-    navTabPaddingX: 14,
-    navTabPaddingY: 6,
-  },
-  compact: {
-    showHeader: true,
-    windowPadding: 8,
-    headerPadding: 4,
-    showTimer: true,
-    showSceneName: true,
-    showSegmentInfo: false,
-    showResetButton: true,
-    showPauseButton: true,
-    showBossOnlyButton: true,
-    showSettingsButton: false,
-    showMinimizeButton: false,
-    showTotalDamage: false,
-    showTotalDps: false,
-    showBossHealth: false,
-    showNavigationTabs: false,
-    timerLabelFontSize: 0,
-    timerFontSize: 16,
-    sceneNameFontSize: 14,
-    segmentFontSize: 11,
-    resetButtonSize: 18,
-    resetButtonPadding: 6,
-    pauseButtonSize: 18,
-    pauseButtonPadding: 6,
-    bossOnlyButtonSize: 18,
-    bossOnlyButtonPadding: 6,
-    settingsButtonSize: 18,
-    settingsButtonPadding: 6,
-    minimizeButtonSize: 18,
-    minimizeButtonPadding: 6,
-    totalDamageLabelFontSize: 12,
-    totalDamageValueFontSize: 16,
-    totalDpsLabelFontSize: 12,
-    totalDpsValueFontSize: 16,
-    bossHealthLabelFontSize: 12,
-    bossHealthNameFontSize: 12,
-    bossHealthValueFontSize: 12,
-    bossHealthPercentFontSize: 12,
-    navTabFontSize: 10,
-    navTabPaddingX: 10,
-    navTabPaddingY: 4,
-  },
-  none: {
-    showHeader: false,
-    windowPadding: 0,
-    headerPadding: 0,
-    showTimer: false,
-    showSceneName: false,
-    showSegmentInfo: false,
-    showResetButton: false,
-    showPauseButton: false,
-    showBossOnlyButton: false,
-    showSettingsButton: false,
-    showMinimizeButton: false,
-    showTotalDamage: false,
-    showTotalDps: false,
-    showBossHealth: false,
-    showNavigationTabs: false,
-    timerLabelFontSize: 12,
-    timerFontSize: 18,
-    sceneNameFontSize: 14,
-    segmentFontSize: 12,
-    resetButtonSize: 20,
-    resetButtonPadding: 8,
-    pauseButtonSize: 20,
-    pauseButtonPadding: 8,
-    bossOnlyButtonSize: 20,
-    bossOnlyButtonPadding: 8,
-    settingsButtonSize: 20,
-    settingsButtonPadding: 8,
-    minimizeButtonSize: 20,
-    minimizeButtonPadding: 8,
-    totalDamageLabelFontSize: 14,
-    totalDamageValueFontSize: 18,
-    totalDpsLabelFontSize: 14,
-    totalDpsValueFontSize: 18,
-    bossHealthLabelFontSize: 14,
-    bossHealthNameFontSize: 14,
-    bossHealthValueFontSize: 14,
-    bossHealthPercentFontSize: 14,
-    navTabFontSize: 11,
-    navTabPaddingX: 14,
-    navTabPaddingY: 6,
-  },
-};
+// (Header preset constants removed - header defaults inlined into DEFAULT_SETTINGS)
 
 export const FONT_SIZE_LABELS: Record<string, string> = {
   xs: 'Extra Small',
@@ -384,19 +205,13 @@ export const DEFAULT_CUSTOM_THEME_COLORS: Record<string, string> = {
   border: 'rgba(74, 74, 74, 1)',
   input: 'rgba(64, 64, 64, 1)',
   ring: 'rgba(166, 166, 166, 1)',
-  chart1: 'rgba(166, 166, 166, 1)',
-  chart2: 'rgba(120, 180, 200, 1)',
-  chart3: 'rgba(120, 120, 120, 1)',
-  chart4: 'rgba(100, 100, 100, 1)',
-  chart5: 'rgba(82, 82, 82, 1)',
-  sidebar: 'rgba(38, 38, 38, 1)',
-  sidebarForeground: 'rgba(226, 226, 226, 1)',
-  sidebarPrimary: 'rgba(166, 166, 166, 1)',
-  sidebarPrimaryForeground: 'rgba(33, 33, 33, 1)',
-  sidebarAccent: 'rgba(82, 82, 82, 1)',
-  sidebarAccentForeground: 'rgba(226, 226, 226, 1)',
-  sidebarBorder: 'rgba(74, 74, 74, 1)',
-  sidebarRing: 'rgba(166, 166, 166, 1)',
+  tooltipBg: 'rgba(33, 33, 33, 0.92)',
+  tooltipBorder: 'rgba(74, 74, 74, 0.55)',
+  tooltipFg: 'rgba(226, 226, 226, 1)',
+  playerTextColor: '#ffffff',
+  skillTextColor: '#ffffff',
+  abbreviatedColor: '#71717a',
+  skillAbbreviatedColor: '#71717a',
 };
 
 // Labels for custom theme color variables
@@ -421,28 +236,18 @@ export const CUSTOM_THEME_COLOR_LABELS: Record<string, { label: string; descript
   border: { label: 'Border', description: 'Border color', category: 'Utility' },
   input: { label: 'Input', description: 'Input field background', category: 'Utility' },
   ring: { label: 'Ring', description: 'Focus ring color', category: 'Utility' },
-  chart1: { label: 'Chart 1', description: 'Chart color 1', category: 'Charts' },
-  chart2: { label: 'Chart 2', description: 'Chart color 2', category: 'Charts' },
-  chart3: { label: 'Chart 3', description: 'Chart color 3', category: 'Charts' },
-  chart4: { label: 'Chart 4', description: 'Chart color 4', category: 'Charts' },
-  chart5: { label: 'Chart 5', description: 'Chart color 5', category: 'Charts' },
-  sidebar: { label: 'Sidebar', description: 'Sidebar background', category: 'Sidebar' },
-  sidebarForeground: { label: 'Sidebar Text', description: 'Sidebar text color', category: 'Sidebar' },
-  sidebarPrimary: { label: 'Sidebar Primary', description: 'Sidebar primary accent', category: 'Sidebar' },
-  sidebarPrimaryForeground: { label: 'Sidebar Primary Text', description: 'Text on sidebar primary', category: 'Sidebar' },
-  sidebarAccent: { label: 'Sidebar Accent', description: 'Sidebar accent color', category: 'Sidebar' },
-  sidebarAccentForeground: { label: 'Sidebar Accent Text', description: 'Text on sidebar accent', category: 'Sidebar' },
-  sidebarBorder: { label: 'Sidebar Border', description: 'Sidebar border color', category: 'Sidebar' },
-  sidebarRing: { label: 'Sidebar Ring', description: 'Sidebar focus ring', category: 'Sidebar' },
+  playerTextColor: { label: 'Player Text', description: 'Color for player names and values in tables', category: 'Tables' },
+  skillTextColor: { label: 'Skill Text', description: 'Color for skill names and values in skill tables', category: 'Tables' },
+  abbreviatedColor: { label: 'Player Suffix Color', description: 'Color of K, M, % suffixes in player tables', category: 'Tables' },
+  skillAbbreviatedColor: { label: 'Skill Suffix Color', description: 'Color of K, M, % suffixes in skill rows', category: 'Tables' },
+  tooltipBg: { label: 'Tooltip Background', description: 'Background color for tooltips', category: 'Tooltip' },
+  tooltipBorder: { label: 'Tooltip Border', description: 'Border color for tooltips', category: 'Tooltip' },
+  tooltipFg: { label: 'Tooltip Text', description: 'Text color for tooltips', category: 'Tooltip' },
 };
 
 const DEFAULT_SETTINGS = {
   accessibility: {
-    theme: 'dark' as string,
     blur: false,
-    transparency: false,
-    transparentOpacityPercent: 2,
-    transparentMode: false,
     clickthrough: false,
     classColors: { ...DEFAULT_CLASS_COLORS },
     useClassSpecColors: false,
@@ -489,7 +294,47 @@ const DEFAULT_SETTINGS = {
     tankedPlayers: { ...DEFAULT_STATS },
     tankedSkillBreakdown: { ...DEFAULT_STATS },
     tableCustomization: { ...DEFAULT_LIVE_TABLE_SETTINGS },
-    headerCustomization: { ...DEFAULT_HEADER_SETTINGS },
+    headerCustomization: {
+      windowPadding: 12,
+      headerPadding: 8,
+      showTimer: true,
+      showSceneName: true,
+      showSegmentInfo: true,
+      showResetButton: true,
+      showPauseButton: true,
+      showBossOnlyButton: true,
+      showSettingsButton: true,
+      showMinimizeButton: true,
+      showTotalDamage: true,
+      showTotalDps: true,
+      showBossHealth: true,
+      showNavigationTabs: true,
+      timerLabelFontSize: 12,
+      timerFontSize: 18,
+      sceneNameFontSize: 14,
+      segmentFontSize: 12,
+      resetButtonSize: 20,
+      resetButtonPadding: 8,
+      pauseButtonSize: 20,
+      pauseButtonPadding: 8,
+      bossOnlyButtonSize: 20,
+      bossOnlyButtonPadding: 8,
+      settingsButtonSize: 20,
+      settingsButtonPadding: 8,
+      minimizeButtonSize: 20,
+      minimizeButtonPadding: 8,
+      totalDamageLabelFontSize: 14,
+      totalDamageValueFontSize: 18,
+      totalDpsLabelFontSize: 14,
+      totalDpsValueFontSize: 18,
+      bossHealthLabelFontSize: 14,
+      bossHealthNameFontSize: 14,
+      bossHealthValueFontSize: 14,
+      bossHealthPercentFontSize: 14,
+      navTabFontSize: 11,
+      navTabPaddingX: 14,
+      navTabPaddingY: 6,
+    },
   },
   history: {
     general: { ...DEFAULT_GENERAL_SETTINGS },
@@ -669,13 +514,4 @@ export const settings = {
 
 // Accessibility helpers
 
-// Available theme names (keep in sync with CSS classes defined in app.css)
-export const AVAILABLE_THEMES = [
-  'dark',
-  'light',
-  'pink',
-  'green',
-  'matcha',
-  'rainbow',
-  'custom'
-];
+// Theme selection removed — app uses only the `custom` theme controlled by customThemeColors

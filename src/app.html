@@ -4,23 +4,8 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%sveltekit.assets%/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Early theme application to prevent FOUC -->
-    <script>
-      (function() {
-        try {
-          const stored = localStorage.getItem('accessibility');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            const theme = parsed?.theme || 'dark';
-            document.documentElement.setAttribute('data-theme', theme);
-          } else {
-            document.documentElement.setAttribute('data-theme', 'dark');
-          }
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
-      })();
-    </script>
+    <!-- Early theme application to prevent FOUC. Use custom theme only. -->
+    <script>document.documentElement.setAttribute('data-theme','custom');</script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">

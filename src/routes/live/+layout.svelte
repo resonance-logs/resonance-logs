@@ -28,9 +28,6 @@
   let { children } = $props();
   // let screenshotDiv: HTMLDivElement | undefined = $state();
 
-  // transparency handled via polling effect below
-  let transparencyInterval: number | null = null;
-
   let notificationToast: NotificationToast;
   let mainElement: HTMLElement | undefined = undefined;
   let unlisten: (() => void) | null = null;
@@ -355,93 +352,86 @@
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    // Poll settings for transparency changes and apply CSS variables / body background
-    transparencyInterval = window.setInterval(() => {
-      if (isDestroyed) return;
-      try {
-        const enabled = !!SETTINGS.accessibility.state.transparency;
-        const percent = Number(SETTINGS.accessibility.state.transparentOpacityPercent ?? 2) || 2;
-        const opacity = String(percent / 100);
-        
-        // Apply background image if enabled (for custom theme)
-        const bgImageEnabled = SETTINGS.accessibility.state.backgroundImageEnabled;
-        const bgImage = SETTINGS.accessibility.state.backgroundImage;
-        const bgMode = SETTINGS.accessibility.state.backgroundImageMode || 'cover';
-        const bgContainColor = SETTINGS.accessibility.state.backgroundImageContainColor || 'rgba(0, 0, 0, 1)';
-        const isCustomTheme = SETTINGS.accessibility.state.theme === 'custom';
-        
-        if (isCustomTheme && bgImageEnabled && bgImage) {
-          document.body.style.backgroundImage = `url('${bgImage}')`;
-          document.body.style.backgroundSize = bgMode;
-          document.body.style.backgroundPosition = 'center';
-          document.body.style.backgroundRepeat = 'no-repeat';
-          if (bgMode === 'contain') {
-            document.body.style.backgroundColor = bgContainColor;
-          } else {
-            document.body.style.backgroundColor = '';
-          }
-          document.documentElement.classList.remove('transparent-mode');
-        } else if (enabled) {
-          // Add root-level class so our CSS rules apply
-          document.documentElement.classList.add('transparent-mode');
-          document.documentElement.style.setProperty('--bg-opacity', opacity);
-          // Make the page background fully transparent so the window shows through
-          document.body.style.background = 'transparent';
-          document.body.style.backgroundImage = '';
-        } else {
-          document.documentElement.classList.remove('transparent-mode');
-          document.body.style.background = '';
-          document.body.style.backgroundImage = '';
-          document.body.style.backgroundColor = '';
-        }
-        
-        // Apply custom fonts if enabled
-        const sansEnabled = SETTINGS.accessibility.state.customFontSansEnabled;
-        const sansName = SETTINGS.accessibility.state.customFontSansName;
-        const sansUrl = SETTINGS.accessibility.state.customFontSansUrl;
-        const monoEnabled = SETTINGS.accessibility.state.customFontMonoEnabled;
-        const monoName = SETTINGS.accessibility.state.customFontMonoName;
-        const monoUrl = SETTINGS.accessibility.state.customFontMonoUrl;
-        
-        // Load custom fonts if URLs are set (need to register font faces)
-        if (sansEnabled && sansName && sansUrl) {
-          // Check if font is already registered
-          if (!document.fonts.check(`12px "${sansName}"`)) {
-            const fontFace = new FontFace(sansName, `url(${sansUrl})`);
-            fontFace.load().then((loadedFace) => {
-              document.fonts.add(loadedFace);
-            }).catch(() => {});
-          }
-          document.documentElement.style.setProperty('--font-sans', `"${sansName}", sans-serif`);
-        } else {
-          document.documentElement.style.setProperty('--font-sans', '"Inter Variable", sans-serif');
-        }
-        
-        if (monoEnabled && monoName && monoUrl) {
-          // Check if font is already registered
-          if (!document.fonts.check(`12px "${monoName}"`)) {
-            const fontFace = new FontFace(monoName, `url(${monoUrl})`);
-            fontFace.load().then((loadedFace) => {
-              document.fonts.add(loadedFace);
-            }).catch(() => {});
-          }
-          document.documentElement.style.setProperty('--font-mono', `"${monoName}", monospace`);
-        } else {
-          document.documentElement.style.setProperty('--font-mono', '"Geist Mono Variable", monospace');
-        }
-      } catch (e) {
-        // ignore
-      }
-    }, 200);
     return () => {
       isDestroyed = true;
       if (reconnectInterval) clearInterval(reconnectInterval);
-      if (transparencyInterval) clearInterval(transparencyInterval);
       if (unlisten) unlisten();
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       cleanupStores();
     };
+  });
+
+  // Reactive background image effect
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    
+    const bgImageEnabled = SETTINGS.accessibility.state.backgroundImageEnabled;
+    const bgImage = SETTINGS.accessibility.state.backgroundImage;
+    const bgMode = SETTINGS.accessibility.state.backgroundImageMode || 'cover';
+    const bgContainColor = SETTINGS.accessibility.state.backgroundImageContainColor || 'rgba(0, 0, 0, 1)';
+
+    if (bgImageEnabled && bgImage) {
+      document.body.style.backgroundImage = `url('${bgImage}')`;
+      document.body.style.backgroundSize = bgMode;
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundRepeat = 'no-repeat';
+      if (bgMode === 'contain') {
+        document.body.style.setProperty('background-color', bgContainColor, 'important');
+      } else {
+        document.body.style.setProperty('background-color', 'transparent', 'important');
+      }
+    } else {
+      // Just clear the background image, keep body transparent
+      document.body.style.backgroundImage = '';
+      document.body.style.backgroundSize = '';
+      document.body.style.backgroundPosition = '';
+      document.body.style.backgroundRepeat = '';
+      document.body.style.setProperty('background-color', 'transparent', 'important');
+    }
+  });
+
+  // Reactive custom fonts effect
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    
+    const sansEnabled = SETTINGS.accessibility.state.customFontSansEnabled;
+    const sansName = SETTINGS.accessibility.state.customFontSansName;
+    const sansUrl = SETTINGS.accessibility.state.customFontSansUrl;
+
+    if (sansEnabled && sansName && sansUrl) {
+      // Check if font is already registered
+      if (!document.fonts.check(`12px "${sansName}"`)) {
+        const fontFace = new FontFace(sansName, `url(${sansUrl})`);
+        fontFace.load().then((loadedFace) => {
+          document.fonts.add(loadedFace);
+        }).catch(() => {});
+      }
+      document.documentElement.style.setProperty('--font-sans', `"${sansName}", sans-serif`);
+    } else {
+      document.documentElement.style.setProperty('--font-sans', '"Inter Variable", sans-serif');
+    }
+  });
+
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    
+    const monoEnabled = SETTINGS.accessibility.state.customFontMonoEnabled;
+    const monoName = SETTINGS.accessibility.state.customFontMonoName;
+    const monoUrl = SETTINGS.accessibility.state.customFontMonoUrl;
+
+    if (monoEnabled && monoName && monoUrl) {
+      // Check if font is already registered
+      if (!document.fonts.check(`12px "${monoName}"`)) {
+        const fontFace = new FontFace(monoName, `url(${monoUrl})`);
+        fontFace.load().then((loadedFace) => {
+          document.fonts.add(loadedFace);
+        }).catch(() => {});
+      }
+      document.documentElement.style.setProperty('--font-mono', `"${monoName}", monospace`);
+    } else {
+      document.documentElement.style.setProperty('--font-mono', '"Geist Mono Variable", monospace');
+    }
   });
 
   // Watch for dummy data toggle
@@ -465,7 +455,7 @@
     <HeaderCustom />
     <main
     bind:this={mainElement}
-    class="flex-1 overflow-y-auto gap-4 rounded-lg bg-card/20 border border-border/40"
+    class="flex-1 overflow-y-auto gap-4 rounded-lg bg-card/20"
     >
     {@render children()}
   </main>

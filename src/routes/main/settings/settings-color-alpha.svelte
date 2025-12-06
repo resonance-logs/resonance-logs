@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Color from 'colorjs.io';
+
   let {
     label = "",
     description = "",
@@ -11,68 +13,81 @@
     oninput?: (value: string) => void;
   } = $props();
 
-  // Parse rgba string to components
-  function parseRgba(rgba: string): { r: number; g: number; b: number; a: number } {
-    const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-    if (match) {
-      return {
-        r: parseInt(match[1] ?? '255', 10),
-        g: parseInt(match[2] ?? '255', 10),
-        b: parseInt(match[3] ?? '255', 10),
-        a: match[4] !== undefined ? parseFloat(match[4]) : 1
-      };
+  // Parse any color format (oklch, rgba, hex, etc.) to RGBA using colorjs.io
+  function parseToRgba(colorStr: string): { r: number; g: number; b: number; a: number } {
+    try {
+      const color = new Color(colorStr);
+      const srgb = color.to('srgb');
+      const r = Math.round(Math.max(0, Math.min(1, srgb.coords[0] ?? 0)) * 255);
+      const g = Math.round(Math.max(0, Math.min(1, srgb.coords[1] ?? 0)) * 255);
+      const b = Math.round(Math.max(0, Math.min(1, srgb.coords[2] ?? 0)) * 255);
+      const a = srgb.alpha ?? 1;
+      return { r, g, b, a };
+    } catch {
+      return { r: 255, g: 255, b: 255, a: 1 };
     }
-    // Fallback for hex
-    if (rgba.startsWith('#')) {
-      const hex = rgba.slice(1);
-      if (hex.length === 6) {
-        return {
-          r: parseInt(hex.slice(0, 2), 16),
-          g: parseInt(hex.slice(2, 4), 16),
-          b: parseInt(hex.slice(4, 6), 16),
-          a: 1
-        };
-      } else if (hex.length === 8) {
-        return {
-          r: parseInt(hex.slice(0, 2), 16),
-          g: parseInt(hex.slice(2, 4), 16),
-          b: parseInt(hex.slice(4, 6), 16),
-          a: parseInt(hex.slice(6, 8), 16) / 255
-        };
-      }
-    }
-    return { r: 255, g: 255, b: 255, a: 1 };
-  }
-
-  // Convert components to rgba string
-  function toRgba(r: number, g: number, b: number, a: number): string {
-    return `rgba(${r}, ${g}, ${b}, ${a})`;
   }
 
   // Convert to hex for color input
   function toHex(r: number, g: number, b: number): string {
-    return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+    return '#' + [clamp(r), clamp(g), clamp(b)].map(x => x.toString(16).padStart(2, '0')).join('');
   }
 
-  let parsed = $derived(parseRgba(value));
-  let hexColor = $derived(toHex(parsed.r, parsed.g, parsed.b));
-  let alphaPercent = $derived(Math.round(parsed.a * 100));
+  // Local state - initialized once from value, then managed locally
+  const initial = parseToRgba(value);
+  let r = $state(initial.r);
+  let g = $state(initial.g);
+  let b = $state(initial.b);
+  let a = $state(initial.a);
+  
+  // Track external value changes
+  let lastExternalValue = value;
+  
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  const DEBOUNCE_MS = 10;
+  
+  $effect(() => {
+    if (value !== lastExternalValue) {
+      const parsed = parseToRgba(value);
+      r = parsed.r;
+      g = parsed.g;
+      b = parsed.b;
+      a = parsed.a;
+      lastExternalValue = value;
+    }
+  });
+
+  let hexColor = $derived(toHex(r, g, b));
+  let alphaPercent = $derived(Math.round(a * 100));
+
+  function emitValue(newR: number, newG: number, newB: number, newA: number) {
+    const newValue = `rgba(${newR}, ${newG}, ${newB}, ${newA})`;
+    lastExternalValue = newValue;
+    
+    // Clear any pending debounce
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    
+    debounceTimer = setTimeout(() => {
+      value = newValue;
+      oninput?.(newValue);
+      debounceTimer = null;
+    }, DEBOUNCE_MS);
+  }
 
   function handleColorChange(e: Event) {
     const hex = (e.target as HTMLInputElement).value;
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    const newValue = toRgba(r, g, b, parsed.a);
-    value = newValue;
-    oninput?.(newValue);
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+    emitValue(r, g, b, a);
   }
 
   function handleAlphaChange(e: Event) {
-    const alpha = parseInt((e.target as HTMLInputElement).value, 10) / 100;
-    const newValue = toRgba(parsed.r, parsed.g, parsed.b, Math.round(alpha * 100) / 100);
-    value = newValue;
-    oninput?.(newValue);
+    a = Math.round(parseInt((e.target as HTMLInputElement).value, 10)) / 100;
+    emitValue(r, g, b, a);
   }
 </script>
 

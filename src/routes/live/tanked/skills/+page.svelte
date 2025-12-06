@@ -132,7 +132,7 @@
       {#each skillsWindow?.skillRows as skill (skill.name)}
         {@const className = currentPlayer?.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currentPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" && currentPlayer ? currentPlayer.className : ""}
         <tr
-          class="relative border-t border-border hover:bg-muted/60 transition-colors bg-background/40"
+          class="relative hover:bg-muted/60 transition-colors bg-background/40"
           style="height: {tableSettings.skillRowHeight}px; font-size: {tableSettings.skillFontSize}px;"
         >
           <td class="px-2 py-1 relative z-10" style="color: {tableSettings.skillTextColor};">
@@ -163,7 +163,7 @@
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} classSpecName={currentPlayer?.classSpecName} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_SKILL ? (maxTakenSkill > 0 ? (skill.totalDmg / maxTakenSkill) * 100 : 0) : skill.dmgPct} />
+          <TableRowGlow isSkill={true} className={className} classSpecName={currentPlayer?.classSpecName} percentage={SETTINGS_RELATIVE_TO_TOP_TANKED_SKILL ? (maxTakenSkill > 0 ? (skill.totalDmg / maxTakenSkill) * 100 : 0) : skill.dmgPct} />
         </tr>
       {/each}
     </tbody>

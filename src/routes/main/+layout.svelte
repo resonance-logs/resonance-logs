@@ -24,7 +24,6 @@
 
   // Navigation listener is set up in onMount and properly cleaned up
   let navigateUnlisten: (() => void) | null = null;
-  let transparencyInterval: number | null = null;
 
   async function openExternalUrl(url: string) {
     try {
@@ -70,18 +69,16 @@
       console.error('Failed to get app version', err);
     });
 
-    // Poll settings for transparency changes and apply CSS variables / body background
-    transparencyInterval = window.setInterval(() => {
+    // Poll settings for background image and custom fonts (transparency removed)
+    const bgAndFontInterval = window.setInterval(() => {
       try {
-        
-        // Apply background image if enabled and custom theme
+        // Apply background image if enabled (custom themes only requirement removed)
         const bgImageEnabled = SETTINGS.accessibility.state.backgroundImageEnabled;
         const bgImage = SETTINGS.accessibility.state.backgroundImage;
         const bgMode = SETTINGS.accessibility.state.backgroundImageMode || 'cover';
         const bgContainColor = SETTINGS.accessibility.state.backgroundImageContainColor || 'rgba(0, 0, 0, 1)';
-        const isCustomTheme = SETTINGS.accessibility.state.theme === 'custom';
-        
-        if (isCustomTheme && bgImageEnabled && bgImage) {
+
+        if (bgImageEnabled && bgImage) {
           document.body.style.backgroundImage = `url('${bgImage}')`;
           document.body.style.backgroundSize = bgMode;
           document.body.style.backgroundPosition = 'center';
@@ -91,6 +88,11 @@
           } else {
             document.body.style.backgroundColor = '';
           }
+        } else {
+          // Clear any background image settings
+          document.body.style.background = '';
+          document.body.style.backgroundImage = '';
+          document.body.style.backgroundColor = '';
         }
         // Apply custom fonts if enabled
         const sansEnabled = SETTINGS.accessibility.state.customFontSansEnabled;
@@ -99,7 +101,7 @@
         const monoEnabled = SETTINGS.accessibility.state.customFontMonoEnabled;
         const monoName = SETTINGS.accessibility.state.customFontMonoName;
         const monoUrl = SETTINGS.accessibility.state.customFontMonoUrl;
-        
+
         // Load custom fonts if URLs are set (need to register font faces)
         if (sansEnabled && sansName && sansUrl) {
           // Check if font is already registered
@@ -113,7 +115,7 @@
         } else {
           document.documentElement.style.setProperty('--font-sans', '"Inter Variable", sans-serif');
         }
-        
+
         if (monoEnabled && monoName && monoUrl) {
           // Check if font is already registered
           if (!document.fonts.check(`12px "${monoName}"`)) {
@@ -137,9 +139,7 @@
         navigateUnlisten();
         navigateUnlisten = null;
       }
-      if (transparencyInterval) {
-        clearInterval(transparencyInterval);
-      }
+      clearInterval(bgAndFontInterval);
     };
   });
 
