@@ -472,7 +472,7 @@ async fn maybe_trigger_auto_upload(app: AppHandle, state: AutoUploadState) -> Re
 
 /// Compute a deterministic SHA-256 hash for an encounter
 /// Uses a canonical subset of fields to ensure consistency
-fn compute_encounter_hash(encounter: &UploadEncounterIn) -> String {
+fn compute_encounter_hash(encounter: &UploadEncounterIn, uploader_id: &str) -> String {
     // Build a canonical representation using selected stable fields
     // Sort attempts by attempt_index to ensure determinism
     let mut sorted_attempts = encounter.attempts.clone();
@@ -506,6 +506,7 @@ fn compute_encounter_hash(encounter: &UploadEncounterIn) -> String {
         "sceneName": encounter.scene_name,
         "attempts": attempt_values,
         "actorIds": actor_ids,
+        "uploaderId": uploader_id,
     });
 
     // Serialize to deterministic JSON string (serde_json maintains key order)
@@ -591,6 +592,7 @@ fn build_encounter_payload(
         Option<String>,
         Option<i64>,
     ),
+    uploader_id: &str,
 ) -> Result<UploadEncounterIn, String> {
     let (
         id,
@@ -1128,7 +1130,7 @@ fn build_encounter_payload(
     };
 
     // Compute and set the source hash
-    encounter.source_hash = Some(compute_encounter_hash(&encounter));
+    encounter.source_hash = Some(compute_encounter_hash(&encounter, uploader_id));
 
     Ok(encounter)
 }
@@ -1270,6 +1272,7 @@ pub async fn perform_upload(
         }
 
         // BLOCKING: Load batch (always offset 0)
+        let api_key_for_hash = api_key.clone();
         let (rows, payloads, skipped_policy_ids) =
             tauri::async_runtime::spawn_blocking(move || {
                 let path = default_db_path();
@@ -1283,7 +1286,7 @@ pub async fn perform_upload(
                 let mut payloads = Vec::with_capacity(rows.len());
                 let mut skipped = Vec::new();
                 for row in &rows {
-                    let built = build_encounter_payload(&mut conn, row.clone())?;
+                    let built = build_encounter_payload(&mut conn, row.clone(), &api_key_for_hash)?;
                     if is_encounter_allowed(&built) {
                         payloads.push(PendingEncounter {
                             id: row.0,
