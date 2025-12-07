@@ -434,7 +434,10 @@ mod tests {
         );
         assert_eq!(log.combat_state, CombatState::Idle);
         // Boss segment should still be open (not closed by timeout)
-        assert!(log.segments[0].ended_at_ms.is_none(), "Boss segment should NOT close on timeout");
+        assert!(
+            log.segments[0].ended_at_ms.is_none(),
+            "Boss segment should NOT close on timeout"
+        );
 
         // Second encounter - same entity, but this time monster_type_id is missing in packet
         // Should resume the existing open segment since it's the same boss
@@ -451,14 +454,21 @@ mod tests {
 
         let (changed, _, new_boss) = log.apply_damage_event(second_event, Instant::now());
         assert!(changed, "Should resume segment");
-        assert!(!new_boss, "Should NOT be a new boss - resuming same segment");
+        assert!(
+            !new_boss,
+            "Should NOT be a new boss - resuming same segment"
+        );
         // The cache should identify this as a boss from previous encounter
         assert!(
             log.entity_cache.is_known_boss(entity_id),
             "Entity should be cached as boss"
         );
         // Should still be only 1 segment (resumed, not new)
-        assert_eq!(log.segments.len(), 1, "Should resume existing segment, not create new one");
+        assert_eq!(
+            log.segments.len(),
+            1,
+            "Should resume existing segment, not create new one"
+        );
         // Check if segment has this entity tracked
         assert!(
             log.segments[0].has_boss_entity(entity_id),
@@ -469,7 +479,8 @@ mod tests {
     #[test]
     fn boss_and_trash_simultaneously_keeps_boss_segment_active() {
         // Test scenario: during a boss fight, player hits both the boss and trash mobs
-        // The boss segment should remain the primary segment and not switch to trash
+        // The boss segment should remain the primary segment and absorb all damage
+        // (no separate trash segments should be created during boss encounters)
         let mut log = DungeonLog::default();
         let boss_id = 100;
         let trash_id = 200;
@@ -482,16 +493,24 @@ mod tests {
         assert_eq!(log.segments.len(), 1);
         assert_eq!(log.segments[0].segment_type, SegmentType::Boss);
         assert_eq!(log.combat_state, CombatState::InCombat);
-        assert!(log.active_segment_idx.is_some(), "Boss should be active segment");
+        assert!(
+            log.active_segment_idx.is_some(),
+            "Boss should be active segment"
+        );
 
         // Now hit a trash mob while boss fight is ongoing
         let (changed, boss_died, new_boss) =
             log.apply_damage_event(trash_event(150, trash_id), Instant::now());
-        assert!(changed, "Trash event should be logged");
+        assert!(changed, "Trash event should be logged to boss segment");
         assert!(!boss_died, "Boss should not have died");
         assert!(!new_boss, "Should not flag as new boss");
 
-        // Trash segment may be created, but boss segment should still be active
+        // Boss segment should still be active and no trash segment should be created
+        assert_eq!(
+            log.segments.len(),
+            1,
+            "Should not create separate trash segment during boss fight"
+        );
         assert!(
             log.active_segment_idx.is_some(),
             "Active segment should still be set"
@@ -504,6 +523,13 @@ mod tests {
         );
         assert_eq!(log.combat_state, CombatState::InCombat);
 
+        // Verify trash damage was absorbed into boss segment
+        // Boss event = 1000 damage, trash event = 500 damage
+        assert_eq!(
+            log.segments[0].total_damage, 1500,
+            "Trash damage should be absorbed into boss segment"
+        );
+
         // Continue hitting the boss - should still work on the boss segment
         let (changed, _, _) =
             log.apply_damage_event(boss_event(200, boss_id, false), Instant::now());
@@ -514,7 +540,12 @@ mod tests {
             "Active segment should still be boss after more boss damage"
         );
 
-        // Check that there's still an open boss segment
+        // Check that there's still exactly one segment (the boss segment)
+        assert_eq!(
+            log.segments.len(),
+            1,
+            "Should have exactly one segment (all damage absorbed into boss)"
+        );
         let open_boss_segments: Vec<_> = log
             .segments
             .iter()
@@ -561,12 +592,22 @@ mod tests {
         let (changed, _, new_boss) =
             log.apply_damage_event(boss_event(300, boss_id, false), Instant::now());
         assert!(changed);
-        assert!(!new_boss, "Should NOT be flagged as new boss - same segment");
+        assert!(
+            !new_boss,
+            "Should NOT be flagged as new boss - same segment"
+        );
         assert_eq!(log.segments.len(), 1, "Should still be only 1 segment");
-        assert_eq!(log.combat_state, CombatState::InCombat, "Should be back in combat");
+        assert_eq!(
+            log.combat_state,
+            CombatState::InCombat,
+            "Should be back in combat"
+        );
 
         // Verify total damage accumulated across the invulnerability gap
-        assert_eq!(log.segments[0].total_damage, 2000, "Should have accumulated damage from both hits");
+        assert_eq!(
+            log.segments[0].total_damage, 2000,
+            "Should have accumulated damage from both hits"
+        );
     }
 
     #[test]
@@ -613,8 +654,15 @@ mod tests {
 
         let (changed, _, new_boss) = log.apply_damage_event(second_event, Instant::now());
         assert!(changed);
-        assert!(!new_boss, "Should NOT be flagged as new boss - same monster type");
-        assert_eq!(log.segments.len(), 1, "Should still be only 1 segment - same boss fight");
+        assert!(
+            !new_boss,
+            "Should NOT be flagged as new boss - same monster type"
+        );
+        assert_eq!(
+            log.segments.len(),
+            1,
+            "Should still be only 1 segment - same boss fight"
+        );
 
         // Verify the segment is tracking both entity IDs
         assert!(
@@ -625,7 +673,10 @@ mod tests {
             log.segments[0].has_boss_entity(200),
             "Should track second entity ID"
         );
-        assert_eq!(log.segments[0].total_damage, 2500, "Should accumulate damage from both phases");
+        assert_eq!(
+            log.segments[0].total_damage, 2500,
+            "Should accumulate damage from both phases"
+        );
     }
 }
 
@@ -718,6 +769,27 @@ fn lock_log(handle: &SharedDungeonLog) -> Option<MutexGuard<'_, DungeonLog>> {
 }
 
 impl DungeonLog {
+    /// Returns the index of an active (open) boss segment if one exists.
+    fn get_active_boss_segment_idx(&self) -> Option<usize> {
+        // Check if active segment is a boss segment
+        if let Some(idx) = self.active_segment_idx {
+            if let Some(segment) = self.segments.get(idx) {
+                if segment.segment_type == SegmentType::Boss && segment.ended_at_ms.is_none() {
+                    return Some(idx);
+                }
+            }
+        }
+
+        // Also check for any open boss segment in the segments list
+        // (boss segment may be open but not currently active if timeout happened)
+        self.segments
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, s)| s.segment_type == SegmentType::Boss && s.ended_at_ms.is_none())
+            .map(|(idx, _)| idx)
+    }
+
     fn should_treat_as_trash(&self, event: &DamageEvent) -> bool {
         if event.amount <= 0 {
             return false;
@@ -841,6 +913,16 @@ impl DungeonLog {
                         (true, false, new_boss) // changed, boss_died, new_boss_started
                     }
                 } else {
+                    // If there's an open boss segment, append trash damage to it
+                    // instead of creating a separate trash segment
+                    if let Some(boss_idx) = self.get_active_boss_segment_idx() {
+                        if let Some(segment) = self.segments.get_mut(boss_idx) {
+                            segment.append_event(event);
+                            self.active_segment_idx = Some(boss_idx);
+                            self.combat_state = CombatState::InCombat;
+                            return (true, false, false);
+                        }
+                    }
                     (self.log_trash_event(event), false, false)
                 }
             }
@@ -853,17 +935,23 @@ impl DungeonLog {
 
         // Check if we have an existing OPEN boss segment for the same monster type
         // This handles the case where a boss has multiple phases or entity IDs
-        let existing_segment_idx = self.segments.iter().enumerate().rev().find(|(_, s)| {
-            s.segment_type == SegmentType::Boss
-                && s.ended_at_ms.is_none()
-                && (s.boss_monster_type_id == event.target_monster_type_id
-                    && event.target_monster_type_id.is_some()
-                    || s.boss_name
-                        .as_ref()
-                        .zip(event.target_name.as_ref())
-                        .map(|(a, b)| a.eq_ignore_ascii_case(b))
-                        .unwrap_or(false))
-        }).map(|(idx, _)| idx);
+        let existing_segment_idx = self
+            .segments
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, s)| {
+                s.segment_type == SegmentType::Boss
+                    && s.ended_at_ms.is_none()
+                    && (s.boss_monster_type_id == event.target_monster_type_id
+                        && event.target_monster_type_id.is_some()
+                        || s.boss_name
+                            .as_ref()
+                            .zip(event.target_name.as_ref())
+                            .map(|(a, b)| a.eq_ignore_ascii_case(b))
+                            .unwrap_or(false))
+            })
+            .map(|(idx, _)| idx);
 
         if let Some(idx) = existing_segment_idx {
             // Resume existing segment for same boss type
@@ -1003,9 +1091,9 @@ impl DungeonLog {
                         return (true, false, new_boss);
                     } else if segment.segment_type == SegmentType::Boss {
                         // Non-boss damage during a boss fight (cleave on adds, etc.).
-                        // Keep the boss segment active but log the trash hit separately.
-                        let changed = self.log_trash_event(event);
-                        return (changed, false, false);
+                        // Absorb all damage into the boss segment - don't create trash segments.
+                        segment.append_event(event);
+                        return (true, false, false);
                     } else {
                         // Trash during boss fight - close boss segment, go to Idle, log as trash
                         segment.close(event.timestamp_ms);
@@ -1071,7 +1159,17 @@ impl DungeonLog {
                     (true, false, new_boss)
                 }
             } else {
-                // Not a boss event, treat as trash and go to Idle
+                // Not a boss event - check if there's an open boss segment
+                // If so, absorb trash damage into it; otherwise treat as trash
+                if let Some(boss_idx) = self.get_active_boss_segment_idx() {
+                    if let Some(segment) = self.segments.get_mut(boss_idx) {
+                        segment.append_event(event);
+                        self.active_segment_idx = Some(boss_idx);
+                        // Stay in InCombat since we're dealing damage to boss segment
+                        return (true, false, false);
+                    }
+                }
+                // No boss segment - treat as trash and go to Idle
                 self.combat_state = CombatState::Idle;
                 (self.log_trash_event(event), false, false)
             }

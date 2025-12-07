@@ -121,7 +121,7 @@ impl AppState {
             low_hp_bosses: HashMap::new(),
             initial_scene_change_handled: false,
             dungeon_log: dungeon_log::create_shared_log(),
-            dungeon_segments_enabled: true,
+            dungeon_segments_enabled: false,
             attempt_config: AttemptConfig::default(),
         }
     }
