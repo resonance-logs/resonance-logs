@@ -18,15 +18,13 @@
   let lastBossOnlySync: boolean | null = null;
   // let lastDungeonSegmentsSync: boolean | null = null;
 
-  const customThemeKeyToCssVar: Record<string, string> = {
+  const customThemeKeyToCssVar: Record<string, string | string[]> = {
     backgroundMain: "--background-main",
     backgroundLive: "--background-live",
     foreground: "--foreground",
-    card: "--card",
-    cardForeground: "--card-foreground",
-    popover: "--popover",
-    popoverForeground: "--popover-foreground",
-    primary: "--primary",
+    surface: ["--card", "--popover"],
+    surfaceForeground: ["--card-foreground", "--popover-foreground"],
+    primary: ["--primary", "--ring"],
     primaryForeground: "--primary-foreground",
     secondary: "--secondary",
     secondaryForeground: "--secondary-foreground",
@@ -38,23 +36,24 @@
     destructiveForeground: "--destructive-foreground",
     border: "--border",
     input: "--input",
-    ring: "--ring",
     tooltipBg: "--tooltip-bg",
     tooltipBorder: "--tooltip-border",
     tooltipFg: "--tooltip-fg",
-    playerTextColor: "--player-text-color",
-    skillTextColor: "--skill-text-color",
-    abbreviatedColor: "--abbreviated-color",
-    skillAbbreviatedColor: "--skill-abbreviated-color",
+    tableTextColor: ["--player-text-color", "--skill-text-color"],
+    tableAbbreviatedColor: ["--abbreviated-color", "--skill-abbreviated-color"],
   };
 
   // Apply custom theme colors to CSS variables
   function applyCustomThemeColors(colors: Record<string, string>) {
     const root = document.documentElement;
-    for (const [key, cssVar] of Object.entries(customThemeKeyToCssVar)) {
+    for (const [key, cssVars] of Object.entries(customThemeKeyToCssVar)) {
       const colorValue = colors[key];
       if (colorValue) {
-        root.style.setProperty(cssVar, colorValue);
+        if (Array.isArray(cssVars)) {
+          cssVars.forEach(v => root.style.setProperty(v, colorValue));
+        } else {
+          root.style.setProperty(cssVars, colorValue);
+        }
       }
     }
   }
@@ -62,8 +61,12 @@
   // Remove custom theme inline styles
   function clearCustomThemeColors() {
     const root = document.documentElement;
-    for (const cssVar of Object.values(customThemeKeyToCssVar)) {
-      root.style.removeProperty(cssVar);
+    for (const cssVars of Object.values(customThemeKeyToCssVar)) {
+      if (Array.isArray(cssVars)) {
+        cssVars.forEach(v => root.style.removeProperty(v));
+      } else {
+        root.style.removeProperty(cssVars);
+      }
     }
   }
 </script>

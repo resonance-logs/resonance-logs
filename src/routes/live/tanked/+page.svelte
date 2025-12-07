@@ -25,6 +25,7 @@
 
   // Table customization settings
   let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
+  let customThemeColors = $derived(SETTINGS.accessibility.state.customThemeColors);
 
   // Update maxTaken when data changes
   $effect(() => {
@@ -89,32 +90,32 @@
               />
               {#if player.abilityScore > 0}
                 {#if SETTINGS.live.general.state.shortenAbilityScore}
-                  <span class="tabular-nums" style="color: {tableSettings.playerTextColor};"><AbbreviatedNumber num={player.abilityScore} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} /></span>
+                  <span class="tabular-nums" style="color: {customThemeColors.tableTextColor};"><AbbreviatedNumber num={player.abilityScore} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} /></span>
                 {:else}
-                  <span class="tabular-nums" style="color: {tableSettings.playerTextColor};">{player.abilityScore}</span>
+                  <span class="tabular-nums" style="color: {customThemeColors.tableTextColor};">{player.abilityScore}</span>
                 {/if}
               {/if}
-              <span class="truncate font-medium" style="color: {tableSettings.playerTextColor};">{displayName || `#${player.uid}`}</span>
+              <span class="truncate font-medium" style="color: {customThemeColors.tableTextColor};">{displayName || `#${player.uid}`}</span>
             </div>
           </td>
           {#each visiblePlayerColumns as col (col.key)}
-            <td class="px-3 py-1 text-right relative z-10 tabular-nums font-medium" style="color: {tableSettings.playerTextColor};">
+            <td class="px-3 py-1 text-right relative z-10 tabular-nums font-medium" style="color: {customThemeColors.tableTextColor};">
               {#if col.key === 'totalDmg'}
                 {#if SETTINGS_SHORTEN_TPS}
-                  <AbbreviatedNumber num={player.totalDmg} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
+                  <AbbreviatedNumber num={player.totalDmg} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
                 {:else}
                   {player.totalDmg.toLocaleString()}
                 {/if}
               {:else if col.key === 'dps'}
                 {#if SETTINGS_SHORTEN_TPS}
-                  <AbbreviatedNumber num={player.dps} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
+                  <AbbreviatedNumber num={player.dps} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
                 {:else}
                   {player.dps.toFixed(1)}
                 {/if}
               {:else if col.key === 'dmgPct'}
-                <PercentFormat val={player.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
+                <PercentFormat val={player.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
               {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
-                <PercentFormat val={player[col.key]} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
+                <PercentFormat val={player[col.key]} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
               {:else}
                 {col.format(player[col.key] ?? 0)}
               {/if}

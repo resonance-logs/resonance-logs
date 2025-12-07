@@ -132,7 +132,8 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
   playerRowHeight: 28,
   playerFontSize: 13,
   playerIconSize: 20,
-  playerTextColor: "#ffffff",
+
+
 
   // Table header settings
   showTableHeader: true,
@@ -142,19 +143,22 @@ export const DEFAULT_LIVE_TABLE_SETTINGS = {
 
   // Abbreviated numbers (K, M, %)
   abbreviatedFontSize: 10,
-  abbreviatedColor: "#71717a",
+
+
 
   // Skill row settings (separate from player rows)
   skillRowHeight: 24,
   skillFontSize: 12,
   skillIconSize: 18,
-  skillTextColor: "#ffffff",
+
+
   skillShowHeader: true,
   skillHeaderHeight: 22,
   skillHeaderFontSize: 10,
   skillHeaderTextColor: "#a1a1aa",
   skillAbbreviatedFontSize: 9,
-  skillAbbreviatedColor: "#71717a",
+
+
   // Skill-specific row glow / highlight customization (separate from player rows)
   skillRowGlowMode: 'gradient-underline' as 'gradient-underline' | 'gradient' | 'solid',
   skillRowGlowOpacity: 0.15,
@@ -188,10 +192,8 @@ export const DEFAULT_CUSTOM_THEME_COLORS: Record<string, string> = {
   backgroundMain: 'rgba(33, 33, 33, 1)',
   backgroundLive: 'rgba(33, 33, 33, 1)',
   foreground: 'rgba(226, 226, 226, 1)',
-  card: 'rgba(41, 41, 41, 1)',
-  cardForeground: 'rgba(226, 226, 226, 1)',
-  popover: 'rgba(41, 41, 41, 1)',
-  popoverForeground: 'rgba(226, 226, 226, 1)',
+  surface: 'rgba(41, 41, 41, 1)',
+  surfaceForeground: 'rgba(226, 226, 226, 1)',
   primary: 'rgba(166, 166, 166, 1)',
   primaryForeground: 'rgba(33, 33, 33, 1)',
   secondary: 'rgba(64, 64, 64, 1)',
@@ -204,14 +206,11 @@ export const DEFAULT_CUSTOM_THEME_COLORS: Record<string, string> = {
   destructiveForeground: 'rgba(255, 255, 255, 1)',
   border: 'rgba(74, 74, 74, 1)',
   input: 'rgba(64, 64, 64, 1)',
-  ring: 'rgba(166, 166, 166, 1)',
   tooltipBg: 'rgba(33, 33, 33, 0.92)',
   tooltipBorder: 'rgba(74, 74, 74, 0.55)',
   tooltipFg: 'rgba(226, 226, 226, 1)',
-  playerTextColor: '#ffffff',
-  skillTextColor: '#ffffff',
-  abbreviatedColor: '#71717a',
-  skillAbbreviatedColor: '#71717a',
+  tableTextColor: '#ffffff',
+  tableAbbreviatedColor: '#71717a',
 };
 
 // Labels for custom theme color variables
@@ -219,10 +218,8 @@ export const CUSTOM_THEME_COLOR_LABELS: Record<string, { label: string; descript
   backgroundMain: { label: 'Background (Main)', description: 'Background color for main window', category: 'Base' },
   backgroundLive: { label: 'Background (Live)', description: 'Background color for live meter', category: 'Base' },
   foreground: { label: 'Foreground', description: 'Main text color', category: 'Base' },
-  card: { label: 'Card', description: 'Card/panel background', category: 'Surfaces' },
-  cardForeground: { label: 'Card Text', description: 'Text on cards', category: 'Surfaces' },
-  popover: { label: 'Popover', description: 'Popup/dropdown background', category: 'Surfaces' },
-  popoverForeground: { label: 'Popover Text', description: 'Text in popups', category: 'Surfaces' },
+  surface: { label: 'Surface', description: 'Background for cards, popovers, and panels', category: 'Surfaces' },
+  surfaceForeground: { label: 'Surface Text', description: 'Text on surfaces', category: 'Surfaces' },
   primary: { label: 'Primary', description: 'Primary accent color', category: 'Accents' },
   primaryForeground: { label: 'Primary Text', description: 'Text on primary elements', category: 'Accents' },
   secondary: { label: 'Secondary', description: 'Secondary accent color', category: 'Accents' },
@@ -235,11 +232,8 @@ export const CUSTOM_THEME_COLOR_LABELS: Record<string, { label: string; descript
   destructiveForeground: { label: 'Destructive Text', description: 'Text on destructive elements', category: 'Utility' },
   border: { label: 'Border', description: 'Border color', category: 'Utility' },
   input: { label: 'Input', description: 'Input field background', category: 'Utility' },
-  ring: { label: 'Ring', description: 'Focus ring color', category: 'Utility' },
-  playerTextColor: { label: 'Player Text', description: 'Color for player names and values in tables', category: 'Tables' },
-  skillTextColor: { label: 'Skill Text', description: 'Color for skill names and values in skill tables', category: 'Tables' },
-  abbreviatedColor: { label: 'Player Suffix Color', description: 'Color of K, M, % suffixes in player tables', category: 'Tables' },
-  skillAbbreviatedColor: { label: 'Skill Suffix Color', description: 'Color of K, M, % suffixes in skill rows', category: 'Tables' },
+  tableTextColor: { label: 'Table Text', description: 'Color for text in live tables', category: 'Tables' },
+  tableAbbreviatedColor: { label: 'Suffix Color', description: 'Color of K, M, % suffixes in tables', category: 'Tables' },
   tooltipBg: { label: 'Tooltip Background', description: 'Background color for tooltips', category: 'Tooltip' },
   tooltipBorder: { label: 'Tooltip Border', description: 'Border color for tooltips', category: 'Tooltip' },
   tooltipFg: { label: 'Tooltip Text', description: 'Text color for tooltips', category: 'Tooltip' },

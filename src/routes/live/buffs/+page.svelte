@@ -26,6 +26,7 @@
   });
 
   let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
+  let customThemeColors = $derived(SETTINGS.accessibility.state.customThemeColors);
 </script>
 
 <div class="relative flex flex-col gap-2 overflow-hidden rounded-lg ring-1 ring-border/60 bg-card/30">
@@ -39,7 +40,7 @@
     <tbody>
       {#each buffData as entity (entity.entityUid)}
         <tr class="bg-background/40 hover:bg-muted/60 transition-colors border-b border-border/20 last:border-0">
-            <td class="px-3 py-2 align-top tabular-nums font-medium" style="color: {tableSettings.playerTextColor}; width: 200px;">
+            <td class="px-3 py-2 align-top tabular-nums font-medium" style="color: {customThemeColors.tableTextColor}; width: 200px;">
                 {entity.entityName}
             </td>
             <td class="px-3 py-2 align-top">

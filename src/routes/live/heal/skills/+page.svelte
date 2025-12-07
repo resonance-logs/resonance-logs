@@ -24,6 +24,7 @@
 
   // Table customization settings for skills
   let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
+  let customThemeColors = $derived(SETTINGS.accessibility.state.customThemeColors);
 
   // Update maxSkillValue when data changes
   $effect(() => {
@@ -124,23 +125,23 @@
             class="relative hover:bg-muted/60 transition-colors bg-background/40"
             style="height: {tableSettings.skillRowHeight}px; font-size: {tableSettings.skillFontSize}px;"
           >
-            <td class="px-2 py-1 relative z-10" style="color: {tableSettings.skillTextColor};">
+            <td class="px-2 py-1 relative z-10" style="color: {customThemeColors.tableTextColor};">
               <div class="flex items-center gap-1 h-full">
                 <span class="truncate">{skill.name}</span>
               </div>
             </td>
             {#each visibleSkillColumns as col (col.key)}
-              <td class="px-2 py-1 text-right relative z-10" style="color: {tableSettings.skillTextColor};">
+              <td class="px-2 py-1 text-right relative z-10" style="color: {customThemeColors.tableTextColor};">
                 {#if col.key === 'totalDmg'}
                   {#if SETTINGS_SHORTEN_DPS}
-                    <AbbreviatedNumber num={skill.totalDmg} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
+                    <AbbreviatedNumber num={skill.totalDmg} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
                   {:else}
                     {col.format(skill[col.key] ?? 0)}
                   {/if}
                 {:else if col.key === 'dmgPct'}
-                  <PercentFormat val={skill.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
+                  <PercentFormat val={skill.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
                 {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
-                  <PercentFormat val={skill[col.key]} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={tableSettings.skillAbbreviatedColor} />
+                  <PercentFormat val={skill[col.key]} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
                 {:else}
                   {col.format(skill[col.key] ?? 0)}
                 {/if}
