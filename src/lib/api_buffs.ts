@@ -10,6 +10,8 @@ export interface BuffEventDto {
 export interface BuffInfoDto {
     buffId: number;
     buffName: string;
+    buffNameLong?: string | null;
+    totalDurationMs: number;
     events: BuffEventDto[];
 }
 
@@ -29,6 +31,8 @@ export interface EncounterBuffEventDto {
 export interface EncounterBuffDto {
     buffId: number;
     buffName: string;
+    buffNameLong?: string | null;
+    totalDurationMs: number;
     events: EncounterBuffEventDto[];
 }
 

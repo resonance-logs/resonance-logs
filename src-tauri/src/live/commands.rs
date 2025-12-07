@@ -553,7 +553,7 @@ pub async fn get_live_buffs(
                 buffs: Vec::new(),
             });
 
-        if let Some(buff_name) = buff_names::lookup(*buff_id) {
+        if let Some((buff_short, buff_long)) = buff_names::lookup_full(*buff_id) {
             let event_dtos: Vec<BuffEventDto> = events
             .iter()
             .map(|e| BuffEventDto {
@@ -563,11 +563,16 @@ pub async fn get_live_buffs(
                 stack_count: e.stack_count,
             })
             .collect();
-            entry.buffs.push(BuffInfoDto {
-                buff_id: *buff_id,
-                buff_name,
-                events: event_dtos,
-            });
+            let total_duration_ms: i64 = event_dtos.iter().map(|e| e.duration_ms).sum();
+            if total_duration_ms > 0 {
+                entry.buffs.push(BuffInfoDto {
+                    buff_id: *buff_id,
+                    buff_name: buff_short,
+                    buff_name_long: Some(buff_long),
+                    total_duration_ms,
+                    events: event_dtos,
+                });
+            }
         }
     }
 

@@ -2199,6 +2199,8 @@ pub struct EncounterBuffEventDto {
 pub struct EncounterBuffDto {
     pub buff_id: i32,
     pub buff_name: String,
+    pub buff_name_long: Option<String>,
+    pub total_duration_ms: i64,
     pub events: Vec<EncounterBuffEventDto>,
 }
 
@@ -2281,12 +2283,18 @@ pub fn get_encounter_buffs(encounter_id: i32) -> Result<Vec<EncounterEntityBuffs
                 })
                 .collect();
 
-            if let Some(buff_name) = buff_names::lookup(row.buff_id) {
-                entry.buffs.push(EncounterBuffDto {
-                    buff_id: row.buff_id,
-                    buff_name,
-                    events: events_dto,
-                });
+            let total_duration_ms: i64 = events_dto.iter().map(|e| e.duration_ms).sum();
+
+            if total_duration_ms > 0 {
+                if let Some((short, long)) = buff_names::lookup_full(row.buff_id) {
+                    entry.buffs.push(EncounterBuffDto {
+                        buff_id: row.buff_id,
+                        buff_name: short,
+                        buff_name_long: Some(long),
+                        total_duration_ms,
+                        events: events_dto,
+                    });
+                }
             }
         }
     }

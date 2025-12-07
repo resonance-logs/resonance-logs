@@ -759,6 +759,14 @@ buffId: number;
  */
 buffName: string; 
 /**
+ * The long English name for the buff (when available).
+ */
+buffNameLong: string | null; 
+/**
+ * Sum of all event durations for this buff in milliseconds.
+ */
+totalDurationMs: number; 
+/**
  * events for this buff
  */
 events: BuffEventDto[] }
@@ -816,7 +824,7 @@ totalDamage: number;
  * The number of hits during this segment.
  */
 hitCount: number }
-export type EncounterBuffDto = { buffId: number; buffName: string; events: EncounterBuffEventDto[] }
+export type EncounterBuffDto = { buffId: number; buffName: string; buffNameLong: string | null; totalDurationMs: number; events: EncounterBuffEventDto[] }
 export type EncounterBuffEventDto = { startMs: number; endMs: number; durationMs: number; stackCount: number }
 export type EncounterEntityBuffsDto = { entityUid: number; entityName: string; buffs: EncounterBuffDto[] }
 /**

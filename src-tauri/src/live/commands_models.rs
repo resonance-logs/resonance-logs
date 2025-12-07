@@ -167,6 +167,10 @@ pub struct BuffInfoDto {
     pub buff_id: i32,
     /// The name of the buff.
     pub buff_name: String,
+    /// The long English name for the buff (when available).
+    pub buff_name_long: Option<String>,
+    /// Sum of all event durations for this buff in milliseconds.
+    pub total_duration_ms: i64,
     /// events for this buff
     pub events: Vec<BuffEventDto>,
 }
