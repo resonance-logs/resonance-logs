@@ -4,14 +4,14 @@
   import History from "./history.svelte";
   import Shortcuts from "./shortcuts.svelte";
   import Network from "./network.svelte";
+  import Debug from "./debug.svelte";
 
   const settingsTabs = [
     { id: "live", label: "Live" },
     { id: "history", label: "Past Encounters" },
     { id: "network", label: "Network" },
     { id: "shortcuts", label: "Shortcuts" },
-    // Module sync moved to Uploading UI
-    // Themes moved to its own main tab
+    { id: "debug", label: "Debug" },
   ];
   // Track the active tab so we can lazy-mount tab content. The Tabs implementation
   // used here will keep all children mounted by default which causes every
@@ -36,7 +36,7 @@
     <Network />
   {:else if activeTab === "shortcuts"}
     <Shortcuts />
-    <!-- Module sync moved to uploading UI; removed from settings tabs -->
-    <!-- Themes moved to its own main tab -->
+  {:else if activeTab === "debug"}
+    <Debug />
   {/if}
 </Tabs.Root>

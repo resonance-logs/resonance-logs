@@ -74,6 +74,7 @@ pub fn run() {
             packet_settings_commands::save_packet_capture_settings,
             packets::npcap::get_network_devices,
             packets::npcap::check_npcap_status,
+            debug_commands::open_log_dir,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -245,6 +246,46 @@ mod packet_settings_commands {
         }
 
         Err(last_err.unwrap_or_else(|| "Failed to save packet capture config".to_string()))
+    }
+}
+
+mod debug_commands {
+    use super::*;
+
+    #[tauri::command]
+    #[specta::specta]
+    pub fn open_log_dir(app_handle: tauri::AppHandle) -> Result<(), String> {
+        let log_dir = app_handle
+            .path()
+            .app_log_dir()
+            .map_err(|e| format!("Failed to get log dir: {}", e))?;
+
+        if !log_dir.exists() {
+            return Err("Log directory does not exist".to_string());
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            Command::new("explorer")
+                .arg(&log_dir)
+                .spawn()
+                .map_err(|e| format!("Failed to open log dir: {}", e))?;
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            // For other OSs, we can use 'open' (macOS) or 'xdg-open' (Linux)
+            // But since this is a Windows-focused request, I'll essentially leave it as a no-op or specific to Windows for now based on user context.
+            // But good to have a fallback or error.
+            // Using `open` crate or tauri's `open` plugin would be better but let's stick to simple Command for now as requested.
+            // Actually, tauri_plugin_opener is initialized in lib.rs, so we might utilize that if we want, but 'explorer' is specific.
+            Command::new("xdg-open")
+                .arg(&log_dir)
+                .spawn()
+                .map_err(|e| format!("Failed to open log dir: {}", e))?;
+        }
+
+        Ok(())
     }
 }
 
