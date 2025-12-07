@@ -80,6 +80,63 @@ pub enum StateEvent {
     },
 }
 
+/// Clamp ongoing buff events to the encounter end and persist them.
+/// Buffs are stored in absolute timestamps; we clamp to fight start (if known)
+/// and to the encounter end to avoid runaway durations across resets.
+fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i64) {
+    if encounter.buff_events.is_empty() {
+        return;
+    }
+
+    let encounter_end = ended_at_ms;
+    let fight_start_i64 = if encounter.time_fight_start_ms > 0 {
+        Some(encounter.time_fight_start_ms.min(i64::MAX as u128) as i64)
+    } else {
+        None
+    };
+
+    for events in encounter.buff_events.values_mut() {
+        if let Some(fs) = fight_start_i64 {
+            // Drop events that end before the fight starts
+            events.retain(|event| event.end >= fs);
+        }
+
+        for event in events.iter_mut() {
+            // Clamp to encounter end first
+            event.end = event.end.min(encounter_end);
+
+            // Then clamp to fight start if we have one
+            if let Some(fs) = fight_start_i64 {
+                if event.start < fs {
+                    event.start = fs;
+                }
+            }
+
+            if event.end < event.start {
+                event.end = event.start;
+                event.duration = 0;
+            } else {
+                let dur_i64 = (event.end - event.start).min(i32::MAX as i64);
+                event.duration = dur_i64 as i32;
+            }
+        }
+    }
+
+    let buffs: Vec<(i64, i32, String)> = encounter
+        .buff_events
+        .iter()
+        .filter_map(|((entity_id, buff_id), events)| {
+            serde_json::to_string(events)
+                .ok()
+                .map(|json| (*entity_id, *buff_id, json))
+        })
+        .collect();
+
+    if !buffs.is_empty() {
+        enqueue(DbTask::SaveBuffs { buffs });
+    }
+}
+
 /// Represents the state of the application.
 #[derive(Debug)]
 pub struct AppState {
@@ -364,21 +421,7 @@ impl AppStateManager {
         }
 
         // Save buff data before ending the encounter
-        if !state.encounter.buff_events.is_empty() {
-            let buffs: Vec<(i64, i32, String)> = state
-                .encounter
-                .buff_events
-                .iter()
-                .filter_map(|((entity_id, buff_id), events)| {
-                    serde_json::to_string(events)
-                        .ok()
-                        .map(|json| (*entity_id, *buff_id, json))
-                })
-                .collect();
-            if !buffs.is_empty() {
-                enqueue(DbTask::SaveBuffs { buffs });
-            }
-        }
+        finalize_and_save_buffs(&mut state.encounter, now_ms());
 
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
         let defeated = state.event_manager.take_dead_bosses();
@@ -831,21 +874,7 @@ impl AppStateManager {
         }
 
         // Save buff data before ending the encounter
-        if !state.encounter.buff_events.is_empty() {
-            let buffs: Vec<(i64, i32, String)> = state
-                .encounter
-                .buff_events
-                .iter()
-                .filter_map(|((entity_id, buff_id), events)| {
-                    serde_json::to_string(events)
-                        .ok()
-                        .map(|json| (*entity_id, *buff_id, json))
-                })
-                .collect();
-            if !buffs.is_empty() {
-                enqueue(DbTask::SaveBuffs { buffs });
-            }
-        }
+        finalize_and_save_buffs(&mut state.encounter, now_ms());
 
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
         let defeated = state.event_manager.take_dead_bosses();

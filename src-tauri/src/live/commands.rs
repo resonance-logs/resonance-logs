@@ -510,3 +510,71 @@ pub async fn set_wipe_detection_enabled(
     info!("Wipe detection enabled: {}", enabled);
     Ok(())
 }
+
+/// Returns the current active buffs for all players in the encounter.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_live_buffs(
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<Vec<crate::live::commands_models::EntityBuffsDto>, String> {
+    use crate::live::buff_names;
+    use crate::live::commands_models::{BuffEventDto, BuffInfoDto, EntityBuffsDto};
+    use crate::live::opcodes_models::AttrType;
+    use blueprotobuf_lib::blueprotobuf::EEntityType;
+
+    let state = state_manager.state.read().await;
+    let encounter = &state.encounter;
+
+    let mut result_map: std::collections::HashMap<i64, EntityBuffsDto> =
+        std::collections::HashMap::new();
+
+    for ((entity_id, buff_id), events) in &encounter.buff_events {
+        // Check if entity is a player
+        let entity_name = if let Some(entity) = encounter.entity_uid_to_entity.get(entity_id) {
+            if entity.entity_type != EEntityType::EntChar {
+                continue;
+            }
+            // Try to get name from attributes
+            if let Some(attr) = entity.attributes.get(&AttrType::Name) {
+                attr.as_string().unwrap_or("Unknown").to_string()
+            } else {
+                format!("Player {}", entity_id)
+            }
+        } else {
+            // If entity not found, skip (likely not a player we track, or stale)
+            continue;
+        };
+
+        let entry = result_map
+            .entry(*entity_id)
+            .or_insert_with(|| EntityBuffsDto {
+                entity_uid: *entity_id,
+                entity_name: entity_name.clone(),
+                buffs: Vec::new(),
+            });
+
+        if let Some((buff_short, buff_long)) = buff_names::lookup_full(*buff_id) {
+            let event_dtos: Vec<BuffEventDto> = events
+            .iter()
+            .map(|e| BuffEventDto {
+                start_ms: e.start,
+                end_ms: e.end,
+                duration_ms: e.duration as i64,
+                stack_count: e.stack_count,
+            })
+            .collect();
+            let total_duration_ms: i64 = event_dtos.iter().map(|e| e.duration_ms).sum();
+            if total_duration_ms > 0 {
+                entry.buffs.push(BuffInfoDto {
+                    buff_id: *buff_id,
+                    buff_name: buff_short,
+                    buff_name_long: Some(buff_long),
+                    total_duration_ms,
+                    events: event_dtos,
+                });
+            }
+        }
+    }
+
+    Ok(result_map.into_values().collect())
+}

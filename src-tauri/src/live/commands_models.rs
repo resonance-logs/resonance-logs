@@ -144,3 +144,45 @@ pub struct SkillRow {
     /// The number of hits per minute dealt by the skill.
     pub hits_per_minute: f64,
 }
+
+/// Represents a buff event.
+#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BuffEventDto {
+    /// Timestamp when the buff started (relative to fight start or absolute, depending on usage).
+    pub start_ms: i64,
+    /// Timestamp when the buff ended.
+    pub end_ms: i64,
+    /// Duration of the buff in milliseconds.
+    pub duration_ms: i64,
+    /// Stack count of the buff.
+    pub stack_count: i32,
+}
+
+/// Represents a specific buff on an entity.
+#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BuffInfoDto {
+    /// The unique ID of the buff.
+    pub buff_id: i32,
+    /// The name of the buff.
+    pub buff_name: String,
+    /// The long English name for the buff (when available).
+    pub buff_name_long: Option<String>,
+    /// Sum of all event durations for this buff in milliseconds.
+    pub total_duration_ms: i64,
+    /// events for this buff
+    pub events: Vec<BuffEventDto>,
+}
+
+/// Represents all buffs tracked for a specific entity.
+#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct EntityBuffsDto {
+    /// The unique UID of the entity.
+    pub entity_uid: i64,
+    /// The name of the entity.
+    pub entity_name: String,
+    /// List of buffs tracked for this entity.
+    pub buffs: Vec<BuffInfoDto>,
+}

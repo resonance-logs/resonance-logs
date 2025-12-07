@@ -2182,3 +2182,122 @@ pub fn toggle_favorite_encounter(id: i32, is_favorite: bool) -> Result<(), Strin
         .map_err(|er| er.to_string())?;
     Ok(())
 }
+
+// Buff Tracking DTOs
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EncounterBuffEventDto {
+    pub start_ms: i64,
+    pub end_ms: i64,
+    pub duration_ms: i64,
+    pub stack_count: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EncounterBuffDto {
+    pub buff_id: i32,
+    pub buff_name: String,
+    pub buff_name_long: Option<String>,
+    pub total_duration_ms: i64,
+    pub events: Vec<EncounterBuffEventDto>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EncounterEntityBuffsDto {
+    pub entity_uid: i64,
+    pub entity_name: String,
+    pub buffs: Vec<EncounterBuffDto>,
+}
+
+#[derive(Deserialize)]
+struct StoredBuffEvent {
+    start: i64,
+    end: i64,
+    duration: i32,
+    stack_count: i32,
+}
+
+/// Gets the buffs for a given encounter, filtered by player entities.
+///
+/// # Arguments
+///
+/// * `encounter_id` - The ID of the encounter.
+///
+/// # Returns
+///
+/// * `Result<Vec<EncounterEntityBuffsDto>, String>` - A list of entity buffs.
+#[tauri::command]
+#[specta::specta]
+pub fn get_encounter_buffs(encounter_id: i32) -> Result<Vec<EncounterEntityBuffsDto>, String> {
+    let mut conn = get_conn()?;
+    use crate::live::buff_names;
+    use sch::actor_encounter_stats::dsl as s;
+    use sch::buffs::dsl as b;
+
+    // 1. Get players in this encounter to filter buffs
+    let players: std::collections::HashMap<i64, String> = s::actor_encounter_stats
+        .filter(s::encounter_id.eq(encounter_id))
+        .filter(s::is_player.eq(1))
+        .select((s::actor_id, s::name))
+        .load::<(i64, Option<String>)>(&mut conn)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(uid, name)| (uid, name.unwrap_or_else(|| format!("Unknown ({})", uid))))
+        .collect();
+
+    // 2. Fetch all buffs for the encounter
+    let buff_rows = b::buffs
+        .filter(b::encounter_id.eq(encounter_id))
+        .load::<m::BuffRow>(&mut conn)
+        .map_err(|e| e.to_string())?;
+
+    let mut result_map: std::collections::HashMap<i64, EncounterEntityBuffsDto> =
+        std::collections::HashMap::new();
+
+    for row in buff_rows {
+        // Only process if entity is a known player
+        if let Some(name) = players.get(&row.entity_id) {
+            let entry =
+                result_map
+                    .entry(row.entity_id)
+                    .or_insert_with(|| EncounterEntityBuffsDto {
+                        entity_uid: row.entity_id,
+                        entity_name: name.clone(),
+                        buffs: Vec::new(),
+                    });
+
+            // Parse events
+            let stored_events: Vec<StoredBuffEvent> =
+                serde_json::from_str(&row.events).unwrap_or_default();
+
+            let events_dto: Vec<EncounterBuffEventDto> = stored_events
+                .into_iter()
+                .map(|e| EncounterBuffEventDto {
+                    start_ms: e.start,
+                    end_ms: e.end,
+                    duration_ms: e.duration as i64,
+                    stack_count: e.stack_count,
+                })
+                .collect();
+
+            let total_duration_ms: i64 = events_dto.iter().map(|e| e.duration_ms).sum();
+
+            if total_duration_ms > 0 {
+                if let Some((short, long)) = buff_names::lookup_full(row.buff_id) {
+                    entry.buffs.push(EncounterBuffDto {
+                        buff_id: row.buff_id,
+                        buff_name: short,
+                        buff_name_long: Some(long),
+                        total_duration_ms,
+                        events: events_dto,
+                    });
+                }
+            }
+        }
+    }
+
+    Ok(result_map.into_values().collect())
+}
