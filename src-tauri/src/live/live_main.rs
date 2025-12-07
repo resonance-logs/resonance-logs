@@ -120,6 +120,29 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     }
                 }
+                packets::opcodes::Pkt::BuffInfoSync => {
+                    match blueprotobuf::BuffInfoSync::decode(Bytes::from(data)) {
+                        Ok(v) => {
+                            // Dump the packet as JSON for debugging
+                            match serde_json::to_string_pretty(&v) {
+                                Ok(json) => {
+                                    info!("BuffInfoSync packet received:\n{}", json);
+                                }
+                                Err(e) => {
+                                    info!(
+                                        "BuffInfoSync packet received (JSON serialization failed: {}): {:?}",
+                                        e, v
+                                    );
+                                }
+                            }
+                            None // Not processed further for now
+                        }
+                        Err(e) => {
+                            warn!("Error decoding BuffInfoSync.. ignoring: {e}");
+                            None
+                        }
+                    }
+                }
                 _ => {
                     trace!("Unhandled packet opcode: {op:?}");
                     None
@@ -195,7 +218,6 @@ pub async fn start(app_handle: AppHandle) {
 fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod {
     use packets::packet_capture::CaptureMethod;
 
-
     let filename_candidates = ["packetCapture.json", "packetCapture.bin", "packetCapture"];
     let mut dir_candidates = Vec::new();
     if let Some(dir) = app.path().app_data_dir().ok() {
@@ -239,7 +261,10 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
                         return CaptureMethod::WinDivert;
                     }
                 } else {
-                    warn!("Failed to parse packet capture config at {}", path.display());
+                    warn!(
+                        "Failed to parse packet capture config at {}",
+                        path.display()
+                    );
                 }
             }
         }
@@ -279,7 +304,10 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
                             return CaptureMethod::WinDivert;
                         }
                     } else {
-                        warn!("Failed to parse packet capture config at {}", path.display());
+                        warn!(
+                            "Failed to parse packet capture config at {}",
+                            path.display()
+                        );
                     }
                 }
             }

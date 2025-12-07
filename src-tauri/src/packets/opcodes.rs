@@ -46,7 +46,8 @@ pub enum Pkt {
     // 0x3d skipped
     NotifyUserCloseFunction = 0x0000003e,
     NotifyServerCloseFunction = 0x0000003f,
-    // 0x40 skipped
+    BuffInfoSync = 0x00000040,
+    // 0x41 skipped
     BounceJump = 0x00000042,
     SyncClientUseSkill = 0x00000043,
     SyncAllServerStateObject = 0x00000044,
@@ -91,6 +92,7 @@ impl TryFrom<u32> for Pkt {
             0x0000003c => Ok(Pkt::PersonalGroupObjectUpdate),
             0x0000003e => Ok(Pkt::NotifyUserCloseFunction),
             0x0000003f => Ok(Pkt::NotifyServerCloseFunction),
+            0x00000040 => Ok(Pkt::BuffInfoSync),
             0x00000042 => Ok(Pkt::BounceJump),
             0x00000043 => Ok(Pkt::SyncClientUseSkill),
             0x00000044 => Ok(Pkt::SyncAllServerStateObject),

@@ -439,6 +439,26 @@ pub fn process_aoi_sync_delta(
         }
     }
 
+    // Dump BuffInfoSync if present (for debugging)
+    if let Some(ref buff_info_sync) = aoi_sync_delta.buff_infos {
+        if !buff_info_sync.buff_infos.is_empty() {
+            match serde_json::to_string_pretty(buff_info_sync) {
+                Ok(json) => {
+                    info!(
+                        "BuffInfoSync (from AoiSyncDelta, target_uid={}): \n{}",
+                        target_uid, json
+                    );
+                }
+                Err(e) => {
+                    info!(
+                        "BuffInfoSync (from AoiSyncDelta, target_uid={}, JSON failed: {}): {:?}",
+                        target_uid, e, buff_info_sync
+                    );
+                }
+            }
+        }
+    }
+
     let Some(skill_effect) = aoi_sync_delta.skill_effects else {
         return Some(()); // return ok since this variable usually doesn't exist
     };
