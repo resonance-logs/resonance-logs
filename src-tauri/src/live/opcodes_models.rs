@@ -6,6 +6,20 @@ use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 use tokio::sync::RwLock;
 
+/// Represents a single buff application event for JSON serialization.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BuffEvent {
+    /// Timestamp when the buff was applied (ms since fight start).
+    pub start: i64,
+    /// Timestamp when the buff expired (ms since fight start).
+    /// May be calculated from start + duration or updated when buff is removed.
+    pub end: i64,
+    /// Duration of the buff in milliseconds.
+    pub duration: i32,
+    /// Number of stacks/layers of the buff.
+    pub stack_count: i32,
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct Encounter {
     pub is_encounter_paused: bool,
@@ -39,6 +53,8 @@ pub struct Encounter {
     pub waiting_for_next_boss: bool,
     // Track the last active segment type to detect transitions for meter resets
     pub last_active_segment_type: Option<String>, // "boss" or "trash"
+    // Buff tracking: key is (entity_uid, buff_id), value is list of buff events
+    pub buff_events: HashMap<(i64, i32), Vec<BuffEvent>>,
 }
 
 // Use an async-aware RwLock so readers don't block the tokio runtime threads.
@@ -465,6 +481,9 @@ impl Encounter {
         self.last_attempt_split_ms = 0;
         self.waiting_for_next_boss = false;
         self.last_active_segment_type = None;
+
+        // Clear buff tracking for fresh encounter
+        self.buff_events.clear();
     }
 
     /// Resets player metrics for a segment switch within the same encounter.

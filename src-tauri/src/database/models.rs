@@ -639,3 +639,32 @@ pub struct NewDungeonSegment<'a> {
     /// The number of hits during this segment.
     pub hit_count: i64,
 }
+
+/// Represents a row in the `buffs` table.
+#[derive(Debug, Clone, Queryable, Identifiable, Associations, Serialize, Deserialize)]
+#[diesel(table_name = sch::buffs, primary_key(encounter_id, entity_id, buff_id))]
+#[diesel(belongs_to(EncounterRow, foreign_key = encounter_id))]
+pub struct BuffRow {
+    /// The ID of the encounter this buff data belongs to.
+    pub encounter_id: i32,
+    /// The ID of the entity that received the buff.
+    pub entity_id: i64,
+    /// The ID of the buff.
+    pub buff_id: i32,
+    /// JSON array of buff events.
+    pub events: String,
+}
+
+/// Represents a new buff record to be inserted/replaced into the `buffs` table.
+#[derive(Debug, Clone, Insertable)]
+#[diesel(table_name = sch::buffs)]
+pub struct NewBuff<'a> {
+    /// The ID of the encounter this buff data belongs to.
+    pub encounter_id: i32,
+    /// The ID of the entity that received the buff.
+    pub entity_id: i64,
+    /// The ID of the buff.
+    pub buff_id: i32,
+    /// JSON array of buff events.
+    pub events: &'a str,
+}

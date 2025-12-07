@@ -307,6 +307,28 @@ diesel::table! {
     }
 }
 
+/// Represents the `buffs` table for tracking buff events per entity per encounter.
+diesel::table! {
+    buffs (encounter_id, entity_id, buff_id) {
+        /// The ID of the encounter this buff data belongs to.
+        encounter_id -> Integer,
+        /// The ID of the entity that received the buff.
+        entity_id -> BigInt,
+        /// The ID of the buff.
+        buff_id -> Integer,
+        /// JSON array of buff events.
+        events -> Text,
+    }
+}
+
+/// Simple key-value config table for app settings.
+diesel::table! {
+    app_config (key) {
+        key -> Text,
+        value -> Text,
+    }
+}
+
 // Joins
 
 // joinable entries for raw event tables removed
@@ -316,6 +338,7 @@ diesel::joinable!(encounter_bosses -> encounters (encounter_id));
 diesel::joinable!(death_events -> encounters (encounter_id));
 diesel::joinable!(attempts -> encounters (encounter_id));
 diesel::joinable!(dungeon_segments -> encounters (encounter_id));
+diesel::joinable!(buffs -> encounters (encounter_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     entities,
@@ -328,4 +351,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     death_events,
     attempts,
     dungeon_segments,
+    buffs,
+    app_config,
 );

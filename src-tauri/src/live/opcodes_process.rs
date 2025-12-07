@@ -8,7 +8,9 @@ use crate::live::dungeon_log::{self, DungeonLogRuntime};
 use crate::live::opcodes_models::class::{
     ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
 };
-use crate::live::opcodes_models::{AttrType, AttrValue, Encounter, Entity, Skill, attr_type};
+use crate::live::opcodes_models::{
+    AttrType, AttrValue, BuffEvent, Encounter, Entity, Skill, attr_type,
+};
 use crate::packets::utils::BinaryReader;
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
@@ -439,22 +441,58 @@ pub fn process_aoi_sync_delta(
         }
     }
 
-    // Dump BuffInfoSync if present (for debugging)
+    // Process BuffInfoSync if present - track buff applications
     if let Some(ref buff_info_sync) = aoi_sync_delta.buff_infos {
-        if !buff_info_sync.buff_infos.is_empty() {
-            match serde_json::to_string_pretty(buff_info_sync) {
-                Ok(json) => {
-                    info!(
-                        "BuffInfoSync (from AoiSyncDelta, target_uid={}): \n{}",
-                        target_uid, json
-                    );
+        let fight_start = encounter.time_fight_start_ms as i64;
+        let now = now_ms();
+        for buff_info in &buff_info_sync.buff_infos {
+            // Extract buff data
+            let buff_id = match buff_info.base_id {
+                Some(id) => id,
+                None => continue,
+            };
+            let duration = buff_info.duration.unwrap_or(0);
+            let stack_count = buff_info.layer.unwrap_or(1);
+            let create_time = buff_info.create_time.unwrap_or(now);
+
+            // Calculate start time relative to fight start (or use absolute if no fight)
+            let start = if fight_start > 0 {
+                (create_time - fight_start).max(0)
+            } else {
+                create_time
+            };
+            let end = start + (duration as i64);
+
+            let key = (target_uid, buff_id);
+            let events = encounter.buff_events.entry(key).or_insert_with(Vec::new);
+
+            // Try to find an existing event that this update belongs to:
+            // 1. Same start time = stack update on existing buff instance
+            // 2. Start is within an existing event's window = refresh that extends duration
+            let mut found_match = false;
+            for existing in events.iter_mut() {
+                if existing.start == start && existing.duration == duration {
+                    // Same buff instance, just update stack count to latest value
+                    existing.stack_count = stack_count;
+                    found_match = true;
+                    break;
+                } else if start >= existing.start && start < existing.end {
+                    // Buff was refreshed mid-duration - extend the end time
+                    existing.end = end;
+                    existing.stack_count = stack_count;
+                    found_match = true;
+                    break;
                 }
-                Err(e) => {
-                    info!(
-                        "BuffInfoSync (from AoiSyncDelta, target_uid={}, JSON failed: {}): {:?}",
-                        target_uid, e, buff_info_sync
-                    );
-                }
+            }
+
+            // Only add as new event if no matching existing event found
+            if !found_match {
+                events.push(BuffEvent {
+                    start,
+                    end,
+                    duration,
+                    stack_count,
+                });
             }
         }
     }

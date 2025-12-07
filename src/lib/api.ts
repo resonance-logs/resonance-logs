@@ -178,8 +178,8 @@ export const disableBlur = (): Promise<void> => commands.disableBlur();
 // New: toggle boss-only DPS filtering on the backend
 export const setBossOnlyDps = (enabled: boolean): Promise<void> => invoke("set_boss_only_dps", { enabled });
 
-export const setDungeonSegmentsEnabled = (enabled: boolean): Promise<void> =>
-  invoke("set_dungeon_segments_enabled", { enabled });
+// export const setDungeonSegmentsEnabled = (enabled: boolean): Promise<void> =>
+//   invoke("set_dungeon_segments_enabled", { enabled });
 
 export const setWipeDetectionEnabled = (enabled: boolean): Promise<void> =>
   invoke("set_wipe_detection_enabled", { enabled });

@@ -519,6 +519,14 @@ async getNetworkDevices() : Promise<Result<Device[], string>> {
 },
 async checkNpcapStatus() : Promise<boolean> {
     return await TAURI_INVOKE("check_npcap_status");
+},
+async openLogDir() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_log_dir") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
