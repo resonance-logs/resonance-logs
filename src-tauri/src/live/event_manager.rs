@@ -330,7 +330,7 @@ fn is_boss_target(encounter: &Encounter, target_uid: &i64) -> bool {
 // Helper functions for generating data structures
 pub fn generate_players_window_dps(
     encounter: &Encounter,
-    boss_only: bool,
+    _boss_only: bool,
     segment_elapsed_ms: Option<u128>,
 ) -> PlayersWindow {
     let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
@@ -339,24 +339,21 @@ pub fn generate_players_window_dps(
         player_rows: Vec::new(),
     };
 
-    let total_scope_dmg: u128 = if boss_only {
-        encounter
-            .entity_uid_to_entity
-            .iter()
-            .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
-            .map(|(_, e)| {
-                e.dmg_to_target
-                    .iter()
-                    .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-                    .map(|(_, v)| *v)
-                    .sum::<u128>()
-            })
-            .sum()
-    } else {
-        encounter.total_dmg
-    };
+    let total_scope_dmg: u128 = encounter.total_dmg;
+    let total_boss_dmg: u128 = encounter
+        .entity_uid_to_entity
+        .iter()
+        .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
+        .map(|(_, e)| {
+            e.dmg_to_target
+                .iter()
+                .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+                .map(|(_, v)| *v)
+                .sum::<u128>()
+        })
+        .sum();
 
-    if total_scope_dmg == 0 {
+    if total_scope_dmg == 0 && total_boss_dmg == 0 {
         return players_window;
     }
 
@@ -365,8 +362,8 @@ pub fn generate_players_window_dps(
             entity_uid,
             entity,
             encounter,
-            boss_only,
             total_scope_dmg,
+            total_boss_dmg,
             time_elapsed_secs,
         ) {
             players_window.player_rows.push(player_row);
@@ -429,6 +426,9 @@ pub fn generate_players_window_heal(
                 ),
                 hits: entity.hits_heal,
                 hits_per_minute: nan_is_zero(entity.hits_heal as f64 / time_elapsed_secs * 60.0),
+                boss_dmg: 0,
+                boss_dps: 0.0,
+                boss_dmg_pct: 0.0,
                 // Extended attributes from Stage 4
                 rank_level: entity.rank_level(),
                 current_hp: entity.hp(),
@@ -511,6 +511,9 @@ pub fn generate_players_window_tanked(
                 ),
                 hits: entity.hits_taken,
                 hits_per_minute: nan_is_zero(entity.hits_taken as f64 / time_elapsed_secs * 60.0),
+                boss_dmg: 0,
+                boss_dps: 0.0,
+                boss_dmg_pct: 0.0,
                 // Extended attributes from Stage 4
                 rank_level: entity.rank_level(),
                 current_hp: entity.hp(),
@@ -551,34 +554,34 @@ pub fn generate_skills_window_dps(
     let entity = encounter.entity_uid_to_entity.get(&player_uid)?;
     let (_, time_elapsed_secs) = resolve_elapsed(encounter, segment_elapsed_ms);
 
+    let total_boss_dmg: u128 = encounter
+        .entity_uid_to_entity
+        .iter()
+        .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
+        .map(|(_, e)| {
+            e.dmg_to_target
+                .iter()
+                .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+                .map(|(_, v)| *v)
+                .sum::<u128>()
+        })
+        .sum();
+
+    let player_boss_total: u128 = entity
+        .dmg_to_target
+        .iter()
+        .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+        .map(|(_, v)| *v)
+        .sum();
+
     // Compute encounter and player totals within scope
     let total_scope_dmg: u128 = if boss_only {
-        encounter
-            .entity_uid_to_entity
-            .iter()
-            .filter(|(_, e)| e.entity_type == EEntityType::EntChar)
-            .map(|(_, e)| {
-                e.dmg_to_target
-                    .iter()
-                    .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-                    .map(|(_, v)| *v)
-                    .sum::<u128>()
-            })
-            .sum()
+        total_boss_dmg
     } else {
         encounter.total_dmg
     };
 
-    let player_total: u128 = if boss_only {
-        entity
-            .dmg_to_target
-            .iter()
-            .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-            .map(|(_, v)| *v)
-            .sum()
-    } else {
-        entity.total_dmg
-    };
+    let player_total: u128 = if boss_only { player_boss_total } else { entity.total_dmg };
 
     // Player DPS Stats
     #[allow(clippy::cast_precision_loss)]
@@ -595,6 +598,13 @@ pub fn generate_skills_window_dps(
                 0.0
             } else {
                 nan_is_zero(player_total as f64 / total_scope_dmg as f64 * 100.0)
+            },
+            boss_dmg: player_boss_total,
+            boss_dps: nan_is_zero(player_boss_total as f64 / time_elapsed_secs),
+            boss_dmg_pct: if total_boss_dmg == 0 {
+                0.0
+            } else {
+                nan_is_zero(player_boss_total as f64 / total_boss_dmg as f64 * 100.0)
             },
             crit_rate: nan_is_zero(entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
@@ -708,6 +718,9 @@ pub fn generate_skills_window_heal(
             ),
             hits: entity.hits_heal,
             hits_per_minute: nan_is_zero(entity.hits_heal as f64 / time_elapsed_secs * 60.0),
+            boss_dmg: 0,
+            boss_dps: 0.0,
+            boss_dmg_pct: 0.0,
             // Extended attributes from Stage 4
             rank_level: entity.rank_level(),
             current_hp: entity.hp(),
@@ -794,6 +807,9 @@ pub fn generate_skills_window_tanked(
             ),
             hits: entity.hits_taken,
             hits_per_minute: nan_is_zero(entity.hits_taken as f64 / time_elapsed_secs * 60.0),
+            boss_dmg: 0,
+            boss_dps: 0.0,
+            boss_dmg_pct: 0.0,
             // Extended attributes from Stage 4
             rank_level: entity.rank_level(),
             current_hp: entity.hp(),
@@ -891,8 +907,8 @@ pub fn generate_player_row_filtered(
     entity_uid: i64,
     entity: &Entity,
     encounter: &Encounter,
-    boss_only: bool,
     total_scope_dmg: u128,
+    total_boss_dmg: u128,
     time_elapsed_secs: f64,
 ) -> Option<PlayerRow> {
     let is_player = entity.entity_type == EEntityType::EntChar;
@@ -902,17 +918,14 @@ pub fn generate_player_row_filtered(
         return None;
     }
 
-    let entity_total: u128 = if boss_only {
-        entity
-            .dmg_to_target
-            .iter()
-            .filter(|(tuid, _)| is_boss_target(encounter, tuid))
-            .map(|(_, v)| *v)
-            .sum()
-    } else {
-        entity.total_dmg
-    };
-    if total_scope_dmg == 0 {
+    let entity_total: u128 = entity.total_dmg;
+    let boss_total: u128 = entity
+        .dmg_to_target
+        .iter()
+        .filter(|(tuid, _)| is_boss_target(encounter, tuid))
+        .map(|(_, v)| *v)
+        .sum();
+    if total_scope_dmg == 0 && total_boss_dmg == 0 {
         return None;
     }
 
@@ -925,7 +938,18 @@ pub fn generate_player_row_filtered(
         ability_score: entity.ability_score as u128,
         total_dmg: entity_total,
         dps: nan_is_zero(entity_total as f64 / time_elapsed_secs),
-        dmg_pct: nan_is_zero(entity_total as f64 / total_scope_dmg as f64 * 100.0),
+        dmg_pct: if total_scope_dmg == 0 {
+            0.0
+        } else {
+            nan_is_zero(entity_total as f64 / total_scope_dmg as f64 * 100.0)
+        },
+        boss_dmg: boss_total,
+        boss_dps: nan_is_zero(boss_total as f64 / time_elapsed_secs),
+        boss_dmg_pct: if total_boss_dmg == 0 {
+            0.0
+        } else {
+            nan_is_zero(boss_total as f64 / total_boss_dmg as f64 * 100.0)
+        },
         crit_rate: nan_is_zero(entity.crit_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),
         crit_dmg_rate: nan_is_zero(entity.crit_total_dmg as f64 / entity.total_dmg as f64 * 100.0),
         lucky_rate: nan_is_zero(entity.lucky_hits_dmg as f64 / entity.hits_dmg as f64 * 100.0),

@@ -160,7 +160,7 @@
     },
     {
       id: "toggleBossHp",
-      label: "Toggle Boss Only Damage",
+      label: "Toggle Boss Health Display",
     },
   ];
 </script>

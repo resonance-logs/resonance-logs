@@ -5,7 +5,6 @@
    */
   import "../app.css";
   import { SETTINGS } from "$lib/settings-store";
-  import { setBossOnlyDps } from "$lib/api";
   // Only allow warnings and errors to be printed to console in production builds
   if (typeof window !== "undefined" && import.meta.env.PROD) {
     // Keep warn and error; disable verbose logging
@@ -15,8 +14,6 @@
   }
 
   let { children } = $props();
-  let lastBossOnlySync: boolean | null = null;
-  // let lastDungeonSegmentsSync: boolean | null = null;
 
   const customThemeKeyToCssVar: Record<string, string | string[]> = {
     backgroundMain: "--background-main",
@@ -92,21 +89,6 @@
 })()}
 
 {(() => {
-  $effect(() => {
-    if (typeof window === "undefined") return;
-    const bossOnlyEnabled = Boolean(SETTINGS.live.general.state.bossOnlyDps);
-    if (lastBossOnlySync === bossOnlyEnabled) return;
-    lastBossOnlySync = bossOnlyEnabled;
-    void setBossOnlyDps(bossOnlyEnabled);
-  });
-
-  // $effect(() => {
-  //   if (typeof window === "undefined") return;
-  //   const segmentsEnabled = Boolean(SETTINGS.live.general.state.dungeonSegmentsEnabled);
-  //   if (lastDungeonSegmentsSync === segmentsEnabled) return;
-  //   lastDungeonSegmentsSync = segmentsEnabled;
-  //   void setDungeonSegmentsEnabled(segmentsEnabled);
-  // });
 })()}
 
 {@render children()}

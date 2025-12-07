@@ -19,8 +19,6 @@
     CLASS_NAMES,
     getClassColorRaw,
   } from "$lib/utils.svelte";
-  import { setBossOnlyDps } from "$lib/api";
-  import { onMount } from "svelte";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
 
   const themesTabs = [
@@ -581,18 +579,6 @@
   function toggleSection(section: keyof typeof expandedSections) {
     expandedSections[section] = !expandedSections[section];
   }
-
-  // Sync boss damage setting to backend
-  let _mounted = false;
-  onMount(() => {
-    _mounted = true;
-  });
-
-  $effect(() => {
-    if (_mounted) {
-      void setBossOnlyDps(SETTINGS.live.general.state.bossOnlyDps);
-    }
-  });
 
   // Table size presets removed — sliders shown by default
 
@@ -1692,41 +1678,6 @@
                         bind:value={
                           SETTINGS.live.headerCustomization.state
                             .pauseButtonPadding
-                        }
-                        min={2}
-                        max={16}
-                        step={1}
-                        label="Padding"
-                        unit="px"
-                      />
-                    </div>
-                  {/if}
-
-                  <!-- Boss Only Button -->
-                  <SettingsSwitch
-                    bind:checked={
-                      SETTINGS.live.headerCustomization.state.showBossOnlyButton
-                    }
-                    label="Show Boss Only Button"
-                    description="Button to toggle boss-only damage mode"
-                  />
-                  {#if SETTINGS.live.headerCustomization.state.showBossOnlyButton}
-                    <div class="grid grid-cols-2 gap-2 pl-4">
-                      <SettingsSlider
-                        bind:value={
-                          SETTINGS.live.headerCustomization.state
-                            .bossOnlyButtonSize
-                        }
-                        min={12}
-                        max={32}
-                        step={1}
-                        label="Icon Size"
-                        unit="px"
-                      />
-                      <SettingsSlider
-                        bind:value={
-                          SETTINGS.live.headerCustomization.state
-                            .bossOnlyButtonPadding
                         }
                         min={2}
                         max={16}

@@ -87,8 +87,9 @@ export async function registerShortcut(cmdId: string, shortcutKey: string) {
       case "toggleBossHp":
         await register(shortcutKey, async (event) => {
           if (event.state === "Pressed") {
-            const nextValue = !SETTINGS.live.general.state.bossOnlyDps;
-            SETTINGS.live.general.state.bossOnlyDps = nextValue;
+            const nextValue =
+              !SETTINGS.live.headerCustomization.state.showBossHealth;
+            SETTINGS.live.headerCustomization.state.showBossHealth = nextValue;
           }
         });
         break;

@@ -4,27 +4,9 @@
   import SettingsSelect from "./settings-select.svelte";
   import { historyDpsPlayerColumns, historyDpsSkillColumns, historyHealPlayerColumns, historyHealSkillColumns, historyTankedPlayerColumns, historyTankedSkillColumns } from "$lib/column-data";
   import { SETTINGS } from "$lib/settings-store";
-  import { setBossOnlyDps } from "$lib/api";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
 
   const SETTINGS_CATEGORY = "history";
-
-  // Sync boss damage setting to backend when user actually changes it.
-  // Avoid calling on initial mount because the settings layout mounts all tabs
-  // at once which would trigger multiple backend invocations and can stall
-  // the live emitter. Only invoke the backend after the component is mounted
-  // and the value changes.
-  import { onMount } from 'svelte';
-  let _mounted = false;
-  onMount(() => {
-    _mounted = true;
-  });
-
-  $effect(() => {
-    if (_mounted) {
-      void setBossOnlyDps(SETTINGS.history.general.state.bossOnlyDps);
-    }
-  });
 
   // Collapsible section state - all collapsed by default
   let expandedSections = $state({
@@ -68,7 +50,6 @@
           <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenTps} label="Shorten TPS Metrics" description="Show TPS values as 5k, 50k, etc." />
           <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenAbilityScore} label="Shorten Ability Score" description="Shortens the Ability Score" />
           <SettingsSwitch bind:checked={SETTINGS.history.general.state.shortenDps} label="Shorten DPS Metrics" description="Show DPS values as 5k, 50k, etc." />
-          <SettingsSwitch bind:checked={SETTINGS.history.general.state.bossOnlyDps} label="Boss Only Damage" description="Only count damage dealt to boss monsters" />
         </div>
       {/if}
     </div>

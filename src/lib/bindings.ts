@@ -1020,6 +1020,18 @@ hits: number;
  */
 hitsPerMinute: number; 
 /**
+ * The total damage dealt to bosses by the player.
+ */
+bossDmg: number; 
+/**
+ * The DPS dealt to bosses by the player.
+ */
+bossDps: number; 
+/**
+ * The percentage contribution of boss damage relative to all boss damage.
+ */
+bossDmgPct: number; 
+/**
  * The rank level of the player.
  */
 rankLevel: number | null; 

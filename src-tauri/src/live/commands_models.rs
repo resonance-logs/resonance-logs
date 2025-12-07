@@ -83,6 +83,12 @@ pub struct PlayerRow {
     pub hits: u128,
     /// The number of hits per minute dealt by the player.
     pub hits_per_minute: f64,
+    /// The total damage dealt to bosses by the player.
+    pub boss_dmg: u128,
+    /// The DPS dealt to bosses by the player.
+    pub boss_dps: f64,
+    /// The percentage contribution of boss damage relative to all boss damage.
+    pub boss_dmg_pct: f64,
     // Extended player attributes from Stage 4
     /// The rank level of the player.
     pub rank_level: Option<i64>,

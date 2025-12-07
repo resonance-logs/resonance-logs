@@ -13,7 +13,6 @@
   import MinusIcon from "virtual:icons/lucide/minus";
   import SettingsIcon from "virtual:icons/lucide/settings";
   import RefreshCwIcon from "virtual:icons/lucide/refresh-cw";
-  import CrownIcon from "virtual:icons/lucide/crown";
 
   import { onMount } from "svelte";
   import { page } from "$app/stores";
@@ -24,7 +23,6 @@
     onResetEncounter,
     resetEncounter,
     togglePauseEncounter,
-    setBossOnlyDps,
     type HeaderInfo,
   } from "$lib/api";
   import { tooltip } from "$lib/utils.svelte";
@@ -173,7 +171,6 @@
     currentSegmentName: null,
   });
   let isEncounterPaused = $state(false);
-  let bossOnlyDpsEnabled = $derived(SETTINGS.live.general.state.bossOnlyDps);
 
   // Display values - use dummy data when enabled
   let displayHeaderInfo = $derived(
@@ -201,12 +198,6 @@
     }
   }
 
-  function toggleBossOnlyDamage() {
-    const nextValue = !SETTINGS.live.general.state.bossOnlyDps;
-    SETTINGS.live.general.state.bossOnlyDps = nextValue;
-    void setBossOnlyDps(nextValue);
-  }
-
   function handleResetEncounter() {
     resetTimer();
     isEncounterPaused = false;
@@ -222,7 +213,6 @@
   let hasRow1Right = $derived(
     h.showResetButton ||
       h.showPauseButton ||
-      h.showBossOnlyButton ||
       h.showSettingsButton ||
       h.showMinimizeButton,
   );
@@ -340,28 +330,6 @@
             {/if}
           </button>
         {/if}
-
-        {#if h.showBossOnlyButton}
-          <button
-            class="rounded-lg transition-all duration-200 {bossOnlyDpsEnabled
-              ? 'text-[oklch(0.75_0.1_95)] bg-[oklch(0.95_0.02_95)]/30 hover:bg-[oklch(0.95_0.02_95)]/50'
-              : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
-            class:boss-only-active={bossOnlyDpsEnabled}
-            style="padding: {h.bossOnlyButtonPadding}px"
-            aria-pressed={bossOnlyDpsEnabled}
-            onclick={toggleBossOnlyDamage}
-            {@attach tooltip(() =>
-              bossOnlyDpsEnabled
-                ? "Boss Only Damage Enabled"
-                : "Enable Boss Only Damage",
-            )}
-          >
-            <CrownIcon
-              style="width: {h.bossOnlyButtonSize}px; height: {h.bossOnlyButtonSize}px"
-            />
-          </button>
-        {/if}
-
 
         {#if h.showSettingsButton}
           <button

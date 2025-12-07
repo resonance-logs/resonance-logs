@@ -16,8 +16,8 @@
   // Track the active tab so we can lazy-mount tab content. The Tabs implementation
   // used here will keep all children mounted by default which causes every
   // settings tab to initialize on page load. That in turn triggers backend
-  // side-effects (e.g. setBossOnlyDps) from every tab and can stall the live
-  // emitter. We render only the currently active tab component to avoid that.
+  // side-effects from every tab and can stall the live emitter. We render only
+  // the currently active tab component to avoid that.
   let activeTab = $state("live");
 </script>
 

@@ -7,6 +7,8 @@ import { RuneStore } from '@tauri-store/svelte';
 export const DEFAULT_STATS = {
   totalDmg: true,
   dps: true,
+  bossDmg: true,
+  bossDps: true,
   dmgPct: true,
   critRate: true,
   critDmgRate: true,
@@ -19,6 +21,8 @@ export const DEFAULT_STATS = {
 export const DEFAULT_HISTORY_STATS = {
   totalDmg: true,
   dps: true,
+  bossDmg: true,
+  bossDps: true,
   dmgPct: true,
   critRate: false,
   critDmgRate: false,

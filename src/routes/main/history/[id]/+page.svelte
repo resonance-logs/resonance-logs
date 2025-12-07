@@ -8,7 +8,6 @@
     SkillsWindow,
   } from "$lib/bindings";
   import { getClassIcon, tooltip, CLASS_MAP } from "$lib/utils.svelte";
-  import CrownIcon from "virtual:icons/lucide/crown";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import {
@@ -52,7 +51,6 @@
 
   // Tab state for encounter view
   let activeTab = $state<"damage" | "tanked" | "healing" | "buffs">("damage");
-  let bossOnlyMode = $state(false);
   let buffs = $state<EncounterEntityBuffsDto[]>([]);
 
   const tabs: {
@@ -132,15 +130,15 @@
   let visiblePlayerColumns = $derived.by(() => {
     if (activeTab === "healing") {
       return historyHealPlayerColumns.filter(
-        (col) => settings.state.history.heal.players[col.key],
+        (col) => settings.state.history.heal.players[col.key] ?? true,
       );
     } else if (activeTab === "tanked") {
       return historyTankedPlayerColumns.filter(
-        (col) => settings.state.history.tanked.players[col.key],
+        (col) => settings.state.history.tanked.players[col.key] ?? true,
       );
     }
     return historyDpsPlayerColumns.filter(
-      (col) => settings.state.history.dps.players[col.key],
+      (col) => settings.state.history.dps.players[col.key] ?? true,
     );
   });
 
@@ -244,23 +242,10 @@
       const hitsTaken = a.hitsTaken || 0;
       const hitsHeal = a.hitsHeal || 0;
       const className = getClassName(a.classId);
-
-      const dmgValue = bossOnlyMode
-        ? a.bossDamageDealt || 0
-        : a.damageDealt || 0;
-      const totalDmgValue = bossOnlyMode ? totalBossDmg : totalDmg;
-      const bossCritTotal = a.bossCritTotalDealt || 0;
-      const critTotal = a.critHitsDealt
-        ? bossOnlyMode
-          ? bossCritTotal
-          : a.critTotalDealt || 0
-        : 0;
-      const bossLuckyTotal = a.bossLuckyTotalDealt || 0;
-      const luckyTotal = a.luckyHitsDealt
-        ? bossOnlyMode
-          ? bossLuckyTotal
-          : a.luckyTotalDealt || 0
-        : 0;
+      const dmgValue = a.damageDealt || 0;
+      const bossDmgValue = a.bossDamageDealt || 0;
+      const critTotal = a.critHitsDealt ? a.critTotalDealt || 0 : 0;
+      const luckyTotal = a.luckyHitsDealt ? a.luckyTotalDealt || 0 : 0;
 
       return {
         uid: a.actorId,
@@ -271,7 +256,10 @@
         abilityScore: a.abilityScore || 0,
         totalDmg: dmgValue,
         dps: dmgValue / durationSecs,
-        dmgPct: totalDmgValue > 0 ? (dmgValue * 100) / totalDmgValue : 0,
+        dmgPct: totalDmg > 0 ? (dmgValue * 100) / totalDmg : 0,
+        bossDmg: bossDmgValue,
+        bossDps: bossDmgValue / durationSecs,
+        bossDmgPct: totalBossDmg > 0 ? (bossDmgValue * 100) / totalBossDmg : 0,
         critRate: hits > 0 ? (a.critHitsDealt || 0) / hits : 0,
         critDmgRate: dmgValue > 0 ? critTotal / dmgValue : 0,
         luckyRate: hits > 0 ? (a.luckyHitsDealt || 0) / hits : 0,
@@ -394,13 +382,6 @@
     } else {
       skillsWindow = null;
       selectedPlayer = null;
-    }
-  });
-
-  $effect(() => {
-    // Reload encounter when bossOnlyMode changes
-    if (bossOnlyMode !== undefined) {
-      loadEncounter();
     }
   });
 
@@ -605,25 +586,6 @@
                   />
                 </svg>
               </button>
-
-              <button
-                onclick={() => {
-                  if (activeTab === "damage") bossOnlyMode = !bossOnlyMode;
-                }}
-                class="boss-only-toggle transition-colors p-2 {activeTab !==
-                'damage'
-                  ? 'opacity-30 cursor-not-allowed'
-                  : 'hover:bg-muted/40 rounded'}"
-                class:boss-only-active={bossOnlyMode && activeTab === "damage"}
-                title={activeTab !== "damage"
-                  ? "Boss Damage Only (Only for Damage tab)"
-                  : bossOnlyMode
-                    ? "Boss Damage Only (Active)"
-                    : "Boss Damage Only"}
-                aria-label="Boss damage only"
-              >
-                <CrownIcon class="w-4 h-4" />
-              </button>
             </div>
 
             <div class="flex rounded border border-border bg-popover">
@@ -775,7 +737,7 @@
                   <td
                     class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10"
                   >
-                    {#if (activeTab === "damage" && (col.key === "totalDmg" || col.key === "dps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "healing" && (col.key === "healDealt" || col.key === "hps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "tanked" && (col.key === "damageTaken" || col.key === "tankedPS") && SETTINGS.history.general.state.shortenTps)}
+                    {#if (activeTab === "damage" && (col.key === "totalDmg" || col.key === "bossDmg" || col.key === "bossDps" || col.key === "dps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "healing" && (col.key === "healDealt" || col.key === "hps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "tanked" && (col.key === "damageTaken" || col.key === "tankedPS") && SETTINGS.history.general.state.shortenTps)}
                       {#if activeTab === "tanked" ? SETTINGS.history.general.state.shortenTps : SETTINGS.history.general.state.shortenDps}
                         <AbbreviatedNumber num={p[col.key] ?? 0} />
                       {:else}
@@ -1004,20 +966,6 @@
           {/if}
         </button>
       </div>
-    </div>
   </div>
+</div>
 {/if}
-
-<style>
-  .boss-only-toggle {
-    transition: color 150ms ease;
-  }
-
-  .boss-only-toggle:hover {
-    color: #facc15;
-  }
-
-  .boss-only-toggle.boss-only-active {
-    color: #facc15;
-  }
-</style>

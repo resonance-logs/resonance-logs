@@ -1495,6 +1495,9 @@ pub fn get_encounter_attempt_player_skills(
             } else {
                 0.0
             },
+            boss_dmg: 0,
+            boss_dps: 0.0,
+            boss_dmg_pct: 0.0,
             rank_level: None,
             current_hp: None,
             max_hp: None,
@@ -1597,27 +1600,27 @@ pub fn get_encounter_attempt_player_skills(
                 } else {
                     0.0
                 },
-                lucky_rate: if hits > 0 {
-                    (lucky_hits as f64) / hits_f
-                } else {
-                    0.0
-                },
-                lucky_dmg_rate: if total_heal > 0 {
-                    (lucky_total as f64) / total_heal_f
-                } else {
-                    0.0
-                },
-                hits: hits.max(0) as u128,
-                hits_per_minute: if duration_secs > 0.0 {
-                    hits_f / (duration_secs / 60.0)
-                } else {
-                    0.0
-                },
-            };
-            skill_rows.push(sr);
-        }
+            lucky_rate: if hits > 0 {
+                (lucky_hits as f64) / hits_f
+            } else {
+                0.0
+            },
+            lucky_dmg_rate: if total_heal > 0 {
+                (lucky_total as f64) / total_heal_f
+            } else {
+                0.0
+            },
+            hits: hits.max(0) as u128,
+            hits_per_minute: if duration_secs > 0.0 {
+                hits_f / (duration_secs / 60.0)
+            } else {
+                0.0
+            },
+        };
+        skill_rows.push(sr);
+    }
 
-        let curr_player = lc::PlayerRow {
+    let curr_player = lc::PlayerRow {
             uid: actor_id as u128,
             name: player_name.clone(),
             class_name: String::from(""),
@@ -1630,6 +1633,9 @@ pub fn get_encounter_attempt_player_skills(
                 0.0
             },
             dmg_pct: 0.0,
+            boss_dmg: 0,
+            boss_dps: 0.0,
+            boss_dmg_pct: 0.0,
             crit_rate: if actor_hits > 0 {
                 (actor_crit_hits as f64) / (actor_hits as f64)
             } else {
@@ -1937,6 +1943,9 @@ pub fn get_encounter_player_skills(
         } else {
             0.0
         },
+        boss_dmg: 0,
+        boss_dps: 0.0,
+        boss_dmg_pct: 0.0,
         // Extended attributes from Stage 4 (not available in historical data)
         rank_level: None,
         current_hp: None,

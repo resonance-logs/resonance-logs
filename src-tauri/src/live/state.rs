@@ -1052,7 +1052,7 @@ impl AppStateManager {
             (
                 state.encounter.clone(),
                 state.event_manager.should_emit_events(),
-                state.boss_only_dps,
+                false, // Always emit full damage totals; boss damage is exposed as a separate column.
                 dungeon_runtime_if_enabled(&state),
             )
         };

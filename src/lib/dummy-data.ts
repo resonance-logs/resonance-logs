@@ -16,6 +16,9 @@ export const DUMMY_PLAYER_DATA: PlayerRow[] = [
     luckyDmgRate: 12.8,
     hits: 450,
     hitsPerMinute: 225,
+    bossDmg: 75000,
+    bossDps: 6250,
+    bossDmgPct: 20.2,
   },
   {
     uid: 312142,
@@ -32,6 +35,9 @@ export const DUMMY_PLAYER_DATA: PlayerRow[] = [
     luckyDmgRate: 11.5,
     hits: 380,
     hitsPerMinute: 190,
+    bossDmg: 65000,
+    bossDps: 5400,
+    bossDmgPct: 17.5,
   },
   {
     uid: 312143,
@@ -48,6 +54,9 @@ export const DUMMY_PLAYER_DATA: PlayerRow[] = [
     luckyDmgRate: 10.8,
     hits: 420,
     hitsPerMinute: 210,
+    bossDmg: 60000,
+    bossDps: 5000,
+    bossDmgPct: 16.2,
   },
   {
     uid: 312144,
@@ -64,6 +73,9 @@ export const DUMMY_PLAYER_DATA: PlayerRow[] = [
     luckyDmgRate: 9.8,
     hits: 340,
     hitsPerMinute: 170,
+    bossDmg: 50000,
+    bossDps: 4140,
+    bossDmgPct: 13.5,
   },
   {
     uid: 312145,
@@ -80,6 +92,9 @@ export const DUMMY_PLAYER_DATA: PlayerRow[] = [
     luckyDmgRate: 8.9,
     hits: 310,
     hitsPerMinute: 155,
+    bossDmg: 42000,
+    bossDps: 3500,
+    bossDmgPct: 11.3,
   },
   {
     uid: 312146,
@@ -96,6 +111,9 @@ export const DUMMY_PLAYER_DATA: PlayerRow[] = [
     luckyDmgRate: 13.5,
     hits: 520,
     hitsPerMinute: 260,
+    bossDmg: 35000,
+    bossDps: 2917,
+    bossDmgPct: 9.4,
   },
   {
     uid: 312147,
@@ -112,6 +130,9 @@ export const DUMMY_PLAYER_DATA: PlayerRow[] = [
     luckyDmgRate: 7.5,
     hits: 280,
     hitsPerMinute: 140,
+    bossDmg: 26000,
+    bossDps: 2167,
+    bossDmgPct: 7.0,
   },
   {
     uid: 312148,
@@ -128,6 +149,9 @@ export const DUMMY_PLAYER_DATA: PlayerRow[] = [
     luckyDmgRate: 6.2,
     hits: 240,
     hitsPerMinute: 120,
+    bossDmg: 18000,
+    bossDps: 1500,
+    bossDmgPct: 4.9,
   },
 ];
 

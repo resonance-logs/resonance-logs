@@ -40,7 +40,7 @@
 
   // Get visible columns based on settings
   let visiblePlayerColumns = $derived.by(() => {
-    return historyDpsPlayerColumns.filter(col => settings.state.live.dps.players[col.key]);
+    return historyDpsPlayerColumns.filter(col => (settings.state.live.dps.players[col.key] ?? true));
   });
 
   
@@ -105,6 +105,18 @@
                   <AbbreviatedNumber num={player.totalDmg} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
                 {:else}
                   {player.totalDmg.toLocaleString()}
+                {/if}
+              {:else if col.key === 'bossDmg'}
+                {#if SETTINGS.live.general.state.shortenDps}
+                  <AbbreviatedNumber num={player.bossDmg} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={tableSettings.abbreviatedColor} />
+                {:else}
+                  {player.bossDmg.toLocaleString()}
+                {/if}
+              {:else if col.key === 'bossDps'}
+                {#if SETTINGS.live.general.state.shortenDps}
+                  <AbbreviatedNumber num={player.bossDps} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
+                {:else}
+                  {Math.round(player.bossDps).toLocaleString()}
                 {/if}
               {:else if col.key === 'dps'}
                 {#if SETTINGS.live.general.state.shortenDps}

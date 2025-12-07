@@ -3,7 +3,7 @@
   import SettingsSwitch from "./settings-switch.svelte";
   import SettingsSelect from "./settings-select.svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { setBossOnlyDps, setWipeDetectionEnabled } from "$lib/api";
+  import { setWipeDetectionEnabled } from "$lib/api";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
   import {
     liveDpsPlayerColumns,
@@ -16,28 +16,13 @@
 
   const SETTINGS_CATEGORY = "live";
 
-  // Sync boss damage setting to backend when user actually changes it.
-  // Avoid calling on initial mount because the settings layout mounts all tabs
-  // at once which would trigger multiple backend invocations and can stall
-  // the live emitter. Only invoke the backend after the component is mounted
-  // and the value changes.
+  // Sync settings that require backend calls only after the component is mounted
+  // to avoid redundant invokes while the settings layout mounts all tabs at once.
   import { onMount } from "svelte";
   let _mounted = false;
   onMount(() => {
     _mounted = true;
   });
-
-  $effect(() => {
-    if (_mounted) {
-      void setBossOnlyDps(SETTINGS.live.general.state.bossOnlyDps);
-    }
-  });
-
-  // $effect(() => {
-  //   if (_mounted) {
-  //     void setDungeonSegmentsEnabled(SETTINGS.live.general.state.dungeonSegmentsEnabled);
-  //   }
-  // });
 
   $effect(() => {
     if (_mounted) {
@@ -160,11 +145,6 @@
             bind:checked={SETTINGS.live.general.state.shortenDps}
             label="Shorten DPS Metrics"
             description="Show DPS values as 5k, 50k, etc."
-          />
-          <SettingsSwitch
-            bind:checked={SETTINGS.live.general.state.bossOnlyDps}
-            label="Boss Only Damage"
-            description="Only count damage dealt to boss monsters"
           />
           <!-- <SettingsSwitch bind:checked={SETTINGS.live.general.state.dungeonSegmentsEnabled} label="Dungeon Segments" description="Persist a dungeon-wide log with boss and trash segments" /> -->
           <SettingsSwitch

@@ -35,13 +35,17 @@ export type PlayerRow = {
   abilityScore: number;
   totalDmg: number;
   dps: number;
+  bossDps: number;
   dmgPct: number;
   critRate: number;
   critDmgRate: number;
   luckyRate: number;
   luckyDmgRate: number;
   hits: number;
-  hitsPerMinute: number
+  hitsPerMinute: number;
+  bossDmg: number;
+  bossDps: number;
+  bossDmgPct: number;
 };
 
 export type PlayersWindow = {
