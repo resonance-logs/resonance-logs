@@ -35,17 +35,17 @@ Resonance Logs is a friendly, cross-platform desktop application designed for **
 - **Hotkeys** under Settings > Shortcuts
 ---
 
+## FAQ
+
+Join the [discord](https://discord.gg/aPPHe8Uq8Q) > #FAQ
+
+---
+
 ## Images
 ![alt text](img/image-1.png)
 ![alt text](img/image-2.png)
 ![alt text](img/image-4.png)
 ![alt text](img/image-3.png)
-
----
-
-## FAQ
-
-Join the [discord](https://discord.gg/aPPHe8Uq8Q) > #FAQ
 
 ---
 
