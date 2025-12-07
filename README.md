@@ -45,11 +45,7 @@ Resonance Logs is a friendly, cross-platform desktop application designed for **
 
 ## FAQ
 
-### Is it a virus?
-No, feel free to look at our codebase.
-
-### I closed my settings, how do I them open again?
-Naviate to your system tray, right click the resonance logs icon and click show settings
+Join the [discord](https://discord.gg/aPPHe8Uq8Q) > #FAQ
 
 ---
 
