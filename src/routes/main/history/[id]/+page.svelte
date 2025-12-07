@@ -55,6 +55,25 @@
   let bossOnlyMode = $state(false);
   let buffs = $state<EncounterEntityBuffsDto[]>([]);
 
+  const tabs: {
+    key: "damage" | "tanked" | "healing" | "buffs";
+    label: string;
+  }[] = [
+    { key: "damage", label: "Damage" },
+    { key: "tanked", label: "Tanked" },
+    { key: "healing", label: "Healing" },
+    { key: "buffs", label: "Buffs" },
+  ];
+
+  let encounterDurationMinutes = $derived.by(() => {
+    if (!encounter) return 0;
+    const durationSeconds = Math.max(
+      1,
+      ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs) / 1000,
+    );
+    return Math.floor(durationSeconds / 60);
+  });
+
   // Segment state - read-only in the UI
   let segments = $state<Segment[]>([]);
 
@@ -427,292 +446,253 @@
   {#if !charId && encounter}
     <!-- Encounter Overview -->
     <div class="mb-4">
-      <div class="flex items-center justify-between gap-3 mb-3">
-        <div class="flex items-center gap-3 flex-wrap">
-          <button
-            onclick={backToHistory}
-            class="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted/40"
-            aria-label="Back to history"
-          >
-            <svg
-              class="w-5 h-5"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <div>
-            <h2 class="text-xl font-semibold text-foreground">
-              Encounter #{encounter.id}
-              {#if encounter.bosses.length > 0}
-                <span class="text-muted-foreground">—</span>
-                <span>
-                  {#each encounter.bosses as b, i}
-                    <span
-                      class={b.isDefeated
-                        ? "text-destructive line-through"
-                        : "text-primary"}
-                      >{b.monsterName}{i < encounter.bosses.length - 1
-                        ? ", "
-                        : ""}</span
-                    >
-                  {/each}
-                </span>
-              {/if}
-            </h2>
-            <div class="text-sm text-muted-foreground">
-              {new Date(encounter.startedAtMs).toLocaleString()} — Duration: {Math.floor(
-                Math.max(
-                  1,
-                  ((encounter.endedAtMs ?? Date.now()) -
-                    encounter.startedAtMs) /
-                    1000,
-                ) / 60,
-              )}m
-            </div>
-            <!-- Segments info -->
-            {#if segments.length > 0}
-              <div class="text-xs text-muted-foreground mt-2">
-                <div class="font-semibold text-foreground mb-1">
-                  Dungeon Segments ({segments.length})
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  {#each segments as segment}
-                    <span
-                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded border
-                        {segment.segmentType === 'boss'
-                        ? 'border-orange-500/30 bg-orange-500/10 text-orange-400'
-                        : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}"
-                    >
-                      <span class="font-semibold"
-                        >{segment.segmentType === "boss"
-                          ? segment.bossName || "Boss"
-                          : "Trash"}</span
-                      >
-                      <span class="text-muted-foreground">•</span>
-                      <span
-                        >{Math.floor(
-                          ((segment.endedAtMs ?? Date.now()) -
-                            segment.startedAtMs) /
-                            1000,
-                        )}s</span
-                      >
-                      <span class="text-muted-foreground">•</span>
-                      <AbbreviatedNumber num={segment.totalDamage} />
-                    </span>
-                  {/each}
-                </div>
+      <div class="flex flex-col gap-3 rounded-lg border border-border bg-card/50 p-4">
+        <div class="flex flex-wrap items-stretch justify-between gap-3">
+          <div class="flex items-start gap-3 min-w-0 flex-1">
+            <div class="space-y-1 min-w-0 flex-1 h-full">
+              <div class="flex flex-wrap items-center gap-1">
+                <button
+                  onclick={backToHistory}
+                  class="p-0.5 text-muted-foreground/70 hover:text-foreground transition-colors rounded shrink-0"
+                  title="Back to history"
+                  aria-label="Back to history"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                <h2 class="text-lg font-semibold text-foreground leading-tight">
+                  {encounter.sceneName ?? "Unknown scene"}
+                </h2>
               </div>
-            {/if}
+              {#if encounter.bosses.length > 0}
+                <div class="w-full mt-1">
+                  <div class="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                    {#each encounter.bosses as b, i}
+                      <span
+                        class={b.isDefeated
+                          ? "text-destructive line-through"
+                          : "text-primary"}
+                        >{b.monsterName}{i < encounter.bosses.length - 1 ? "," : ""}</span
+                      >
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+              <div class="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                <span>{new Date(encounter.startedAtMs).toLocaleString()}</span>
+                <span class="text-muted-foreground">•</span>
+                <span>Duration: {encounterDurationMinutes}m</span>
+                <span class="text-muted-foreground">•</span>
+                <span class="text-[11px] text-muted-foreground">#{encounter.id}</span>
+              </div>
+              {#if segments.length > 0}
+                <div class="space-y-1">
+                  <div class="text-[11px] font-semibold text-foreground">
+                    Dungeon Segments ({segments.length})
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    {#each segments as segment}
+                      <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px]
+                          {segment.segmentType === 'boss'
+                          ? 'border-orange-500/30 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}"
+                      >
+                        <span class="font-semibold"
+                          >{segment.segmentType === "boss"
+                            ? segment.bossName || "Boss"
+                            : "Trash"}</span
+                        >
+                        <span class="text-muted-foreground">•</span>
+                        <span
+                          >{Math.floor(
+                            ((segment.endedAtMs ?? Date.now()) -
+                              segment.startedAtMs) /
+                              1000,
+                          )}s</span
+                        >
+                        <span class="text-muted-foreground">•</span>
+                        <AbbreviatedNumber num={segment.totalDamage} />
+                      </span>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+            </div>
           </div>
-          {#if encounter.remoteEncounterId}
-            <button
-              onclick={openEncounterOnWebsite}
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-              title="Open this encounter on resonance-logs.com"
-            >
-              <svg
-                class="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+
+          <div class="flex flex-col items-end gap-2 shrink-0 self-stretch justify-between h-full">
+            <div class="flex items-center gap-1.5">
+              {#if encounter.remoteEncounterId}
+                <button
+                  onclick={openEncounterOnWebsite}
+                  class="inline-flex items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors p-2"
+                  title="Open this encounter on resonance-logs.com"
+                  aria-label="Open on website"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                </button>
+              {/if}
+
+              <button
+                onclick={handleToggleFavorite}
+                class="inline-flex items-center justify-center rounded transition-colors p-2 {encounter.isFavorite
+                  ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20'
+                  : 'bg-muted/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground'}"
+                title={encounter.isFavorite
+                  ? "Remove from favorites"
+                  : "Add to favorites"}
+                aria-label={encounter.isFavorite
+                  ? "Remove from favorites"
+                  : "Add to favorites"}
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-              Open on website
-            </button>
-          {/if}
+                <svg
+                  class="w-4 h-4"
+                  fill={encounter.isFavorite ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                  />
+                </svg>
+              </button>
 
-          <!-- Favorite Toggle -->
-          <button
-            onclick={handleToggleFavorite}
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition-colors {encounter.isFavorite
-              ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20'
-              : 'bg-muted/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground'}"
-            title={encounter.isFavorite
-              ? "Remove from favorites"
-              : "Add to favorites"}
-          >
-            <svg
-              class="w-3.5 h-3.5"
-              fill={encounter.isFavorite ? "currentColor" : "none"}
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-              />
-            </svg>
-            {encounter.isFavorite ? "Favorited" : "Favorite"}
-          </button>
+              <button
+                onclick={openDeleteModal}
+                class="inline-flex items-center justify-center rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors p-2"
+                title="Delete this encounter"
+                aria-label="Delete encounter"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
 
-          <!-- Delete Button -->
-          <button
-            onclick={openDeleteModal}
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-            title="Delete this encounter"
-          >
-            <svg
-              class="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-            Delete
-          </button>
-        </div>
+              <button
+                onclick={() => {
+                  if (activeTab === "damage") bossOnlyMode = !bossOnlyMode;
+                }}
+                class="boss-only-toggle transition-colors p-2 {activeTab !==
+                'damage'
+                  ? 'opacity-30 cursor-not-allowed'
+                  : 'hover:bg-muted/40 rounded'}"
+                class:boss-only-active={bossOnlyMode && activeTab === "damage"}
+                title={activeTab !== "damage"
+                  ? "Boss Damage Only (Only for Damage tab)"
+                  : bossOnlyMode
+                    ? "Boss Damage Only (Active)"
+                    : "Boss Damage Only"}
+                aria-label="Boss damage only"
+              >
+                <CrownIcon class="w-4 h-4" />
+              </button>
+            </div>
 
-        <!-- Tabs, Segment Selector, and Boss Only Toggle -->
-        <div class="flex items-end gap-2 h-[48px]">
-          <!-- Segment selector removed (display only) -->
-
-          <div class="flex rounded border border-border bg-popover">
-            <button
-              onclick={() => (activeTab = "damage")}
-              class="px-2 py-1 text-xs rounded transition-colors {activeTab ===
-              'damage'
-                ? 'bg-muted/40 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'}"
-            >
-              Damage
-            </button>
-            <button
-              onclick={() => (activeTab = "tanked")}
-              class="px-2 py-1 text-xs rounded transition-colors {activeTab ===
-              'tanked'
-                ? 'bg-muted/40 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'}"
-            >
-              Tanked
-            </button>
-            <button
-              onclick={() => (activeTab = "healing")}
-              class="px-2 py-1 text-xs rounded transition-colors {activeTab ===
-              'healing'
-                ? 'bg-muted/40 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'}"
-            >
-              Healing
-            </button>
-            <button
-              onclick={() => (activeTab = "buffs")}
-              class="px-2 py-1 text-xs rounded transition-colors {activeTab ===
-              'buffs'
-                ? 'bg-muted/40 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'}"
-            >
-              Buffs
-            </button>
+            <div class="flex rounded border border-border bg-popover">
+              {#each tabs as tab}
+                <button
+                  onclick={() => (activeTab = tab.key)}
+                  class="px-3 py-1 text-xs rounded transition-colors {activeTab === tab.key
+                    ? 'bg-muted/40 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'}"
+                >
+                  {tab.label}
+                </button>
+              {/each}
+            </div>
           </div>
-
-          <button
-            onclick={() => {
-              if (activeTab === "damage") bossOnlyMode = !bossOnlyMode;
-            }}
-            class="boss-only-toggle transition-colors p-1 {activeTab !==
-            'damage'
-              ? 'opacity-30 cursor-not-allowed'
-              : 'hover:bg-muted/40 rounded'}"
-            class:boss-only-active={bossOnlyMode && activeTab === "damage"}
-            title={activeTab !== "damage"
-              ? "Boss Damage Only (Only for Damage tab)"
-              : bossOnlyMode
-                ? "Boss Damage Only (Active)"
-                : "Boss Damage Only"}
-          >
-            <CrownIcon class="w-[16px] h-[16px] mb-0.25" />
-          </button>
         </div>
       </div>
     </div>
 
     {#if activeTab === "buffs"}
-      <div
-        class="overflow-x-auto rounded border border-border/60 bg-card/30 p-0"
-      >
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-popover/60">
-              <th
-                class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >Player</th
-              >
-              <th
-                class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >Buffs</th
-              >
-            </tr>
-          </thead>
-          <tbody class="bg-background/40">
-            {#each buffs as entity (entity.entityUid)}
-              <tr
-                class="border-t border-border/40 hover:bg-muted/60 transition-colors"
-              >
-                <td
-                  class="px-3 py-3 text-sm text-foreground align-top w-[200px] font-medium"
-                >
-                  {entity.entityName}
-                </td>
-                <td class="px-3 py-3 text-sm text-foreground align-top">
-                  <div class="flex flex-wrap gap-2">
-                    {#each entity.buffs as buff}
-                      {#each getBuffStacks(buff) as s}
-                        <div
-                          class="inline-flex flex-col bg-black/20 rounded px-2 py-1 text-xs"
-                          {@attach tooltip(() => buff.buffNameLong ?? "")}
-                        >
-                          <span class="font-semibold text-foreground">{getBuffStacks(buff).length > 1 ? `${buff.buffName} - ${s.stackCount}` : buff.buffName}</span>
-                          <span class="text-muted-foreground text-[10px]">
-                            {#if encounter && encounter.startedAtMs}
-                              {Math.round((s.totalDurationMs / Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs))) * 100)}% uptime • {s.casts} casts
-                            {:else}
-                              {Math.round((s.totalDurationMs / Math.max(1, (encounter?.duration ?? 1))) * 100)}% uptime • {s.casts} casts
-                            {/if}
-                          </span>
-                        </div>
-                      {/each}
-                    {/each}
-                    {#if entity.buffs.length === 0}
-                      <span class="text-muted-foreground italic">No buffs</span>
-                    {/if}
-                  </div>
-                </td>
-              </tr>
-            {/each}
-            {#if buffs.length === 0}
-              <tr
-                ><td
-                  colspan="2"
-                  class="px-3 py-4 text-center text-muted-foreground italic"
-                  >No buff data available</td
-                ></tr
-              >
+      <div class="space-y-2">
+        {#each buffs as entity (entity.entityUid)}
+          <div class="rounded border border-border/60 bg-card/30 p-3">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="text-sm font-semibold text-foreground truncate">
+                {entity.entityName}
+              </div>
+              <span class="text-[11px] text-muted-foreground">{entity.buffs.length} buffs</span>
+            </div>
+
+            {#if entity.buffs.length > 0}
+              <div class="flex flex-wrap gap-1.5">
+                {#each entity.buffs as buff}
+                  {#each getBuffStacks(buff) as s}
+                    <div
+                      class="flex flex-col gap-0.5 rounded border border-border/60 bg-popover/60 px-2 py-1 text-[11px] leading-tight min-w-[140px] max-w-[200px]"
+                      {@attach tooltip(() => buff.buffNameLong ?? "")}
+                    >
+                      <div class="flex items-center gap-1 min-w-0">
+                        <span class="font-semibold truncate">
+                          {getBuffStacks(buff).length > 1 ? `${buff.buffName} (${s.stackCount})` : buff.buffName}
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-1 text-muted-foreground">
+                        <span>
+                          {#if encounter && encounter.startedAtMs}
+                            {Math.round((s.totalDurationMs / Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs))) * 100)}%
+                          {:else}
+                            {Math.round((s.totalDurationMs / Math.max(1, (encounter?.duration ?? 1))) * 100)}%
+                          {/if}
+                        </span>
+                        <span>•</span>
+                        <span>{s.casts} casts</span>
+                      </div>
+                    </div>
+                  {/each}
+                {/each}
+              </div>
+            {:else}
+              <div class="text-xs text-muted-foreground italic">No buffs</div>
             {/if}
-          </tbody>
-        </table>
+          </div>
+        {/each}
+
+        {#if buffs.length === 0}
+          <div class="rounded border border-border/60 bg-card/30 p-3 text-center text-muted-foreground text-xs italic">
+            No buff data available
+          </div>
+        {/if}
       </div>
     {:else}
       <div class="overflow-x-auto rounded border border-border/60 bg-card/30">
