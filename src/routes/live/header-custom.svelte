@@ -36,7 +36,7 @@
 
   // Get header settings
   let h = $derived(SETTINGS.live.headerCustomization.state);
-  
+
   // Check if dummy data mode is enabled
   let useDummyData = $derived(SETTINGS.live.general.state.useDummyData);
 
@@ -54,7 +54,7 @@
     if (useDummyData) {
       return DUMMY_SEGMENT_INFO;
     }
-    
+
     if (!activeSegment) return null;
 
     const durationSecs = Math.max(
@@ -174,12 +174,20 @@
   });
   let isEncounterPaused = $state(false);
   let bossOnlyDpsEnabled = $derived(SETTINGS.live.general.state.bossOnlyDps);
-  
+
   // Display values - use dummy data when enabled
-  let displayHeaderInfo = $derived(useDummyData ? DUMMY_HEADER_INFO : headerInfo);
-  let displayElapsedMs = $derived(useDummyData ? DUMMY_HEADER_INFO.elapsedMs : clientElapsedMs);
-  let displaySceneName = $derived(useDummyData ? DUMMY_HEADER_INFO.sceneName : headerInfo.sceneName);
-  let displayBosses = $derived(useDummyData ? DUMMY_HEADER_INFO.bosses : headerInfo.bosses);
+  let displayHeaderInfo = $derived(
+    useDummyData ? DUMMY_HEADER_INFO : headerInfo,
+  );
+  let displayElapsedMs = $derived(
+    useDummyData ? DUMMY_HEADER_INFO.elapsedMs : clientElapsedMs,
+  );
+  let displaySceneName = $derived(
+    useDummyData ? DUMMY_HEADER_INFO.sceneName : headerInfo.sceneName,
+  );
+  let displayBosses = $derived(
+    useDummyData ? DUMMY_HEADER_INFO.bosses : headerInfo.bosses,
+  );
 
   const appWindow = getCurrentWebviewWindow();
 
@@ -206,34 +214,39 @@
   }
 
   // Check if we have any row 1 left content
-  let hasRow1Left = $derived(h.showTimer || h.showSceneName || h.showSegmentInfo);
-  
+  let hasRow1Left = $derived(
+    h.showTimer || h.showSceneName || h.showSegmentInfo,
+  );
+
   // Check if we have any row 1 right content (buttons)
   let hasRow1Right = $derived(
-    h.showResetButton || 
-    h.showPauseButton || 
-    h.showBossOnlyButton || 
-    h.showSettingsButton || 
-    h.showMinimizeButton
+    h.showResetButton ||
+      h.showPauseButton ||
+      h.showBossOnlyButton ||
+      h.showSettingsButton ||
+      h.showMinimizeButton,
   );
-  
+
   // Check if we have any row 2 left content
-  let hasRow2Left = $derived(h.showTotalDamage || h.showTotalDps || h.showBossHealth);
-  
+  let hasRow2Left = $derived(
+    h.showTotalDamage || h.showTotalDps || h.showBossHealth,
+  );
+
   // Check if we have any row 2 content at all
   let hasRow2 = $derived(hasRow2Left || h.showNavigationTabs);
-  
+
   // Check if we have any row 1 content at all
   let hasRow1 = $derived(hasRow1Left || hasRow1Right);
 </script>
 
-{#if (hasRow1 || hasRow2)}
+{#if hasRow1 || hasRow2}
   <header
     data-tauri-drag-region
     class="grid w-full grid-cols-[1fr_auto] text-sm"
     class:grid-rows-1={!hasRow2}
     class:grid-rows-2={hasRow2}
-    style="padding: {h.headerPadding}px; padding-bottom: {h.headerPadding + 4}px"
+    style="padding: {h.headerPadding}px; padding-bottom: {h.headerPadding +
+      4}px"
   >
     <!-- Row 1, Col 1: Timer + Scene + Segment -->
     {#if hasRow1Left}
@@ -246,8 +259,7 @@
             {#if h.timerLabelFontSize > 0}
               <span
                 class="font-medium text-muted-foreground uppercase tracking-wider leading-none"
-                style="font-size: {h.timerLabelFontSize}px"
-                >Timer</span
+                style="font-size: {h.timerLabelFontSize}px">Timer</span
               >
             {/if}
             <span
@@ -258,7 +270,7 @@
             >
           </div>
         {/if}
-        
+
         {#if h.showSceneName && displaySceneName}
           <span
             class="text-muted-foreground font-medium shrink-0 leading-none"
@@ -267,7 +279,7 @@
             >{displaySceneName}</span
           >
         {/if}
-        
+
         {#if h.showSegmentInfo && activeSegmentInfo}
           <span
             class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {activeSegmentInfo.type ===
@@ -298,10 +310,12 @@
             onclick={handleResetEncounter}
             {@attach tooltip(() => "Reset Encounter")}
           >
-            <RefreshCwIcon style="width: {h.resetButtonSize}px; height: {h.resetButtonSize}px" />
+            <RefreshCwIcon
+              style="width: {h.resetButtonSize}px; height: {h.resetButtonSize}px"
+            />
           </button>
         {/if}
-        
+
         {#if h.showPauseButton}
           <button
             class="{isEncounterPaused
@@ -314,13 +328,19 @@
             }}
           >
             {#if isEncounterPaused}
-              <PlayIcon {@attach tooltip(() => "Resume Encounter")} style="width: {h.pauseButtonSize}px; height: {h.pauseButtonSize}px" />
+              <PlayIcon
+                {@attach tooltip(() => "Resume Encounter")}
+                style="width: {h.pauseButtonSize}px; height: {h.pauseButtonSize}px"
+              />
             {:else}
-              <PauseIcon {@attach tooltip(() => "Pause Encounter")} style="width: {h.pauseButtonSize}px; height: {h.pauseButtonSize}px" />
+              <PauseIcon
+                {@attach tooltip(() => "Pause Encounter")}
+                style="width: {h.pauseButtonSize}px; height: {h.pauseButtonSize}px"
+              />
             {/if}
           </button>
         {/if}
-        
+
         {#if h.showBossOnlyButton}
           <button
             class="rounded-lg transition-all duration-200 {bossOnlyDpsEnabled
@@ -336,7 +356,9 @@
                 : "Enable Boss Only Damage",
             )}
           >
-            <CrownIcon style="width: {h.bossOnlyButtonSize}px; height: {h.bossOnlyButtonSize}px" />
+            <CrownIcon
+              style="width: {h.bossOnlyButtonSize}px; height: {h.bossOnlyButtonSize}px"
+            />
           </button>
         {/if}
 
@@ -351,10 +373,12 @@
             onclick={() => openSettings()}
             {@attach tooltip(() => "Settings")}
           >
-            <SettingsIcon style="width: {h.settingsButtonSize}px; height: {h.settingsButtonSize}px" />
+            <SettingsIcon
+              style="width: {h.settingsButtonSize}px; height: {h.settingsButtonSize}px"
+            />
           </button>
         {/if}
-        
+
         {#if h.showMinimizeButton}
           <button
             class="text-muted-foreground hover:text-foreground hover:bg-popover/60 rounded-lg transition-all duration-200"
@@ -362,7 +386,9 @@
             onclick={() => appWindow.hide()}
             {@attach tooltip(() => "Minimize")}
           >
-            <MinusIcon style="width: {h.minimizeButtonSize}px; height: {h.minimizeButtonSize}px" />
+            <MinusIcon
+              style="width: {h.minimizeButtonSize}px; height: {h.minimizeButtonSize}px"
+            />
           </button>
         {/if}
       </div>
@@ -384,12 +410,16 @@
               <span
                 class="font-bold text-foreground"
                 style="font-size: {h.totalDamageValueFontSize}px"
-                {@attach tooltip(() => displayHeaderInfo.totalDmg.toLocaleString())}
-                ><AbbreviatedNumber num={Number(displayHeaderInfo.totalDmg)} /></span
+                {@attach tooltip(() =>
+                  displayHeaderInfo.totalDmg.toLocaleString(),
+                )}
+                ><AbbreviatedNumber
+                  num={Number(displayHeaderInfo.totalDmg)}
+                /></span
               >
             </div>
           {/if}
-          
+
           {#if h.showTotalDps}
             <div class="flex items-center gap-2 shrink-0">
               <span
@@ -400,8 +430,9 @@
               <span
                 class="font-bold text-foreground"
                 style="font-size: {h.totalDpsValueFontSize}px"
-                {@attach tooltip(() => displayHeaderInfo.totalDps.toLocaleString())}
-                ><AbbreviatedNumber num={displayHeaderInfo.totalDps} /></span
+                {@attach tooltip(() =>
+                  displayHeaderInfo.totalDps.toLocaleString(),
+                )}><AbbreviatedNumber num={displayHeaderInfo.totalDps} /></span
               >
             </div>
           {/if}
@@ -418,25 +449,43 @@
             {#if displayBosses.length > 0}
               <div class="flex flex-col gap-1">
                 {#each displayBosses as boss (boss.uid)}
-                  {@const hpPercent = boss.maxHp && boss.currentHp !== null ? Math.min(100, Math.max(0, (boss.currentHp / boss.maxHp) * 100)) : 0}
+                  {@const hpPercent =
+                    boss.maxHp && boss.currentHp !== null
+                      ? Math.min(
+                          100,
+                          Math.max(0, (boss.currentHp / boss.maxHp) * 100),
+                        )
+                      : 0}
                   <div class="flex items-center gap-1 whitespace-nowrap">
                     <span
                       class="truncate text-foreground font-semibold tracking-tight"
                       style="font-size: {h.bossHealthNameFontSize}px"
-                      {@attach tooltip(() => boss.name)}
-                    >{boss.name} -</span>
-                    <span class="tabular-nums font-semibold text-foreground" style="font-size: {h.bossHealthValueFontSize}px">
-                      <AbbreviatedNumber num={boss.currentHp !== null ? boss.currentHp : 0} />
+                      {@attach tooltip(() => boss.name)}>{boss.name} -</span
+                    >
+                    <span
+                      class="tabular-nums font-semibold text-foreground"
+                      style="font-size: {h.bossHealthValueFontSize}px"
+                    >
+                      <AbbreviatedNumber
+                        num={boss.currentHp !== null ? boss.currentHp : 0}
+                      />
                       {#if boss.maxHp}
                         <span> / <AbbreviatedNumber num={boss.maxHp} /></span>
-                        <span class="text-destructive ml-1" style="font-size: {h.bossHealthPercentFontSize}px">({hpPercent.toFixed(1)}%)</span>
+                        <span
+                          class="text-destructive ml-1"
+                          style="font-size: {h.bossHealthPercentFontSize}px"
+                          >({hpPercent.toFixed(1)}%)</span
+                        >
                       {/if}
                     </span>
                   </div>
                 {/each}
               </div>
             {:else}
-              <span class="text-neutral-500 font-medium italic" style="font-size: {h.bossHealthNameFontSize}px">No Boss</span>
+              <span
+                class="text-neutral-500 font-medium italic"
+                style="font-size: {h.bossHealthNameFontSize}px">No Boss</span
+              >
             {/if}
           </div>
         {/if}
@@ -449,22 +498,50 @@
         class="col-start-2 row-start-2 justify-self-end flex items-stretch border border-border rounded-lg overflow-hidden bg-popover/30 shrink-0"
       >
         <button
-          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap h-full flex items-center {$page.url.pathname.includes('dps') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap h-full flex items-center {$page.url.pathname.includes(
+            'dps',
+          )
+            ? 'bg-muted text-foreground'
+            : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
           style="font-size: {h.navTabFontSize}px; padding: {h.navTabPaddingY}px {h.navTabPaddingX}px"
           aria-current={$page.url.pathname.includes("dps") ? "page" : undefined}
           onclick={() => goto(resolve("/live/dps"))}>DPS</button
         >
         <button
-          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap h-full flex items-center {$page.url.pathname.includes('heal') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap h-full flex items-center {$page.url.pathname.includes(
+            'heal',
+          )
+            ? 'bg-muted text-foreground'
+            : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
           style="font-size: {h.navTabFontSize}px; padding: {h.navTabPaddingY}px {h.navTabPaddingX}px"
-          aria-current={$page.url.pathname.includes("heal") ? "page" : undefined}
+          aria-current={$page.url.pathname.includes("heal")
+            ? "page"
+            : undefined}
           onclick={() => goto(resolve("/live/heal"))}>HEAL</button
         >
         <button
-          class="transition-all duration-200 font-bold tracking-wider uppercase whitespace-nowrap h-full flex items-center {$page.url.pathname.includes('tanked') ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+          class="transition-all duration-200 font-bold tracking-wider uppercase border-r border-border whitespace-nowrap h-full flex items-center {$page.url.pathname.includes(
+            'tanked',
+          )
+            ? 'bg-muted text-foreground'
+            : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
           style="font-size: {h.navTabFontSize}px; padding: {h.navTabPaddingY}px {h.navTabPaddingX}px"
-          aria-current={$page.url.pathname.includes("tanked") ? "page" : undefined}
+          aria-current={$page.url.pathname.includes("tanked")
+            ? "page"
+            : undefined}
           onclick={() => goto(resolve("/live/tanked"))}>TANKED</button
+        >
+        <button
+          class="transition-all duration-200 font-bold tracking-wider uppercase whitespace-nowrap h-full flex items-center {$page.url.pathname.includes(
+            'buffs',
+          )
+            ? 'bg-muted text-foreground'
+            : 'text-muted-foreground hover:text-foreground hover:bg-popover/60'}"
+          style="font-size: {h.navTabFontSize}px; padding: {h.navTabPaddingY}px {h.navTabPaddingX}px"
+          aria-current={$page.url.pathname.includes("buffs")
+            ? "page"
+            : undefined}
+          onclick={() => goto(resolve("/live/buffs"))}>BUFFS</button
         >
       </div>
     {/if}

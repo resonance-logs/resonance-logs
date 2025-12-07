@@ -1,4 +1,5 @@
 pub mod attempt_detector;
+pub mod buff_names;
 pub mod commands;
 pub mod commands_models;
 pub mod dungeon_log;
