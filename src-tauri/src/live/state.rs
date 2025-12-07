@@ -363,6 +363,23 @@ impl AppStateManager {
             dungeon_log::persist_segments(&state.dungeon_log, true);
         }
 
+        // Save buff data before ending the encounter
+        if !state.encounter.buff_events.is_empty() {
+            let buffs: Vec<(i64, i32, String)> = state
+                .encounter
+                .buff_events
+                .iter()
+                .filter_map(|((entity_id, buff_id), events)| {
+                    serde_json::to_string(events)
+                        .ok()
+                        .map(|json| (*entity_id, *buff_id, json))
+                })
+                .collect();
+            if !buffs.is_empty() {
+                enqueue(DbTask::SaveBuffs { buffs });
+            }
+        }
+
         // End any active encounter in DB. Drain any detected dead boss names for persistence.
         let defeated = state.event_manager.take_dead_bosses();
         enqueue(DbTask::EndEncounter {
@@ -811,6 +828,23 @@ impl AppStateManager {
         // Persist dungeon segments if enabled
         if state.dungeon_segments_enabled {
             dungeon_log::persist_segments(&state.dungeon_log, true);
+        }
+
+        // Save buff data before ending the encounter
+        if !state.encounter.buff_events.is_empty() {
+            let buffs: Vec<(i64, i32, String)> = state
+                .encounter
+                .buff_events
+                .iter()
+                .filter_map(|((entity_id, buff_id), events)| {
+                    serde_json::to_string(events)
+                        .ok()
+                        .map(|json| (*entity_id, *buff_id, json))
+                })
+                .collect();
+            if !buffs.is_empty() {
+                enqueue(DbTask::SaveBuffs { buffs });
+            }
         }
 
         // End any active encounter in DB. Drain any detected dead boss names for persistence.

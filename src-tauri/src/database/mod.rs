@@ -378,6 +378,12 @@ pub enum DbTask {
         total_damage: i64,
         hit_count: i64,
     },
+
+    /// A task to save buff data for the current encounter.
+    SaveBuffs {
+        /// Map of (entity_id, buff_id) -> JSON-serialized events array.
+        buffs: Vec<(i64, i32, String)>,
+    },
 }
 
 /// Enqueues a database task to be processed by the background writer thread.
@@ -979,6 +985,24 @@ fn handle_task(
                     boss_name,
                     started_at_ms
                 );
+            }
+        }
+        DbTask::SaveBuffs { buffs } => {
+            if let Some(enc_id) = *current_encounter_id {
+                for (entity_id, buff_id, events_json) in buffs {
+                    diesel::sql_query(
+                        "INSERT INTO buffs (encounter_id, entity_id, buff_id, events)
+                         VALUES (?1, ?2, ?3, ?4)
+                         ON CONFLICT(encounter_id, entity_id, buff_id) DO UPDATE SET
+                             events = excluded.events",
+                    )
+                    .bind::<diesel::sql_types::Integer, _>(enc_id)
+                    .bind::<diesel::sql_types::BigInt, _>(entity_id)
+                    .bind::<diesel::sql_types::Integer, _>(buff_id)
+                    .bind::<diesel::sql_types::Text, _>(&events_json)
+                    .execute(conn)
+                    .ok();
+                }
             }
         }
     }
