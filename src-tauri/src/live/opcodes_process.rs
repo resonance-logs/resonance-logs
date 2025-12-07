@@ -461,9 +461,8 @@ pub fn process_aoi_sync_delta(
         }
     }
 
-    // Process BuffInfoSync if present - track buff applications
+    // Process BuffInfoSync if present - track buff applications (absolute times)
     if let Some(ref buff_info_sync) = aoi_sync_delta.buff_infos {
-        let fight_start = encounter.time_fight_start_ms as i64;
         let now = now_ms();
         for buff_info in &buff_info_sync.buff_infos {
             // Extract buff data
@@ -475,45 +474,30 @@ pub fn process_aoi_sync_delta(
             let stack_count = buff_info.layer.unwrap_or(1);
             let create_time = buff_info.create_time.unwrap_or(now);
 
-            // Calculate start time relative to fight start (or use absolute if no fight)
-            let start = if fight_start > 0 {
-                (create_time - fight_start).max(0)
-            } else {
-                create_time
-            };
+            let start = create_time;
             let end = start + (duration as i64);
 
             let key = (target_uid, buff_id);
             let events = encounter.buff_events.entry(key).or_insert_with(Vec::new);
 
-            // Try to find an existing event that this update belongs to:
-            // 1. Same start time = stack update on existing buff instance
-            // 2. Start is within an existing event's window = refresh that extends duration
-            let mut found_match = false;
-            for existing in events.iter_mut() {
-                if existing.start == start && existing.duration == duration {
-                    // Same buff instance, just update stack count to latest value
-                    existing.stack_count = stack_count;
-                    found_match = true;
-                    break;
-                } else if start >= existing.start && start < existing.end {
-                    // Buff was refreshed mid-duration - extend the end time
-                    existing.end = end;
-                    existing.stack_count = stack_count;
-                    found_match = true;
-                    break;
-                }
+            // Close any ongoing buff instance before recording the new one
+            if let Some(ongoing) = events
+                .iter_mut()
+                .filter(|event| event.end > start) //this is inefficient...
+                .max_by_key(|event| event.start)
+            {
+                let adjusted_duration = start.saturating_sub(ongoing.start);
+                ongoing.end = start;
+                ongoing.duration = adjusted_duration.min(i32::MAX as i64) as i32;
             }
 
-            // Only add as new event if no matching existing event found
-            if !found_match {
-                events.push(BuffEvent {
-                    start,
-                    end,
-                    duration,
-                    stack_count,
-                });
-            }
+            // Always record the new buff event
+            events.push(BuffEvent {
+                start,
+                end,
+                duration,
+                stack_count,
+            });
         }
     }
 
@@ -988,6 +972,27 @@ pub fn process_aoi_sync_delta(
 
     if encounter.time_fight_start_ms == Default::default() {
         encounter.time_fight_start_ms = timestamp_ms;
+        let fight_start_i64 = timestamp_ms.min(i64::MAX as u128) as i64;
+
+        // Clamp any pre-existing buff events to the fight start and recompute durations
+        for events in encounter.buff_events.values_mut() {
+            // Drop events that end before fight start
+            events.retain(|event| event.end >= fight_start_i64);
+
+            for event in events.iter_mut() {
+                if event.start < fight_start_i64 {
+                    event.start = fight_start_i64;
+                }
+
+                if event.end < event.start {
+                    event.end = event.start;
+                    event.duration = 0;
+                } else {
+                    let dur_i64 = (event.end - event.start).min(i32::MAX as i64);
+                    event.duration = dur_i64 as i32;
+                }
+            }
+        }
 
         // Only persist encounters to the database for non-overworld scenes.
         // Scene ID 8 is the overworld; we still track and display the encounter
