@@ -553,10 +553,8 @@ pub async fn get_live_buffs(
                 buffs: Vec::new(),
             });
 
-        let buff_name =
-            buff_names::lookup(*buff_id).unwrap_or_else(|| format!("Unknown Buff {}", buff_id));
-
-        let event_dtos: Vec<BuffEventDto> = events
+        if let Some(buff_name) = buff_names::lookup(*buff_id) {
+            let event_dtos: Vec<BuffEventDto> = events
             .iter()
             .map(|e| BuffEventDto {
                 start_ms: e.start,
@@ -565,12 +563,12 @@ pub async fn get_live_buffs(
                 stack_count: e.stack_count,
             })
             .collect();
-
-        entry.buffs.push(BuffInfoDto {
-            buff_id: *buff_id,
-            buff_name,
-            events: event_dtos,
-        });
+            entry.buffs.push(BuffInfoDto {
+                buff_id: *buff_id,
+                buff_name,
+                events: event_dtos,
+            });
+        }
     }
 
     Ok(result_map.into_values().collect())

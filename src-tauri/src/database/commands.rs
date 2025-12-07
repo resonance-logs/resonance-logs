@@ -2281,14 +2281,13 @@ pub fn get_encounter_buffs(encounter_id: i32) -> Result<Vec<EncounterEntityBuffs
                 })
                 .collect();
 
-            let buff_name = buff_names::lookup(row.buff_id)
-                .unwrap_or_else(|| format!("Unknown Buff {}", row.buff_id));
-
-            entry.buffs.push(EncounterBuffDto {
-                buff_id: row.buff_id,
-                buff_name,
-                events: events_dto,
-            });
+            if let Some(buff_name) = buff_names::lookup(row.buff_id) {
+                entry.buffs.push(EncounterBuffDto {
+                    buff_id: row.buff_id,
+                    buff_name,
+                    events: events_dto,
+                });
+            }
         }
     }
 
