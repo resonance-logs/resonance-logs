@@ -27,6 +27,7 @@
   import {
     getEncounterBuffs,
     type EncounterEntityBuffsDto,
+    type EncounterBuffDto,
   } from "$lib/api_buffs";
 
   // Get encounter ID from URL params
@@ -394,6 +395,23 @@
     }
   }
 
+  // Helper: group buff events by stackCount and compute per-stack stats
+  function getBuffStacks(buff: EncounterBuffDto) {
+    const map = new Map<number, { stackCount: number; casts: number; totalDurationMs: number }>();
+    for (const ev of buff.events || []) {
+      const sc = ev.stackCount ?? 0;
+      const entry = map.get(sc);
+      if (entry) {
+        entry.casts += 1;
+        entry.totalDurationMs += ev.durationMs ?? 0;
+      } else {
+        map.set(sc, { stackCount: sc, casts: 1, totalDurationMs: ev.durationMs ?? 0 });
+      }
+    }
+    // Return as array sorted by stackCount ascending
+    return Array.from(map.values()).sort((a, b) => a.stackCount - b.stackCount);
+  }
+
   $effect(() => {
     if (encounterId && activeTab === "buffs") {
       loadBuffs();
@@ -661,17 +679,21 @@
                 <td class="px-3 py-3 text-sm text-foreground align-top">
                   <div class="flex flex-wrap gap-2">
                     {#each entity.buffs as buff}
-                      <div
-                        class="inline-flex flex-col bg-black/20 rounded px-2 py-1 text-xs"
-                        title={`ID: ${buff.buffId}`}
-                      >
-                        <span class="font-semibold text-foreground"
-                          >{buff.buffName}</span
+                      {#each getBuffStacks(buff) as s}
+                        <div
+                          class="inline-flex flex-col bg-black/20 rounded px-2 py-1 text-xs"
+                          {@attach tooltip(() => buff.buffNameLong ?? "")}
                         >
-                        <span class="text-muted-foreground text-[10px]"
-                          >{buff.events.length} events</span
-                        >
-                      </div>
+                          <span class="font-semibold text-foreground">{getBuffStacks(buff).length > 1 ? `${buff.buffName} - ${s.stackCount}` : buff.buffName}</span>
+                          <span class="text-muted-foreground text-[10px]">
+                            {#if encounter && encounter.startedAtMs}
+                              {Math.round((s.totalDurationMs / Math.max(1, ((encounter.endedAtMs ?? Date.now()) - encounter.startedAtMs))) * 100)}% uptime • {s.casts} casts
+                            {:else}
+                              {Math.round((s.totalDurationMs / Math.max(1, (encounter?.duration ?? 1))) * 100)}% uptime • {s.casts} casts
+                            {/if}
+                          </span>
+                        </div>
+                      {/each}
                     {/each}
                     {#if entity.buffs.length === 0}
                       <span class="text-muted-foreground italic">No buffs</span>
