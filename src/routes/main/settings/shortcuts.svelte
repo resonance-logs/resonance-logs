@@ -155,6 +155,10 @@
       label: "Reset Encounter",
     },
     {
+      id: "togglePauseEncounter",
+      label: "Toggle Pause Encounter",
+    },
+    {
       id: "toggleBossHp",
       label: "Toggle Boss Only Damage",
     },

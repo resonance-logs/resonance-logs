@@ -275,6 +275,7 @@ const DEFAULT_SETTINGS = {
     disableClickthrough: "",
     toggleClickthrough: "",
     resetEncounter: "",
+      togglePauseEncounter: "",
     hardReset: "",
     toggleBossHp: "",
   },

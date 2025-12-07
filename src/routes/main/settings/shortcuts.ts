@@ -93,6 +93,18 @@ export async function registerShortcut(cmdId: string, shortcutKey: string) {
         });
         break;
 
+      case "togglePauseEncounter":
+        await register(shortcutKey, async (event) => {
+          if (event.state === "Pressed") {
+            try {
+              await commands.togglePauseEncounter();
+            } catch (e) {
+              console.error("Failed to toggle pause encounter", e);
+            }
+          }
+        });
+        break;
+
       default:
         console.log("Unknown command");
     }
