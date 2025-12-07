@@ -362,9 +362,6 @@
           </button>
         {/if}
 
-        {#if (h.showResetButton || h.showPauseButton || h.showBossOnlyButton) && (h.showSettingsButton || h.showMinimizeButton)}
-          <div class="h-5 w-px bg-neutral-700/60"></div>
-        {/if}
 
         {#if h.showSettingsButton}
           <button
