@@ -209,24 +209,7 @@
           title="Support on Ko-fi"
           onclick={() => openExternalUrl(KO_FI_URL)}
         >
-          <svg
-            class="w-5 h-5 shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="3.75" y="6.75" width="11.5" height="9.5" rx="2.5" ry="2.5" />
-            <path d="M14.5 8.5H17a1.75 1.75 0 0 1 0 3.5H14.5" />
-            <path
-              d="M8.25 9.75c-.83 0-1.5.67-1.5 1.5 0 1.35 2.25 3.05 2.25 3.05s2.25-1.7 2.25-3.05c0-.83-.67-1.5-1.5-1.5-.47 0-.9.22-1.19.57-.29-.35-.72-.57-1.31-.57Z"
-              fill="currentColor"
-              stroke="none"
-            />
-          </svg>
+          <img src="/icon/kofi_logo.svg" alt="Ko-fi" class="w-6 h-6 shrink-0" />
         </button>
       </div>
     </div>
