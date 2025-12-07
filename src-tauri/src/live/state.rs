@@ -407,7 +407,7 @@ impl AppStateManager {
 
     async fn snapshot_segment_and_reset_live_meter(&self, state: &mut AppState) {
         // Persist dungeon segments
-        dungeon_log::persist_segments(&state.dungeon_log, true);
+        // dungeon_log::persist_segments(&state.dungeon_log, true);
 
         // Store the original fight start time before reset
         let original_fight_start_ms = state.encounter.time_fight_start_ms;
