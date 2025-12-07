@@ -10,11 +10,15 @@
   import { openUrl } from "@tauri-apps/plugin-opener";
   import { SIDEBAR_ROUTES } from "./routes.svelte";
   import { getVersion } from "@tauri-apps/api/app";
+  import DiscordIcon from "virtual:icons/logos/discord-icon";
   import ChangelogModal from '$lib/components/ChangelogModal.svelte';
   import { SETTINGS } from '$lib/settings-store';
   import { onMount } from 'svelte';
 
   let { children } = $props();
+
+  const DISCORD_URL = "https://discord.gg/aPPHe8Uq8Q";
+  const KO_FI_URL = "https://ko-fi.com/resonancelogs";
 
   $effect.pre(() => {
     (async () => {
@@ -188,8 +192,42 @@
           {/if}
         {/each}
       </div>
-      <div class="text-xs text-muted-foreground shrink-0">
-        v{#await getVersion()}...{:then version}{version}{/await}
+      <div class="flex items-center gap-2 text-muted-foreground shrink-0">
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-md transition-all duration-200 hover:text-foreground hover:bg-popover/50"
+          aria-label="Join our Discord"
+          title="Join our Discord"
+          onclick={() => openExternalUrl(DISCORD_URL)}
+        >
+          <DiscordIcon class="w-5 h-5 shrink-0" />
+        </button>
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-md transition-all duration-200 hover:text-foreground hover:bg-popover/50"
+          aria-label="Support on Ko-fi"
+          title="Support on Ko-fi"
+          onclick={() => openExternalUrl(KO_FI_URL)}
+        >
+          <svg
+            class="w-5 h-5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3.75" y="6.75" width="11.5" height="9.5" rx="2.5" ry="2.5" />
+            <path d="M14.5 8.5H17a1.75 1.75 0 0 1 0 3.5H14.5" />
+            <path
+              d="M8.25 9.75c-.83 0-1.5.67-1.5 1.5 0 1.35 2.25 3.05 2.25 3.05s2.25-1.7 2.25-3.05c0-.83-.67-1.5-1.5-1.5-.47 0-.9.22-1.19.57-.29-.35-.72-.57-1.31-.57Z"
+              fill="currentColor"
+              stroke="none"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   </nav>
