@@ -21,6 +21,7 @@ use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 // the updater plugin.
 use tauri_specta::{Builder, collect_commands};
 mod database;
+mod tracking;
 mod uploader; // stage 4 upload logic
 use serde_json::json;
 
@@ -108,6 +109,14 @@ pub fn run() {
                     if let Err(e) = crate::check_for_updates(handle).await {
                         warn!("Updater error: {}", e);
                     }
+                });
+            }
+
+            // Track application update (anonymous telemetry)
+            {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    crate::tracking::track_update(handle).await;
                 });
             }
 

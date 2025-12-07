@@ -321,6 +321,14 @@ diesel::table! {
     }
 }
 
+/// Simple key-value config table for app settings.
+diesel::table! {
+    app_config (key) {
+        key -> Text,
+        value -> Text,
+    }
+}
+
 // Joins
 
 // joinable entries for raw event tables removed
@@ -344,4 +352,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     attempts,
     dungeon_segments,
     buffs,
+    app_config,
 );
