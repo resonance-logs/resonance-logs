@@ -76,7 +76,8 @@
 
   function formatUptime(totalDurationMs: number) {
     if (fightElapsedMs <= 0) return 0;
-    return Math.round((totalDurationMs / fightElapsedMs) * 100);
+    const effectiveDuration = Math.min(totalDurationMs, fightElapsedMs);
+    return Math.min(100, Math.round((effectiveDuration / fightElapsedMs) * 100));
   }
 
   onMount(() => {

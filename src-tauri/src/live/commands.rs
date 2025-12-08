@@ -528,6 +528,27 @@ pub async fn get_live_buffs(
     let mut result_map: std::collections::HashMap<i64, EntityBuffsDto> =
         std::collections::HashMap::new();
 
+    let fight_start_ms = if encounter.time_fight_start_ms > 0 {
+        Some(
+            encounter
+                .time_fight_start_ms
+                .min(i64::MAX as u128) as i64,
+        )
+    } else {
+        None
+    };
+
+    let now_ms = {
+        let last_packet_ms = encounter
+            .time_last_combat_packet_ms
+            .min(i64::MAX as u128) as i64;
+        if last_packet_ms > 0 {
+            last_packet_ms
+        } else {
+            crate::database::now_ms()
+        }
+    };
+
     for ((entity_id, buff_id), events) in &encounter.buff_events {
         // Check if entity is a player
         let entity_name = if let Some(entity) = encounter.entity_uid_to_entity.get(entity_id) {
@@ -554,16 +575,28 @@ pub async fn get_live_buffs(
             });
 
         if let Some((buff_short, buff_long)) = buff_names::lookup_full(*buff_id) {
-            let event_dtos: Vec<BuffEventDto> = events
-            .iter()
-            .map(|e| BuffEventDto {
-                start_ms: e.start,
-                end_ms: e.end,
-                duration_ms: e.duration as i64,
-                stack_count: e.stack_count,
-            })
-            .collect();
-            let total_duration_ms: i64 = event_dtos.iter().map(|e| e.duration_ms).sum();
+            let mut event_dtos: Vec<BuffEventDto> = Vec::new();
+            let mut total_duration_ms: i64 = 0;
+
+            for e in events.iter() {
+                let clamped_start = fight_start_ms.map_or(e.start, |fs| e.start.max(fs));
+                let clamped_end = e.end.min(now_ms);
+
+                if clamped_end <= clamped_start {
+                    continue;
+                }
+
+                let duration_ms = clamped_end.saturating_sub(clamped_start);
+                total_duration_ms = total_duration_ms.saturating_add(duration_ms);
+
+                event_dtos.push(BuffEventDto {
+                    start_ms: clamped_start,
+                    end_ms: clamped_end,
+                    duration_ms,
+                    stack_count: e.stack_count,
+                });
+            }
+
             if total_duration_ms > 0 {
                 entry.buffs.push(BuffInfoDto {
                     buff_id: *buff_id,
