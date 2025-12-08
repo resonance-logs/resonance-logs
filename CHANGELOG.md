@@ -6,7 +6,7 @@
 - true dps (should work like other meters)
 - boss damage is a column now
 - ko-fi added
-- Segments completely disabled
+- Segments completely disabled. We're looking into an alternate/better solution
 
 ## Website
 - allow multiple users to own 1 encounter
