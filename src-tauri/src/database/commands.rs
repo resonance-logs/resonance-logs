@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use diesel_migrations::MigrationHarness;
 use serde::{Deserialize, Serialize};
 
 use crate::database::models as m;
@@ -437,7 +438,12 @@ fn load_actor_stats(
 fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
     let path = default_db_path();
     ensure_parent_dir(&path).map_err(|e| e.to_string())?;
-    diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy()).map_err(|e| e.to_string())
+    let mut conn =
+        diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy()).map_err(|e| e.to_string())?;
+    // Run any pending migrations in case the writer initialization was skipped or failed.
+    conn.run_pending_migrations(crate::database::MIGRATIONS)
+        .map_err(|e| e.to_string())?;
+    Ok(conn)
 }
 
 /// Gets a list of unique boss names.
