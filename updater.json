@@ -1,15 +1,15 @@
 {
-  "version": "0.17.1",
-  "notes": "## New Features\r\n\r\n- Added support for Npcap packet capture\r\n- Added log favoriting\r\n- Added ability to delete logs\r\n- Added wipe detection setting\r\n",
-  "pub_date": "2025-12-03T17:47:01.598Z",
+  "version": "0.18.0",
+  "notes": "## Logs\r\n- refactor ui customization to make it more understandable / better\r\nNOTE: Will reset your existing UI presets\r\n- buff uptime\r\n- true dps (should work like other meters)\r\n- boss damage is a column now\r\n- ko-fi added\r\n- Segments completely disabled. We're looking into an alternate/better solution\r\n",
+  "pub_date": "2025-12-08T04:42:52.385Z",
   "platforms": {
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2Nqbmh6NmsxMDlGV3o5bVFBM2xEZUJDY241bGF4L0ROSHAwTG9DNktzNnA5cExNWmJqckxVSXFoeDJML1JZNGxCVlQyZWpKcHQzZ0IvNExHd0pZbndnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0Nzg0MDEyCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNy4xX3g2NC1zZXR1cC5leGUKNGlWYTFtU0g4Qk1wTStCRGJiUjZvZmVRQzZSSXhRMWxpSnFIN3ViVW1sUUtwR2EzNUUzS0l3emdhbDBWL1FPT2RtVUZQT25wblg0dGpjT1ErSGt2QUE9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.17.1/resonance-logs_0.17.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2ZpRHpPOEFLMmRHcWxIRW0xN0J1N2tIZ3NSTWxUQWtSU09hdmNuN1daTEVWN0VoZmhnRG1tT1hwQXd3bkFORFprSStNZEtLeHhtRWZ0UXNISnh2RkFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY1MTY4OTYzCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOC4wX3g2NC1zZXR1cC5leGUKeHFaemh4RnIvMnF4MkoyZjNLRGwyeGk4cXg5NnI5a09xLzVIcnM3bURlOUROMksxWXBib0VMTGZXQUwwdUlkbmVqalFBU0ZqQTJXcFZ3eTNhM042RFE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.18.0/resonance-logs_0.18.0_x64-setup.exe"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2Nqbmh6NmsxMDlGV3o5bVFBM2xEZUJDY241bGF4L0ROSHAwTG9DNktzNnA5cExNWmJqckxVSXFoeDJML1JZNGxCVlQyZWpKcHQzZ0IvNExHd0pZbndnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY0Nzg0MDEyCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xNy4xX3g2NC1zZXR1cC5leGUKNGlWYTFtU0g4Qk1wTStCRGJiUjZvZmVRQzZSSXhRMWxpSnFIN3ViVW1sUUtwR2EzNUUzS0l3emdhbDBWL1FPT2RtVUZQT25wblg0dGpjT1ErSGt2QUE9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.17.1/resonance-logs_0.17.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2ZpRHpPOEFLMmRHcWxIRW0xN0J1N2tIZ3NSTWxUQWtSU09hdmNuN1daTEVWN0VoZmhnRG1tT1hwQXd3bkFORFprSStNZEtLeHhtRWZ0UXNISnh2RkFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY1MTY4OTYzCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOC4wX3g2NC1zZXR1cC5leGUKeHFaemh4RnIvMnF4MkoyZjNLRGwyeGk4cXg5NnI5a09xLzVIcnM3bURlOUROMksxWXBib0VMTGZXQUwwdUlkbmVqalFBU0ZqQTJXcFZ3eTNhM042RFE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.18.0/resonance-logs_0.18.0_x64-setup.exe"
     }
   }
 }
