@@ -18,7 +18,7 @@
     historyTankedPlayerColumns,
     historyTankedSkillColumns,
   } from "$lib/column-data";
-  import { settings, SETTINGS } from "$lib/settings-store";
+  import { settings, SETTINGS, DEFAULT_HISTORY_STATS } from "$lib/settings-store";
   import getDisplayName from "$lib/name-display";
   import { getModuleApiBaseUrl } from "$lib/stores/uploading";
   import { openUrl } from "@tauri-apps/plugin-opener";
@@ -138,7 +138,16 @@
       );
     }
     return historyDpsPlayerColumns.filter(
-      (col) => settings.state.history.dps.players[col.key] ?? true,
+      (col) => {
+        const defaultValue =
+          DEFAULT_HISTORY_STATS[col.key as keyof typeof DEFAULT_HISTORY_STATS] ??
+          true;
+        const setting =
+          settings.state.history.dps.players[
+            col.key as keyof typeof settings.state.history.dps.players
+          ];
+        return setting ?? defaultValue;
+      },
     );
   });
 
@@ -246,6 +255,12 @@
       const bossDmgValue = a.bossDamageDealt || 0;
       const critTotal = a.critHitsDealt ? a.critTotalDealt || 0 : 0;
       const luckyTotal = a.luckyHitsDealt ? a.luckyTotalDealt || 0 : 0;
+      const activeTimeMs = a.activeDmgTimeMs || 0;
+      const tdpsValue =
+        a.tdps ??
+        (activeTimeMs > 0
+          ? dmgValue / Math.max(activeTimeMs / 1000, 0.001)
+          : dmgValue / durationSecs);
 
       return {
         uid: a.actorId,
@@ -256,6 +271,8 @@
         abilityScore: a.abilityScore || 0,
         totalDmg: dmgValue,
         dps: dmgValue / durationSecs,
+        tdps: tdpsValue,
+        activeTimeMs,
         dmgPct: totalDmg > 0 ? (dmgValue * 100) / totalDmg : 0,
         bossDmg: bossDmgValue,
         bossDps: bossDmgValue / durationSecs,
@@ -737,7 +754,7 @@
                   <td
                     class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10"
                   >
-                    {#if (activeTab === "damage" && (col.key === "totalDmg" || col.key === "bossDmg" || col.key === "bossDps" || col.key === "dps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "healing" && (col.key === "healDealt" || col.key === "hps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "tanked" && (col.key === "damageTaken" || col.key === "tankedPS") && SETTINGS.history.general.state.shortenTps)}
+                    {#if (activeTab === "damage" && (col.key === "totalDmg" || col.key === "bossDmg" || col.key === "bossDps" || col.key === "dps" || col.key === "tdps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "healing" && (col.key === "healDealt" || col.key === "hps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "tanked" && (col.key === "damageTaken" || col.key === "tankedPS") && SETTINGS.history.general.state.shortenTps)}
                       {#if activeTab === "tanked" ? SETTINGS.history.general.state.shortenTps : SETTINGS.history.general.state.shortenDps}
                         <AbbreviatedNumber num={p[col.key] ?? 0} />
                       {:else}

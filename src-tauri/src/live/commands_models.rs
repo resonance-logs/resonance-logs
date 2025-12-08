@@ -69,6 +69,10 @@ pub struct PlayerRow {
     pub total_dmg: u128,
     /// The DPS of the player.
     pub dps: f64,
+    /// The "True DPS" of the player (uses active damage time).
+    pub tdps: f64,
+    /// The accumulated active damage time used for True DPS, in milliseconds.
+    pub active_time_ms: u128,
     /// The damage percentage of the player.
     pub dmg_pct: f64,
     /// The critical hit rate of the player.

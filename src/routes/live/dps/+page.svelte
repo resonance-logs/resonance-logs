@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getClassIcon, tooltip } from "$lib/utils.svelte";
   import { goto } from "$app/navigation";
-  import { settings, SETTINGS } from "$lib/settings-store";
+  import { settings, SETTINGS, DEFAULT_STATS } from "$lib/settings-store";
   import { getDpsPlayers } from "$lib/stores/live-meter-store.svelte";
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
   import { historyDpsPlayerColumns } from "$lib/column-data";
@@ -40,7 +40,15 @@
 
   // Get visible columns based on settings
   let visiblePlayerColumns = $derived.by(() => {
-    return historyDpsPlayerColumns.filter(col => (settings.state.live.dps.players[col.key] ?? true));
+    return historyDpsPlayerColumns.filter(col => {
+      const defaultValue =
+        DEFAULT_STATS[col.key as keyof typeof DEFAULT_STATS] ?? true;
+      const setting =
+        settings.state.live.dps.players[
+          col.key as keyof typeof settings.state.live.dps.players
+        ];
+      return setting ?? defaultValue;
+    });
   });
 
   
@@ -123,6 +131,12 @@
                   <AbbreviatedNumber num={player.dps} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
                 {:else}
                   {Math.round(player.dps).toLocaleString()}
+                {/if}
+              {:else if col.key === 'tdps'}
+                {#if SETTINGS.live.general.state.shortenDps}
+                  <AbbreviatedNumber num={player.tdps} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
+                {:else}
+                  {Math.round(player.tdps).toLocaleString()}
                 {/if}
               {:else if col.key === 'dmgPct'}
                 <PercentFormat val={player.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />

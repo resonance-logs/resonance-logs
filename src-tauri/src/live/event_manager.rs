@@ -409,6 +409,8 @@ pub fn generate_players_window_heal(
                 ability_score: entity.ability_score as u128,
                 total_dmg: entity.total_heal,
                 dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs),
+                tdps: 0.0,
+                active_time_ms: 0,
                 dmg_pct: nan_is_zero(
                     entity.total_heal as f64 / encounter.total_heal as f64 * 100.0,
                 ),
@@ -496,6 +498,8 @@ pub fn generate_players_window_tanked(
                 ability_score: entity.ability_score as u128,
                 total_dmg: entity.total_taken,
                 dps: nan_is_zero(entity.total_taken as f64 / time_elapsed_secs),
+                tdps: 0.0,
+                active_time_ms: 0,
                 dmg_pct: nan_is_zero(entity.total_taken as f64 / total_taken_all as f64 * 100.0),
                 crit_rate: nan_is_zero(
                     entity.crit_hits_taken as f64 / entity.hits_taken as f64 * 100.0,
@@ -582,6 +586,13 @@ pub fn generate_skills_window_dps(
     };
 
     let player_total: u128 = if boss_only { player_boss_total } else { entity.total_dmg };
+    let active_time_ms = entity.active_dmg_time_ms;
+    #[allow(clippy::cast_precision_loss)]
+    let active_time_secs = if active_time_ms > 0 {
+        active_time_ms as f64 / 1000.0
+    } else {
+        0.0
+    };
 
     // Player DPS Stats
     #[allow(clippy::cast_precision_loss)]
@@ -594,6 +605,8 @@ pub fn generate_skills_window_dps(
             ability_score: entity.ability_score as u128,
             total_dmg: player_total,
             dps: nan_is_zero(player_total as f64 / time_elapsed_secs),
+            tdps: nan_is_zero(player_total as f64 / active_time_secs),
+            active_time_ms,
             dmg_pct: if total_scope_dmg == 0 {
                 0.0
             } else {
@@ -705,6 +718,8 @@ pub fn generate_skills_window_heal(
             ability_score: entity.ability_score as u128,
             total_dmg: entity.total_heal,
             dps: nan_is_zero(entity.total_heal as f64 / time_elapsed_secs),
+            tdps: 0.0,
+            active_time_ms: 0,
             dmg_pct: nan_is_zero(entity.total_heal as f64 / encounter.total_heal as f64 * 100.0),
             crit_rate: nan_is_zero(entity.crit_hits_heal as f64 / entity.hits_heal as f64 * 100.0),
             crit_dmg_rate: nan_is_zero(
@@ -792,6 +807,8 @@ pub fn generate_skills_window_tanked(
             ability_score: entity.ability_score as u128,
             total_dmg: entity.total_taken,
             dps: nan_is_zero(entity.total_taken as f64 / time_elapsed_secs),
+            tdps: 0.0,
+            active_time_ms: 0,
             dmg_pct: 100.0, // Always 100% for the current player view
             crit_rate: nan_is_zero(
                 entity.crit_hits_taken as f64 / entity.hits_taken as f64 * 100.0,
@@ -929,6 +946,14 @@ pub fn generate_player_row_filtered(
         return None;
     }
 
+    let active_time_ms = entity.active_dmg_time_ms;
+    #[allow(clippy::cast_precision_loss)]
+    let active_time_secs = if active_time_ms > 0 {
+        active_time_ms as f64 / 1000.0
+    } else {
+        0.0
+    };
+
     #[allow(clippy::cast_precision_loss)]
     Some(PlayerRow {
         uid: entity_uid as u128,
@@ -938,6 +963,8 @@ pub fn generate_player_row_filtered(
         ability_score: entity.ability_score as u128,
         total_dmg: entity_total,
         dps: nan_is_zero(entity_total as f64 / time_elapsed_secs),
+        tdps: nan_is_zero(entity_total as f64 / active_time_secs),
+        active_time_ms,
         dmg_pct: if total_scope_dmg == 0 {
             0.0
         } else {

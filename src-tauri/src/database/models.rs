@@ -289,6 +289,10 @@ pub struct ActorEncounterStatRow {
     pub revives: i64,
     /// The average DPS snapshot for the actor during the encounter.
     pub dps: f64,
+    /// The accumulated active damage time (ms) used for True DPS.
+    pub active_dmg_time_ms: i64,
+    /// The True DPS snapshot for the actor during the encounter.
+    pub tdps: f64,
     /// The encounter duration in seconds used for the DPS snapshot.
     pub duration: f64,
     /// Whether the actor is a player.
@@ -369,6 +373,10 @@ pub struct NewActorEncounterStat {
     pub revives: i64,
     /// The average DPS snapshot for the actor during the encounter.
     pub dps: f64,
+    /// The accumulated active damage time (ms) used for True DPS.
+    pub active_dmg_time_ms: i64,
+    /// The True DPS snapshot for the actor during the encounter.
+    pub tdps: f64,
     /// The encounter duration in seconds used for the DPS snapshot.
     pub duration: f64,
 }

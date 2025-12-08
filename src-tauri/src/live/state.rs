@@ -48,6 +48,22 @@ fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload:
     }
 }
 
+fn collect_player_active_times(encounter: &Encounter) -> Vec<(i64, i64)> {
+    encounter
+        .entity_uid_to_entity
+        .iter()
+        .filter(|(_, entity)| {
+            entity.entity_type == blueprotobuf_lib::blueprotobuf::EEntityType::EntChar
+        })
+        .map(|(uid, entity)| {
+            let active_ms = entity
+                .active_dmg_time_ms
+                .min(i64::MAX as u128) as i64;
+            (*uid, active_ms)
+        })
+        .collect()
+}
+
 /// Represents the possible events that can be handled by the state manager.
 #[derive(Debug, Clone)]
 pub enum StateEvent {
@@ -433,6 +449,7 @@ impl AppStateManager {
                 Some(defeated)
             },
             is_manually_reset: false,
+            player_active_times: collect_player_active_times(&state.encounter),
         });
         on_server_change(&mut state.encounter);
 
@@ -886,6 +903,7 @@ impl AppStateManager {
                 Some(defeated)
             },
             is_manually_reset: is_manual,
+            player_active_times: collect_player_active_times(&state.encounter),
         });
         state.encounter.reset_combat_state();
         state.skill_subscriptions.clear();

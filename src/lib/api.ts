@@ -35,6 +35,8 @@ export type PlayerRow = {
   abilityScore: number;
   totalDmg: number;
   dps: number;
+  tdps: number;
+  activeTimeMs: number;
   bossDps: number;
   dmgPct: number;
   critRate: number;

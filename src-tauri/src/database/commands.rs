@@ -231,6 +231,10 @@ pub struct ActorEncounterStatDto {
     pub boss_lucky_total_dealt: i64,
     /// The average DPS snapshot for the actor during the encounter.
     pub dps: f64,
+    /// The accumulated active damage time (ms) used for True DPS.
+    pub active_dmg_time_ms: i64,
+    /// The True DPS snapshot for the actor during the encounter.
+    pub tdps: f64,
     /// The encounter duration in seconds used for the DPS snapshot.
     pub duration: f64,
     /// Whether the actor is the local player.
@@ -287,6 +291,8 @@ fn load_actor_stats(
             s::boss_crit_total_dealt,
             s::boss_lucky_total_dealt,
             s::dps,
+            s::active_dmg_time_ms,
+            s::tdps,
             s::duration,
             s::is_local_player,
         ))
@@ -324,6 +330,8 @@ fn load_actor_stats(
             i64,
             i64,
             i64,
+            i64,
+            f64,
             i64,
             f64,
             f64,
@@ -365,41 +373,57 @@ fn load_actor_stats(
                 boss_crit_total_dealt,
                 boss_lucky_total_dealt,
                 dps,
+                active_dmg_time_ms,
+                tdps,
                 duration,
                 is_local_player,
-            )| ActorEncounterStatDto {
-                encounter_id,
-                actor_id,
-                name,
-                class_id,
-                ability_score,
-                damage_dealt,
-                heal_dealt,
-                damage_taken,
-                hits_dealt,
-                hits_heal,
-                hits_taken,
-                crit_hits_dealt,
-                crit_hits_heal,
-                crit_hits_taken,
-                lucky_hits_dealt,
-                lucky_hits_heal,
-                lucky_hits_taken,
-                crit_total_dealt,
-                crit_total_heal,
-                crit_total_taken,
-                lucky_total_dealt,
-                lucky_total_heal,
-                lucky_total_taken,
-                boss_damage_dealt,
-                boss_hits_dealt,
-                boss_crit_hits_dealt,
-                boss_lucky_hits_dealt,
-                boss_crit_total_dealt,
-                boss_lucky_total_dealt,
-                dps,
-                duration,
-                is_local_player: is_local_player == 1,
+            )| {
+                let active_ms = active_dmg_time_ms;
+                let tdps_value = if tdps > 0.0 {
+                    tdps
+                } else if active_ms > 0 {
+                    damage_dealt as f64 * 1000.0 / (active_ms as f64)
+                } else if duration > 0.0 {
+                    damage_dealt as f64 / duration
+                } else {
+                    0.0
+                };
+                ActorEncounterStatDto {
+                    encounter_id,
+                    actor_id,
+                    name,
+                    class_id,
+                    ability_score,
+                    damage_dealt,
+                    heal_dealt,
+                    damage_taken,
+                    hits_dealt,
+                    hits_heal,
+                    hits_taken,
+                    crit_hits_dealt,
+                    crit_hits_heal,
+                    crit_hits_taken,
+                    lucky_hits_dealt,
+                    lucky_hits_heal,
+                    lucky_hits_taken,
+                    crit_total_dealt,
+                    crit_total_heal,
+                    crit_total_taken,
+                    lucky_total_dealt,
+                    lucky_total_heal,
+                    lucky_total_taken,
+                    boss_damage_dealt,
+                    boss_hits_dealt,
+                    boss_crit_hits_dealt,
+                    boss_lucky_hits_dealt,
+                    boss_crit_total_dealt,
+                    boss_lucky_total_dealt,
+                    dps,
+                    active_dmg_time_ms: active_ms,
+                    tdps: tdps_value,
+                    duration,
+                    is_local_player: is_local_player == 1,
+                }
             },
         )
         .collect())
@@ -1173,7 +1197,7 @@ pub fn get_encounter_attempt_actor_stats(
 
     // NOTE: attempt_index is ignored because raw per-event tables are removed.
     // Return per-encounter aggregated stats from materialized tables.
-    let player_rows: Vec<(i64, Option<String>, Option<i32>, Option<i32>, i32, f64, f64)> =
+    let player_rows: Vec<(i64, Option<String>, Option<i32>, Option<i32>, i32, f64, f64, i64, f64)> =
         a::actor_encounter_stats
             .filter(a::encounter_id.eq(encounter_id))
             .filter(a::is_player.eq(1))
@@ -1185,8 +1209,10 @@ pub fn get_encounter_attempt_actor_stats(
                 a::is_local_player,
                 a::duration,
                 a::dps,
+                a::active_dmg_time_ms,
+                a::tdps,
             ))
-            .load::<(i64, Option<String>, Option<i32>, Option<i32>, i32, f64, f64)>(&mut conn)
+            .load::<(i64, Option<String>, Option<i32>, Option<i32>, i32, f64, f64, i64, f64)>(&mut conn)
             .map_err(|e| e.to_string())?;
 
     let mut results: Vec<ActorEncounterStatDto> = Vec::new();
@@ -1199,6 +1225,8 @@ pub fn get_encounter_attempt_actor_stats(
         is_local,
         duration_val,
         persisted_dps,
+        active_dmg_time_ms,
+        persisted_tdps,
     ) in player_rows
     {
         // Damage dealt by this actor (aggregate)
@@ -1295,6 +1323,13 @@ pub fn get_encounter_attempt_actor_stats(
         } else {
             computed_dps
         };
+        let tdps_value = if persisted_tdps > 0.0 {
+            persisted_tdps
+        } else if active_dmg_time_ms > 0 {
+            dmg_total as f64 * 1000.0 / (active_dmg_time_ms as f64)
+        } else {
+            dps_value
+        };
 
         results.push(ActorEncounterStatDto {
             encounter_id,
@@ -1327,6 +1362,8 @@ pub fn get_encounter_attempt_actor_stats(
             boss_crit_total_dealt: boss_crit_total,
             boss_lucky_total_dealt: boss_lucky_total,
             dps: dps_value,
+            active_dmg_time_ms,
+            tdps: tdps_value,
             duration,
             is_local_player: is_local != 0,
         });
@@ -1476,6 +1513,12 @@ pub fn get_encounter_attempt_player_skills(
             } else {
                 0.0
             },
+            tdps: if duration_secs > 0.0 {
+                (actor_total_dmg as f64) / duration_secs
+            } else {
+                0.0
+            },
+            active_time_ms: (duration_secs * 1000.0).round() as u128,
             dmg_pct: 0.0,
             crit_rate: if actor_hits > 0 {
                 (actor_crit_hits as f64) / (actor_hits as f64)
@@ -1632,6 +1675,12 @@ pub fn get_encounter_attempt_player_skills(
             } else {
                 0.0
             },
+            tdps: if duration_secs > 0.0 {
+                (actor_total_heal as f64) / duration_secs
+            } else {
+                0.0
+            },
+            active_time_ms: (duration_secs * 1000.0).round() as u128,
             dmg_pct: 0.0,
             boss_dmg: 0,
             boss_dps: 0.0,
@@ -1924,6 +1973,12 @@ pub fn get_encounter_player_skills(
         } else {
             0.0
         },
+        tdps: if duration_secs > 0.0 {
+            (actor_total_dmg as f64) / duration_secs
+        } else {
+            0.0
+        },
+        active_time_ms: (duration_secs * 1000.0).round() as u128,
         dmg_pct: 0.0, // filled per-skill below if needed
         crit_rate: if actor_hits > 0 {
             (actor_crit_hits as f64) / (actor_hits as f64)

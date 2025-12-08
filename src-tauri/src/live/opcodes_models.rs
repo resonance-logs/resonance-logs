@@ -350,6 +350,10 @@ pub struct Entity {
     pub lucky_hits_dmg_boss_only: u128,
     pub hits_dmg_boss_only: u128,
     pub skill_uid_to_dmg_skill_boss_only: HashMap<i32, Skill>,
+    /// Accumulated active damage time in milliseconds for True DPS.
+    pub active_dmg_time_ms: u128,
+    /// Timestamp of the last damage event used to compute active time.
+    pub last_dmg_timestamp_ms: Option<u128>,
     // Healing
     pub total_heal: u128,
     pub crit_total_heal: u128,
@@ -445,6 +449,8 @@ impl Encounter {
             entity.skill_uid_to_dmg_skill.clear();
             entity.dmg_to_target.clear();
             entity.skill_dmg_to_target.clear();
+            entity.active_dmg_time_ms = 0;
+            entity.last_dmg_timestamp_ms = None;
 
             // Clear stale HP attributes for monsters so new encounters don't reuse old boss health
             entity.attributes.remove(&AttrType::CurrentHp);
@@ -514,6 +520,8 @@ impl Encounter {
             entity.skill_uid_to_dmg_skill.clear();
             entity.dmg_to_target.clear();
             entity.skill_dmg_to_target.clear();
+            entity.active_dmg_time_ms = 0;
+            entity.last_dmg_timestamp_ms = None;
 
             // NOTE: Do NOT clear HP attributes here - we want to preserve boss HP
             // for display when switching segments within the same encounter

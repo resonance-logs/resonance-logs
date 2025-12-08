@@ -142,6 +142,10 @@ diesel::table! {
         revives -> BigInt,
         /// The average DPS snapshot for the actor during the encounter.
         dps -> Double,
+        /// The accumulated active damage time (ms) used for True DPS.
+        active_dmg_time_ms -> BigInt,
+        /// The True DPS snapshot for the actor during the encounter.
+        tdps -> Double,
         /// The encounter duration in seconds used for the DPS snapshot.
         duration -> Double,
         /// Whether the actor is a player.

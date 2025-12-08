@@ -695,6 +695,14 @@ bossLuckyTotalDealt: number;
  */
 dps: number; 
 /**
+ * The accumulated active damage time (ms) used for True DPS.
+ */
+activeDmgTimeMs: number; 
+/**
+ * The True DPS snapshot for the actor during the encounter.
+ */
+tdps: number; 
+/**
  * The encounter duration in seconds used for the DPS snapshot.
  */
 duration: number; 
@@ -991,6 +999,14 @@ totalDmg: number;
  * The DPS of the player.
  */
 dps: number; 
+/**
+ * The "True DPS" of the player (uses active damage time).
+ */
+tdps: number; 
+/**
+ * The accumulated active damage time used for True DPS, in milliseconds.
+ */
+activeTimeMs: number; 
 /**
  * The damage percentage of the player.
  */

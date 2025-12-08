@@ -85,6 +85,29 @@ fn record_revive(encounter: &mut Encounter, actor_id: i64, timestamp_ms: i64) {
     info!("Recorded revive for UID {}", actor_id);
 }
 
+/// Increment per-entity active damage time used for True DPS calculations.
+/// Adds a small grace window for single hits and ignores long idle gaps.
+fn update_active_damage_time(entity: &mut Entity, timestamp_ms: u128) {
+    const INACTIVITY_CUTOFF_MS: u128 = 3_000;
+    const HIT_GRACE_MS: u128 = 500;
+
+    let additional = if let Some(last) = entity.last_dmg_timestamp_ms {
+        let delta = timestamp_ms.saturating_sub(last);
+        if delta <= INACTIVITY_CUTOFF_MS {
+            delta
+        } else {
+            HIT_GRACE_MS
+        }
+    } else {
+        HIT_GRACE_MS
+    };
+
+    entity.active_dmg_time_ms = entity
+        .active_dmg_time_ms
+        .saturating_add(additional);
+    entity.last_dmg_timestamp_ms = Some(timestamp_ms);
+}
+
 fn did_target_die(
     is_dead_flag: Option<bool>,
     hp_loss: u128,
@@ -641,6 +664,7 @@ pub fn process_aoi_sync_delta(
                 attacker_entity.total_dmg += actual_value;
                 skill.hits += 1;
                 skill.total_value += actual_value;
+                update_active_damage_time(attacker_entity, timestamp_ms);
 
                 if is_boss_target {
                     let skill_boss_only = attacker_entity

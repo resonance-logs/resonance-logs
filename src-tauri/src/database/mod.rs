@@ -280,6 +280,8 @@ pub enum DbTask {
         defeated_bosses: Option<Vec<String>>,
         /// Whether this encounter was manually reset by the user.
         is_manually_reset: bool,
+        /// Per-player active damage time (ms) used for True DPS calculations.
+        player_active_times: Vec<(i64, i64)>,
     },
 
     /// A task to end any encounters that never received an explicit end.
@@ -409,6 +411,7 @@ fn finalize_encounter(
     ended_at_ms: i64,
     defeated_bosses: Option<Vec<String>>,
     is_manually_reset: bool,
+    player_active_times: Vec<(i64, i64)>,
 ) -> Result<(), String> {
     use sch::encounters::dsl as e;
 
@@ -434,10 +437,26 @@ fn finalize_encounter(
         }
     }
 
+    if !player_active_times.is_empty() {
+        for (actor_id, active_ms) in player_active_times {
+            diesel::sql_query(
+                "UPDATE actor_encounter_stats
+                 SET active_dmg_time_ms = ?3
+                 WHERE encounter_id = ?1 AND actor_id = ?2",
+            )
+            .bind::<diesel::sql_types::Integer, _>(encounter_id)
+            .bind::<diesel::sql_types::BigInt, _>(actor_id)
+            .bind::<diesel::sql_types::BigInt, _>(active_ms)
+            .execute(conn)
+            .ok();
+        }
+    }
+
     diesel::sql_query(
         "UPDATE actor_encounter_stats
          SET duration = ?2,
-             dps = CASE WHEN ?2 > 0 THEN damage_dealt * 1.0 / ?2 ELSE 0 END
+             dps = CASE WHEN ?2 > 0 THEN damage_dealt * 1.0 / ?2 ELSE 0 END,
+             tdps = CASE WHEN active_dmg_time_ms > 0 THEN damage_dealt * 1000.0 / active_dmg_time_ms ELSE 0 END
          WHERE encounter_id = ?1 AND is_player = 1",
     )
     .bind::<diesel::sql_types::Integer, _>(encounter_id)
@@ -561,9 +580,17 @@ fn handle_task(
             ended_at_ms,
             defeated_bosses,
             is_manually_reset,
+            player_active_times,
         } => {
             if let Some(id) = current_encounter_id.take() {
-                finalize_encounter(conn, id, ended_at_ms, defeated_bosses, is_manually_reset)?;
+                finalize_encounter(
+                    conn,
+                    id,
+                    ended_at_ms,
+                    defeated_bosses,
+                    is_manually_reset,
+                    player_active_times,
+                )?;
             }
             *current_encounter_start_ms = None;
         }
@@ -576,7 +603,7 @@ fn handle_task(
                 .map_err(|er| er.to_string())?;
 
             for encounter_id in open_encounters {
-                finalize_encounter(conn, encounter_id, ended_at_ms, None, false)?;
+                finalize_encounter(conn, encounter_id, ended_at_ms, None, false, Vec::new())?;
             }
 
             *current_encounter_id = None;
@@ -1641,6 +1668,7 @@ mod tests {
                 ended_at_ms: 4_600,
                 defeated_bosses: None,
                 is_manually_reset: false,
+                player_active_times: Vec::new(),
             },
             &mut enc_opt,
             &mut enc_start_opt,
@@ -1803,6 +1831,7 @@ mod tests {
                 ended_at_ms: 10_500,
                 defeated_bosses: None,
                 is_manually_reset: false,
+                player_active_times: Vec::new(),
             },
             &mut enc_opt,
             &mut enc_start_opt,
