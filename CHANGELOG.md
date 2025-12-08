@@ -2,6 +2,7 @@
 
 ## Logs
 - refactor ui customization to make it more understandable / better
+NOTE: Will reset your existing UI presets
 - buff uptime
 - true dps (should work like other meters)
 - boss damage is a column now
