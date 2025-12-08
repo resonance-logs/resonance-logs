@@ -177,6 +177,13 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                 }
             };
 
+            // Snapshot the current encounter state before processing the batch.
+            // If the batch fails, we must restore this state because any changes (like clearing the ID)
+            // made during the failed transaction are semantically rolled back, but the Rust variables
+            // would otherwise remain changed.
+            let pre_batch_encounter_id = current_encounter_id;
+            let pre_batch_encounter_start = current_encounter_start_ms;
+
             let batch_result = conn.transaction::<(), diesel::result::Error, _>(|tx_conn| {
                 for task in tasks.iter().cloned() {
                     handle_task(
@@ -199,11 +206,13 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                     e
                 );
 
-                // CRITICAL: Reset current_encounter_id because the batch transaction was rolled back.
-                // Any encounter that was created in the failed transaction no longer exists.
-                // This ensures BeginEncounter tasks will create new encounters instead of being skipped.
-                current_encounter_id = None;
-                current_encounter_start_ms = None;
+                // Restore the encounter state to what it was before the batch attempted to run.
+                // This correctly handles cases where:
+                // 1. BeginEncounter was in a PREVIOUS batch (so current_encounter_id is valid).
+                // 2. BeginEncounter was in THIS batch (so it should be None after rollback).
+                // 3. EndEncounter was in THIS batch (so it should be restored to the valid ID).
+                current_encounter_id = pre_batch_encounter_id;
+                current_encounter_start_ms = pre_batch_encounter_start;
 
                 // Try to process tasks individually; this uses the same connection
                 // (and therefore the same transaction semantics as earlier).
