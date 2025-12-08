@@ -102,9 +102,7 @@ fn update_active_damage_time(entity: &mut Entity, timestamp_ms: u128) {
         HIT_GRACE_MS
     };
 
-    entity.active_dmg_time_ms = entity
-        .active_dmg_time_ms
-        .saturating_add(additional);
+    entity.active_dmg_time_ms = entity.active_dmg_time_ms.saturating_add(additional);
     entity.last_dmg_timestamp_ms = Some(timestamp_ms);
 }
 
@@ -464,25 +462,25 @@ pub fn process_aoi_sync_delta(
         }
     }
 
-    // Dump BuffInfoSync if present (for debugging)
-    if let Some(ref buff_info_sync) = aoi_sync_delta.buff_infos {
-        if !buff_info_sync.buff_infos.is_empty() {
-            match serde_json::to_string_pretty(buff_info_sync) {
-                Ok(json) => {
-                    info!(
-                        "BuffInfoSync (from AoiSyncDelta, target_uid={}): \n{}",
-                        target_uid, json
-                    );
-                }
-                Err(e) => {
-                    info!(
-                        "BuffInfoSync (from AoiSyncDelta, target_uid={}, JSON failed: {}): {:?}",
-                        target_uid, e, buff_info_sync
-                    );
-                }
-            }
-        }
-    }
+    // // Dump BuffInfoSync if present (for debugging)
+    // if let Some(ref buff_info_sync) = aoi_sync_delta.buff_infos {
+    //     if !buff_info_sync.buff_infos.is_empty() {
+    //         match serde_json::to_string_pretty(buff_info_sync) {
+    //             Ok(json) => {
+    //                 info!(
+    //                     "BuffInfoSync (from AoiSyncDelta, target_uid={}): \n{}",
+    //                     target_uid, json
+    //                 );
+    //             }
+    //             Err(e) => {
+    //                 info!(
+    //                     "BuffInfoSync (from AoiSyncDelta, target_uid={}, JSON failed: {}): {:?}",
+    //                     target_uid, e, buff_info_sync
+    //                 );
+    //             }
+    //         }
+    //     }
+    // }
 
     // Process BuffInfoSync if present - track buff applications (absolute times)
     if let Some(ref buff_info_sync) = aoi_sync_delta.buff_infos {
