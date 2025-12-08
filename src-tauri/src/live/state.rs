@@ -1,5 +1,6 @@
 use crate::database::{DbTask, enqueue, now_ms};
 use crate::live::attempt_detector::AttemptConfig;
+use crate::live::buff_names;
 use crate::live::dungeon_log::{self, DungeonLogRuntime, SegmentType, SharedDungeonLog};
 use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
@@ -100,6 +101,11 @@ pub enum StateEvent {
 /// Buffs are stored in absolute timestamps; we clamp to fight start (if known)
 /// and to the encounter end to avoid runaway durations across resets.
 fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i64) {
+    // Drop any buffs that don't meet our validity rules before clamping/persisting.
+    encounter
+        .buff_events
+        .retain(|(_, buff_id), _| buff_names::is_valid(*buff_id));
+
     if encounter.buff_events.is_empty() {
         return;
     }
@@ -142,6 +148,10 @@ fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i64) {
         .buff_events
         .iter()
         .filter_map(|((entity_id, buff_id), events)| {
+            if !buff_names::is_valid(*buff_id) {
+                return None;
+            }
+
             serde_json::to_string(events)
                 .ok()
                 .map(|json| (*entity_id, *buff_id, json))

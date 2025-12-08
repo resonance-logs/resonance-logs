@@ -90,6 +90,12 @@ pub fn lookup(buff_id: i32) -> Option<String> {
     cache.get(&buff_id).map(|(s, _)| s.clone())
 }
 
+/// Returns true when the buff exists in the cache (i.e., it passed validity checks).
+pub fn is_valid(buff_id: i32) -> bool {
+    let cache = BUFF_CACHE.read();
+    cache.contains_key(&buff_id)
+}
+
 /// Returns both (EnglishShort, EnglishLong) when available.
 pub fn lookup_full(buff_id: i32) -> Option<(String, String)> {
     let cache = BUFF_CACHE.read();

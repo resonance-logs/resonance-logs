@@ -4,6 +4,7 @@ use crate::live::attempt_detector::{
     AttemptConfig, check_hp_rollback_condition, check_wipe_condition, get_boss_hp_percentage,
     split_attempt, track_party_member, update_boss_hp_tracking,
 };
+use crate::live::buff_names;
 use crate::live::dungeon_log::{self, DungeonLogRuntime};
 use crate::live::opcodes_models::class::{
     ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
@@ -491,6 +492,12 @@ pub fn process_aoi_sync_delta(
                 Some(id) => id,
                 None => continue,
             };
+
+            // Only track buffs that we consider valid (have proper names for display/persistence).
+            if !buff_names::is_valid(buff_id) {
+                continue;
+            }
+
             let duration = buff_info.duration.unwrap_or(0);
             let stack_count = buff_info.layer.unwrap_or(1);
             let create_time = buff_info.create_time.unwrap_or(now);
