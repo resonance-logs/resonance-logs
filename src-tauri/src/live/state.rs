@@ -57,9 +57,7 @@ fn collect_player_active_times(encounter: &Encounter) -> Vec<(i64, i64)> {
             entity.entity_type == blueprotobuf_lib::blueprotobuf::EEntityType::EntChar
         })
         .map(|(uid, entity)| {
-            let active_ms = entity
-                .active_dmg_time_ms
-                .min(i64::MAX as u128) as i64;
+            let active_ms = entity.active_dmg_time_ms.min(i64::MAX as u128) as i64;
             (*uid, active_ms)
         })
         .collect()
@@ -101,12 +99,12 @@ pub enum StateEvent {
 /// Buffs are stored in absolute timestamps; we clamp to fight start (if known)
 /// and to the encounter end to avoid runaway durations across resets.
 fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i64) {
-    // Drop any buffs that don't meet our validity rules before clamping/persisting.
-    encounter
-        .buff_events
-        .retain(|(_, buff_id), _| buff_names::is_valid(*buff_id));
+    let mut buff_events = encounter.buff_events.write();
 
-    if encounter.buff_events.is_empty() {
+    // Drop any buffs that don't meet our validity rules before clamping/persisting.
+    buff_events.retain(|(_, buff_id), _| buff_names::is_valid(*buff_id));
+
+    if buff_events.is_empty() {
         return;
     }
 
@@ -117,7 +115,7 @@ fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i64) {
         None
     };
 
-    for events in encounter.buff_events.values_mut() {
+    for events in buff_events.values_mut() {
         if let Some(fs) = fight_start_i64 {
             // Drop events that end before the fight starts
             events.retain(|event| event.end >= fs);
@@ -144,8 +142,7 @@ fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i64) {
         }
     }
 
-    let buffs: Vec<(i64, i32, String)> = encounter
-        .buff_events
+    let buffs: Vec<(i64, i32, String)> = buff_events
         .iter()
         .filter_map(|((entity_id, buff_id), events)| {
             if !buff_names::is_valid(*buff_id) {

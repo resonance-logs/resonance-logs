@@ -478,54 +478,53 @@ pub fn process_aoi_sync_delta(
     //                     "BuffInfoSync (from AoiSyncDelta, target_uid={}, JSON failed: {}): {:?}",
     //                     target_uid, e, buff_info_sync
     //                 );
-    //             }
-    //         }
-    //     }
-    // }
-
     // Process BuffInfoSync if present - track buff applications (absolute times)
     if let Some(ref buff_info_sync) = aoi_sync_delta.buff_infos {
-        let now = now_ms();
-        for buff_info in &buff_info_sync.buff_infos {
-            // Extract buff data
-            let buff_id = match buff_info.base_id {
-                Some(id) => id,
-                None => continue,
-            };
+        if !buff_info_sync.buff_infos.is_empty() {
+            let now = now_ms();
+            let mut buff_events_guard = encounter.buff_events.write();
 
-            // Only track buffs that we consider valid (have proper names for display/persistence).
-            if !buff_names::is_valid(buff_id) {
-                continue;
+            for buff_info in &buff_info_sync.buff_infos {
+                // Extract buff data
+                let buff_id = match buff_info.base_id {
+                    Some(id) => id,
+                    None => continue,
+                };
+
+                // Only track buffs that we consider valid (have proper names for display/persistence).
+                if !buff_names::is_valid(buff_id) {
+                    continue;
+                }
+
+                let duration = buff_info.duration.unwrap_or(0);
+                let stack_count = buff_info.layer.unwrap_or(1);
+                let create_time = buff_info.create_time.unwrap_or(now);
+
+                let start = create_time;
+                let end = start + (duration as i64);
+
+                let key = (target_uid, buff_id);
+                let events = buff_events_guard.entry(key).or_insert_with(Vec::new);
+
+                // Close any ongoing buff instance before recording the new one
+                if let Some(ongoing) = events
+                    .iter_mut()
+                    .filter(|event| event.end > start) //this is inefficient...
+                    .max_by_key(|event| event.start)
+                {
+                    let adjusted_duration = start.saturating_sub(ongoing.start);
+                    ongoing.end = start;
+                    ongoing.duration = adjusted_duration.min(i32::MAX as i64) as i32;
+                }
+
+                // Always record the new buff event
+                events.push(BuffEvent {
+                    start,
+                    end,
+                    duration,
+                    stack_count,
+                });
             }
-
-            let duration = buff_info.duration.unwrap_or(0);
-            let stack_count = buff_info.layer.unwrap_or(1);
-            let create_time = buff_info.create_time.unwrap_or(now);
-
-            let start = create_time;
-            let end = start + (duration as i64);
-
-            let key = (target_uid, buff_id);
-            let events = encounter.buff_events.entry(key).or_insert_with(Vec::new);
-
-            // Close any ongoing buff instance before recording the new one
-            if let Some(ongoing) = events
-                .iter_mut()
-                .filter(|event| event.end > start) //this is inefficient...
-                .max_by_key(|event| event.start)
-            {
-                let adjusted_duration = start.saturating_sub(ongoing.start);
-                ongoing.end = start;
-                ongoing.duration = adjusted_duration.min(i32::MAX as i64) as i32;
-            }
-
-            // Always record the new buff event
-            events.push(BuffEvent {
-                start,
-                end,
-                duration,
-                stack_count,
-            });
         }
     }
 
@@ -1004,7 +1003,9 @@ pub fn process_aoi_sync_delta(
         let fight_start_i64 = timestamp_ms.min(i64::MAX as u128) as i64;
 
         // Clamp any pre-existing buff events to the fight start and recompute durations
-        for events in encounter.buff_events.values_mut() {
+        let buff_events_arc = encounter.buff_events.clone();
+        let mut buff_events = buff_events_arc.write();
+        for events in buff_events.values_mut() {
             // Drop events that end before fight start
             events.retain(|event| event.end >= fight_start_i64);
 

@@ -1,9 +1,10 @@
 use crate::live::opcodes_models::class::ClassSpec;
 use crate::live::skill_names;
 use blueprotobuf_lib::blueprotobuf::{EEntityType, SyncContainerData};
+use parking_lot::RwLock as PlRwLock;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 use tokio::sync::RwLock;
 
 /// Represents a single buff application event for JSON serialization.
@@ -54,7 +55,9 @@ pub struct Encounter {
     // Track the last active segment type to detect transitions for meter resets
     pub last_active_segment_type: Option<String>, // "boss" or "trash"
     // Buff tracking: key is (entity_uid, buff_id), value is list of buff events
-    pub buff_events: HashMap<(i64, i32), Vec<BuffEvent>>,
+    // Wrapped in Arc<RwLock> to make Encounter cloning cheap (shallow copy of the lock handle)
+    // This prevents the UI update loop from stalling when cloning heavy encounter state.
+    pub buff_events: Arc<PlRwLock<HashMap<(i64, i32), Vec<BuffEvent>>>>,
 }
 
 // Use an async-aware RwLock so readers don't block the tokio runtime threads.
@@ -489,20 +492,8 @@ impl Encounter {
         self.last_active_segment_type = None;
 
         // Clear buff tracking for fresh encounter
-        self.buff_events.clear();
+        self.buff_events.write().clear();
     }
-
-    /// Resets player metrics for a segment switch within the same encounter.
-    /// Unlike `reset_combat_state`, this preserves boss HP attributes so the
-    /// boss health bar remains visible when switching from trash to boss segment.
-    ///
-    /// Preserves:
-    /// - entity HP attributes (CurrentHp, MaxHp) for boss health display
-    /// - entity identity fields (name, class, spec, etc.)
-    ///
-    /// Clears:
-    /// - per-entity combat counters and skill maps
-    /// - encounter totals (but NOT time_fight_start_ms - caller handles that)
     pub fn reset_segment_metrics(&mut self) {
         // Reset encounter-level combat totals (but NOT timestamps - caller preserves those)
         self.total_dmg = 0;

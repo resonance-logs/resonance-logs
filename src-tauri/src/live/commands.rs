@@ -529,19 +529,13 @@ pub async fn get_live_buffs(
         std::collections::HashMap::new();
 
     let fight_start_ms = if encounter.time_fight_start_ms > 0 {
-        Some(
-            encounter
-                .time_fight_start_ms
-                .min(i64::MAX as u128) as i64,
-        )
+        Some(encounter.time_fight_start_ms.min(i64::MAX as u128) as i64)
     } else {
         None
     };
 
     let now_ms = {
-        let last_packet_ms = encounter
-            .time_last_combat_packet_ms
-            .min(i64::MAX as u128) as i64;
+        let last_packet_ms = encounter.time_last_combat_packet_ms.min(i64::MAX as u128) as i64;
         if last_packet_ms > 0 {
             last_packet_ms
         } else {
@@ -549,7 +543,8 @@ pub async fn get_live_buffs(
         }
     };
 
-    for ((entity_id, buff_id), events) in &encounter.buff_events {
+    let buff_events_lock = encounter.buff_events.read();
+    for ((entity_id, buff_id), events) in buff_events_lock.iter() {
         // Check if entity is a player
         let entity_name = if let Some(entity) = encounter.entity_uid_to_entity.get(entity_id) {
             if entity.entity_type != EEntityType::EntChar {
