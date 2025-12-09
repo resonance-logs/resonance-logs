@@ -198,6 +198,26 @@ async setWipeDetectionEnabled(enabled: boolean) : Promise<Result<null, string>> 
 }
 },
 /**
+ * Sets the event update rate in milliseconds.
+ * 
+ * # Arguments
+ * 
+ * * `rate_ms` - The update rate in milliseconds (clamped to 50-2000ms range).
+ * * `state_manager` - The state manager.
+ * 
+ * # Returns
+ * 
+ * * `Result<(), String>` - An empty result.
+ */
+async setEventUpdateRateMs(rateMs: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_event_update_rate_ms", { rateMs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Returns the current dungeon log snapshot for the frontend.
  */
 async getDungeonLog() : Promise<Result<DungeonLog, string>> {

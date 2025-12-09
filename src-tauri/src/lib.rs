@@ -54,6 +54,7 @@ pub fn run() {
             live::commands::set_boss_only_dps,
             live::commands::set_dungeon_segments_enabled,
             live::commands::set_wipe_detection_enabled,
+            live::commands::set_event_update_rate_ms,
             live::commands::get_dungeon_log,
             live::commands::get_live_buffs,
             database::commands::get_recent_encounters,

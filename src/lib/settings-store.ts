@@ -79,6 +79,7 @@ const DEFAULT_GENERAL_SETTINGS = {
   dungeonSegmentsEnabled: false,
   wipeDetection: true,
   useDummyData: false,
+  eventUpdateRateMs: 200,
 };
 
 export const DEFAULT_CLASS_COLORS: Record<string, string> = {

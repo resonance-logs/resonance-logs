@@ -183,6 +183,8 @@ pub struct AppState {
     pub dungeon_segments_enabled: bool,
     /// Configuration for attempt detection.
     pub attempt_config: AttemptConfig,
+    /// Event update rate in milliseconds (default: 200ms). Controls how often events are emitted to frontend.
+    pub event_update_rate_ms: u64,
 }
 
 impl AppState {
@@ -203,6 +205,7 @@ impl AppState {
             dungeon_log: dungeon_log::create_shared_log(),
             dungeon_segments_enabled: false,
             attempt_config: AttemptConfig::default(),
+            event_update_rate_ms: 200,
         }
     }
 

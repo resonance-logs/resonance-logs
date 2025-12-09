@@ -511,6 +511,33 @@ pub async fn set_wipe_detection_enabled(
     Ok(())
 }
 
+/// Sets the event update rate in milliseconds.
+///
+/// # Arguments
+///
+/// * `rate_ms` - The update rate in milliseconds (clamped to 50-2000ms range).
+/// * `state_manager` - The state manager.
+///
+/// # Returns
+///
+/// * `Result<(), String>` - An empty result.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_event_update_rate_ms(
+    rate_ms: u64,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    // Clamp to reasonable range: 50ms to 2000ms
+    let clamped = rate_ms.clamp(50, 2000);
+    state_manager
+        .with_state_mut(|state| {
+            state.event_update_rate_ms = clamped;
+        })
+        .await;
+    info!("Event update rate set to: {}ms", clamped);
+    Ok(())
+}
+
 /// Returns the current active buffs for all players in the encounter.
 #[tauri::command]
 #[specta::specta]

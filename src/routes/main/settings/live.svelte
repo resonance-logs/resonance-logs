@@ -2,8 +2,9 @@
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import SettingsSwitch from "./settings-switch.svelte";
   import SettingsSelect from "./settings-select.svelte";
+  import SettingsSlider from "./settings-slider.svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { setWipeDetectionEnabled } from "$lib/api";
+  import { setWipeDetectionEnabled, setEventUpdateRateMs } from "$lib/api";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
   import {
     liveDpsPlayerColumns,
@@ -27,6 +28,12 @@
   $effect(() => {
     if (_mounted) {
       void setWipeDetectionEnabled(SETTINGS.live.general.state.wipeDetection);
+    }
+  });
+
+  $effect(() => {
+    if (_mounted) {
+      void setEventUpdateRateMs(SETTINGS.live.general.state.eventUpdateRateMs);
     }
   });
 
@@ -156,6 +163,15 @@
             bind:checked={SETTINGS.live.general.state.wipeDetection}
             label="Wipe Detection"
             description="Automatically split attempts when the party wipes (all members dead)"
+          />
+          <SettingsSlider
+            bind:value={SETTINGS.live.general.state.eventUpdateRateMs}
+            label="Event Update Rate"
+            description="How often the live meter refreshes (50-2000ms). Lower = smoother but uses more CPU."
+            min={50}
+            max={2000}
+            step={50}
+            unit="ms"
           />
         </div>
       {/if}

@@ -26,9 +26,8 @@ pub async fn start(app_handle: AppHandle) {
         state.event_manager.initialize(app_handle.clone());
     }
 
-    // Throttling for events (emit at most every 200ms)
+    // Throttling for events - rate is read dynamically from state each iteration
     let mut last_emit_time = Instant::now();
-    let emit_throttle_duration = Duration::from_millis(200);
 
     // Heartbeat: ensure we emit events periodically even during idle periods
     // to prevent frontend from thinking the connection is dead
@@ -193,6 +192,12 @@ pub async fn start(app_handle: AppHandle) {
                 }
 
                 // Check if we should emit events (throttling)
+                // Read current event update rate from state dynamically
+                let emit_rate_ms = {
+                    let state = state_manager.state.read().await;
+                    state.event_update_rate_ms
+                };
+                let emit_throttle_duration = Duration::from_millis(emit_rate_ms);
                 let now = Instant::now();
                 if now.duration_since(last_emit_time) >= emit_throttle_duration {
                     last_emit_time = now;
@@ -204,7 +209,12 @@ pub async fn start(app_handle: AppHandle) {
                 break;
             }
             Err(_) => {
-                // Timeout occurred
+                // Timeout occurred - read rate dynamically
+                let emit_rate_ms = {
+                    let state = state_manager.state.read().await;
+                    state.event_update_rate_ms
+                };
+                let emit_throttle_duration = Duration::from_millis(emit_rate_ms);
                 let now = Instant::now();
                 if now.duration_since(last_emit_time) >= emit_throttle_duration {
                     last_emit_time = now;

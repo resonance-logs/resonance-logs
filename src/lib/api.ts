@@ -190,6 +190,9 @@ export const setBossOnlyDps = (enabled: boolean): Promise<void> => invoke("set_b
 export const setWipeDetectionEnabled = (enabled: boolean): Promise<void> =>
   invoke("set_wipe_detection_enabled", { enabled });
 
+export const setEventUpdateRateMs = (rateMs: number): Promise<void> =>
+  invoke("set_event_update_rate_ms", { rateMs });
+
 export const getDungeonLog = (): Promise<DungeonLog> => invoke("get_dungeon_log");
 
 export const getEncounterSegments = (encounterId: number): Promise<Segment[]> =>
