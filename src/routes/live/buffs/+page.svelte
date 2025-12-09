@@ -77,7 +77,10 @@
   function formatUptime(totalDurationMs: number) {
     if (fightElapsedMs <= 0) return 0;
     const effectiveDuration = Math.min(totalDurationMs, fightElapsedMs);
-    return Math.min(100, Math.round((effectiveDuration / fightElapsedMs) * 100));
+    return Math.min(
+      100,
+      Math.round((effectiveDuration / fightElapsedMs) * 100),
+    );
   }
 
   onMount(() => {
@@ -104,57 +107,85 @@
   });
 
   let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
-  let customThemeColors = $derived(SETTINGS.accessibility.state.customThemeColors);
+  let customThemeColors = $derived(
+    SETTINGS.accessibility.state.customThemeColors,
+  );
 </script>
 
-<div class="relative flex flex-col gap-2 overflow-hidden rounded-lg ring-1 ring-border/60 bg-card/30">
+<div
+  class="relative flex flex-col gap-2 overflow-hidden rounded-lg ring-1 ring-border/60 bg-card/30"
+>
   <table class="w-full border-collapse overflow-hidden">
     <thead>
-        <tr class="bg-popover/60" style="height: {tableSettings.tableHeaderHeight}px;">
-          <th class="px-3 py-1 text-left font-medium uppercase tracking-wide" style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};">Player</th>
-          <th class="px-3 py-1 text-left font-medium uppercase tracking-wide" style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};">Buffs</th>
-        </tr>
+      <tr
+        class="bg-popover/60"
+        style="height: {tableSettings.tableHeaderHeight}px;"
+      >
+        <th
+          class="px-3 py-1 text-left font-medium uppercase tracking-wide"
+          style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};"
+          >Player</th
+        >
+        <th
+          class="px-3 py-1 text-left font-medium uppercase tracking-wide"
+          style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};"
+          >Buffs</th
+        >
+      </tr>
     </thead>
     <tbody>
       {#each buffData as entity (entity.entityUid)}
-        <tr class="bg-background/40 hover:bg-muted/60 transition-colors border-b border-border/20 last:border-0">
-            <td class="px-3 py-2 align-top tabular-nums font-medium" style="color: {customThemeColors.tableTextColor}; width: 200px;">
-                {entity.entityName}
-            </td>
-            <td class="px-3 py-2 align-top">
-                <div class="flex flex-wrap gap-2">
-                    {#each entity.buffs as buff}
-                      {@const buffStacks = getBuffStacks(buff)}
-                      {#each buffStacks as stack}
-                        <div
-                          class="flex flex-col gap-0.5 bg-black/20 rounded px-2 py-1 text-xs min-w-[140px] max-w-[200px]"
-                          use:tooltip={() => buff.buffNameLong ?? `ID: ${buff.buffId}`}
-                        >
-                          <span class="font-semibold text-foreground truncate">
-                            {buffStacks.length > 1
-                              ? `${buff.buffName} (${stack.stackCount})`
-                              : buff.buffName}
-                          </span>
-                          <div class="flex items-center gap-1 text-muted-foreground text-[10px]">
-                            <span>{formatUptime(stack.totalDurationMs)}%</span>
-                            <span class="text-muted-foreground"></span>
-                            <span>{stack.casts} casts</span>
-                          </div>
-                        </div>
-                      {/each}
-                    {/each}
-                    {#if entity.buffs.length === 0}
-                        <span class="text-muted-foreground italic">No buffs recorded</span>
-                    {/if}
-                </div>
-            </td>
+        <tr
+          class="bg-background/40 hover:bg-muted/60 transition-colors border-b border-border/20 last:border-0"
+        >
+          <td
+            class="px-3 py-2 align-top tabular-nums font-medium"
+            style="color: {customThemeColors.tableTextColor}; width: 200px;"
+          >
+            {entity.entityName}
+          </td>
+          <td class="px-3 py-2 align-top">
+            <div class="flex flex-wrap gap-2">
+              {#each entity.buffs as buff}
+                {@const buffStacks = getBuffStacks(buff)}
+                {#each buffStacks as stack}
+                  <div
+                    class="flex flex-col gap-0.5 bg-black/20 rounded px-2 py-1 text-xs min-w-[140px] max-w-[200px]"
+                    use:tooltip={() =>
+                      buff.buffNameLong ?? `ID: ${buff.buffId}`}
+                  >
+                    <span class="font-semibold text-foreground truncate">
+                      {buffStacks.length > 1
+                        ? `${buff.buffName} (${stack.stackCount})`
+                        : buff.buffName}
+                    </span>
+                    <div
+                      class="flex items-center gap-1 text-muted-foreground text-[10px]"
+                    >
+                      <span>{formatUptime(stack.totalDurationMs)}%</span>
+                      <span>{stack.casts} casts</span>
+                    </div>
+                  </div>
+                {/each}
+              {/each}
+              {#if entity.buffs.length === 0}
+                <span class="text-muted-foreground italic"
+                  >No buffs recorded</span
+                >
+              {/if}
+            </div>
+          </td>
         </tr>
       {/each}
-       {#if buffData.length === 0}
-         <tr>
-             <td colspan="2" class="px-3 py-4 text-center text-muted-foreground italic">No buff data available</td>
-         </tr>
-       {/if}
+      {#if buffData.length === 0}
+        <tr>
+          <td
+            colspan="2"
+            class="px-3 py-4 text-center text-muted-foreground italic"
+            >No buff data available</td
+          >
+        </tr>
+      {/if}
     </tbody>
   </table>
 </div>
