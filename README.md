@@ -1,11 +1,14 @@
 # Resonance Logs - Desktop Application
 
-[![GitHub Downloads](https://img.shields.io/github/downloads/resonance-logs/resonance-logs/total?style=for-the-badge&color=%23ff9800)](https://github.com/resonance-logs/resonance-logs/releases) [![Discord](https://img.shields.io/discord/1439352907961995410?color=%235865F2&label=Discord&style=for-the-badge)](https://discord.gg/aPPHe8Uq8Q)
+[![GitHub Downloads](https://img.shields.io/github/downloads/resonance-logs/resonance-logs/total?style=for-the-badge&color=%23ff9800)](https://github.com/resonance-logs/resonance-logs/releases) 
+[![Discord](https://img.shields.io/discord/1439352907961995410?color=%235865F2&label=Discord&style=for-the-badge)](https://discord.gg/aPPHe8Uq8Q)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/resonancelogs)
 
-[![GitHub Release](https://img.shields.io/github/v/release/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/releases) [![GitHub License](https://img.shields.io/github/license/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/blob/main/LICENSE) [![GitHub Stars](https://img.shields.io/github/stars/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/stargazers)
+[![GitHub Release](https://img.shields.io/github/v/release/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/releases) 
+[![GitHub License](https://img.shields.io/github/license/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/blob/main/LICENSE) 
+[![GitHub Stars](https://img.shields.io/github/stars/resonance-logs/resonance-logs?style=flat-square)](https://github.com/resonance-logs/resonance-logs/stargazers)
 
 > **Website:** [bpsr.app](https://bpsr.app/) 
-> **Website Github:** [resonance-website](https://github.com/resonance-logs/resonance-website)
 
 ---
 
