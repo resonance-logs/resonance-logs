@@ -1643,7 +1643,8 @@ pub async fn perform_upload(
                 .await
             {
                 Ok(resp) => {
-                    if resp.status().is_success() {
+                    let status = resp.status();
+                    if status.is_success() {
                         // Parse response to get created encounter IDs
                         match resp.json::<UploadEncountersResponse>().await {
                             Ok(upload_resp) => {
@@ -1658,13 +1659,45 @@ pub async fn perform_upload(
                                 current_url_index += 1;
                             }
                         }
+                    } else if status.is_client_error() {
+                        // 4xx Client Error - this is a fatal rejection, do not retry
+                        let text = resp.text().await.unwrap_or_default();
+                        // Try to parse as JSON error response from server
+                        let error_msg = if let Ok(json_err) =
+                            serde_json::from_str::<serde_json::Value>(&text)
+                        {
+                            let msg = json_err
+                                .get("message")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("Unknown error");
+                            let details = json_err
+                                .get("details")
+                                .and_then(|v| v.as_array())
+                                .map(|arr| {
+                                    arr.iter()
+                                        .filter_map(|v| v.as_str())
+                                        .collect::<Vec<_>>()
+                                        .join(", ")
+                                })
+                                .unwrap_or_default();
+                            if details.is_empty() {
+                                format!("Upload rejected: {}", msg)
+                            } else {
+                                format!("Upload rejected: {} ({})", msg, details)
+                            }
+                        } else {
+                            format!("Upload rejected ({}): {}", status.as_u16(), text)
+                        };
+                        last_error = error_msg;
+                        // Break immediately - do not retry on client errors
+                        break;
                     } else {
+                        // 5xx Server Error - try next URL
                         let text = resp.text().await.unwrap_or_default();
                         last_error = format!(
                             "Server error from {}: {}",
                             base_urls[current_url_index], text
                         );
-                        // Try next URL for server errors
                         current_url_index += 1;
                     }
                 }
