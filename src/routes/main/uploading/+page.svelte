@@ -14,8 +14,6 @@
   import EyeIcon from "virtual:icons/lucide/eye";
   import EyeOffIcon from "virtual:icons/lucide/eye-off";
   import RotateCcwIcon from "virtual:icons/lucide/rotate-ccw";
-  import RotateCwIcon from "virtual:icons/lucide/rotate-cw";
-  import XIcon from "virtual:icons/lucide/x";
   import CheckIcon from "virtual:icons/lucide/check";
 
   import {
@@ -186,10 +184,6 @@
       setError(`Uploader not available yet: ${msg}`);
       busy = false;
     }
-  }
-
-  function clearKey() {
-    apiKeyInput = "";
   }
 
   $effect(() => {
@@ -448,14 +442,7 @@
             <span>Show</span>
           {/if}
         </button>
-        <button
-          class="inline-flex items-center gap-1 rounded-md border border-border bg-popover px-3 py-2 text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
-          title="Clear API key"
-          onclick={clearKey}
-        >
-          <XIcon class="h-4 w-4" />
-          <span>Clear</span>
-        </button>
+
         <button
           class="inline-flex items-center gap-1 rounded-md bg-primary text-primary-foreground px-3 py-2 hover:opacity-90 transition-colors"
           title="Save API key"
@@ -511,15 +498,7 @@
         <UploadIcon class="h-4 w-4" />
         <span>Start upload</span>
       </button>
-      <button
-        class="inline-flex items-center gap-2 rounded-md border border-border bg-popover text-muted-foreground px-4 py-2 hover:bg-muted/40 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        onclick={forceRecheck}
-        disabled={busy || !getApiKey()}
-        title="Force recheck all logs and player data with server and upload if valid"
-      >
-        <RotateCwIcon class="h-4 w-4" />
-        <span>Force Recheck</span>
-      </button>
+
       <button
         class="inline-flex items-center gap-2 rounded-md border border-border bg-popover text-muted-foreground px-4 py-2 hover:bg-muted/40 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         onclick={cancelUpload}
@@ -637,7 +616,18 @@
   <section
     class="rounded-lg border border-border/60 bg-card/40 p-6 space-y-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
   >
-    <h3 class="text-base font-semibold text-foreground">Player Data</h3>
+    <div class="flex items-center justify-between">
+      <h3 class="text-base font-semibold text-foreground">Player Data</h3>
+      <button
+        class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        onclick={forceRecheck}
+        disabled={busy || !getApiKey()}
+        title="Upload player data to server"
+      >
+        <UploadIcon class="h-4 w-4" />
+        <span>Upload</span>
+      </button>
+    </div>
     <div class="flex flex-col gap-2 text-sm text-muted-foreground">
       <div class="flex items-center gap-2">
         <span>Synced:</span>
