@@ -31,7 +31,12 @@ pub struct PlayerDataSyncState {
 }
 
 impl PlayerDataSyncState {
-    pub async fn sync_from_settings(&self, api_key: Option<String>, base_url: Option<String>, auto_upload: bool) {
+    pub async fn sync_from_settings(
+        &self,
+        api_key: Option<String>,
+        base_url: Option<String>,
+        auto_upload: bool,
+    ) {
         let sanitized_key = api_key.and_then(|k| {
             let trimmed = k.trim().to_string();
             if trimmed.is_empty() {
@@ -65,7 +70,9 @@ impl PlayerDataSyncState {
         // Read file in a blocking thread to avoid blocking the async runtime
         let settings = match tauri::async_runtime::spawn_blocking(move || {
             read_module_sync_settings_blocking(settings_path)
-        }).await {
+        })
+        .await
+        {
             Ok(s) => s,
             Err(_) => return,
         };
@@ -158,7 +165,7 @@ pub struct SyncPlayerDataResponse {
     pub ids: Vec<i64>,
 }
 
-fn resolve_base_urls(base_url: Option<String>) -> Vec<String> {
+fn resolve_base_urls(_base_url: Option<String>) -> Vec<String> {
     // Same logic as encounter uploader - use fixed primary+fallback
     vec![
         "https://api.bpsr.app/api/v1".to_string(),
@@ -185,15 +192,23 @@ fn load_all_player_data(
 
     Ok(rows
         .into_iter()
-        .map(|(player_id, last_seen_ms, char_serialize_json, profession_list_json, talent_node_ids_json)| {
-            SyncPlayerDataIn {
+        .map(
+            |(
                 player_id,
                 last_seen_ms,
                 char_serialize_json,
                 profession_list_json,
                 talent_node_ids_json,
-            }
-        })
+            )| {
+                SyncPlayerDataIn {
+                    player_id,
+                    last_seen_ms,
+                    char_serialize_json,
+                    profession_list_json,
+                    talent_node_ids_json,
+                }
+            },
+        )
         .collect())
 }
 
@@ -235,7 +250,10 @@ pub fn start_player_data_sync_task(app: AppHandle, state: PlayerDataSyncState) {
     });
 }
 
-async fn maybe_trigger_player_data_sync(app: AppHandle, state: PlayerDataSyncState) -> Result<(), String> {
+async fn maybe_trigger_player_data_sync(
+    app: AppHandle,
+    state: PlayerDataSyncState,
+) -> Result<(), String> {
     // Check if auto-upload is enabled (uses cached value)
     if !state.is_auto_upload_enabled().await {
         return Ok(());
@@ -261,7 +279,9 @@ async fn maybe_trigger_player_data_sync(app: AppHandle, state: PlayerDataSyncSta
 
         tauri::async_runtime::spawn(async move {
             let _guard = guard;
-            if let Err(e) = perform_player_data_sync(app_clone.clone(), api_key, base_urls, state_clone).await {
+            if let Err(e) =
+                perform_player_data_sync(app_clone.clone(), api_key, base_urls, state_clone).await
+            {
                 let _ = app_clone.emit("player-data-sync:error", json!({"message": e}));
             }
         });
@@ -284,7 +304,10 @@ pub async fn perform_player_data_sync(
     let player_data = load_all_player_data(&mut conn)?;
 
     if player_data.is_empty() {
-        let _ = app.emit("player-data-sync:completed", json!({"synced": 0, "total": 0}));
+        let _ = app.emit(
+            "player-data-sync:completed",
+            json!({"synced": 0, "total": 0}),
+        );
         return Ok(());
     }
 
@@ -425,6 +448,46 @@ pub async fn sync_player_data(
     });
 
     Ok(())
+}
+
+/// Response for player data times query
+#[derive(Debug, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerDataTimesResponse {
+    pub last_detected_ms: Option<i64>,
+    pub last_sync_ms: Option<i64>,
+}
+
+/// Get the most recent player data detection and sync times
+#[tauri::command]
+#[specta::specta]
+pub async fn get_player_data_times() -> Result<PlayerDataTimesResponse, String> {
+    // Get last detected time from the database (the most recent last_seen_ms in detailed_playerdata)
+    let last_detected_ms = tauri::async_runtime::spawn_blocking(|| {
+        let path = default_db_path();
+        let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
+            .map_err(|e| e.to_string())?;
+
+        use sch::detailed_playerdata::dsl as dpd;
+        let result: Result<Option<i64>, diesel::result::Error> = dpd::detailed_playerdata
+            .select(diesel::dsl::max(dpd::last_seen_ms))
+            .first(&mut conn);
+
+        match result {
+            Ok(ms) => Ok(ms),
+            Err(diesel::result::Error::NotFound) => Ok(None),
+            Err(e) => Err(e.to_string()),
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    // Note: last_sync_ms would need to be stored somewhere persistent
+    // For now, we return None as it's tracked in-memory by the frontend
+    Ok(PlayerDataTimesResponse {
+        last_detected_ms,
+        last_sync_ms: None,
+    })
 }
 
 #[cfg(test)]

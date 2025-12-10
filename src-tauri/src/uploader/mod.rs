@@ -1194,9 +1194,12 @@ fn build_encounter_payload(
 
         for (entity_id, buff_id, events_json) in buff_rows {
             // Only include player entities we know
-            let Some(name) = player_names.get(&entity_id) else { continue };
+            let Some(name) = player_names.get(&entity_id) else {
+                continue;
+            };
 
-            let events: Vec<StoredBuffEvent> = serde_json::from_str(&events_json).unwrap_or_default();
+            let events: Vec<StoredBuffEvent> =
+                serde_json::from_str(&events_json).unwrap_or_default();
             if events.is_empty() {
                 continue;
             }
@@ -1221,11 +1224,10 @@ fn build_encounter_payload(
                 continue;
             }
 
-            let (buff_name, buff_name_long) =
-                match crate::live::buff_names::lookup_full(buff_id) {
-                    Some((short, long)) => (Some(short), Some(long)),
-                    None => (None, None),
-                };
+            let (buff_name, buff_name_long) = match crate::live::buff_names::lookup_full(buff_id) {
+                Some((short, long)) => (Some(short), Some(long)),
+                None => (None, None),
+            };
 
             by_entity
                 .entry(entity_id)
@@ -1377,6 +1379,8 @@ pub async fn perform_upload(
     // we always fetch the first pending encounter (offset 0).
     let batch_size = 1_i64;
     let mut uploaded = 0_i64;
+    let mut succeeded = 0_i64;
+    let mut errored = 0_i64;
     let mut current_url_index = 0;
 
     // We loop until we have processed 'total' encounters or run out of pending ones.
@@ -1682,8 +1686,14 @@ pub async fn perform_upload(
         .map_err(|e| e.to_string())??;
 
         uploaded += rows.len() as i64;
+        succeeded += filtered_payloads.len() as i64;
         // Emit progress for UI to known windows and as a fallback via app.emit
-        let progress_payload: serde_json::Value = json!({"uploaded": uploaded, "total": total});
+        let progress_payload: serde_json::Value = json!({
+            "uploaded": uploaded,
+            "total": total,
+            "succeeded": succeeded,
+            "errored": errored
+        });
         if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
             let _ = w.emit("upload:progress", progress_payload.clone());
         }
@@ -1693,7 +1703,12 @@ pub async fn perform_upload(
         let _ = app.emit("upload:progress", progress_payload);
     }
 
-    let completed_payload: serde_json::Value = json!({"uploaded": uploaded, "total": total});
+    let completed_payload: serde_json::Value = json!({
+        "uploaded": uploaded,
+        "total": total,
+        "succeeded": succeeded,
+        "errored": errored
+    });
     if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
         let _ = w.emit("upload:completed", completed_payload.clone());
     }
@@ -1740,6 +1755,48 @@ pub async fn start_upload(
 pub fn cancel_upload_cmd() -> Result<(), String> {
     cancel_upload();
     Ok(())
+}
+
+/// Check if an API key is valid by calling the server's /auth/check endpoint.
+/// Returns Ok(true) if valid, Ok(false) if the server returns 401, or Err on network error.
+#[tauri::command]
+#[specta::specta]
+pub async fn check_api_key(api_key: String, base_url: Option<String>) -> Result<bool, String> {
+    let key = api_key.trim().to_string();
+    if key.is_empty() {
+        return Err("API key cannot be empty".to_string());
+    }
+
+    let base_urls = resolve_base_urls(base_url);
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    for base in &base_urls {
+        let url = format!("{}/auth/check", base);
+        log::debug!("checking API key against {}", url);
+
+        let resp = client.get(&url).header("X-Api-Key", &key).send().await;
+
+        match resp {
+            Ok(r) => {
+                if r.status().is_success() {
+                    return Ok(true);
+                } else if r.status() == reqwest::StatusCode::UNAUTHORIZED {
+                    return Ok(false);
+                }
+                // Other status codes: try next base URL
+                log::debug!("check_api_key got status {} from {}", r.status(), base);
+            }
+            Err(e) => {
+                log::debug!("check_api_key request to {} failed: {}", base, e);
+                // Try next base URL
+            }
+        }
+    }
+
+    Err("Could not reach the server to validate API key".to_string())
 }
 
 #[cfg(test)]
