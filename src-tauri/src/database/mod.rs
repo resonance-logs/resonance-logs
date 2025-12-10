@@ -403,14 +403,21 @@ pub enum DbTask {
 ///
 /// * `task` - The `DbTask` to enqueue.
 pub fn enqueue(task: DbTask) {
-    // fire-and-forget; drop if not initialized
+    // Fire-and-forget for normal cases, but don't silently drop critical tasks
+    // when the queue is saturated—block briefly to preserve encounter data.
     let guard = DB_SENDER.lock();
     if let Some(tx) = guard.as_ref() {
-        // Use try_send so producers don't block; if the queue is full we drop
-        // the task and log a warning to protect process memory.
-        if let Err(e) = tx.try_send(task) {
-            log::warn!("DB queue full or closed, dropping task: {}", e);
+        if let Err(e) = tx.try_send(task.clone()) {
+            log::warn!(
+                "DB queue full or closed ({}); retrying with blocking_send to avoid data loss",
+                e
+            );
+            if let Err(send_err) = tx.blocking_send(task) {
+                log::error!("Failed to enqueue DB task after retry: {}", send_err);
+            }
         }
+    } else {
+        log::warn!("DB queue not initialized; dropping database task");
     }
 }
 
