@@ -58,17 +58,18 @@ export const UPLOADING = {
   ),
 };
 
-let logIdCounter = 0;
+
 const MAX_API_LOGS = 50;
 
 export function addApiLog(type: ApiLogType, message: string) {
+  const logs = UPLOADING.progress.state.apiLogs ?? [];
+  const maxId = logs.reduce((max, log) => Math.max(max, log.id), 0);
   const entry: ApiLogEntry = {
-    id: ++logIdCounter,
+    id: maxId + 1,
     timestamp: Date.now(),
     type,
     message,
   };
-  const logs = UPLOADING.progress.state.apiLogs ?? [];
   // Add to front, limit to MAX_API_LOGS
   UPLOADING.progress.state.apiLogs = [entry, ...logs].slice(0, MAX_API_LOGS);
 }

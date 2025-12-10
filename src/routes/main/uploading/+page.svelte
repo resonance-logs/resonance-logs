@@ -165,6 +165,7 @@
     }
     busy = true;
     resetProgress();
+    addApiLog("info", "Force recheck requested…");
     try {
       const baseUrl = getModuleApiBaseUrl();
       // Start the upload recheck
@@ -173,7 +174,7 @@
       // Also manually request a player-data sync to ensure player build data is updated immediately
       try {
         // Set the recheck message up-front so it doesn't overwrite upload completion if upload finishes
-        infoMsg = "Recheck started… rechecking logs";
+        infoMsg = "Recheck started… checking logs & player data";
         await invoke("sync_player_data", { apiKey: key, baseUrl });
       } catch (err) {
         // Player data sync may not be available yet; don't block recheck, but surface a helpful message
@@ -298,6 +299,16 @@
       .then(safeAddUnsub);
 
     // Player data sync events
+    app
+      .listen<{ total?: number }>("player-data-sync:started", (e) => {
+        if (isDestroyed) return;
+        addApiLog(
+          "info",
+          `Player data sync started: ${e.payload?.total ?? 0} potential entries`,
+        );
+      })
+      .then(safeAddUnsub);
+
     app
       .listen<{ synced?: number; total?: number }>(
         "player-data-sync:completed",

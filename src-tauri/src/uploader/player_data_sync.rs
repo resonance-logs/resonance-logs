@@ -438,7 +438,7 @@ pub async fn sync_player_data(
         .ok_or_else(|| "A player data sync is already in progress".to_string())?;
 
     let app_cloned = app.clone();
-    let state = PlayerDataSyncState::default();
+    let state = (*app.state::<PlayerDataSyncState>()).clone();
 
     tauri::async_runtime::spawn(async move {
         let _guard = guard;
