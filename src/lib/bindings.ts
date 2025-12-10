@@ -541,11 +541,34 @@ async cancelUploadCmd() : Promise<Result<null, string>> {
 }
 },
 /**
+ * Check if an API key is valid by calling the server's /auth/check endpoint.
+ * Returns Ok(true) if valid, Ok(false) if the server returns 401, or Err on network error.
+ */
+async checkApiKey(apiKey: string, baseUrl: string | null) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_api_key", { apiKey, baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Manual trigger for player data sync (can be called from Tauri command)
  */
 async syncPlayerData(apiKey: string, baseUrl: string | null) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("sync_player_data", { apiKey, baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the most recent player data detection and sync times
+ */
+async getPlayerDataTimes() : Promise<Result<PlayerDataTimesResponse, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_player_data_times") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -963,6 +986,10 @@ entityName: string;
  * List of buffs tracked for this entity.
  */
 buffs: BuffInfoDto[] }
+/**
+ * Response for player data times query
+ */
+export type PlayerDataTimesResponse = { lastDetectedMs: number | null; lastSyncMs: number | null }
 /**
  * Information about a player.
  */

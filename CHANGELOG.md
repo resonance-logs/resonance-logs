@@ -1,7 +1,7 @@
-# Changelog v0.18.2
+# Changelog v0.18.3
 
 ## Logs
 
-- Fixed no such column bug on history page
-- Fixed the freezing bug (probably)
-- Fixed bullet point not displaying correctly on buffs page
+- Revamped the uploading page with a better UI and better instructions
+- Added a configurable toggle for how fast the UI updates lower number = more fluidity but more cpu usage
+- Added diagnostic logging for DB related saving problems (related to history page bug)

@@ -108,15 +108,22 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
     let manager = ConnectionManager::<SqliteConnection>::new(db_path.to_string_lossy().to_string());
     // Increase connection pool size to reduce contention for DB connections
     // under concurrent UI reads + writer work. Tuned to 8 as a reasonable default (probably)
-    let pool = Pool::builder()
-        .max_size(8)
-        .build(manager)
-        .map_err(|e| DbInitError::Pool(e.to_string()))?;
+    let pool = Pool::builder().max_size(8).build(manager).map_err(|e| {
+        let err_msg = format!("DB pool build error: {}", e);
+        log::error!("{}", err_msg);
+        eprintln!("{}", err_msg);
+        DbInitError::Pool(e.to_string())
+    })?;
 
     // Run migrations once
     {
         let mut conn = pool.get().map_err(|e| DbInitError::Pool(e.to_string()))?;
-        run_migrations(&mut conn).map_err(|e| DbInitError::Migration(e))?;
+        run_migrations(&mut conn).map_err(|e| {
+            let err_msg = format!("DB migration error: {}", e);
+            log::error!("{}", err_msg);
+            eprintln!("{}", err_msg);
+            DbInitError::Migration(e)
+        })?;
         // Pragmas for better concurrency/perf
         diesel::sql_query("PRAGMA journal_mode=WAL;")
             .execute(&mut conn)
@@ -417,7 +424,14 @@ pub fn enqueue(task: DbTask) {
             }
         }
     } else {
-        log::warn!("DB queue not initialized; dropping database task");
+        // Use an atomic flag to prevent spamming the log
+        static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+        if !WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+            log::warn!(
+                "DB queue not initialized; dropping database task (suppressing further warnings)"
+            );
+            eprintln!("DB queue not initialized; dropping database task");
+        }
     }
 }
 
