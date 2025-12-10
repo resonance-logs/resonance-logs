@@ -386,8 +386,25 @@ pub struct UploadEncountersResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DuplicateCandidate {
+    pub source_hash: String,
+    pub started_at_ms: i64,
+    pub scene_id: Option<i32>,
+    pub scene_name: Option<String>,
+    pub bosses: Vec<String>,
+    pub player_ids: Vec<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CheckDuplicatesRequest {
+    /// Legacy: array of source hashes for exact matching
+    #[serde(default)]
     pub hashes: Vec<String>,
+    /// New: candidates with full metadata for party fingerprint + time window matching
+    #[serde(default)]
+    pub candidates: Vec<DuplicateCandidate>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -395,6 +412,8 @@ pub struct CheckDuplicatesRequest {
 pub struct DuplicateInfo {
     pub hash: String,
     pub encounter_id: i64,
+    #[serde(default)]
+    pub match_type: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1447,6 +1466,38 @@ pub async fn perform_upload(
         }
 
         // Preflight check: ask server which encounters are duplicates
+        // Build candidates with full metadata for party-based matching
+        let candidates: Vec<DuplicateCandidate> = payloads
+            .iter()
+            .filter_map(|e| {
+                let source_hash = e.payload.source_hash.clone()?;
+                // Extract boss names
+                let bosses: Vec<String> = e
+                    .payload
+                    .encounter_bosses
+                    .iter()
+                    .map(|b| b.monster_name.clone())
+                    .collect();
+                // Extract player IDs
+                let player_ids: Vec<i64> = e
+                    .payload
+                    .actor_encounter_stats
+                    .iter()
+                    .filter(|s| s.is_player)
+                    .map(|s| s.actor_id)
+                    .collect();
+                Some(DuplicateCandidate {
+                    source_hash,
+                    started_at_ms: e.payload.started_at_ms,
+                    scene_id: e.payload.scene_id,
+                    scene_name: e.payload.scene_name.clone(),
+                    bosses,
+                    player_ids,
+                })
+            })
+            .collect();
+
+        // Also collect legacy hashes for backward compatibility
         let hashes: Vec<String> = payloads
             .iter()
             .filter_map(|e| e.payload.source_hash.clone())
@@ -1456,13 +1507,13 @@ pub async fn perform_upload(
         let mut duplicate_ids: Vec<i32> = Vec::new();
         let mut duplicate_updates: Vec<(i32, i64)> = Vec::new(); // (local_id, remote_id)
 
-        if !hashes.is_empty() {
-            // Perform preflight duplicate check
+        if !candidates.is_empty() || !hashes.is_empty() {
+            // Perform preflight duplicate check with candidates
             let check_url = format!(
                 "{}/upload/check",
                 base_urls[current_url_index].trim_end_matches('/')
             );
-            let check_body = CheckDuplicatesRequest { hashes };
+            let check_body = CheckDuplicatesRequest { hashes, candidates };
 
             match client
                 .post(&check_url)
