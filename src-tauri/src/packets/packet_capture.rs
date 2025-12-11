@@ -50,7 +50,7 @@ impl WinDivertSource {
         )
         .map_err(|e| format!("Failed to initialize WinDivert: {}", e))?;
 
-        info!("WinDivert handle opened!");
+        info!(target: "app::capture", "WinDivert handle opened");
 
         Ok(Self {
             handle,
@@ -75,7 +75,7 @@ struct NpcapSource {
 impl NpcapSource {
     fn new(device: &str) -> Result<Self, String> {
         let capture = NpcapCapture::new(device)?;
-        info!("Npcap handle opened for device: {}", device);
+        info!(target: "app::capture", "Npcap handle opened device={}", device);
         Ok(Self { capture })
     }
 
@@ -141,12 +141,18 @@ pub fn start_capture(
     RESTART_SENDER.set(restart_sender.clone()).ok();
 
     match &method {
-        CaptureMethod::WinDivert => info!("Starting packet capture with WinDivert"),
-        CaptureMethod::Npcap(dev) => info!("Starting packet capture with Npcap on device '{}'", dev),
+        CaptureMethod::WinDivert => {
+            info!(target: "app::capture", "capture_start method=WinDivert")
+        }
+        CaptureMethod::Npcap(dev) => {
+            info!(target: "app::capture", "capture_start method=Npcap device={}", dev)
+        }
     }
 
     // Use std::thread::spawn to avoid blocking the async runtime with WinDivert recv
     std::thread::spawn(move || {
+        let capture_span = tracing::info_span!(target: "app::capture", "capture_thread", method = ?method);
+        let _capture_guard = capture_span.enter();
         loop {
             read_packets(&packet_sender, &mut restart_receiver, method.clone());
             // Wait for restart signal
@@ -167,18 +173,26 @@ fn read_packets(
     restart_receiver: &mut watch::Receiver<bool>,
     method: CaptureMethod,
 ) {
+    let read_span = tracing::info_span!(target: "app::capture", "capture_read_loop", method = ?method);
+    let _read_guard = read_span.enter();
+
     let mut source: Box<dyn PacketSource> = match method {
         CaptureMethod::WinDivert => match WinDivertSource::new() {
             Ok(s) => Box::new(s),
             Err(e) => {
-                error!("{}", e);
+                error!(target: "app::capture", "capture_source_init_failed method=WinDivert err={}", e);
                 return;
             }
         },
         CaptureMethod::Npcap(device) => match NpcapSource::new(&device) {
             Ok(s) => Box::new(s),
             Err(e) => {
-                error!("Failed to initialize Npcap: {}", e);
+                error!(
+                    target: "app::capture",
+                    "capture_source_init_failed method=Npcap device={} err={}",
+                    device,
+                    e
+                );
                 return;
             }
         },
@@ -193,7 +207,7 @@ fn read_packets(
             Ok(Some(data)) => data,
             Ok(None) => continue, // Timeout or ignored packet
             Err(e) => {
-                error!("Packet capture error: {}", e);
+                error!(target: "app::capture", "capture_error err={}", e);
                 break; // Exit loop on error? Or retry?
             }
         };
@@ -269,6 +283,7 @@ fn read_packets(
                                                 && tcp_frag[5..5 + SIGNATURE.len()] == SIGNATURE
                                             {
                                                 info!(
+                                                    target: "app::capture",
                                                     "Got Scene Server Address (by change): {curr_server}"
                                                 );
                                                 known_server = Some(curr_server);
@@ -318,7 +333,10 @@ fn read_packets(
                     && tcp_payload[0..10] == SIGNATURE_1
                     && tcp_payload[14..20] == SIGNATURE_2
                 {
-                    info!("Got Scene Server Address by Login Return Packet: {curr_server}");
+                    info!(
+                        target: "app::capture",
+                        "Got Scene Server Address by Login Return Packet: {curr_server}"
+                    );
                     known_server = Some(curr_server);
                     let payload_len = u32::try_from(tcp_payload.len()).unwrap_or(u32::MAX);
                     let seq_end = tcp_packet.sequence_number().wrapping_add(payload_len);
@@ -338,7 +356,10 @@ fn read_packets(
         let payload_len = payload.len();
 
         if tcp_packet.syn() {
-            info!("SYN observed for {curr_server}; resetting TCP reassembler state");
+            info!(
+                target: "app::capture",
+                "SYN observed for {curr_server}; resetting TCP reassembler state"
+            );
             reset_stream(
                 &mut tcp_reassembler,
                 &mut reassembler,
@@ -366,6 +387,7 @@ fn read_packets(
                 let backwards = expected.wrapping_sub(sequence_number);
                 if backwards > MAX_BACKTRACK_BYTES {
                     warn!(
+                        target: "app::capture",
                         "Sequence regression detected for {curr_server}: expected {expected}, \
                         got {sequence_number} (backwards {backwards} bytes). Resetting stream"
                     );
@@ -397,6 +419,7 @@ fn read_packets(
 }
 
 // Function to send restart signal from another thread/task
+#[allow(dead_code)]
 pub fn request_restart() {
     if let Some(sender) = RESTART_SENDER.get() {
         let _ = sender.send(true);

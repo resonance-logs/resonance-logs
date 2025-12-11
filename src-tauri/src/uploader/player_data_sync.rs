@@ -226,6 +226,9 @@ fn count_player_data() -> Result<i64, String> {
 /// Start the automatic player data sync background task
 pub fn start_player_data_sync_task(app: AppHandle, state: PlayerDataSyncState) {
     tauri::async_runtime::spawn(async move {
+        let task_span = tracing::info_span!(target: "app::sync", "player_data_sync_task");
+        let _task_guard = task_span.enter();
+
         // Load settings once at startup
         state.reload_from_file(&app).await;
 
@@ -242,7 +245,7 @@ pub fn start_player_data_sync_task(app: AppHandle, state: PlayerDataSyncState) {
             }
 
             if let Err(err) = maybe_trigger_player_data_sync(app.clone(), state.clone()).await {
-                log::warn!("player data sync check failed: {}", err);
+                log::warn!(target: "app::sync", "player data sync check failed: {}", err);
             }
         }
     });
@@ -270,6 +273,8 @@ async fn maybe_trigger_player_data_sync(
         return Ok(()); // No player data to sync
     }
 
+    log::info!(target: "app::sync", "player data sync: pending={} starting", pending);
+
     if let Some(guard) = PlayerDataSyncGuard::try_acquire() {
         let base_urls = resolve_base_urls(state.current_base_url().await);
         let app_clone = app.clone();
@@ -295,6 +300,10 @@ pub async fn perform_player_data_sync(
     base_urls: Vec<String>,
     state: PlayerDataSyncState,
 ) -> Result<(), String> {
+    let started = std::time::Instant::now();
+    let sync_span = tracing::info_span!(target: "app::sync", "player_data_sync_run", base_urls = base_urls.len());
+    let _sync_guard = sync_span.enter();
+
     let mut conn = establish_connection().map_err(|e| e.to_string())?;
 
     let player_data = load_all_player_data(&mut conn)?;
@@ -304,10 +313,12 @@ pub async fn perform_player_data_sync(
             "player-data-sync:completed",
             json!({"synced": 0, "total": 0}),
         );
+        log::info!(target: "app::sync", "player data sync done total=0 elapsed_ms={}", started.elapsed().as_millis());
         return Ok(());
     }
 
     let total = player_data.len();
+    log::info!(target: "app::sync", "player data sync started total={}", total);
 
     // Emit started event
     let started_payload = json!({"total": total});
@@ -385,6 +396,7 @@ pub async fn perform_player_data_sync(
             let _ = w.emit("player-data-sync:error", err_payload.clone());
         }
         let _ = app.emit("player-data-sync:error", err_payload);
+        log::warn!(target: "app::sync", "player data sync failed total={} elapsed_ms={} err={}", total, started.elapsed().as_millis(), last_error);
         return Err(last_error);
     }
 
@@ -409,8 +421,11 @@ pub async fn perform_player_data_sync(
     let _ = app.emit("player-data-sync:completed", completed_payload);
 
     log::info!(
-        "Player data sync completed: {} entries synced",
-        response_data.map(|r| r.synced).unwrap_or(0)
+        target: "app::sync",
+        "player data sync completed synced={} total={} elapsed_ms={}",
+        response_data.as_ref().map(|r| r.synced).unwrap_or(0),
+        total,
+        started.elapsed().as_millis()
     );
 
     Ok(())

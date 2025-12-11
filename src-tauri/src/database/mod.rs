@@ -126,7 +126,12 @@ pub fn ensure_parent_dir(path: &Path) -> std::io::Result<()> {
 ///
 /// * `Result<(), DbInitError>` - An empty result indicating success or failure.
 pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
+    let db_init_span = tracing::info_span!(target: "app::db", "db_init");
+    let _db_init_guard = db_init_span.enter();
+
     let db_path = default_db_path();
+    log::info!(target: "app::db", "db_path={}", db_path.display());
+
     if let Err(e) = ensure_parent_dir(&db_path) {
         return Err(DbInitError::Pool(format!("failed to create dir: {e}")));
     }
@@ -136,20 +141,25 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
     // under concurrent UI reads + writer work. Tuned to 8 as a reasonable default (probably)
     let pool = Pool::builder().max_size(8).build(manager).map_err(|e| {
         let err_msg = format!("DB pool build error: {}", e);
-        log::error!("{}", err_msg);
-        eprintln!("{}", err_msg);
+        log::error!(target: "app::db", "{}", err_msg);
         DbInitError::Pool(e.to_string())
     })?;
 
     // Run migrations once
     {
         let mut conn = pool.get().map_err(|e| DbInitError::Pool(e.to_string()))?;
-        run_migrations(&mut conn).map_err(|e| {
+        let mig_started = Instant::now();
+        let applied = run_migrations(&mut conn).map_err(|e| {
             let err_msg = format!("DB migration error: {}", e);
-            log::error!("{}", err_msg);
-            eprintln!("{}", err_msg);
+            log::error!(target: "app::db", "{}", err_msg);
             DbInitError::Migration(e)
         })?;
+        log::info!(
+            target: "app::db",
+            "migrations_applied count={} elapsed_ms={}",
+            applied,
+            mig_started.elapsed().as_millis()
+        );
 
         // added busy timeout
         diesel::sql_query("PRAGMA busy_timeout=5000;")
@@ -176,6 +186,9 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
     }
 
     std::thread::spawn(move || {
+        let writer_span = tracing::info_span!(target: "app::db", "db_writer_thread");
+        let _writer_guard = writer_span.enter();
+
         let mut current_encounter_id: Option<i32> = None;
         let mut current_encounter_start_ms: Option<i64> = None;
         loop {
@@ -209,7 +222,7 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
             let mut conn = match pool.get() {
                 Ok(c) => c,
                 Err(e) => {
-                    log::error!("DB get conn: {e}");
+                    log::error!(target: "app::db", "DB get conn: {e}");
                     continue;
                 }
             };
@@ -230,7 +243,7 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                         &mut current_encounter_start_ms,
                     )
                     .map_err(|e| {
-                        log::error!("DB task in batch failed: {}", e);
+                        log::error!(target: "app::db", "DB task in batch failed: {}", e);
                         diesel::result::Error::RollbackTransaction
                     })?;
                 }
@@ -239,6 +252,7 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 
             if let Err(e) = batch_result {
                 log::error!(
+                    target: "app::db",
                     "Batch transaction failed: {:?}. Falling back to per-task execution.",
                     e
                 );
@@ -273,7 +287,11 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                         &mut current_encounter_id,
                         &mut current_encounter_start_ms,
                     ) {
-                        log::error!("DB task error (fallback - BeginEncounter): {}", e);
+                        log::error!(
+                            target: "app::db",
+                            "DB task error (fallback - BeginEncounter): {}",
+                            e
+                        );
                     }
                 }
 
@@ -285,7 +303,7 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                         &mut current_encounter_id,
                         &mut current_encounter_start_ms,
                     ) {
-                        log::error!("DB task error (fallback): {}", e);
+                        log::error!(target: "app::db", "DB task error (fallback): {}", e);
                     }
                 }
             }
@@ -304,9 +322,9 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 /// # Returns
 ///
 /// * `Result<(), String>` - An empty result indicating success or failure.
-fn run_migrations(conn: &mut SqliteConnection) -> Result<(), String> {
+fn run_migrations(conn: &mut SqliteConnection) -> Result<usize, String> {
     conn.run_pending_migrations(MIGRATIONS)
-        .map(|_| ())
+        .map(|applied| applied.len())
         .map_err(|e| e.to_string())
 }
 
@@ -1477,7 +1495,7 @@ mod tests {
         use diesel::sqlite::SqliteConnection;
         let mut conn = SqliteConnection::establish(":memory:").expect("in-memory sqlite");
         // Apply migrations
-        run_migrations(&mut conn).expect("migrations");
+        let _ = run_migrations(&mut conn).expect("migrations");
         // Pragmas similar to production
         diesel::sql_query("PRAGMA foreign_keys=ON;")
             .execute(&mut conn)

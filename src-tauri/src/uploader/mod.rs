@@ -456,6 +456,9 @@ fn pending_encounter_count() -> Result<i64, String> {
 
 pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
     tauri::async_runtime::spawn(async move {
+        let task_span = tracing::info_span!(target: "app::uploader", "auto_upload_task");
+        let _task_guard = task_span.enter();
+
         // Load settings once at startup
         state.reload_from_file(&app).await;
 
@@ -471,7 +474,7 @@ pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
             }
 
             if let Err(err) = maybe_trigger_auto_upload(app.clone(), state.clone()).await {
-                log::warn!("auto upload check failed: {}", err);
+                log::warn!(target: "app::uploader", "auto upload check failed: {}", err);
             }
         }
     });
@@ -497,6 +500,7 @@ async fn maybe_trigger_auto_upload(app: AppHandle, state: AutoUploadState) -> Re
     }
 
     log::info!(
+        target: "app::uploader",
         "auto upload: found {} pending encounter(s), starting upload",
         pending
     );
@@ -1360,6 +1364,14 @@ pub async fn perform_upload(
     api_key: String,
     base_urls: Vec<String>,
 ) -> Result<(), String> {
+    let started = std::time::Instant::now();
+    let upload_span = tracing::info_span!(
+        target: "app::uploader",
+        "upload_run",
+        base_urls = base_urls.len()
+    );
+    let _upload_guard = upload_span.enter();
+
     CANCEL_FLAG.store(false, Ordering::SeqCst);
 
     // BLOCKING: Count total
@@ -1380,9 +1392,12 @@ pub async fn perform_upload(
     }
     let _ = app.emit("upload:started", started_payload);
     if total == 0 {
+        log::info!(target: "app::uploader", "upload_done total=0 uploaded=0 elapsed_ms={}", started.elapsed().as_millis());
         let _ = app.emit("upload:completed", json!({"uploaded": 0, "total": 0}));
         return Ok(());
     }
+
+    log::info!(target: "app::uploader", "upload_started total={}", total);
 
     let client = Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -1412,9 +1427,20 @@ pub async fn perform_upload(
                 let _ = w.emit("upload:error", err_payload.clone());
             }
             let _ = app.emit("upload:error", err_payload);
+            log::warn!(target: "app::uploader", "upload_cancelled uploaded={} total={} elapsed_ms={}", uploaded, total, started.elapsed().as_millis());
             return Ok(());
         }
 
+
+    log::info!(
+        target: "app::uploader",
+        "upload_done uploaded={} total={} succeeded={} errored={} elapsed_ms={}",
+        uploaded,
+        total,
+        succeeded,
+        errored,
+        started.elapsed().as_millis()
+    );
         // BLOCKING: Load batch (always offset 0)
         let api_key_for_hash = api_key.clone();
         let (rows, payloads, skipped_policy_ids) =

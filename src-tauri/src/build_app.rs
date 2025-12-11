@@ -12,7 +12,7 @@ pub fn build_and_run(builder: TauriBuilder<tauri::Wry>) {
         .run(|_app_handle, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
                 stop_windivert();
-                info!("App is closing! Cleaning up resources...");
+                info!(target: "app::startup", "App is closing! Cleaning up resources...");
             }
         });
 }

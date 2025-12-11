@@ -11,6 +11,21 @@
             toast.error("Failed to open log directory: " + e);
         }
     }
+
+    async function createDiagnosticsBundle() {
+        try {
+            const path = await invoke<string>("create_diagnostics_bundle");
+            try {
+                await navigator.clipboard.writeText(path);
+                toast.success("Diagnostics bundle created (path copied): " + path);
+            } catch {
+                toast.success("Diagnostics bundle created: " + path);
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to create diagnostics bundle: " + e);
+        }
+    }
 </script>
 
 <div class="space-y-3">
@@ -29,6 +44,16 @@
                 </div>
                 <Button variant="outline" onclick={openLogDir}>
                     Open Logs
+                </Button>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between">
+                <div class="text-sm text-muted-foreground">
+                    <div class="font-medium text-foreground">Diagnostics Bundle</div>
+                    Create a ZIP with recent logs + settings (redacted) for support
+                </div>
+                <Button variant="outline" onclick={createDiagnosticsBundle}>
+                    Create Bundle
                 </Button>
             </div>
         </div>

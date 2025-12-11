@@ -8,13 +8,12 @@ use specta_typescript::{BigIntExportBehavior, Typescript};
 #[cfg(windows)]
 use std::process::{Command, Stdio};
 
-use chrono_tz;
-#[cfg(not(debug_assertions))]
-use log::LevelFilter;
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+
 use tauri::menu::MenuBuilder;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{LogicalPosition, LogicalSize, Manager, Position, Size, Window, WindowEvent};
-use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 // NOTE: the updater extension trait is imported next to the helper that uses it
 // and is cfg-gated to avoid unused-import warnings on builds that don't enable
@@ -29,6 +28,12 @@ use serde_json::json;
 pub const WINDOW_LIVE_LABEL: &str = "live";
 /// The label for the main window.
 pub const WINDOW_MAIN_LABEL: &str = "main";
+
+/// Keeps the non-blocking tracing appender worker alive for the lifetime of the process.
+/// If this guard is dropped, file logging may stop flushing.
+static LOGGING_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = OnceLock::new();
+/// Ensures we only initialize global logging once.
+static LOGGING_INIT: OnceLock<Result<(), String>> = OnceLock::new();
 
 /// The main entry point for the application logic.
 ///
@@ -81,6 +86,7 @@ pub fn run() {
             packets::npcap::get_network_devices,
             packets::npcap::check_npcap_status,
             debug_commands::open_log_dir,
+            debug_commands::create_diagnostics_bundle,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
@@ -97,7 +103,26 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(builder.invoke_handler())
         .setup(|app| {
-            info!("starting app v{}", app.package_info().version);
+            let app_handle = app.handle().clone();
+
+            // Setup logs as early as possible so we don't lose startup context.
+            // If logging fails, fall back to stderr so we still get a breadcrumb.
+            if let Err(e) = setup_logs(&app_handle) {
+                eprintln!("Failed to setup logs: {e}");
+            }
+
+            // Attach key-value-ish context to the setup flow via a span.
+            // Existing log::info!/warn! calls will flow into tracing via LogTracer.
+            let setup_span = tracing::info_span!(
+                target: "app::startup",
+                "app_setup",
+                version = %app.package_info().version,
+                os = %std::env::consts::OS,
+                arch = %std::env::consts::ARCH
+            );
+            let _setup_guard = setup_span.enter();
+
+            log::info!(target: "app::startup", "starting app v{}", app.package_info().version);
             stop_windivert();
             remove_windivert();
 
@@ -125,13 +150,6 @@ pub fn run() {
                 });
             }
 
-            let app_handle = app.handle().clone();
-
-            // Setup logs
-            if let Err(e) = setup_logs(&app_handle) {
-                warn!("Failed to setup logs: {}", e);
-            }
-
             // Install panic hook to create a crash dump file when the app panics.
             // This is installed after logs so we can use the configured logger.
             let hook_app_handle = app_handle.clone();
@@ -147,31 +165,31 @@ pub fn run() {
                 dump_content.push_str(&format!("Panic occurred: {}\n", info));
                 dump_content.push_str(&format!("Backtrace:\n{:?}\n", backtrace));
                 dump_content.push_str(&format!("OS: {} {}\n", std::env::consts::OS, std::env::consts::ARCH));
-                // Prefer to write to the app-specific log directory; fall back to a standard OS directory.
-                let path_targets = [
-                    // Try app-specific data dir first (by vendor settings via dirs crate)
-                    dirs::data_local_dir().map(|d| d.join("resonance-logs").join("logs")),
-                    // Fallback to current working directory
-                    std::env::current_dir().ok().map(|d| d.join("logs")),
-                ];
-                let mut written = false;
-                for target in path_targets.into_iter().flatten() {
-                    if let Err(e) = std::fs::create_dir_all(&target) {
-                        warn!("Failed to create dump dir {}: {}", target.display(), e);
-                        continue;
-                    }
-                    let file_path = target.join(&file_name);
-                    match std::fs::write(&file_path, &dump_content) {
-                        Ok(_) => {
-                            warn!("Wrote crash dump to {}", file_path.display());
-                            written = true;
-                            break;
+                let log_dir = hook_app_handle
+                    .path()
+                    .app_log_dir()
+                    .ok();
+
+                if let Some(log_dir) = log_dir {
+                    if let Err(e) = std::fs::create_dir_all(&log_dir) {
+                        warn!(
+                            "panic: failed to create log dir {}: {}",
+                            log_dir.display(),
+                            e
+                        );
+                    } else {
+                        let file_path = log_dir.join(&file_name);
+                        match std::fs::write(&file_path, &dump_content) {
+                            Ok(_) => warn!("panic: wrote crash dump to {}", file_path.display()),
+                            Err(e) => warn!(
+                                "panic: failed to write crash dump to {}: {}",
+                                file_path.display(),
+                                e
+                            ),
                         }
-                        Err(e) => warn!("Failed to write crash dump to {}: {}", file_path.display(), e),
                     }
-                }
-                if !written {
-                    warn!("Failed to write crash dump to any known location; printing dump content to logs instead");
+                } else {
+                    warn!("panic: failed to resolve app_log_dir; printing dump content to logs");
                     warn!("Crash dump:\n{}", dump_content);
                 }
                 // Attempt a clean up of resources (driver) before handing off to default handler.
@@ -182,7 +200,7 @@ pub fn run() {
 
             // Initialize database and background writer
             if let Err(e) = crate::database::init_and_spawn_writer() {
-                warn!("Failed to initialize database: {}", e);
+                warn!(target: "app::db", "Failed to initialize database: {}", e);
             }
 
             // Setup tray icon
@@ -301,11 +319,24 @@ mod debug_commands {
 
         Ok(())
     }
+
+    /// Creates a diagnostics ZIP bundle in the app log directory and returns the path.
+    ///
+    /// The bundle includes:
+    /// - the most recent log files
+    /// - any crash dumps in the log directory
+    /// - selected settings files with secrets redacted
+    #[tauri::command]
+    #[specta::specta]
+    pub fn create_diagnostics_bundle(app_handle: tauri::AppHandle) -> Result<String, String> {
+        crate::create_diagnostics_bundle(&app_handle)
+    }
 }
 
 /// Starts the WinDivert driver.
 ///
 /// This function executes a shell command to create and start the WinDivert driver service.
+#[allow(dead_code)]
 fn start_windivert() {
     // Run the command silently (no console window) on Windows. On other platforms, just
     // redirect stdio to null so nothing is printed.
@@ -324,7 +355,7 @@ fn start_windivert() {
     if status.is_ok_and(|status| status.success()) {
         info!("started driver");
     } else {
-        warn!("could not execute command to stop driver");
+        warn!("could not execute command to start driver");
     }
 }
 
@@ -442,41 +473,268 @@ async fn check_for_updates(app: tauri::AppHandle) -> tauri_plugin_updater::Resul
 /// # Returns
 ///
 /// * `tauri::Result<()>` - An empty result indicating success or failure.
-fn setup_logs(app: &tauri::AppHandle) -> tauri::Result<()> {
-    let app_version = &app.package_info().version;
-    let pst_time = chrono::Utc::now()
-        .with_timezone(&chrono_tz::America::Los_Angeles)
-        .format("%m-%d-%Y %H_%M_%S")
-        .to_string();
-    let log_file_name = format!("log v{app_version} {pst_time} PST",);
+fn setup_logs(app: &tauri::AppHandle) -> Result<(), String> {
+    let res = LOGGING_INIT.get_or_init(|| init_logging(app));
+    res.clone()
+}
 
-    let mut tauri_log = tauri_plugin_log::Builder::new() // https://v2.tauri.app/plugin/logging/
-        .clear_targets()
-        .with_colors(ColoredLevelConfig::default())
-        .targets([
-            #[cfg(debug_assertions)]
-            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout)
-                .filter(|metadata| metadata.level() <= log::LevelFilter::Trace),
-            // LogDir target - in debug builds log everything; in release builds only warnings/errors
-            {
-                let target = tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
-                    file_name: Some(log_file_name),
-                });
-                #[cfg(debug_assertions)]
-                let target = target.filter(|metadata| metadata.level() <= log::LevelFilter::Trace);
-                #[cfg(not(debug_assertions))]
-                let target = target.filter(|metadata| metadata.level() <= LevelFilter::Warn);
-                target
-            },
-        ])
-        .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
-        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(10)); // keep the last 10 logs
-    #[cfg(not(debug_assertions))]
-    {
-        tauri_log = tauri_log.max_file_size(1_073_741_824 /* 1 gb */);
-    }
-    app.plugin(tauri_log.build())?;
+fn init_logging(app: &tauri::AppHandle) -> Result<(), String> {
+    // Bridge existing `log::info!` calls into tracing so we can gradually introduce spans
+    // without rewriting the entire codebase.
+    let _ = tracing_log::LogTracer::init();
+
+    let log_dir = app
+        .path()
+        .app_log_dir()
+        .map_err(|e| format!("failed to resolve app_log_dir: {e}"))?;
+    std::fs::create_dir_all(&log_dir)
+        .map_err(|e| format!("failed to create log dir {}: {e}", log_dir.display()))?;
+
+    // Ensure we don't accumulate infinite logs on disk.
+    cleanup_old_logs(&log_dir, 10).ok();
+
+    let version = app.package_info().version.to_string();
+    let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+    let file_name = format!("resonance-logs_v{version}_{timestamp}.log");
+
+    let file_appender = tracing_appender::rolling::never(&log_dir, &file_name);
+    let (file_writer, guard) = tracing_appender::non_blocking(file_appender);
+    let _ = LOGGING_GUARD.set(guard);
+
+    let default_filter = if cfg!(debug_assertions) {
+        // Debug: default to info unless user overrides.
+        "info"
+    } else {
+        // Release: warn+error globally, but keep key lifecycle info for diagnostics.
+        "warn,app::startup=info,app::logging=info,app::db=info,app::capture=info,app::live=info,app::uploader=info,app::sync=info"
+    };
+
+    let filter = tracing_subscriber::EnvFilter::try_from_env("RES_LOG")
+        .or_else(|_| tracing_subscriber::EnvFilter::try_from_default_env())
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(default_filter));
+
+    use tracing_subscriber::prelude::*;
+    use tracing_subscriber::fmt::format::FmtSpan;
+
+    let file_layer = tracing_subscriber::fmt::layer()
+        .with_writer(file_writer)
+        .with_ansi(false)
+        .with_target(true)
+        .with_span_events(FmtSpan::CLOSE);
+
+    let subscriber = tracing_subscriber::registry().with(filter).with(file_layer);
+
+    #[cfg(debug_assertions)]
+    let subscriber = subscriber.with(
+        tracing_subscriber::fmt::layer()
+            .with_writer(std::io::stdout)
+            .with_ansi(true)
+            .with_target(true)
+            .with_span_events(FmtSpan::CLOSE),
+    );
+
+    tracing::subscriber::set_global_default(subscriber)
+        .map_err(|e| format!("failed to set global tracing subscriber: {e}"))?;
+
+    tracing::info!(
+        target: "app::logging",
+        "logging initialized dir={} file={} (override via RES_LOG/RUST_LOG)",
+        log_dir.display(),
+        file_name
+    );
     Ok(())
+}
+
+fn cleanup_old_logs(log_dir: &Path, keep: usize) -> Result<(), String> {
+    let mut entries: Vec<(std::time::SystemTime, PathBuf)> = Vec::new();
+
+    let rd = std::fs::read_dir(log_dir)
+        .map_err(|e| format!("read_dir {}: {e}", log_dir.display()))?;
+
+    for entry in rd {
+        let entry = entry.map_err(|e| format!("read_dir entry: {e}"))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+
+        let file_name = path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("");
+
+        // Only prune our own log files. Keep crash dumps.
+        if !file_name.starts_with("resonance-logs_v") || file_name.contains("crash_dump") {
+            continue;
+        }
+
+        let meta = std::fs::metadata(&path)
+            .map_err(|e| format!("metadata {}: {e}", path.display()))?;
+        let modified = meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        entries.push((modified, path));
+    }
+
+    // Newest first.
+    entries.sort_by(|a, b| b.0.cmp(&a.0));
+    for (_, path) in entries.into_iter().skip(keep) {
+        let _ = std::fs::remove_file(&path);
+    }
+
+    Ok(())
+}
+
+fn create_diagnostics_bundle(app_handle: &tauri::AppHandle) -> Result<String, String> {
+    use zip::write::FileOptions;
+    use std::io::Write;
+
+    let log_dir = app_handle
+        .path()
+        .app_log_dir()
+        .map_err(|e| format!("Failed to get log dir: {e}"))?;
+    std::fs::create_dir_all(&log_dir)
+        .map_err(|e| format!("Failed to create log dir {}: {e}", log_dir.display()))?;
+
+    let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+    let bundle_name = format!("diagnostics_{timestamp}.zip");
+    let bundle_path = log_dir.join(&bundle_name);
+
+    let file = std::fs::File::create(&bundle_path)
+        .map_err(|e| format!("Failed to create {}: {e}", bundle_path.display()))?;
+    let mut zip = zip::ZipWriter::new(file);
+    let opts = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+
+    // Add a manifest.json for quick context.
+    let manifest = serde_json::json!({
+        "created_at": timestamp,
+        "version": app_handle.package_info().version.to_string(),
+        "os": std::env::consts::OS,
+        "arch": std::env::consts::ARCH,
+        "log_dir": log_dir.display().to_string(),
+    });
+    zip.start_file("manifest.json", opts)
+        .map_err(|e| format!("zip: start manifest: {e}"))?;
+    zip.write_all(
+        serde_json::to_vec_pretty(&manifest)
+            .map_err(|e| format!("manifest serialize: {e}"))?
+            .as_slice(),
+    )
+    .map_err(|e| format!("zip: write manifest: {e}"))?;
+
+    // Include latest logs/crash dumps.
+    let mut files: Vec<(std::time::SystemTime, PathBuf)> = Vec::new();
+    for entry in std::fs::read_dir(&log_dir)
+        .map_err(|e| format!("read_dir {}: {e}", log_dir.display()))?
+    {
+        let entry = entry.map_err(|e| format!("read_dir entry: {e}"))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+        if !(name.starts_with("resonance-logs_v") || name.starts_with("crash_dump_v")) {
+            continue;
+        }
+        let meta = std::fs::metadata(&path)
+            .map_err(|e| format!("metadata {}: {e}", path.display()))?;
+        let modified = meta.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        files.push((modified, path));
+    }
+    files.sort_by(|a, b| b.0.cmp(&a.0));
+
+    for (_, path) in files.into_iter().take(3) {
+        let name = path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown.log");
+
+        // Avoid zipping extremely large files.
+        let meta = std::fs::metadata(&path)
+            .map_err(|e| format!("metadata {}: {e}", path.display()))?;
+        const MAX_BYTES: u64 = 25 * 1024 * 1024;
+        if meta.len() > MAX_BYTES {
+            continue;
+        }
+
+        let bytes = std::fs::read(&path)
+            .map_err(|e| format!("read {}: {e}", path.display()))?;
+        zip.start_file(format!("logs/{name}"), opts)
+            .map_err(|e| format!("zip: start file {name}: {e}"))?;
+        zip.write_all(&bytes)
+            .map_err(|e| format!("zip: write file {name}: {e}"))?;
+    }
+
+    // Include selected settings (redacted).
+    for (zip_path, bytes) in collect_redacted_settings(app_handle)? {
+        zip.start_file(zip_path, opts)
+            .map_err(|e| format!("zip: start settings file: {e}"))?;
+        zip.write_all(&bytes)
+            .map_err(|e| format!("zip: write settings file: {e}"))?;
+    }
+
+    zip.finish().map_err(|e| format!("zip: finish: {e}"))?;
+    Ok(bundle_path.display().to_string())
+}
+
+fn collect_redacted_settings(
+    app_handle: &tauri::AppHandle,
+) -> Result<Vec<(String, Vec<u8>)>, String> {
+    let mut out = Vec::new();
+
+    let dirs = [app_handle.path().app_data_dir(), app_handle.path().app_local_data_dir()];
+    for dir in dirs.into_iter().flatten() {
+        let stores = dir.join("stores");
+        let candidates = [
+            stores.join("packetCapture.json"),
+            stores.join("moduleSync.json"),
+        ];
+        for path in candidates {
+            if !path.exists() {
+                continue;
+            }
+            let bytes = std::fs::read(&path)
+                .map_err(|e| format!("read {}: {e}", path.display()))?;
+            let redacted = redact_json_bytes(&bytes).unwrap_or(bytes);
+            let name = path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("settings.json");
+            out.push((format!("settings/{name}"), redacted));
+        }
+    }
+
+    Ok(out)
+}
+
+fn redact_json_bytes(input: &[u8]) -> Option<Vec<u8>> {
+    let mut v: serde_json::Value = serde_json::from_slice(input).ok()?;
+    redact_json_value(&mut v);
+    serde_json::to_vec_pretty(&v).ok()
+}
+
+fn redact_json_value(v: &mut serde_json::Value) {
+    match v {
+        serde_json::Value::Object(map) => {
+            for (k, val) in map.iter_mut() {
+                let key = k.to_ascii_lowercase();
+                if key == "apikey"
+                    || key == "api_key"
+                    || key == "token"
+                    || key == "authorization"
+                    || key == "password"
+                {
+                    *val = serde_json::Value::String("<redacted>".to_string());
+                } else {
+                    redact_json_value(val);
+                }
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for item in arr.iter_mut() {
+                redact_json_value(item);
+            }
+        }
+        _ => {}
+    }
 }
 
 /// Sets up the system tray icon and menu.
