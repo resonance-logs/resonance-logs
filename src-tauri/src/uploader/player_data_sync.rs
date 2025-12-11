@@ -9,7 +9,7 @@ use tokio::sync::{Notify, RwLock};
 use tokio::time::{Duration, interval};
 
 use crate::database::schema as sch;
-use crate::database::{default_db_path, now_ms};
+use crate::database::{establish_connection, now_ms};
 use diesel::prelude::*;
 
 use super::{get_module_sync_settings_path, read_module_sync_settings_blocking};
@@ -214,9 +214,7 @@ fn load_all_player_data(
 
 /// Count player data entries
 fn count_player_data() -> Result<i64, String> {
-    let path = default_db_path();
-    let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-        .map_err(|e| e.to_string())?;
+    let mut conn = establish_connection().map_err(|e| e.to_string())?;
 
     use sch::detailed_playerdata::dsl as dpd;
     dpd::detailed_playerdata
@@ -297,9 +295,7 @@ pub async fn perform_player_data_sync(
     base_urls: Vec<String>,
     state: PlayerDataSyncState,
 ) -> Result<(), String> {
-    let path = default_db_path();
-    let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-        .map_err(|e| e.to_string())?;
+    let mut conn = establish_connection().map_err(|e| e.to_string())?;
 
     let player_data = load_all_player_data(&mut conn)?;
 
@@ -464,9 +460,7 @@ pub struct PlayerDataTimesResponse {
 pub async fn get_player_data_times() -> Result<PlayerDataTimesResponse, String> {
     // Get last detected time from the database (the most recent last_seen_ms in detailed_playerdata)
     let last_detected_ms = tauri::async_runtime::spawn_blocking(|| {
-        let path = default_db_path();
-        let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-            .map_err(|e| e.to_string())?;
+        let mut conn = establish_connection().map_err(|e| e.to_string())?;
 
         use sch::detailed_playerdata::dsl as dpd;
         let result: Result<Option<i64>, diesel::result::Error> = dpd::detailed_playerdata

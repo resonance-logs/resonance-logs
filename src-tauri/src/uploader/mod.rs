@@ -12,7 +12,7 @@ use tokio::sync::{Notify, RwLock};
 use tokio::time::{Duration, interval};
 
 use crate::database::schema as sch;
-use crate::database::{default_db_path, now_ms};
+use crate::database::{establish_connection, now_ms};
 use diesel::prelude::*;
 
 static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
@@ -450,9 +450,7 @@ fn mark_encounters_uploaded(
 }
 
 fn pending_encounter_count() -> Result<i64, String> {
-    let path = default_db_path();
-    let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-        .map_err(|e| e.to_string())?;
+    let mut conn = establish_connection().map_err(|e| e.to_string())?;
     count_ended_encounters(&mut conn)
 }
 
@@ -1366,9 +1364,7 @@ pub async fn perform_upload(
 
     // BLOCKING: Count total
     let total = tauri::async_runtime::spawn_blocking(|| {
-        let path = default_db_path();
-        let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-            .map_err(|e| e.to_string())?;
+        let mut conn = establish_connection().map_err(|e| e.to_string())?;
         count_ended_encounters(&mut conn)
     })
     .await
@@ -1423,9 +1419,7 @@ pub async fn perform_upload(
         let api_key_for_hash = api_key.clone();
         let (rows, payloads, skipped_policy_ids) =
             tauri::async_runtime::spawn_blocking(move || {
-                let path = default_db_path();
-                let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-                    .map_err(|e| e.to_string())?;
+                let mut conn = establish_connection().map_err(|e| e.to_string())?;
                 // Always use offset 0 because uploaded encounters are filtered out by the query
                 let rows = load_encounters_slice(&mut conn, 0, batch_size)?;
                 if rows.is_empty() {
@@ -1575,9 +1569,7 @@ pub async fn perform_upload(
         if !duplicate_updates.is_empty() {
             let updates = duplicate_updates.clone();
             tauri::async_runtime::spawn_blocking(move || {
-                let path = default_db_path();
-                let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-                    .map_err(|e| e.to_string())?;
+                let mut conn = establish_connection().map_err(|e| e.to_string())?;
                 use sch::encounters::dsl as e;
                 for (local_id, remote_id) in updates {
                     let _ = diesel::update(e::encounters.filter(e::id.eq(local_id)))
@@ -1602,9 +1594,7 @@ pub async fn perform_upload(
 
             // BLOCKING: Mark uploaded
             tauri::async_runtime::spawn_blocking(move || {
-                let path = default_db_path();
-                let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-                    .map_err(|e| e.to_string())?;
+                let mut conn = establish_connection().map_err(|e| e.to_string())?;
                 mark_encounters_uploaded(&mut conn, &ids)
             })
             .await
@@ -1729,9 +1719,7 @@ pub async fn perform_upload(
         let skipped_ids_clone = skipped_policy_ids.clone();
 
         tauri::async_runtime::spawn_blocking(move || {
-            let path = default_db_path();
-            let mut conn = diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy())
-                .map_err(|e| e.to_string())?;
+            let mut conn = establish_connection().map_err(|e| e.to_string())?;
             use sch::encounters::dsl as e;
 
             // Map returned remote IDs to local encounter IDs

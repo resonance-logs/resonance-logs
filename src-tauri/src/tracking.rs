@@ -8,7 +8,7 @@ use reqwest::Client;
 use serde::Serialize;
 use uuid::Uuid;
 
-use crate::database::default_db_path;
+use crate::database::establish_connection;
 use crate::database::schema::app_config;
 use diesel::prelude::*;
 
@@ -62,9 +62,7 @@ pub async fn track_update(app_handle: tauri::AppHandle) {
 
     // Load config from database in blocking context
     let (client_id, last_reported_version) = match tauri::async_runtime::spawn_blocking(move || {
-        let db_path = default_db_path();
-        let mut conn = match diesel::sqlite::SqliteConnection::establish(&db_path.to_string_lossy())
-        {
+        let mut conn = match establish_connection() {
             Ok(c) => c,
             Err(e) => {
                 warn!("tracking: failed to connect to db: {}", e);
@@ -132,12 +130,10 @@ pub async fn track_update(app_handle: tauri::AppHandle) {
     if success {
         let version_to_save = current_version;
         if let Err(e) = tauri::async_runtime::spawn_blocking(move || {
-            let db_path = default_db_path();
-            let mut conn =
-                match diesel::sqlite::SqliteConnection::establish(&db_path.to_string_lossy()) {
-                    Ok(c) => c,
-                    Err(e) => return Err(e.to_string()),
-                };
+            let mut conn = match establish_connection() {
+                Ok(c) => c,
+                Err(e) => return Err(e.to_string()),
+            };
             set_config_value(&mut conn, KEY_LAST_REPORTED_VERSION, &version_to_save)
         })
         .await

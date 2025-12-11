@@ -78,6 +78,32 @@ pub fn default_db_path() -> PathBuf {
     }
 }
 
+pub fn establish_connection() -> Result<SqliteConnection, diesel::ConnectionError> {
+    let path = default_db_path();
+    let mut conn = SqliteConnection::establish(&path.to_string_lossy())?;
+
+    // busy timeout instead of silent fail
+    diesel::sql_query("PRAGMA busy_timeout=5000;")
+        .execute(&mut conn)
+        .ok();
+
+    // WAL mode good, should use
+    diesel::sql_query("PRAGMA journal_mode=WAL;")
+        .execute(&mut conn)
+        .ok();
+
+    diesel::sql_query("PRAGMA synchronous=NORMAL;")
+        .execute(&mut conn)
+        .ok();
+
+    // foreign key enforcement
+    diesel::sql_query("PRAGMA foreign_keys=ON;")
+        .execute(&mut conn)
+        .ok();
+
+    Ok(conn)
+}
+
 /// Ensures that the parent directory of a given path exists.
 ///
 /// # Arguments
@@ -124,7 +150,11 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
             eprintln!("{}", err_msg);
             DbInitError::Migration(e)
         })?;
-        // Pragmas for better concurrency/perf
+
+        // added busy timeout
+        diesel::sql_query("PRAGMA busy_timeout=5000;")
+            .execute(&mut conn)
+            .ok();
         diesel::sql_query("PRAGMA journal_mode=WAL;")
             .execute(&mut conn)
             .ok();

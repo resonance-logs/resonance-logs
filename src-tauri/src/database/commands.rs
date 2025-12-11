@@ -438,8 +438,7 @@ fn load_actor_stats(
 fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
     let path = default_db_path();
     ensure_parent_dir(&path).map_err(|e| e.to_string())?;
-    let mut conn =
-        diesel::sqlite::SqliteConnection::establish(&path.to_string_lossy()).map_err(|e| e.to_string())?;
+    let mut conn = crate::database::establish_connection().map_err(|e| e.to_string())?;
     // Run any pending migrations in case the writer initialization was skipped or failed.
     conn.run_pending_migrations(crate::database::MIGRATIONS)
         .map_err(|e| e.to_string())?;
@@ -1203,23 +1202,42 @@ pub fn get_encounter_attempt_actor_stats(
 
     // NOTE: attempt_index is ignored because raw per-event tables are removed.
     // Return per-encounter aggregated stats from materialized tables.
-    let player_rows: Vec<(i64, Option<String>, Option<i32>, Option<i32>, i32, f64, f64, i64, f64)> =
-        a::actor_encounter_stats
-            .filter(a::encounter_id.eq(encounter_id))
-            .filter(a::is_player.eq(1))
-            .select((
-                a::actor_id,
-                a::name,
-                a::class_id,
-                a::ability_score,
-                a::is_local_player,
-                a::duration,
-                a::dps,
-                a::active_dmg_time_ms,
-                a::tdps,
-            ))
-            .load::<(i64, Option<String>, Option<i32>, Option<i32>, i32, f64, f64, i64, f64)>(&mut conn)
-            .map_err(|e| e.to_string())?;
+    let player_rows: Vec<(
+        i64,
+        Option<String>,
+        Option<i32>,
+        Option<i32>,
+        i32,
+        f64,
+        f64,
+        i64,
+        f64,
+    )> = a::actor_encounter_stats
+        .filter(a::encounter_id.eq(encounter_id))
+        .filter(a::is_player.eq(1))
+        .select((
+            a::actor_id,
+            a::name,
+            a::class_id,
+            a::ability_score,
+            a::is_local_player,
+            a::duration,
+            a::dps,
+            a::active_dmg_time_ms,
+            a::tdps,
+        ))
+        .load::<(
+            i64,
+            Option<String>,
+            Option<i32>,
+            Option<i32>,
+            i32,
+            f64,
+            f64,
+            i64,
+            f64,
+        )>(&mut conn)
+        .map_err(|e| e.to_string())?;
 
     let mut results: Vec<ActorEncounterStatDto> = Vec::new();
 
@@ -1649,27 +1667,27 @@ pub fn get_encounter_attempt_player_skills(
                 } else {
                     0.0
                 },
-            lucky_rate: if hits > 0 {
-                (lucky_hits as f64) / hits_f
-            } else {
-                0.0
-            },
-            lucky_dmg_rate: if total_heal > 0 {
-                (lucky_total as f64) / total_heal_f
-            } else {
-                0.0
-            },
-            hits: hits.max(0) as u128,
-            hits_per_minute: if duration_secs > 0.0 {
-                hits_f / (duration_secs / 60.0)
-            } else {
-                0.0
-            },
-        };
-        skill_rows.push(sr);
-    }
+                lucky_rate: if hits > 0 {
+                    (lucky_hits as f64) / hits_f
+                } else {
+                    0.0
+                },
+                lucky_dmg_rate: if total_heal > 0 {
+                    (lucky_total as f64) / total_heal_f
+                } else {
+                    0.0
+                },
+                hits: hits.max(0) as u128,
+                hits_per_minute: if duration_secs > 0.0 {
+                    hits_f / (duration_secs / 60.0)
+                } else {
+                    0.0
+                },
+            };
+            skill_rows.push(sr);
+        }
 
-    let curr_player = lc::PlayerRow {
+        let curr_player = lc::PlayerRow {
             uid: actor_id as u128,
             name: player_name.clone(),
             class_name: String::from(""),
@@ -2194,13 +2212,7 @@ pub fn get_encounter_player_skills(
 pub fn get_encounter_segments(encounter_id: i32) -> Result<Vec<m::DungeonSegmentRow>, String> {
     use sch::dungeon_segments::dsl as ds;
 
-    let db_path = default_db_path();
-    if let Err(e) = ensure_parent_dir(&db_path) {
-        return Err(format!("Failed to create db dir: {}", e));
-    }
-
-    let mut conn = SqliteConnection::establish(db_path.to_string_lossy().as_ref())
-        .map_err(|e| e.to_string())?;
+    let mut conn = crate::database::establish_connection().map_err(|e| e.to_string())?;
 
     let segments = ds::dungeon_segments
         .filter(ds::encounter_id.eq(encounter_id))
