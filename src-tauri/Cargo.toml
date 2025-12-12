@@ -47,6 +47,7 @@ tauri-plugin-clipboard-manager = "2"
 tauri-plugin-svelte = "3"
 tauri-plugin-os = "2"
 tauri-plugin-opener = "2.5.2"
+tauri-plugin-dialog = "2"
 ts-rs = "11.1.0"
 chrono-tz = "0.10.4"
 diesel = { version = "2.2.4", features = ["sqlite", "chrono", "r2d2", "64-column-tables"] }

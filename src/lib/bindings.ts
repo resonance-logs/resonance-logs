@@ -602,16 +602,14 @@ async openLogDir() : Promise<Result<null, string>> {
 }
 },
 /**
- * Creates a diagnostics ZIP bundle in the app log directory and returns the path.
+ * Creates a debug ZIP containing the most recent application log file and returns the path.
  * 
- * The bundle includes:
- * - the most recent log files
- * - any crash dumps in the log directory
- * - selected settings files with secrets redacted
+ * If `destination_path` is provided, the ZIP is written there. Otherwise it is created
+ * in the app log directory.
  */
-async createDiagnosticsBundle() : Promise<Result<string, string>> {
+async createDiagnosticsBundle(destinationPath: string | null) : Promise<Result<string, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("create_diagnostics_bundle") };
+    return { status: "ok", data: await TAURI_INVOKE("create_diagnostics_bundle", { destinationPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };

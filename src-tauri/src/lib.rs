@@ -234,6 +234,7 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build()) // used to remember window size/position https://v2.tauri.app/plugin/window-state/
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {})) // used to enforce only 1 instance of the app https://v2.tauri.app/plugin/single-instance/
         .plugin(tauri_plugin_opener::init()) // used to open URLs in the default browser
+        .plugin(tauri_plugin_dialog::init()) // used to show save/open dialogs
         .plugin(tauri_plugin_svelte::init()); // used for settings file
     build_and_run(tauri_builder);
 }
@@ -320,16 +321,17 @@ mod debug_commands {
         Ok(())
     }
 
-    /// Creates a diagnostics ZIP bundle in the app log directory and returns the path.
+    /// Creates a debug ZIP containing the most recent application log file and returns the path.
     ///
-    /// The bundle includes:
-    /// - the most recent log files
-    /// - any crash dumps in the log directory
-    /// - selected settings files with secrets redacted
+    /// If `destination_path` is provided, the ZIP is written there. Otherwise it is created
+    /// in the app log directory.
     #[tauri::command]
     #[specta::specta]
-    pub fn create_diagnostics_bundle(app_handle: tauri::AppHandle) -> Result<String, String> {
-        crate::create_diagnostics_bundle(&app_handle)
+    pub fn create_diagnostics_bundle(
+        app_handle: tauri::AppHandle,
+        destination_path: Option<String>,
+    ) -> Result<String, String> {
+        crate::create_diagnostics_bundle(&app_handle, destination_path)
     }
 }
 
@@ -583,7 +585,10 @@ fn cleanup_old_logs(log_dir: &Path, keep: usize) -> Result<(), String> {
     Ok(())
 }
 
-fn create_diagnostics_bundle(app_handle: &tauri::AppHandle) -> Result<String, String> {
+fn create_diagnostics_bundle(
+    app_handle: &tauri::AppHandle,
+    destination_path: Option<String>,
+) -> Result<String, String> {
     use zip::write::FileOptions;
     use std::io::Write;
 
@@ -595,32 +600,25 @@ fn create_diagnostics_bundle(app_handle: &tauri::AppHandle) -> Result<String, St
         .map_err(|e| format!("Failed to create log dir {}: {e}", log_dir.display()))?;
 
     let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
-    let bundle_name = format!("diagnostics_{timestamp}.zip");
-    let bundle_path = log_dir.join(&bundle_name);
+    let bundle_name = format!("debug_{timestamp}.zip");
+
+    let mut bundle_path = destination_path
+        .map(PathBuf::from)
+        .unwrap_or_else(|| log_dir.join(&bundle_name));
+    if bundle_path.extension().is_none() {
+        bundle_path.set_extension("zip");
+    }
+    if let Some(parent) = bundle_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create dir {}: {e}", parent.display()))?;
+    }
 
     let file = std::fs::File::create(&bundle_path)
         .map_err(|e| format!("Failed to create {}: {e}", bundle_path.display()))?;
     let mut zip = zip::ZipWriter::new(file);
     let opts = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
-    // Add a manifest.json for quick context.
-    let manifest = serde_json::json!({
-        "created_at": timestamp,
-        "version": app_handle.package_info().version.to_string(),
-        "os": std::env::consts::OS,
-        "arch": std::env::consts::ARCH,
-        "log_dir": log_dir.display().to_string(),
-    });
-    zip.start_file("manifest.json", opts)
-        .map_err(|e| format!("zip: start manifest: {e}"))?;
-    zip.write_all(
-        serde_json::to_vec_pretty(&manifest)
-            .map_err(|e| format!("manifest serialize: {e}"))?
-            .as_slice(),
-    )
-    .map_err(|e| format!("zip: write manifest: {e}"))?;
-
-    // Include latest logs/crash dumps.
+    // Include only the most recent application log file.
     let mut files: Vec<(std::time::SystemTime, PathBuf)> = Vec::new();
     for entry in std::fs::read_dir(&log_dir)
         .map_err(|e| format!("read_dir {}: {e}", log_dir.display()))?
@@ -631,7 +629,7 @@ fn create_diagnostics_bundle(app_handle: &tauri::AppHandle) -> Result<String, St
             continue;
         }
         let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-        if !(name.starts_with("resonance-logs_v") || name.starts_with("crash_dump_v")) {
+        if !name.starts_with("resonance-logs_v") || !name.ends_with(".log") {
             continue;
         }
         let meta = std::fs::metadata(&path)
@@ -641,100 +639,35 @@ fn create_diagnostics_bundle(app_handle: &tauri::AppHandle) -> Result<String, St
     }
     files.sort_by(|a, b| b.0.cmp(&a.0));
 
-    for (_, path) in files.into_iter().take(3) {
-        let name = path
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("unknown.log");
+    let Some((_, path)) = files.into_iter().next() else {
+        return Err("No application log file found in log directory".to_string());
+    };
 
-        // Avoid zipping extremely large files.
-        let meta = std::fs::metadata(&path)
-            .map_err(|e| format!("metadata {}: {e}", path.display()))?;
-        const MAX_BYTES: u64 = 25 * 1024 * 1024;
-        if meta.len() > MAX_BYTES {
-            continue;
-        }
+    let name = path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("resonance-logs.log");
 
-        let bytes = std::fs::read(&path)
-            .map_err(|e| format!("read {}: {e}", path.display()))?;
-        zip.start_file(format!("logs/{name}"), opts)
-            .map_err(|e| format!("zip: start file {name}: {e}"))?;
-        zip.write_all(&bytes)
-            .map_err(|e| format!("zip: write file {name}: {e}"))?;
+    // Avoid zipping extremely large files.
+    let meta = std::fs::metadata(&path)
+        .map_err(|e| format!("metadata {}: {e}", path.display()))?;
+    const MAX_BYTES: u64 = 25 * 1024 * 1024;
+    if meta.len() > MAX_BYTES {
+        return Err(format!(
+            "Log file too large to include in bundle ({} bytes; limit {} bytes)",
+            meta.len(),
+            MAX_BYTES
+        ));
     }
 
-    // Include selected settings (redacted).
-    for (zip_path, bytes) in collect_redacted_settings(app_handle)? {
-        zip.start_file(zip_path, opts)
-            .map_err(|e| format!("zip: start settings file: {e}"))?;
-        zip.write_all(&bytes)
-            .map_err(|e| format!("zip: write settings file: {e}"))?;
-    }
+    let bytes = std::fs::read(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
+    zip.start_file(name, opts)
+        .map_err(|e| format!("zip: start file {name}: {e}"))?;
+    zip.write_all(&bytes)
+        .map_err(|e| format!("zip: write file {name}: {e}"))?;
 
     zip.finish().map_err(|e| format!("zip: finish: {e}"))?;
     Ok(bundle_path.display().to_string())
-}
-
-fn collect_redacted_settings(
-    app_handle: &tauri::AppHandle,
-) -> Result<Vec<(String, Vec<u8>)>, String> {
-    let mut out = Vec::new();
-
-    let dirs = [app_handle.path().app_data_dir(), app_handle.path().app_local_data_dir()];
-    for dir in dirs.into_iter().flatten() {
-        let stores = dir.join("stores");
-        let candidates = [
-            stores.join("packetCapture.json"),
-            stores.join("moduleSync.json"),
-        ];
-        for path in candidates {
-            if !path.exists() {
-                continue;
-            }
-            let bytes = std::fs::read(&path)
-                .map_err(|e| format!("read {}: {e}", path.display()))?;
-            let redacted = redact_json_bytes(&bytes).unwrap_or(bytes);
-            let name = path
-                .file_name()
-                .and_then(|s| s.to_str())
-                .unwrap_or("settings.json");
-            out.push((format!("settings/{name}"), redacted));
-        }
-    }
-
-    Ok(out)
-}
-
-fn redact_json_bytes(input: &[u8]) -> Option<Vec<u8>> {
-    let mut v: serde_json::Value = serde_json::from_slice(input).ok()?;
-    redact_json_value(&mut v);
-    serde_json::to_vec_pretty(&v).ok()
-}
-
-fn redact_json_value(v: &mut serde_json::Value) {
-    match v {
-        serde_json::Value::Object(map) => {
-            for (k, val) in map.iter_mut() {
-                let key = k.to_ascii_lowercase();
-                if key == "apikey"
-                    || key == "api_key"
-                    || key == "token"
-                    || key == "authorization"
-                    || key == "password"
-                {
-                    *val = serde_json::Value::String("<redacted>".to_string());
-                } else {
-                    redact_json_value(val);
-                }
-            }
-        }
-        serde_json::Value::Array(arr) => {
-            for item in arr.iter_mut() {
-                redact_json_value(item);
-            }
-        }
-        _ => {}
-    }
 }
 
 /// Sets up the system tray icon and menu.

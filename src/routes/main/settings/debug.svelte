@@ -1,6 +1,7 @@
 <script lang="ts">
     import { invoke } from "@tauri-apps/api/core";
-    import { Button } from "$lib/components/ui/button/index.js";
+    import { Button } from "$lib/components/ui/button";
+    import { save } from "@tauri-apps/plugin-dialog";
     import { toast } from "svelte-sonner";
 
     async function openLogDir() {
@@ -14,16 +15,32 @@
 
     async function createDiagnosticsBundle() {
         try {
-            const path = await invoke<string>("create_diagnostics_bundle");
+            const ts = new Date();
+            const pad = (n: number) => n.toString().padStart(2, "0");
+            const defaultName = `debug_${ts.getFullYear()}-${pad(ts.getMonth() + 1)}-${pad(ts.getDate())}_${pad(ts.getHours())}-${pad(ts.getMinutes())}-${pad(ts.getSeconds())}.zip`;
+
+            const destinationPath = await save({
+                title: "Save Debug Zip",
+                defaultPath: defaultName,
+                filters: [{ name: "Zip", extensions: ["zip"] }],
+            });
+
+            if (!destinationPath) {
+                return;
+            }
+
+            const path = await invoke<string>("create_diagnostics_bundle", {
+                destination_path: destinationPath,
+            });
             try {
                 await navigator.clipboard.writeText(path);
-                toast.success("Diagnostics bundle created (path copied): " + path);
+                toast.success("Debug zip created (path copied): " + path);
             } catch {
-                toast.success("Diagnostics bundle created: " + path);
+                toast.success("Debug zip created: " + path);
             }
         } catch (e) {
             console.error(e);
-            toast.error("Failed to create diagnostics bundle: " + e);
+            toast.error("Failed to create debug zip: " + e);
         }
     }
 </script>
@@ -49,11 +66,11 @@
 
             <div class="mt-4 flex items-center justify-between">
                 <div class="text-sm text-muted-foreground">
-                    <div class="font-medium text-foreground">Diagnostics Bundle</div>
-                    Create a ZIP with recent logs + settings (redacted) for support
+                    <div class="font-medium text-foreground">Debug ZIP</div>
+                    Create a ZIP containing the most recent log file for support
                 </div>
                 <Button variant="outline" onclick={createDiagnosticsBundle}>
-                    Create Bundle
+                    Create Debug Zip
                 </Button>
             </div>
         </div>
