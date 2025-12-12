@@ -42,6 +42,39 @@
   let apiKeyInput = $state(getApiKey());
   let lastPersistedKey = $state("");
 
+  // Player data sync status
+  let playerDataSyncing = $state(false);
+  let playerDataSyncResult = $state<"success" | "error" | null>(null);
+  let playerDataSyncMessage = $state<string | null>(null);
+  let playerDataSyncDismissTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function dismissPlayerDataStatus() {
+    if (playerDataSyncDismissTimer) {
+      clearTimeout(playerDataSyncDismissTimer);
+      playerDataSyncDismissTimer = null;
+    }
+    playerDataSyncResult = null;
+    playerDataSyncMessage = null;
+  }
+
+  function setPlayerDataSyncStatus(
+    result: "success" | "error",
+    message: string,
+  ) {
+    playerDataSyncing = false;
+    playerDataSyncResult = result;
+    playerDataSyncMessage = message;
+
+    // Auto-dismiss after 5 seconds
+    if (playerDataSyncDismissTimer) {
+      clearTimeout(playerDataSyncDismissTimer);
+    }
+    playerDataSyncDismissTimer = setTimeout(() => {
+      playerDataSyncResult = null;
+      playerDataSyncMessage = null;
+    }, 5000);
+  }
+
   // derived attributes to avoid reactivity glitches
   let type = $derived.by<"text" | "password">(() =>
     showKey ? "text" : "password",
@@ -169,42 +202,26 @@
     }
   }
 
-  async function forceRecheck() {
+  async function uploadPlayerData() {
     const key = getApiKey();
     const trimmedInput = apiKeyInput.trim();
-    infoMsg = null;
     if (!key) {
-      setError("Please enter your API key, click Save, and try again.");
+      setPlayerDataSyncStatus("error", "Please enter your API key first.");
       return;
     }
     if (trimmedInput !== key) {
-      setError(
-        "You have unsaved API key changes. Click Save before forcing a recheck.",
-      );
+      setPlayerDataSyncStatus("error", "Please save your API key first.");
       return;
     }
-    busy = true;
-    resetProgress();
-    addApiLog("info", "Force recheck requested…");
+    playerDataSyncing = true;
+    dismissPlayerDataStatus();
+    addApiLog("info", "Starting player data upload…");
     try {
       const baseUrl = getModuleApiBaseUrl();
-      // Start the upload recheck
-      await invoke("start_upload", { apiKey: key, baseUrl });
-      infoMsg = "Recheck started…";
-      // Also manually request a player-data sync to ensure player build data is updated immediately
-      try {
-        // Set the recheck message up-front so it doesn't overwrite upload completion if upload finishes
-        infoMsg = "Recheck started… checking logs & player data";
-        await invoke("sync_player_data", { apiKey: key, baseUrl });
-      } catch (err) {
-        // Player data sync may not be available yet; don't block recheck, but surface a helpful message
-        const msg = err instanceof Error ? err.message : String(err);
-        setError(`Player data sync failed to start: ${msg}`);
-      }
+      await invoke("sync_player_data", { apiKey: key, baseUrl });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(`Uploader not available yet: ${msg}`);
-      busy = false;
+      setPlayerDataSyncStatus("error", `Failed to start: ${msg}`);
     }
   }
 
@@ -318,6 +335,7 @@
     app
       .listen<{ total?: number }>("player-data-sync:started", (e) => {
         if (isDestroyed) return;
+        playerDataSyncing = true;
         addApiLog(
           "info",
           `Player data sync started: ${e.payload?.total ?? 0} potential entries`,
@@ -339,10 +357,9 @@
         (e) => {
           if (isDestroyed) return;
           setPlayerDataSyncTime(Date.now());
-          addApiLog(
-            "success",
-            `Player data synced: ${e.payload?.synced ?? 0} entries`,
-          );
+          const synced = e.payload?.synced ?? 0;
+          setPlayerDataSyncStatus("success", `Synced ${synced} entries`);
+          addApiLog("success", `Player data synced: ${synced} entries`);
         },
       )
       .then(safeAddUnsub);
@@ -350,10 +367,9 @@
     app
       .listen<{ message?: string }>("player-data-sync:error", (e) => {
         if (isDestroyed) return;
-        addApiLog(
-          "error",
-          `Player data sync error: ${e.payload?.message ?? "Unknown"}`,
-        );
+        const msg = e.payload?.message ?? "Unknown error";
+        setPlayerDataSyncStatus("error", msg);
+        addApiLog("error", `Player data sync error: ${msg}`);
       })
       .then(safeAddUnsub);
 
@@ -648,15 +664,63 @@
   >
     <div class="flex items-center justify-between">
       <h3 class="text-base font-semibold text-foreground">Player Data</h3>
-      <button
-        class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        onclick={forceRecheck}
-        disabled={busy || !getApiKey()}
-        title="Upload player data to server"
-      >
-        <UploadIcon class="h-4 w-4" />
-        <span>Upload</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          onclick={uploadPlayerData}
+          disabled={playerDataSyncing || !getApiKey()}
+          title="Upload player data to server"
+        >
+          {#if playerDataSyncing}
+            <span
+              class="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"
+            ></span>
+            <span>Uploading…</span>
+          {:else}
+            <UploadIcon class="h-4 w-4" />
+            <span>Upload</span>
+          {/if}
+        </button>
+        {#if playerDataSyncResult === "success"}
+          <span
+            class="inline-flex items-center gap-1 text-sm text-green-500 animate-in fade-in duration-300"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+            <span>{playerDataSyncMessage}</span>
+          </span>
+        {:else if playerDataSyncResult === "error"}
+          <span
+            class="inline-flex items-center gap-1 text-sm text-red-500 animate-in fade-in duration-300"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+            <span>{playerDataSyncMessage}</span>
+          </span>
+        {/if}
+      </div>
     </div>
     <div class="flex flex-col gap-2 text-sm text-muted-foreground">
       <div class="flex items-center gap-2">
