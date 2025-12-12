@@ -522,14 +522,9 @@ pub struct CheckDuplicatesResponse {
 }
 
 fn resolve_base_urls(_base_url: Option<String>) -> Vec<String> {
-    // Ignore any user-provided base_url from settings. Always try the
-    // public API first and fall back to the local development server.
-    // This removes the user-configurable module sync URL from advanced
-    // settings and enforces a fixed primary+fallback ordering.
-    vec![
-        "https://api.bpsr.app/api/v1".to_string(),
-        "http://localhost:8080/api/v1".to_string(),
-    ]
+    // Ignore any user-provided base_url from settings.
+    // Use only the production API endpoint.
+    vec!["https://api.bpsr.app/api/v1".to_string()]
 }
 
 fn mark_encounters_uploaded(
@@ -1642,11 +1637,7 @@ pub async fn perform_upload(
                 total,
                 succeeded,
                 errored,
-                format!(
-                    "Preflight: POST {} (body_bytes={})",
-                    check_url,
-                    check_bytes
-                ),
+                format!("Preflight: POST {} (body_bytes={})", check_url, check_bytes),
             );
             let check_started = Instant::now();
 
@@ -1872,17 +1863,15 @@ pub async fn perform_upload(
                         let bounded = truncate_for_log(&text, 800);
                         let msg = extract_server_error_message(&bounded)
                             .unwrap_or_else(|| "Unknown error".to_string());
-                        last_error = format!("Upload rejected (status={}): {}", status.as_u16(), msg);
+                        last_error =
+                            format!("Upload rejected (status={}): {}", status.as_u16(), msg);
                         emit_upload_log(
                             &app,
                             uploaded,
                             total,
                             succeeded,
                             errored,
-                            format!(
-                                "Upload: rejected {}",
-                                last_error
-                            ),
+                            format!("Upload: rejected {}", last_error),
                         );
                         // Break immediately - do not retry on client errors
                         break;
@@ -2193,9 +2182,7 @@ pub async fn check_api_key_verbose(
 
     Err(format!(
         "Could not validate API key (status={:?} via={:?} body={:?})",
-        last_status,
-        last_via,
-        last_body
+        last_status, last_via, last_body
     ))
 }
 
@@ -2231,8 +2218,8 @@ pub async fn check_api_key(api_key: String, base_url: Option<String>) -> Result<
                 // Read body for better diagnostics (bounded).
                 let text = r.text().await.unwrap_or_default();
                 let bounded = truncate_for_log(&text, 800);
-                let extracted = extract_server_error_message(&bounded)
-                    .unwrap_or_else(|| bounded.clone());
+                let extracted =
+                    extract_server_error_message(&bounded).unwrap_or_else(|| bounded.clone());
 
                 if status == reqwest::StatusCode::UNAUTHORIZED {
                     log::debug!(
@@ -2269,24 +2256,22 @@ mod tests {
 
     #[test]
     fn test_fallback_url_ordering_when_no_base_url() {
-        // Test that when no base_url is provided, it uses the public API first
-        // and then falls back to the local development server.
+        // Test that when no base_url is provided, it uses only the production API.
         let base_urls = resolve_base_urls(None);
 
-        // Verify the ordering
-        assert_eq!(base_urls.len(), 2);
+        // Verify only the production URL is returned
+        assert_eq!(base_urls.len(), 1);
         assert_eq!(base_urls[0], "https://api.bpsr.app/api/v1");
-        assert!(base_urls[1].contains("localhost") || base_urls[1].contains("127.0.0.1"));
     }
 
     #[test]
     fn test_specific_base_url_only() {
-        // Test that when a specific base_url is provided, it is ignored and the
-        // fixed ordering (public API then localhost) is still used.
+        // Test that when a specific base_url is provided, it is ignored and
+        // only the production API is used.
         let specific_url = "https://custom.example.com".to_string();
         let base_urls = resolve_base_urls(Some(specific_url));
 
-        assert_eq!(base_urls.len(), 2);
+        assert_eq!(base_urls.len(), 1);
         assert_eq!(base_urls[0], "https://api.bpsr.app/api/v1");
     }
 

@@ -12,10 +12,7 @@ use crate::database::establish_connection;
 use crate::database::schema::app_config;
 use diesel::prelude::*;
 
-const API_URLS: &[&str] = &[
-    "https://api.bpsr.app/api/v1/tracking/app-update",
-    "http://localhost:8080/api/v1/tracking/app-update",
-];
+const API_URLS: &[&str] = &["https://api.bpsr.app/api/v1/tracking/app-update"];
 
 const KEY_CLIENT_ID: &str = "tracking_client_id";
 const KEY_LAST_REPORTED_VERSION: &str = "tracking_last_reported_version";

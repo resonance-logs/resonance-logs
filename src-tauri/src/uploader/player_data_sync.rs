@@ -169,11 +169,8 @@ pub struct SyncPlayerDataResponse {
 }
 
 fn resolve_base_urls(_base_url: Option<String>) -> Vec<String> {
-    // Same logic as encounter uploader - use fixed primary+fallback
-    vec![
-        "https://api.bpsr.app/api/v1".to_string(),
-        "http://localhost:8080/api/v1".to_string(),
-    ]
+    // Use only the production API endpoint.
+    vec!["https://api.bpsr.app/api/v1".to_string()]
 }
 
 fn approx_json_bytes<T: serde::Serialize>(value: &T) -> usize {
@@ -321,10 +318,7 @@ pub async fn perform_player_data_sync(
 
     emit_sync_log(
         &app,
-        format!(
-            "Player data sync: starting (base_urls={})",
-            base_urls.len()
-        ),
+        format!("Player data sync: starting (base_urls={})", base_urls.len()),
     );
 
     let db_open_started = Instant::now();
@@ -454,10 +448,7 @@ pub async fn perform_player_data_sync(
                         base_urls[current_url_index],
                         msg
                     );
-                    emit_sync_log(
-                        &app,
-                        format!("Player data sync: rejected ({})", last_error),
-                    );
+                    emit_sync_log(&app, format!("Player data sync: rejected ({})", last_error));
                     break;
                 } else {
                     // 5xx (or other non-client errors) - try next URL
@@ -623,8 +614,7 @@ mod tests {
     #[test]
     fn test_fallback_url_ordering() {
         let base_urls = resolve_base_urls(None);
-        assert_eq!(base_urls.len(), 2);
+        assert_eq!(base_urls.len(), 1);
         assert_eq!(base_urls[0], "https://api.bpsr.app/api/v1");
-        assert!(base_urls[1].contains("localhost"));
     }
 }
