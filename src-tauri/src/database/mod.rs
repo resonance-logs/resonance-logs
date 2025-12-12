@@ -80,7 +80,16 @@ pub fn default_db_path() -> PathBuf {
 
 pub fn establish_connection() -> Result<SqliteConnection, diesel::ConnectionError> {
     let path = default_db_path();
+    let opened = Instant::now();
     let mut conn = SqliteConnection::establish(&path.to_string_lossy())?;
+
+    // Connection lifecycle logging: keep at debug to avoid spam at default levels.
+    log::debug!(
+        target: "app::db",
+        "db_connection_opened path={} elapsed_ms={}",
+        path.display(),
+        opened.elapsed().as_millis()
+    );
 
     // busy timeout instead of silent fail
     diesel::sql_query("PRAGMA busy_timeout=5000;")
@@ -145,6 +154,15 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
         DbInitError::Pool(e.to_string())
     })?;
 
+    log::info!(
+        target: "app::db",
+        "db_pool_ready max_size={} queue_capacity={} batch_max_events={} batch_max_wait_ms={}",
+        8,
+        BATCH_QUEUE_CAPACITY,
+        BATCH_MAX_EVENTS,
+        BATCH_MAX_WAIT_MS
+    );
+
     // Run migrations once
     {
         let mut conn = pool.get().map_err(|e| DbInitError::Pool(e.to_string()))?;
@@ -189,12 +207,20 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
         let writer_span = tracing::info_span!(target: "app::db", "db_writer_thread");
         let _writer_guard = writer_span.enter();
 
+        log::info!(
+            target: "app::db",
+            "db_writer_thread_started batch_max_events={} batch_max_wait_ms={}",
+            BATCH_MAX_EVENTS,
+            BATCH_MAX_WAIT_MS
+        );
+
         let mut current_encounter_id: Option<i32> = None;
         let mut current_encounter_start_ms: Option<i64> = None;
         loop {
             // Block until we receive the first task
             let first = rx.blocking_recv();
             let Some(first) = first else {
+                log::info!(target: "app::db", "db_writer_thread_stopping (channel closed)");
                 break;
             };
 
@@ -226,6 +252,11 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                     continue;
                 }
             };
+
+            let tasks_len = tasks.len();
+
+            // Trace-level batch logging (can be enabled via RES_LOG) to avoid noisy defaults.
+            log::trace!(target: "app::db", "db_batch_begin tasks={}", tasks_len);
 
             // Snapshot the current encounter state before processing the batch.
             // If the batch fails, we must restore this state because any changes (like clearing the ID)
@@ -307,7 +338,16 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
                     }
                 }
             }
+
+            log::trace!(
+                target: "app::db",
+                "db_batch_end tasks={} encounter_active={}",
+                tasks_len,
+                current_encounter_id.is_some()
+            );
         }
+
+        log::info!(target: "app::db", "db_writer_thread_exited");
     });
 
     Ok(())

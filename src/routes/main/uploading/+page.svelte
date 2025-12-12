@@ -303,6 +303,14 @@
       })
       .then(safeAddUnsub);
 
+    // Optional: detailed per-request logs from the Rust sync task
+    app
+      .listen<{ message?: string }>("player-data-sync:progress", (e) => {
+        if (isDestroyed) return;
+        if (e.payload?.message) addApiLog("info", e.payload.message);
+      })
+      .then(safeAddUnsub);
+
     app
       .listen<{ synced?: number; total?: number }>(
         "player-data-sync:completed",

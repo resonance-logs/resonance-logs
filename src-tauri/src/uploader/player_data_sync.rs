@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
 use reqwest::Client;
 use tauri::{AppHandle, Emitter, Manager};
@@ -173,6 +174,18 @@ fn resolve_base_urls(_base_url: Option<String>) -> Vec<String> {
     ]
 }
 
+fn approx_json_bytes<T: serde::Serialize>(value: &T) -> usize {
+    serde_json::to_vec(value).map(|v| v.len()).unwrap_or(0)
+}
+
+fn emit_sync_log(app: &AppHandle, message: impl Into<String>) {
+    let payload = json!({ "message": message.into() });
+    if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+        let _ = w.emit("player-data-sync:progress", payload.clone());
+    }
+    let _ = app.emit("player-data-sync:progress", payload);
+}
+
 /// Load all detailed player data from the local database
 fn load_all_player_data(
     conn: &mut diesel::sqlite::SqliteConnection,
@@ -304,7 +317,21 @@ pub async fn perform_player_data_sync(
     let sync_span = tracing::info_span!(target: "app::sync", "player_data_sync_run", base_urls = base_urls.len());
     let _sync_guard = sync_span.enter();
 
+    emit_sync_log(
+        &app,
+        format!(
+            "Player data sync: starting (base_urls={})",
+            base_urls.len()
+        ),
+    );
+
+    let db_open_started = Instant::now();
     let mut conn = establish_connection().map_err(|e| e.to_string())?;
+    log::debug!(
+        target: "app::sync",
+        "player data sync opened DB elapsed_ms={}",
+        db_open_started.elapsed().as_millis()
+    );
 
     let player_data = load_all_player_data(&mut conn)?;
 
@@ -337,6 +364,8 @@ pub async fn perform_player_data_sync(
         client_version: Some(env!("APP_VERSION").to_string()),
     };
 
+    let body_bytes = approx_json_bytes(&body);
+
     let mut current_url_index = 0;
     let mut sync_success = false;
     let mut last_error = String::new();
@@ -348,6 +377,17 @@ pub async fn perform_player_data_sync(
             base_urls[current_url_index].trim_end_matches('/')
         );
 
+        emit_sync_log(
+            &app,
+            format!(
+                "Player data sync: POST {} (entries={} body_bytes={})",
+                url,
+                body.player_data.len(),
+                body_bytes
+            ),
+        );
+        let req_started = Instant::now();
+
         match client
             .post(&url)
             .header("X-Api-Key", api_key.clone())
@@ -357,16 +397,44 @@ pub async fn perform_player_data_sync(
             .await
         {
             Ok(resp) => {
+                emit_sync_log(
+                    &app,
+                    format!(
+                        "Player data sync: status={} elapsed_ms={} (via {})",
+                        resp.status().as_u16(),
+                        req_started.elapsed().as_millis(),
+                        base_urls[current_url_index]
+                    ),
+                );
                 if resp.status().is_success() {
                     match resp.json::<SyncPlayerDataResponse>().await {
                         Ok(sync_resp) => {
                             response_data = Some(sync_resp);
                             sync_success = true;
+                            if let Some(ref r) = response_data {
+                                emit_sync_log(
+                                    &app,
+                                    format!(
+                                        "Player data sync: parsed response synced={} updated={} created={} ids_returned={}",
+                                        r.synced,
+                                        r.updated,
+                                        r.created,
+                                        r.ids.len()
+                                    ),
+                                );
+                            }
                         }
                         Err(e) => {
                             last_error = format!(
                                 "Failed to parse player data sync response from {}: {}",
                                 base_urls[current_url_index], e
+                            );
+                            emit_sync_log(
+                                &app,
+                                format!(
+                                    "Player data sync: response parse failed; trying next base URL ({})",
+                                    last_error
+                                ),
                             );
                             current_url_index += 1;
                         }
@@ -377,6 +445,13 @@ pub async fn perform_player_data_sync(
                         "Server error from {}: {}",
                         base_urls[current_url_index], text
                     );
+                    emit_sync_log(
+                        &app,
+                        format!(
+                            "Player data sync: server error; trying next base URL ({})",
+                            last_error
+                        ),
+                    );
                     current_url_index += 1;
                 }
             }
@@ -384,6 +459,13 @@ pub async fn perform_player_data_sync(
                 last_error = format!(
                     "Connection error to {}: {}",
                     base_urls[current_url_index], e
+                );
+                emit_sync_log(
+                    &app,
+                    format!(
+                        "Player data sync: network error; trying next base URL ({})",
+                        last_error
+                    ),
                 );
                 current_url_index += 1;
             }
@@ -426,6 +508,15 @@ pub async fn perform_player_data_sync(
         response_data.as_ref().map(|r| r.synced).unwrap_or(0),
         total,
         started.elapsed().as_millis()
+    );
+
+    emit_sync_log(
+        &app,
+        format!(
+            "Player data sync finished: total={} elapsed_ms={}",
+            total,
+            started.elapsed().as_millis()
+        ),
     );
 
     Ok(())

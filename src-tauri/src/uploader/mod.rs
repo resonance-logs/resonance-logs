@@ -5,6 +5,7 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
 use reqwest::Client;
 use tauri::{AppHandle, Emitter, Manager};
@@ -18,6 +19,35 @@ use diesel::prelude::*;
 static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
 static UPLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 const AUTO_UPLOAD_INTERVAL_SECS: u64 = 30;
+
+fn approx_json_bytes<T: serde::Serialize>(value: &T) -> usize {
+    serde_json::to_vec(value).map(|v| v.len()).unwrap_or(0)
+}
+
+fn emit_upload_log(
+    app: &AppHandle,
+    uploaded: i64,
+    total: i64,
+    succeeded: i64,
+    errored: i64,
+    message: impl Into<String>,
+) {
+    let payload: serde_json::Value = json!({
+        "uploaded": uploaded,
+        "total": total,
+        "succeeded": succeeded,
+        "errored": errored,
+        "message": message.into(),
+    });
+
+    if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+        let _ = w.emit("upload:progress", payload.clone());
+    }
+    if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+        let _ = w.emit("upload:progress", payload.clone());
+    }
+    let _ = app.emit("upload:progress", payload);
+}
 
 /// Settings from the moduleSync.json store file
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -1398,6 +1428,18 @@ pub async fn perform_upload(
     }
 
     log::info!(target: "app::uploader", "upload_started total={}", total);
+    emit_upload_log(
+        &app,
+        0,
+        total,
+        0,
+        0,
+        format!(
+            "Upload starting: pending={} (base_urls={})",
+            total,
+            base_urls.len()
+        ),
+    );
 
     let client = Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -1431,16 +1473,6 @@ pub async fn perform_upload(
             return Ok(());
         }
 
-
-    log::info!(
-        target: "app::uploader",
-        "upload_done uploaded={} total={} succeeded={} errored={} elapsed_ms={}",
-        uploaded,
-        total,
-        succeeded,
-        errored,
-        started.elapsed().as_millis()
-    );
         // BLOCKING: Load batch (always offset 0)
         let api_key_for_hash = api_key.clone();
         let (rows, payloads, skipped_policy_ids) =
@@ -1535,6 +1567,21 @@ pub async fn perform_upload(
             );
             let check_body = CheckDuplicatesRequest { hashes, candidates };
 
+            let check_bytes = approx_json_bytes(&check_body);
+            emit_upload_log(
+                &app,
+                uploaded,
+                total,
+                succeeded,
+                errored,
+                format!(
+                    "Preflight: POST {} (body_bytes={})",
+                    check_url,
+                    check_bytes
+                ),
+            );
+            let check_started = Instant::now();
+
             match client
                 .post(&check_url)
                 .header("X-Api-Key", api_key.clone())
@@ -1543,6 +1590,18 @@ pub async fn perform_upload(
                 .await
             {
                 Ok(resp) if resp.status().is_success() => {
+                    emit_upload_log(
+                        &app,
+                        uploaded,
+                        total,
+                        succeeded,
+                        errored,
+                        format!(
+                            "Preflight: status={} elapsed_ms={}",
+                            resp.status().as_u16(),
+                            check_started.elapsed().as_millis()
+                        ),
+                    );
                     if let Ok(check_result) = resp.json::<CheckDuplicatesResponse>().await {
                         // Map hash -> remote_encounter_id for duplicates
                         let duplicate_map: std::collections::HashMap<String, i64> = check_result
@@ -1586,6 +1645,17 @@ pub async fn perform_upload(
                     }
                 }
                 _ => {
+                    emit_upload_log(
+                        &app,
+                        uploaded,
+                        total,
+                        succeeded,
+                        errored,
+                        format!(
+                            "Preflight: failed (elapsed_ms={}); continuing without dedupe precheck",
+                            check_started.elapsed().as_millis()
+                        ),
+                    );
                     // Preflight check failed; proceed with full batch upload (server will dedupe)
                 }
             }
@@ -1639,6 +1709,8 @@ pub async fn perform_upload(
         };
         let mut processed_ids = duplicate_ids.clone();
 
+        let upload_body_bytes = approx_json_bytes(&body);
+
         // Try each URL in sequence until one succeeds
         let mut upload_success = false;
         let mut last_error = String::new();
@@ -1651,6 +1723,21 @@ pub async fn perform_upload(
                 "{}/upload/",
                 base_urls[current_url_index].trim_end_matches('/')
             );
+
+            emit_upload_log(
+                &app,
+                uploaded,
+                total,
+                succeeded,
+                errored,
+                format!(
+                    "Upload: POST {} (encounters={} body_bytes={})",
+                    url,
+                    body.encounters.len(),
+                    upload_body_bytes
+                ),
+            );
+            let req_started = Instant::now();
             match client
                 .post(&url)
                 .header("X-Api-Key", api_key.clone())
@@ -1660,17 +1747,53 @@ pub async fn perform_upload(
             {
                 Ok(resp) => {
                     let status = resp.status();
+                    emit_upload_log(
+                        &app,
+                        uploaded,
+                        total,
+                        succeeded,
+                        errored,
+                        format!(
+                            "Upload: status={} elapsed_ms={} (via {})",
+                            status.as_u16(),
+                            req_started.elapsed().as_millis(),
+                            base_urls[current_url_index]
+                        ),
+                    );
                     if status.is_success() {
                         // Parse response to get created encounter IDs
                         match resp.json::<UploadEncountersResponse>().await {
                             Ok(upload_resp) => {
                                 returned_ids = upload_resp.ids;
                                 upload_success = true;
+                                emit_upload_log(
+                                    &app,
+                                    uploaded,
+                                    total,
+                                    succeeded,
+                                    errored,
+                                    format!(
+                                        "Upload: parsed response ingested={} ids_returned={}",
+                                        upload_resp.ingested,
+                                        returned_ids.len()
+                                    ),
+                                );
                             }
                             Err(e) => {
                                 last_error = format!(
                                     "Failed to parse upload response from {}: {}",
                                     base_urls[current_url_index], e
+                                );
+                                emit_upload_log(
+                                    &app,
+                                    uploaded,
+                                    total,
+                                    succeeded,
+                                    errored,
+                                    format!(
+                                        "Upload: response parse failed; trying next base URL ({})",
+                                        last_error
+                                    ),
                                 );
                                 current_url_index += 1;
                             }
@@ -1705,6 +1828,18 @@ pub async fn perform_upload(
                             format!("Upload rejected ({}): {}", status.as_u16(), text)
                         };
                         last_error = error_msg;
+                        emit_upload_log(
+                            &app,
+                            uploaded,
+                            total,
+                            succeeded,
+                            errored,
+                            format!(
+                                "Upload: rejected (status={}) {}",
+                                status.as_u16(),
+                                last_error
+                            ),
+                        );
                         // Break immediately - do not retry on client errors
                         break;
                     } else {
@@ -1714,6 +1849,17 @@ pub async fn perform_upload(
                             "Server error from {}: {}",
                             base_urls[current_url_index], text
                         );
+                        emit_upload_log(
+                            &app,
+                            uploaded,
+                            total,
+                            succeeded,
+                            errored,
+                            format!(
+                                "Upload: server error; trying next base URL ({})",
+                                last_error
+                            ),
+                        );
                         current_url_index += 1;
                     }
                 }
@@ -1721,6 +1867,17 @@ pub async fn perform_upload(
                     last_error = format!(
                         "Connection error from {}: {}",
                         base_urls[current_url_index], e
+                    );
+                    emit_upload_log(
+                        &app,
+                        uploaded,
+                        total,
+                        succeeded,
+                        errored,
+                        format!(
+                            "Upload: network error; trying next base URL ({})",
+                            last_error
+                        ),
                     );
                     // Try next URL for connection errors
                     current_url_index += 1;
@@ -1800,6 +1957,30 @@ pub async fn perform_upload(
         }
         let _ = app.emit("upload:progress", progress_payload);
     }
+
+    log::info!(
+        target: "app::uploader",
+        "upload_done uploaded={} total={} succeeded={} errored={} elapsed_ms={}",
+        uploaded,
+        total,
+        succeeded,
+        errored,
+        started.elapsed().as_millis()
+    );
+    emit_upload_log(
+        &app,
+        uploaded,
+        total,
+        succeeded,
+        errored,
+        format!(
+            "Upload finished: uploaded={} succeeded={} errored={} elapsed_ms={}",
+            uploaded,
+            succeeded,
+            errored,
+            started.elapsed().as_millis()
+        ),
+    );
 
     let completed_payload: serde_json::Value = json!({
         "uploaded": uploaded,
