@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
 use reqwest::Client;
 use tauri::{AppHandle, Emitter, Manager};
@@ -31,6 +32,7 @@ pub struct PlayerDataSyncState {
 }
 
 impl PlayerDataSyncState {
+    #[allow(dead_code)]
     pub async fn sync_from_settings(
         &self,
         api_key: Option<String>,
@@ -110,6 +112,7 @@ impl PlayerDataSyncState {
         self.notifier.clone()
     }
 
+    #[allow(dead_code)]
     pub async fn get_last_sync_ms(&self) -> i64 {
         *self.last_sync_ms.read().await
     }
@@ -166,11 +169,20 @@ pub struct SyncPlayerDataResponse {
 }
 
 fn resolve_base_urls(_base_url: Option<String>) -> Vec<String> {
-    // Same logic as encounter uploader - use fixed primary+fallback
-    vec![
-        "https://api.bpsr.app/api/v1".to_string(),
-        "http://localhost:8080/api/v1".to_string(),
-    ]
+    // Use only the production API endpoint.
+    vec!["https://api.bpsr.app/api/v1".to_string()]
+}
+
+fn approx_json_bytes<T: serde::Serialize>(value: &T) -> usize {
+    serde_json::to_vec(value).map(|v| v.len()).unwrap_or(0)
+}
+
+fn emit_sync_log(app: &AppHandle, message: impl Into<String>) {
+    let payload = json!({ "message": message.into() });
+    if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+        let _ = w.emit("player-data-sync:progress", payload.clone());
+    }
+    let _ = app.emit("player-data-sync:progress", payload);
 }
 
 /// Load all detailed player data from the local database
@@ -226,6 +238,9 @@ fn count_player_data() -> Result<i64, String> {
 /// Start the automatic player data sync background task
 pub fn start_player_data_sync_task(app: AppHandle, state: PlayerDataSyncState) {
     tauri::async_runtime::spawn(async move {
+        let task_span = tracing::info_span!(target: "app::sync", "player_data_sync_task");
+        let _task_guard = task_span.enter();
+
         // Load settings once at startup
         state.reload_from_file(&app).await;
 
@@ -242,7 +257,7 @@ pub fn start_player_data_sync_task(app: AppHandle, state: PlayerDataSyncState) {
             }
 
             if let Err(err) = maybe_trigger_player_data_sync(app.clone(), state.clone()).await {
-                log::warn!("player data sync check failed: {}", err);
+                log::warn!(target: "app::sync", "player data sync check failed: {}", err);
             }
         }
     });
@@ -270,6 +285,8 @@ async fn maybe_trigger_player_data_sync(
         return Ok(()); // No player data to sync
     }
 
+    log::info!(target: "app::sync", "player data sync: pending={} starting", pending);
+
     if let Some(guard) = PlayerDataSyncGuard::try_acquire() {
         let base_urls = resolve_base_urls(state.current_base_url().await);
         let app_clone = app.clone();
@@ -295,7 +312,22 @@ pub async fn perform_player_data_sync(
     base_urls: Vec<String>,
     state: PlayerDataSyncState,
 ) -> Result<(), String> {
+    let started = std::time::Instant::now();
+    let sync_span = tracing::info_span!(target: "app::sync", "player_data_sync_run", base_urls = base_urls.len());
+    let _sync_guard = sync_span.enter();
+
+    emit_sync_log(
+        &app,
+        format!("Player data sync: starting (base_urls={})", base_urls.len()),
+    );
+
+    let db_open_started = Instant::now();
     let mut conn = establish_connection().map_err(|e| e.to_string())?;
+    log::debug!(
+        target: "app::sync",
+        "player data sync opened DB elapsed_ms={}",
+        db_open_started.elapsed().as_millis()
+    );
 
     let player_data = load_all_player_data(&mut conn)?;
 
@@ -304,10 +336,12 @@ pub async fn perform_player_data_sync(
             "player-data-sync:completed",
             json!({"synced": 0, "total": 0}),
         );
+        log::info!(target: "app::sync", "player data sync done total=0 elapsed_ms={}", started.elapsed().as_millis());
         return Ok(());
     }
 
     let total = player_data.len();
+    log::info!(target: "app::sync", "player data sync started total={}", total);
 
     // Emit started event
     let started_payload = json!({"total": total});
@@ -326,6 +360,8 @@ pub async fn perform_player_data_sync(
         client_version: Some(env!("APP_VERSION").to_string()),
     };
 
+    let body_bytes = approx_json_bytes(&body);
+
     let mut current_url_index = 0;
     let mut sync_success = false;
     let mut last_error = String::new();
@@ -337,6 +373,17 @@ pub async fn perform_player_data_sync(
             base_urls[current_url_index].trim_end_matches('/')
         );
 
+        emit_sync_log(
+            &app,
+            format!(
+                "Player data sync: POST {} (entries={} body_bytes={})",
+                url,
+                body.player_data.len(),
+                body_bytes
+            ),
+        );
+        let req_started = Instant::now();
+
         match client
             .post(&url)
             .header("X-Api-Key", api_key.clone())
@@ -346,25 +393,81 @@ pub async fn perform_player_data_sync(
             .await
         {
             Ok(resp) => {
-                if resp.status().is_success() {
+                let status = resp.status();
+                emit_sync_log(
+                    &app,
+                    format!(
+                        "Player data sync: status={} elapsed_ms={} (via {})",
+                        status.as_u16(),
+                        req_started.elapsed().as_millis(),
+                        base_urls[current_url_index]
+                    ),
+                );
+                if status.is_success() {
                     match resp.json::<SyncPlayerDataResponse>().await {
                         Ok(sync_resp) => {
                             response_data = Some(sync_resp);
                             sync_success = true;
+                            if let Some(ref r) = response_data {
+                                emit_sync_log(
+                                    &app,
+                                    format!(
+                                        "Player data sync: parsed response synced={} updated={} created={} ids_returned={}",
+                                        r.synced,
+                                        r.updated,
+                                        r.created,
+                                        r.ids.len()
+                                    ),
+                                );
+                            }
                         }
                         Err(e) => {
                             last_error = format!(
                                 "Failed to parse player data sync response from {}: {}",
                                 base_urls[current_url_index], e
                             );
+                            emit_sync_log(
+                                &app,
+                                format!(
+                                    "Player data sync: response parse failed; trying next base URL ({})",
+                                    last_error
+                                ),
+                            );
                             current_url_index += 1;
                         }
                     }
-                } else {
+                } else if status.is_client_error() {
+                    // 4xx Client Error - treat as a fatal rejection (don't retry different base URLs).
                     let text = resp.text().await.unwrap_or_default();
+                    let bounded = super::truncate_for_log(&text, 800);
+                    let msg = super::extract_server_error_message(&bounded)
+                        .unwrap_or_else(|| bounded.clone());
                     last_error = format!(
-                        "Server error from {}: {}",
-                        base_urls[current_url_index], text
+                        "Player data sync rejected (status={}) via {}: {}",
+                        status.as_u16(),
+                        base_urls[current_url_index],
+                        msg
+                    );
+                    emit_sync_log(&app, format!("Player data sync: rejected ({})", last_error));
+                    break;
+                } else {
+                    // 5xx (or other non-client errors) - try next URL
+                    let text = resp.text().await.unwrap_or_default();
+                    let bounded = super::truncate_for_log(&text, 800);
+                    let msg = super::extract_server_error_message(&bounded)
+                        .unwrap_or_else(|| bounded.clone());
+                    last_error = format!(
+                        "Server error (status={}) from {}: {}",
+                        status.as_u16(),
+                        base_urls[current_url_index],
+                        msg
+                    );
+                    emit_sync_log(
+                        &app,
+                        format!(
+                            "Player data sync: server error; trying next base URL ({})",
+                            last_error
+                        ),
                     );
                     current_url_index += 1;
                 }
@@ -373,6 +476,13 @@ pub async fn perform_player_data_sync(
                 last_error = format!(
                     "Connection error to {}: {}",
                     base_urls[current_url_index], e
+                );
+                emit_sync_log(
+                    &app,
+                    format!(
+                        "Player data sync: network error; trying next base URL ({})",
+                        last_error
+                    ),
                 );
                 current_url_index += 1;
             }
@@ -385,6 +495,7 @@ pub async fn perform_player_data_sync(
             let _ = w.emit("player-data-sync:error", err_payload.clone());
         }
         let _ = app.emit("player-data-sync:error", err_payload);
+        log::warn!(target: "app::sync", "player data sync failed total={} elapsed_ms={} err={}", total, started.elapsed().as_millis(), last_error);
         return Err(last_error);
     }
 
@@ -409,8 +520,20 @@ pub async fn perform_player_data_sync(
     let _ = app.emit("player-data-sync:completed", completed_payload);
 
     log::info!(
-        "Player data sync completed: {} entries synced",
-        response_data.map(|r| r.synced).unwrap_or(0)
+        target: "app::sync",
+        "player data sync completed synced={} total={} elapsed_ms={}",
+        response_data.as_ref().map(|r| r.synced).unwrap_or(0),
+        total,
+        started.elapsed().as_millis()
+    );
+
+    emit_sync_log(
+        &app,
+        format!(
+            "Player data sync finished: total={} elapsed_ms={}",
+            total,
+            started.elapsed().as_millis()
+        ),
     );
 
     Ok(())
@@ -491,8 +614,7 @@ mod tests {
     #[test]
     fn test_fallback_url_ordering() {
         let base_urls = resolve_base_urls(None);
-        assert_eq!(base_urls.len(), 2);
+        assert_eq!(base_urls.len(), 1);
         assert_eq!(base_urls[0], "https://api.bpsr.app/api/v1");
-        assert!(base_urls[1].contains("localhost"));
     }
 }

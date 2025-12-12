@@ -553,6 +553,22 @@ async checkApiKey(apiKey: string, baseUrl: string | null) : Promise<Result<boole
 }
 },
 /**
+ * Check if an API key is valid and return status/body details for logs.
+ * 
+ * - Returns `valid=true` on 2xx.
+ * - Returns `valid=false` on 401 (and includes server message when available).
+ * - For other non-2xx responses, tries the next base URL and returns an error
+ * only if no base URL yields a definitive result.
+ */
+async checkApiKeyVerbose(apiKey: string, baseUrl: string | null) : Promise<Result<CheckApiKeyVerboseResponse, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_api_key_verbose", { apiKey, baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Manual trigger for player data sync (can be called from Tauri command)
  */
 async syncPlayerData(apiKey: string, baseUrl: string | null) : Promise<Result<null, string>> {
@@ -596,6 +612,20 @@ async checkNpcapStatus() : Promise<boolean> {
 async openLogDir() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("open_log_dir") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Creates a debug ZIP containing the most recent application log file and returns the path.
+ * 
+ * If `destination_path` is provided, the ZIP is written there. Otherwise it is created
+ * in the app log directory.
+ */
+async createDiagnosticsBundle(destinationPath: string | null) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_diagnostics_bundle", { destinationPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -821,6 +851,25 @@ totalDurationMs: number;
  * events for this buff
  */
 events: BuffEventDto[] }
+/**
+ * Detailed API-key check response for UI logging.
+ * 
+ * This is intentionally separate from `check_api_key` to preserve the existing
+ * boolean-only behavior used elsewhere.
+ */
+export type CheckApiKeyVerboseResponse = { valid: boolean; status: number | null; 
+/**
+ * Best-effort extracted server message (usually from JSON `{message}` or similar).
+ */
+message: string | null; 
+/**
+ * Best-effort bounded body snippet for troubleshooting.
+ */
+bodySnippet: string | null; 
+/**
+ * The base URL that produced the result, when available.
+ */
+via: string | null }
 export type CombatState = "idle" | "inCombat"
 /**
  * Discrete damage occurrence stored on a segment.

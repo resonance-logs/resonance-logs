@@ -1,9 +1,8 @@
-use crate::live::event_manager::MetricType;
 use crate::live::state::{AppStateManager, StateEvent};
 use crate::packets;
 use blueprotobuf_lib::blueprotobuf;
 use bytes::Bytes;
-use log::{info, trace, warn};
+use log::{debug, info, trace, warn};
 use prost::Message;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
@@ -16,6 +15,14 @@ use tauri::{AppHandle, Manager};
 ///
 /// * `app_handle` - A handle to the Tauri application instance.
 pub async fn start(app_handle: AppHandle) {
+    let live_span = tracing::info_span!(
+        target: "app::live",
+        "live_meter",
+        window_live = crate::WINDOW_LIVE_LABEL,
+        window_main = crate::WINDOW_MAIN_LABEL
+    );
+    let _live_guard = live_span.enter();
+
     // Get the state manager from app state
     let state_manager = app_handle.state::<AppStateManager>().inner().clone();
 
@@ -47,7 +54,7 @@ pub async fn start(app_handle: AppHandle) {
             match op {
                 packets::opcodes::Pkt::ServerChangeInfo => Some(StateEvent::ServerChange),
                 packets::opcodes::Pkt::EnterScene => {
-                    info!("Received EnterScene packet");
+                    info!(target: "app::live", "Received EnterScene packet");
                     match blueprotobuf::EnterScene::decode(Bytes::from(data)) {
                         Ok(v) => Some(StateEvent::EnterScene(v)),
                         Err(e) => {
@@ -125,10 +132,11 @@ pub async fn start(app_handle: AppHandle) {
                             // Dump the packet as JSON for debugging
                             match serde_json::to_string_pretty(&v) {
                                 Ok(json) => {
-                                    info!("BuffInfoSync packet received:\n{}", json);
+                                    debug!(target: "app::live", "BuffInfoSync packet received:\n{}", json);
                                 }
                                 Err(e) => {
-                                    info!(
+                                    debug!(
+                                        target: "app::live",
                                         "BuffInfoSync packet received (JSON serialization failed: {}): {:?}",
                                         e, v
                                     );
@@ -185,7 +193,10 @@ pub async fn start(app_handle: AppHandle) {
                         }
                         Err(tokio::sync::mpsc::error::TryRecvError::Empty) => break,
                         Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
-                            warn!("Packet capture channel closed (disconnected) while draining");
+                            warn!(
+                                target: "app::live",
+                                "Packet capture channel closed (disconnected) while draining"
+                            );
                             break;
                         }
                     }
@@ -205,7 +216,10 @@ pub async fn start(app_handle: AppHandle) {
                 }
             }
             Ok(None) => {
-                warn!("Packet capture channel closed, exiting live meter loop");
+                warn!(
+                    target: "app::live",
+                    "Packet capture channel closed, exiting live meter loop"
+                );
                 break;
             }
             Err(_) => {
@@ -257,6 +271,7 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
                         .unwrap_or("");
 
                     info!(
+                        target: "app::capture",
                         "Packet capture config found at {} (method={}, device={})",
                         path.display(),
                         method,
@@ -264,10 +279,10 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
                     );
 
                     if method == "Npcap" {
-                        info!("Using Npcap capture method with device: {}", device);
+                        info!(target: "app::capture", "Using Npcap capture method device={}", device);
                         return CaptureMethod::Npcap(device.to_string());
                     } else {
-                        info!("Using WinDivert capture method (from config)");
+                        info!(target: "app::capture", "Using WinDivert capture method (from config)");
                         return CaptureMethod::WinDivert;
                     }
                 } else {
@@ -300,6 +315,7 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
                             .unwrap_or("");
 
                         info!(
+                            target: "app::capture",
                             "Packet capture config found at {} (method={}, device={})",
                             path.display(),
                             method,
@@ -307,10 +323,10 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
                         );
 
                         if method == "Npcap" {
-                            info!("Using Npcap capture method with device: {}", device);
+                            info!(target: "app::capture", "Using Npcap capture method device={}", device);
                             return CaptureMethod::Npcap(device.to_string());
                         } else {
-                            info!("Using WinDivert capture method (from config)");
+                            info!(target: "app::capture", "Using WinDivert capture method (from config)");
                             return CaptureMethod::WinDivert;
                         }
                     } else {
@@ -324,8 +340,8 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
         }
     }
 
-    warn!("No packetCapture config found in app data dirs; falling back to WinDivert");
+    warn!(target: "app::capture", "No packetCapture config found in app data dirs; falling back to WinDivert");
 
-    info!("Using WinDivert capture method (default)");
+    info!(target: "app::capture", "Using WinDivert capture method (default)");
     CaptureMethod::WinDivert
 }

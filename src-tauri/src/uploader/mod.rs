@@ -5,6 +5,7 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
 use reqwest::Client;
 use tauri::{AppHandle, Emitter, Manager};
@@ -19,11 +20,107 @@ static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
 static UPLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 const AUTO_UPLOAD_INTERVAL_SECS: u64 = 30;
 
+fn truncate_for_log(s: &str, max_chars: usize) -> String {
+    if max_chars == 0 {
+        return String::new();
+    }
+    if s.chars().count() <= max_chars {
+        return s.to_string();
+    }
+    let mut out = String::with_capacity(max_chars + 1);
+    for (i, ch) in s.chars().enumerate() {
+        if i >= max_chars {
+            break;
+        }
+        out.push(ch);
+    }
+    out.push('…');
+    out
+}
+
+fn extract_server_error_message(text: &str) -> Option<String> {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    // Try common JSON error shapes.
+    if let Ok(json_err) = serde_json::from_str::<serde_json::Value>(trimmed) {
+        // Common string fields
+        let candidates = ["message", "error", "detail", "title"];
+        for key in candidates {
+            if let Some(s) = json_err.get(key).and_then(|v| v.as_str()) {
+                let s = s.trim();
+                if !s.is_empty() {
+                    // optional details array
+                    let details = json_err
+                        .get("details")
+                        .and_then(|v| v.as_array())
+                        .map(|arr| {
+                            arr.iter()
+                                .filter_map(|v| v.as_str())
+                                .map(|s| s.trim())
+                                .filter(|s| !s.is_empty())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        })
+                        .unwrap_or_default();
+                    if details.is_empty() {
+                        return Some(s.to_string());
+                    }
+                    return Some(format!("{} ({})", s, details));
+                }
+            }
+        }
+
+        // If response is a raw JSON string: "..."
+        if let Some(s) = json_err.as_str() {
+            let s = s.trim();
+            if !s.is_empty() {
+                return Some(s.to_string());
+            }
+        }
+    }
+
+    // Fallback: use text as-is (bounded at callsite)
+    Some(trimmed.to_string())
+}
+
+fn approx_json_bytes<T: serde::Serialize>(value: &T) -> usize {
+    serde_json::to_vec(value).map(|v| v.len()).unwrap_or(0)
+}
+
+fn emit_upload_log(
+    app: &AppHandle,
+    uploaded: i64,
+    total: i64,
+    succeeded: i64,
+    errored: i64,
+    message: impl Into<String>,
+) {
+    let payload: serde_json::Value = json!({
+        "uploaded": uploaded,
+        "total": total,
+        "succeeded": succeeded,
+        "errored": errored,
+        "message": message.into(),
+    });
+
+    if let Some(w) = app.get_webview_window(crate::WINDOW_MAIN_LABEL) {
+        let _ = w.emit("upload:progress", payload.clone());
+    }
+    if let Some(w) = app.get_webview_window(crate::WINDOW_LIVE_LABEL) {
+        let _ = w.emit("upload:progress", payload.clone());
+    }
+    let _ = app.emit("upload:progress", payload);
+}
+
 /// Settings from the moduleSync.json store file
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ModuleSyncSettings {
     #[serde(default)]
+    #[allow(dead_code)]
     pub enabled: bool,
     #[serde(default = "default_auto_upload")]
     pub auto_upload: bool,
@@ -65,6 +162,7 @@ pub struct AutoUploadState {
 }
 
 impl AutoUploadState {
+    #[allow(dead_code)]
     pub async fn sync_from_settings(
         &self,
         api_key: Option<String>,
@@ -423,15 +521,10 @@ pub struct CheckDuplicatesResponse {
     pub missing: Vec<String>,
 }
 
-fn resolve_base_urls(base_url: Option<String>) -> Vec<String> {
-    // Ignore any user-provided base_url from settings. Always try the
-    // public API first and fall back to the local development server.
-    // This removes the user-configurable module sync URL from advanced
-    // settings and enforces a fixed primary+fallback ordering.
-    vec![
-        "https://api.bpsr.app/api/v1".to_string(),
-        "http://localhost:8080/api/v1".to_string(),
-    ]
+fn resolve_base_urls(_base_url: Option<String>) -> Vec<String> {
+    // Ignore any user-provided base_url from settings.
+    // Use only the production API endpoint.
+    vec!["https://api.bpsr.app/api/v1".to_string()]
 }
 
 fn mark_encounters_uploaded(
@@ -456,6 +549,9 @@ fn pending_encounter_count() -> Result<i64, String> {
 
 pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
     tauri::async_runtime::spawn(async move {
+        let task_span = tracing::info_span!(target: "app::uploader", "auto_upload_task");
+        let _task_guard = task_span.enter();
+
         // Load settings once at startup
         state.reload_from_file(&app).await;
 
@@ -471,7 +567,7 @@ pub fn start_auto_upload_task(app: AppHandle, state: AutoUploadState) {
             }
 
             if let Err(err) = maybe_trigger_auto_upload(app.clone(), state.clone()).await {
-                log::warn!("auto upload check failed: {}", err);
+                log::warn!(target: "app::uploader", "auto upload check failed: {}", err);
             }
         }
     });
@@ -497,6 +593,7 @@ async fn maybe_trigger_auto_upload(app: AppHandle, state: AutoUploadState) -> Re
     }
 
     log::info!(
+        target: "app::uploader",
         "auto upload: found {} pending encounter(s), starting upload",
         pending
     );
@@ -572,7 +669,7 @@ fn count_ended_encounters(conn: &mut diesel::sqlite::SqliteConnection) -> Result
     e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .filter(e::uploaded_at_ms.is_null())
-        .filter(e::is_manually_reset.eq(0))
+        // .filter(e::is_manually_reset.eq(0)) // Disabled: allow manually reset encounters to be uploaded
         .count()
         .get_result(conn)
         .map_err(|er| er.to_string())
@@ -600,7 +697,7 @@ fn load_encounters_slice(
     e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .filter(e::uploaded_at_ms.is_null())
-        .filter(e::is_manually_reset.eq(0))
+        // .filter(e::is_manually_reset.eq(0)) // Disabled: allow manually reset encounters to be uploaded
         .order(e::started_at_ms.asc())
         .select((
             e::id,
@@ -1211,7 +1308,7 @@ fn build_encounter_payload(
 
         for (entity_id, buff_id, events_json) in buff_rows {
             // Only include player entities we know
-            let Some(name) = player_names.get(&entity_id) else {
+            let Some(_name) = player_names.get(&entity_id) else {
                 continue;
             };
 
@@ -1360,6 +1457,14 @@ pub async fn perform_upload(
     api_key: String,
     base_urls: Vec<String>,
 ) -> Result<(), String> {
+    let started = std::time::Instant::now();
+    let upload_span = tracing::info_span!(
+        target: "app::uploader",
+        "upload_run",
+        base_urls = base_urls.len()
+    );
+    let _upload_guard = upload_span.enter();
+
     CANCEL_FLAG.store(false, Ordering::SeqCst);
 
     // BLOCKING: Count total
@@ -1380,9 +1485,24 @@ pub async fn perform_upload(
     }
     let _ = app.emit("upload:started", started_payload);
     if total == 0 {
+        log::info!(target: "app::uploader", "upload_done total=0 uploaded=0 elapsed_ms={}", started.elapsed().as_millis());
         let _ = app.emit("upload:completed", json!({"uploaded": 0, "total": 0}));
         return Ok(());
     }
+
+    log::info!(target: "app::uploader", "upload_started total={}", total);
+    emit_upload_log(
+        &app,
+        0,
+        total,
+        0,
+        0,
+        format!(
+            "Upload starting: pending={} (base_urls={})",
+            total,
+            base_urls.len()
+        ),
+    );
 
     let client = Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -1395,7 +1515,7 @@ pub async fn perform_upload(
     let batch_size = 1_i64;
     let mut uploaded = 0_i64;
     let mut succeeded = 0_i64;
-    let mut errored = 0_i64;
+    let errored = 0_i64;
     let mut current_url_index = 0;
 
     // We loop until we have processed 'total' encounters or run out of pending ones.
@@ -1412,6 +1532,7 @@ pub async fn perform_upload(
                 let _ = w.emit("upload:error", err_payload.clone());
             }
             let _ = app.emit("upload:error", err_payload);
+            log::warn!(target: "app::uploader", "upload_cancelled uploaded={} total={} elapsed_ms={}", uploaded, total, started.elapsed().as_millis());
             return Ok(());
         }
 
@@ -1509,6 +1630,17 @@ pub async fn perform_upload(
             );
             let check_body = CheckDuplicatesRequest { hashes, candidates };
 
+            let check_bytes = approx_json_bytes(&check_body);
+            emit_upload_log(
+                &app,
+                uploaded,
+                total,
+                succeeded,
+                errored,
+                format!("Preflight: POST {} (body_bytes={})", check_url, check_bytes),
+            );
+            let check_started = Instant::now();
+
             match client
                 .post(&check_url)
                 .header("X-Api-Key", api_key.clone())
@@ -1517,6 +1649,18 @@ pub async fn perform_upload(
                 .await
             {
                 Ok(resp) if resp.status().is_success() => {
+                    emit_upload_log(
+                        &app,
+                        uploaded,
+                        total,
+                        succeeded,
+                        errored,
+                        format!(
+                            "Preflight: status={} elapsed_ms={}",
+                            resp.status().as_u16(),
+                            check_started.elapsed().as_millis()
+                        ),
+                    );
                     if let Ok(check_result) = resp.json::<CheckDuplicatesResponse>().await {
                         // Map hash -> remote_encounter_id for duplicates
                         let duplicate_map: std::collections::HashMap<String, i64> = check_result
@@ -1560,6 +1704,17 @@ pub async fn perform_upload(
                     }
                 }
                 _ => {
+                    emit_upload_log(
+                        &app,
+                        uploaded,
+                        total,
+                        succeeded,
+                        errored,
+                        format!(
+                            "Preflight: failed (elapsed_ms={}); continuing without dedupe precheck",
+                            check_started.elapsed().as_millis()
+                        ),
+                    );
                     // Preflight check failed; proceed with full batch upload (server will dedupe)
                 }
             }
@@ -1611,7 +1766,9 @@ pub async fn perform_upload(
                 .collect(),
             client_version: Some(env!("APP_VERSION").to_string()),
         };
-        let mut processed_ids = duplicate_ids.clone();
+        let _processed_ids = duplicate_ids.clone();
+
+        let upload_body_bytes = approx_json_bytes(&body);
 
         // Try each URL in sequence until one succeeds
         let mut upload_success = false;
@@ -1625,6 +1782,21 @@ pub async fn perform_upload(
                 "{}/upload/",
                 base_urls[current_url_index].trim_end_matches('/')
             );
+
+            emit_upload_log(
+                &app,
+                uploaded,
+                total,
+                succeeded,
+                errored,
+                format!(
+                    "Upload: POST {} (encounters={} body_bytes={})",
+                    url,
+                    body.encounters.len(),
+                    upload_body_bytes
+                ),
+            );
+            let req_started = Instant::now();
             match client
                 .post(&url)
                 .header("X-Api-Key", api_key.clone())
@@ -1634,17 +1806,53 @@ pub async fn perform_upload(
             {
                 Ok(resp) => {
                     let status = resp.status();
+                    emit_upload_log(
+                        &app,
+                        uploaded,
+                        total,
+                        succeeded,
+                        errored,
+                        format!(
+                            "Upload: status={} elapsed_ms={} (via {})",
+                            status.as_u16(),
+                            req_started.elapsed().as_millis(),
+                            base_urls[current_url_index]
+                        ),
+                    );
                     if status.is_success() {
                         // Parse response to get created encounter IDs
                         match resp.json::<UploadEncountersResponse>().await {
                             Ok(upload_resp) => {
                                 returned_ids = upload_resp.ids;
                                 upload_success = true;
+                                emit_upload_log(
+                                    &app,
+                                    uploaded,
+                                    total,
+                                    succeeded,
+                                    errored,
+                                    format!(
+                                        "Upload: parsed response ingested={} ids_returned={}",
+                                        upload_resp.ingested,
+                                        returned_ids.len()
+                                    ),
+                                );
                             }
                             Err(e) => {
                                 last_error = format!(
                                     "Failed to parse upload response from {}: {}",
                                     base_urls[current_url_index], e
+                                );
+                                emit_upload_log(
+                                    &app,
+                                    uploaded,
+                                    total,
+                                    succeeded,
+                                    errored,
+                                    format!(
+                                        "Upload: response parse failed; trying next base URL ({})",
+                                        last_error
+                                    ),
                                 );
                                 current_url_index += 1;
                             }
@@ -1652,41 +1860,43 @@ pub async fn perform_upload(
                     } else if status.is_client_error() {
                         // 4xx Client Error - this is a fatal rejection, do not retry
                         let text = resp.text().await.unwrap_or_default();
-                        // Try to parse as JSON error response from server
-                        let error_msg = if let Ok(json_err) =
-                            serde_json::from_str::<serde_json::Value>(&text)
-                        {
-                            let msg = json_err
-                                .get("message")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("Unknown error");
-                            let details = json_err
-                                .get("details")
-                                .and_then(|v| v.as_array())
-                                .map(|arr| {
-                                    arr.iter()
-                                        .filter_map(|v| v.as_str())
-                                        .collect::<Vec<_>>()
-                                        .join(", ")
-                                })
-                                .unwrap_or_default();
-                            if details.is_empty() {
-                                format!("Upload rejected: {}", msg)
-                            } else {
-                                format!("Upload rejected: {} ({})", msg, details)
-                            }
-                        } else {
-                            format!("Upload rejected ({}): {}", status.as_u16(), text)
-                        };
-                        last_error = error_msg;
+                        let bounded = truncate_for_log(&text, 800);
+                        let msg = extract_server_error_message(&bounded)
+                            .unwrap_or_else(|| "Unknown error".to_string());
+                        last_error =
+                            format!("Upload rejected (status={}): {}", status.as_u16(), msg);
+                        emit_upload_log(
+                            &app,
+                            uploaded,
+                            total,
+                            succeeded,
+                            errored,
+                            format!("Upload: rejected {}", last_error),
+                        );
                         // Break immediately - do not retry on client errors
                         break;
                     } else {
                         // 5xx Server Error - try next URL
                         let text = resp.text().await.unwrap_or_default();
+                        let bounded = truncate_for_log(&text, 800);
+                        let msg = extract_server_error_message(&bounded)
+                            .unwrap_or_else(|| bounded.clone());
                         last_error = format!(
-                            "Server error from {}: {}",
-                            base_urls[current_url_index], text
+                            "Server error (status={}) from {}: {}",
+                            status.as_u16(),
+                            base_urls[current_url_index],
+                            msg
+                        );
+                        emit_upload_log(
+                            &app,
+                            uploaded,
+                            total,
+                            succeeded,
+                            errored,
+                            format!(
+                                "Upload: server error; trying next base URL ({})",
+                                last_error
+                            ),
                         );
                         current_url_index += 1;
                     }
@@ -1695,6 +1905,17 @@ pub async fn perform_upload(
                     last_error = format!(
                         "Connection error from {}: {}",
                         base_urls[current_url_index], e
+                    );
+                    emit_upload_log(
+                        &app,
+                        uploaded,
+                        total,
+                        succeeded,
+                        errored,
+                        format!(
+                            "Upload: network error; trying next base URL ({})",
+                            last_error
+                        ),
                     );
                     // Try next URL for connection errors
                     current_url_index += 1;
@@ -1775,6 +1996,30 @@ pub async fn perform_upload(
         let _ = app.emit("upload:progress", progress_payload);
     }
 
+    log::info!(
+        target: "app::uploader",
+        "upload_done uploaded={} total={} succeeded={} errored={} elapsed_ms={}",
+        uploaded,
+        total,
+        succeeded,
+        errored,
+        started.elapsed().as_millis()
+    );
+    emit_upload_log(
+        &app,
+        uploaded,
+        total,
+        succeeded,
+        errored,
+        format!(
+            "Upload finished: uploaded={} succeeded={} errored={} elapsed_ms={}",
+            uploaded,
+            succeeded,
+            errored,
+            started.elapsed().as_millis()
+        ),
+    );
+
     let completed_payload: serde_json::Value = json!({
         "uploaded": uploaded,
         "total": total,
@@ -1829,6 +2074,118 @@ pub fn cancel_upload_cmd() -> Result<(), String> {
     Ok(())
 }
 
+/// Detailed API-key check response for UI logging.
+///
+/// This is intentionally separate from `check_api_key` to preserve the existing
+/// boolean-only behavior used elsewhere.
+#[derive(Debug, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckApiKeyVerboseResponse {
+    pub valid: bool,
+    pub status: Option<u16>,
+    /// Best-effort extracted server message (usually from JSON `{message}` or similar).
+    pub message: Option<String>,
+    /// Best-effort bounded body snippet for troubleshooting.
+    pub body_snippet: Option<String>,
+    /// The base URL that produced the result, when available.
+    pub via: Option<String>,
+}
+
+/// Check if an API key is valid and return status/body details for logs.
+///
+/// - Returns `valid=true` on 2xx.
+/// - Returns `valid=false` on 401 (and includes server message when available).
+/// - For other non-2xx responses, tries the next base URL and returns an error
+///   only if no base URL yields a definitive result.
+#[tauri::command]
+#[specta::specta]
+pub async fn check_api_key_verbose(
+    api_key: String,
+    base_url: Option<String>,
+) -> Result<CheckApiKeyVerboseResponse, String> {
+    let key = api_key.trim().to_string();
+    if key.is_empty() {
+        return Err("API key cannot be empty".to_string());
+    }
+
+    let base_urls = resolve_base_urls(base_url);
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let mut last_status: Option<u16> = None;
+    let mut last_body: Option<String> = None;
+    let mut last_via: Option<String> = None;
+
+    for base in &base_urls {
+        let url = format!("{}/auth/check", base);
+        log::debug!(target: "app::uploader", "checking API key against {}", url);
+
+        match client.get(&url).header("X-Api-Key", &key).send().await {
+            Ok(resp) => {
+                let status = resp.status();
+                last_status = Some(status.as_u16());
+                last_via = Some(base.clone());
+
+                if status.is_success() {
+                    return Ok(CheckApiKeyVerboseResponse {
+                        valid: true,
+                        status: Some(status.as_u16()),
+                        message: None,
+                        body_snippet: None,
+                        via: Some(base.clone()),
+                    });
+                }
+
+                let text = resp.text().await.unwrap_or_default();
+                let bounded = truncate_for_log(&text, 800);
+                let extracted = extract_server_error_message(&bounded);
+
+                last_body = if bounded.trim().is_empty() {
+                    None
+                } else {
+                    Some(bounded.clone())
+                };
+
+                // 401 is the definitive "invalid key" case.
+                if status == reqwest::StatusCode::UNAUTHORIZED {
+                    return Ok(CheckApiKeyVerboseResponse {
+                        valid: false,
+                        status: Some(status.as_u16()),
+                        message: extracted.clone(),
+                        body_snippet: last_body.clone(),
+                        via: Some(base.clone()),
+                    });
+                }
+
+                // For other statuses, try next base URL.
+                log::debug!(
+                    target: "app::uploader",
+                    "check_api_key_verbose got status={} via={} msg={}",
+                    status.as_u16(),
+                    base,
+                    extracted.unwrap_or_else(|| bounded)
+                );
+            }
+            Err(e) => {
+                last_via = Some(base.clone());
+                log::debug!(
+                    target: "app::uploader",
+                    "check_api_key_verbose request to {} failed: {}",
+                    base,
+                    e
+                );
+            }
+        }
+    }
+
+    Err(format!(
+        "Could not validate API key (status={:?} via={:?} body={:?})",
+        last_status, last_via, last_body
+    ))
+}
+
 /// Check if an API key is valid by calling the server's /auth/check endpoint.
 /// Returns Ok(true) if valid, Ok(false) if the server returns 401, or Err on network error.
 #[tauri::command]
@@ -1853,13 +2210,35 @@ pub async fn check_api_key(api_key: String, base_url: Option<String>) -> Result<
 
         match resp {
             Ok(r) => {
-                if r.status().is_success() {
+                let status = r.status();
+                if status.is_success() {
                     return Ok(true);
-                } else if r.status() == reqwest::StatusCode::UNAUTHORIZED {
+                }
+
+                // Read body for better diagnostics (bounded).
+                let text = r.text().await.unwrap_or_default();
+                let bounded = truncate_for_log(&text, 800);
+                let extracted =
+                    extract_server_error_message(&bounded).unwrap_or_else(|| bounded.clone());
+
+                if status == reqwest::StatusCode::UNAUTHORIZED {
+                    log::debug!(
+                        target: "app::uploader",
+                        "check_api_key unauthorized status={} from {} msg={}",
+                        status.as_u16(),
+                        base,
+                        extracted
+                    );
                     return Ok(false);
                 }
                 // Other status codes: try next base URL
-                log::debug!("check_api_key got status {} from {}", r.status(), base);
+                log::debug!(
+                    target: "app::uploader",
+                    "check_api_key got status={} from {} msg={}",
+                    status.as_u16(),
+                    base,
+                    extracted
+                );
             }
             Err(e) => {
                 log::debug!("check_api_key request to {} failed: {}", base, e);
@@ -1877,24 +2256,22 @@ mod tests {
 
     #[test]
     fn test_fallback_url_ordering_when_no_base_url() {
-        // Test that when no base_url is provided, it uses the public API first
-        // and then falls back to the local development server.
+        // Test that when no base_url is provided, it uses only the production API.
         let base_urls = resolve_base_urls(None);
 
-        // Verify the ordering
-        assert_eq!(base_urls.len(), 2);
+        // Verify only the production URL is returned
+        assert_eq!(base_urls.len(), 1);
         assert_eq!(base_urls[0], "https://api.bpsr.app/api/v1");
-        assert!(base_urls[1].contains("localhost") || base_urls[1].contains("127.0.0.1"));
     }
 
     #[test]
     fn test_specific_base_url_only() {
-        // Test that when a specific base_url is provided, it is ignored and the
-        // fixed ordering (public API then localhost) is still used.
+        // Test that when a specific base_url is provided, it is ignored and
+        // only the production API is used.
         let specific_url = "https://custom.example.com".to_string();
         let base_urls = resolve_base_urls(Some(specific_url));
 
-        assert_eq!(base_urls.len(), 2);
+        assert_eq!(base_urls.len(), 1);
         assert_eq!(base_urls[0], "https://api.bpsr.app/api/v1");
     }
 
