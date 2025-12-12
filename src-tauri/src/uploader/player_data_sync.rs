@@ -32,6 +32,7 @@ pub struct PlayerDataSyncState {
 }
 
 impl PlayerDataSyncState {
+    #[allow(dead_code)]
     pub async fn sync_from_settings(
         &self,
         api_key: Option<String>,
@@ -111,6 +112,7 @@ impl PlayerDataSyncState {
         self.notifier.clone()
     }
 
+    #[allow(dead_code)]
     pub async fn get_last_sync_ms(&self) -> i64 {
         *self.last_sync_ms.read().await
     }
@@ -397,16 +399,17 @@ pub async fn perform_player_data_sync(
             .await
         {
             Ok(resp) => {
+                let status = resp.status();
                 emit_sync_log(
                     &app,
                     format!(
                         "Player data sync: status={} elapsed_ms={} (via {})",
-                        resp.status().as_u16(),
+                        status.as_u16(),
                         req_started.elapsed().as_millis(),
                         base_urls[current_url_index]
                     ),
                 );
-                if resp.status().is_success() {
+                if status.is_success() {
                     match resp.json::<SyncPlayerDataResponse>().await {
                         Ok(sync_resp) => {
                             response_data = Some(sync_resp);
@@ -439,11 +442,34 @@ pub async fn perform_player_data_sync(
                             current_url_index += 1;
                         }
                     }
-                } else {
+                } else if status.is_client_error() {
+                    // 4xx Client Error - treat as a fatal rejection (don't retry different base URLs).
                     let text = resp.text().await.unwrap_or_default();
+                    let bounded = super::truncate_for_log(&text, 800);
+                    let msg = super::extract_server_error_message(&bounded)
+                        .unwrap_or_else(|| bounded.clone());
                     last_error = format!(
-                        "Server error from {}: {}",
-                        base_urls[current_url_index], text
+                        "Player data sync rejected (status={}) via {}: {}",
+                        status.as_u16(),
+                        base_urls[current_url_index],
+                        msg
+                    );
+                    emit_sync_log(
+                        &app,
+                        format!("Player data sync: rejected ({})", last_error),
+                    );
+                    break;
+                } else {
+                    // 5xx (or other non-client errors) - try next URL
+                    let text = resp.text().await.unwrap_or_default();
+                    let bounded = super::truncate_for_log(&text, 800);
+                    let msg = super::extract_server_error_message(&bounded)
+                        .unwrap_or_else(|| bounded.clone());
+                    last_error = format!(
+                        "Server error (status={}) from {}: {}",
+                        status.as_u16(),
+                        base_urls[current_url_index],
+                        msg
                     );
                     emit_sync_log(
                         &app,

@@ -95,15 +95,37 @@
     infoMsg = null;
     try {
       const baseUrl = getModuleApiBaseUrl();
-      const valid = await invoke<boolean>("check_api_key", {
-        apiKey: trimmed,
-        baseUrl,
-      });
-      checkResult = valid;
+      addApiLog("info", "Checking API key with server…");
+      const res = await invoke<{
+        valid: boolean;
+        status?: number | null;
+        message?: string | null;
+        bodySnippet?: string | null;
+        via?: string | null;
+      }>("check_api_key_verbose", { apiKey: trimmed, baseUrl });
+
+      checkResult = res.valid;
+
+      const statusStr = res.status != null ? String(res.status) : "?";
+      const viaStr = res.via ? ` via ${res.via}` : "";
+      const msg = (res.message || res.bodySnippet || "").trim();
+
+      if (res.valid) {
+        addApiLog("success", `API key valid (status=${statusStr}${viaStr})`);
+        infoMsg = "API key is valid.";
+      } else {
+        // Most commonly: 401 with a helpful JSON `{message: ...}`
+        addApiLog(
+          "error",
+          `API key invalid (status=${statusStr}${viaStr})${msg ? `: ${msg}` : ""}`,
+        );
+        infoMsg = msg ? `Invalid API key: ${msg}` : "API key is invalid.";
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       infoMsg = `Check failed: ${msg}`;
       checkResult = false;
+      addApiLog("error", `API key check failed: ${msg}`);
     } finally {
       checking = false;
     }

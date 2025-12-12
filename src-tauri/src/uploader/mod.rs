@@ -20,6 +20,72 @@ static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
 static UPLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 const AUTO_UPLOAD_INTERVAL_SECS: u64 = 30;
 
+fn truncate_for_log(s: &str, max_chars: usize) -> String {
+    if max_chars == 0 {
+        return String::new();
+    }
+    if s.chars().count() <= max_chars {
+        return s.to_string();
+    }
+    let mut out = String::with_capacity(max_chars + 1);
+    for (i, ch) in s.chars().enumerate() {
+        if i >= max_chars {
+            break;
+        }
+        out.push(ch);
+    }
+    out.push('…');
+    out
+}
+
+fn extract_server_error_message(text: &str) -> Option<String> {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    // Try common JSON error shapes.
+    if let Ok(json_err) = serde_json::from_str::<serde_json::Value>(trimmed) {
+        // Common string fields
+        let candidates = ["message", "error", "detail", "title"];
+        for key in candidates {
+            if let Some(s) = json_err.get(key).and_then(|v| v.as_str()) {
+                let s = s.trim();
+                if !s.is_empty() {
+                    // optional details array
+                    let details = json_err
+                        .get("details")
+                        .and_then(|v| v.as_array())
+                        .map(|arr| {
+                            arr.iter()
+                                .filter_map(|v| v.as_str())
+                                .map(|s| s.trim())
+                                .filter(|s| !s.is_empty())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        })
+                        .unwrap_or_default();
+                    if details.is_empty() {
+                        return Some(s.to_string());
+                    }
+                    return Some(format!("{} ({})", s, details));
+                }
+            }
+        }
+
+        // If response is a raw JSON string: "..."
+        if let Some(s) = json_err.as_str() {
+            let s = s.trim();
+            if !s.is_empty() {
+                return Some(s.to_string());
+            }
+        }
+    }
+
+    // Fallback: use text as-is (bounded at callsite)
+    Some(trimmed.to_string())
+}
+
 fn approx_json_bytes<T: serde::Serialize>(value: &T) -> usize {
     serde_json::to_vec(value).map(|v| v.len()).unwrap_or(0)
 }
@@ -54,6 +120,7 @@ fn emit_upload_log(
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ModuleSyncSettings {
     #[serde(default)]
+    #[allow(dead_code)]
     pub enabled: bool,
     #[serde(default = "default_auto_upload")]
     pub auto_upload: bool,
@@ -95,6 +162,7 @@ pub struct AutoUploadState {
 }
 
 impl AutoUploadState {
+    #[allow(dead_code)]
     pub async fn sync_from_settings(
         &self,
         api_key: Option<String>,
@@ -453,7 +521,7 @@ pub struct CheckDuplicatesResponse {
     pub missing: Vec<String>,
 }
 
-fn resolve_base_urls(base_url: Option<String>) -> Vec<String> {
+fn resolve_base_urls(_base_url: Option<String>) -> Vec<String> {
     // Ignore any user-provided base_url from settings. Always try the
     // public API first and fall back to the local development server.
     // This removes the user-configurable module sync URL from advanced
@@ -1245,7 +1313,7 @@ fn build_encounter_payload(
 
         for (entity_id, buff_id, events_json) in buff_rows {
             // Only include player entities we know
-            let Some(name) = player_names.get(&entity_id) else {
+            let Some(_name) = player_names.get(&entity_id) else {
                 continue;
             };
 
@@ -1452,7 +1520,7 @@ pub async fn perform_upload(
     let batch_size = 1_i64;
     let mut uploaded = 0_i64;
     let mut succeeded = 0_i64;
-    let mut errored = 0_i64;
+    let errored = 0_i64;
     let mut current_url_index = 0;
 
     // We loop until we have processed 'total' encounters or run out of pending ones.
@@ -1707,7 +1775,7 @@ pub async fn perform_upload(
                 .collect(),
             client_version: Some(env!("APP_VERSION").to_string()),
         };
-        let mut processed_ids = duplicate_ids.clone();
+        let _processed_ids = duplicate_ids.clone();
 
         let upload_body_bytes = approx_json_bytes(&body);
 
@@ -1801,33 +1869,10 @@ pub async fn perform_upload(
                     } else if status.is_client_error() {
                         // 4xx Client Error - this is a fatal rejection, do not retry
                         let text = resp.text().await.unwrap_or_default();
-                        // Try to parse as JSON error response from server
-                        let error_msg = if let Ok(json_err) =
-                            serde_json::from_str::<serde_json::Value>(&text)
-                        {
-                            let msg = json_err
-                                .get("message")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("Unknown error");
-                            let details = json_err
-                                .get("details")
-                                .and_then(|v| v.as_array())
-                                .map(|arr| {
-                                    arr.iter()
-                                        .filter_map(|v| v.as_str())
-                                        .collect::<Vec<_>>()
-                                        .join(", ")
-                                })
-                                .unwrap_or_default();
-                            if details.is_empty() {
-                                format!("Upload rejected: {}", msg)
-                            } else {
-                                format!("Upload rejected: {} ({})", msg, details)
-                            }
-                        } else {
-                            format!("Upload rejected ({}): {}", status.as_u16(), text)
-                        };
-                        last_error = error_msg;
+                        let bounded = truncate_for_log(&text, 800);
+                        let msg = extract_server_error_message(&bounded)
+                            .unwrap_or_else(|| "Unknown error".to_string());
+                        last_error = format!("Upload rejected (status={}): {}", status.as_u16(), msg);
                         emit_upload_log(
                             &app,
                             uploaded,
@@ -1835,8 +1880,7 @@ pub async fn perform_upload(
                             succeeded,
                             errored,
                             format!(
-                                "Upload: rejected (status={}) {}",
-                                status.as_u16(),
+                                "Upload: rejected {}",
                                 last_error
                             ),
                         );
@@ -1845,9 +1889,14 @@ pub async fn perform_upload(
                     } else {
                         // 5xx Server Error - try next URL
                         let text = resp.text().await.unwrap_or_default();
+                        let bounded = truncate_for_log(&text, 800);
+                        let msg = extract_server_error_message(&bounded)
+                            .unwrap_or_else(|| bounded.clone());
                         last_error = format!(
-                            "Server error from {}: {}",
-                            base_urls[current_url_index], text
+                            "Server error (status={}) from {}: {}",
+                            status.as_u16(),
+                            base_urls[current_url_index],
+                            msg
                         );
                         emit_upload_log(
                             &app,
@@ -2036,6 +2085,120 @@ pub fn cancel_upload_cmd() -> Result<(), String> {
     Ok(())
 }
 
+/// Detailed API-key check response for UI logging.
+///
+/// This is intentionally separate from `check_api_key` to preserve the existing
+/// boolean-only behavior used elsewhere.
+#[derive(Debug, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckApiKeyVerboseResponse {
+    pub valid: bool,
+    pub status: Option<u16>,
+    /// Best-effort extracted server message (usually from JSON `{message}` or similar).
+    pub message: Option<String>,
+    /// Best-effort bounded body snippet for troubleshooting.
+    pub body_snippet: Option<String>,
+    /// The base URL that produced the result, when available.
+    pub via: Option<String>,
+}
+
+/// Check if an API key is valid and return status/body details for logs.
+///
+/// - Returns `valid=true` on 2xx.
+/// - Returns `valid=false` on 401 (and includes server message when available).
+/// - For other non-2xx responses, tries the next base URL and returns an error
+///   only if no base URL yields a definitive result.
+#[tauri::command]
+#[specta::specta]
+pub async fn check_api_key_verbose(
+    api_key: String,
+    base_url: Option<String>,
+) -> Result<CheckApiKeyVerboseResponse, String> {
+    let key = api_key.trim().to_string();
+    if key.is_empty() {
+        return Err("API key cannot be empty".to_string());
+    }
+
+    let base_urls = resolve_base_urls(base_url);
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let mut last_status: Option<u16> = None;
+    let mut last_body: Option<String> = None;
+    let mut last_via: Option<String> = None;
+
+    for base in &base_urls {
+        let url = format!("{}/auth/check", base);
+        log::debug!(target: "app::uploader", "checking API key against {}", url);
+
+        match client.get(&url).header("X-Api-Key", &key).send().await {
+            Ok(resp) => {
+                let status = resp.status();
+                last_status = Some(status.as_u16());
+                last_via = Some(base.clone());
+
+                if status.is_success() {
+                    return Ok(CheckApiKeyVerboseResponse {
+                        valid: true,
+                        status: Some(status.as_u16()),
+                        message: None,
+                        body_snippet: None,
+                        via: Some(base.clone()),
+                    });
+                }
+
+                let text = resp.text().await.unwrap_or_default();
+                let bounded = truncate_for_log(&text, 800);
+                let extracted = extract_server_error_message(&bounded);
+
+                last_body = if bounded.trim().is_empty() {
+                    None
+                } else {
+                    Some(bounded.clone())
+                };
+
+                // 401 is the definitive "invalid key" case.
+                if status == reqwest::StatusCode::UNAUTHORIZED {
+                    return Ok(CheckApiKeyVerboseResponse {
+                        valid: false,
+                        status: Some(status.as_u16()),
+                        message: extracted.clone(),
+                        body_snippet: last_body.clone(),
+                        via: Some(base.clone()),
+                    });
+                }
+
+                // For other statuses, try next base URL.
+                log::debug!(
+                    target: "app::uploader",
+                    "check_api_key_verbose got status={} via={} msg={}",
+                    status.as_u16(),
+                    base,
+                    extracted.unwrap_or_else(|| bounded)
+                );
+            }
+            Err(e) => {
+                last_via = Some(base.clone());
+                log::debug!(
+                    target: "app::uploader",
+                    "check_api_key_verbose request to {} failed: {}",
+                    base,
+                    e
+                );
+            }
+        }
+    }
+
+    Err(format!(
+        "Could not validate API key (status={:?} via={:?} body={:?})",
+        last_status,
+        last_via,
+        last_body
+    ))
+}
+
 /// Check if an API key is valid by calling the server's /auth/check endpoint.
 /// Returns Ok(true) if valid, Ok(false) if the server returns 401, or Err on network error.
 #[tauri::command]
@@ -2060,13 +2223,35 @@ pub async fn check_api_key(api_key: String, base_url: Option<String>) -> Result<
 
         match resp {
             Ok(r) => {
-                if r.status().is_success() {
+                let status = r.status();
+                if status.is_success() {
                     return Ok(true);
-                } else if r.status() == reqwest::StatusCode::UNAUTHORIZED {
+                }
+
+                // Read body for better diagnostics (bounded).
+                let text = r.text().await.unwrap_or_default();
+                let bounded = truncate_for_log(&text, 800);
+                let extracted = extract_server_error_message(&bounded)
+                    .unwrap_or_else(|| bounded.clone());
+
+                if status == reqwest::StatusCode::UNAUTHORIZED {
+                    log::debug!(
+                        target: "app::uploader",
+                        "check_api_key unauthorized status={} from {} msg={}",
+                        status.as_u16(),
+                        base,
+                        extracted
+                    );
                     return Ok(false);
                 }
                 // Other status codes: try next base URL
-                log::debug!("check_api_key got status {} from {}", r.status(), base);
+                log::debug!(
+                    target: "app::uploader",
+                    "check_api_key got status={} from {} msg={}",
+                    status.as_u16(),
+                    base,
+                    extracted
+                );
             }
             Err(e) => {
                 log::debug!("check_api_key request to {} failed: {}", base, e);

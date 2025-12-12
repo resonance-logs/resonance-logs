@@ -80,6 +80,7 @@ pub fn run() {
             uploader::start_upload,
             uploader::cancel_upload_cmd,
             uploader::check_api_key,
+            uploader::check_api_key_verbose,
             uploader::player_data_sync::sync_player_data,
             uploader::player_data_sync::get_player_data_times,
             packet_settings_commands::save_packet_capture_settings,
