@@ -576,10 +576,10 @@ pub fn process_aoi_sync_delta(
                     ..Default::default()
                 });
 
-            if attacker_entity.class_spec == ClassSpec::Unknown {
-                let class_spec = get_class_spec_from_skill_id(skill_uid);
-                attacker_entity.class_id = get_class_id_from_spec(class_spec);
-                attacker_entity.class_spec = class_spec;
+            let determined_spec = get_class_spec_from_skill_id(skill_uid);
+            if determined_spec != ClassSpec::Unknown {
+                attacker_entity.class_id = get_class_id_from_spec(determined_spec);
+                attacker_entity.class_spec = determined_spec;
             }
 
             let is_heal = sync_damage_info.r#type.unwrap_or(0) == EDamageType::Heal as i32;
