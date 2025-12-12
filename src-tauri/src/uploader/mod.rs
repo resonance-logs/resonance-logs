@@ -669,7 +669,7 @@ fn count_ended_encounters(conn: &mut diesel::sqlite::SqliteConnection) -> Result
     e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .filter(e::uploaded_at_ms.is_null())
-        .filter(e::is_manually_reset.eq(0))
+        // .filter(e::is_manually_reset.eq(0)) // Disabled: allow manually reset encounters to be uploaded
         .count()
         .get_result(conn)
         .map_err(|er| er.to_string())
@@ -697,7 +697,7 @@ fn load_encounters_slice(
     e::encounters
         .filter(e::ended_at_ms.is_not_null())
         .filter(e::uploaded_at_ms.is_null())
-        .filter(e::is_manually_reset.eq(0))
+        // .filter(e::is_manually_reset.eq(0)) // Disabled: allow manually reset encounters to be uploaded
         .order(e::started_at_ms.asc())
         .select((
             e::id,
