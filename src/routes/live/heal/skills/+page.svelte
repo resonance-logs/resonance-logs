@@ -13,7 +13,10 @@
 
   const playerUid: string = page.url.searchParams.get("playerUid") ?? "-1";
 
-  let healSkillBreakdownWindow: SkillsWindow = $state({ currPlayer: [], skillRows: [] });
+  let healSkillBreakdownWindow: SkillsWindow = $state({
+    currPlayer: [],
+    skillRows: [],
+  });
   let unlisten: (() => void) | null = null;
 
   // Optimize derived calculations to avoid recalculation on every render
@@ -24,11 +27,46 @@
 
   // Table customization settings for skills
   let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
-  let customThemeColors = $derived(SETTINGS.accessibility.state.customThemeColors);
+  let customThemeColors = $derived(
+    SETTINGS.accessibility.state.customThemeColors,
+  );
+
+  // Sorting settings for skills
+  let sortKey = $derived(SETTINGS.live.sorting.healSkills.state.sortKey);
+  let sortDesc = $derived(SETTINGS.live.sorting.healSkills.state.sortDesc);
+  let columnOrder = $derived(SETTINGS.live.columnOrder.healSkills.state.order);
+
+  // Handle column header click for sorting
+  function handleSort(key: string) {
+    if (SETTINGS.live.sorting.healSkills.state.sortKey === key) {
+      SETTINGS.live.sorting.healSkills.state.sortDesc =
+        !SETTINGS.live.sorting.healSkills.state.sortDesc;
+    } else {
+      SETTINGS.live.sorting.healSkills.state.sortKey = key;
+      SETTINGS.live.sorting.healSkills.state.sortDesc = true;
+    }
+  }
+
+  // Sorted skill data based on settings
+  let sortedSkillRows = $derived.by(() => {
+    const data = [...healSkillBreakdownWindow.skillRows];
+    data.sort((a, b) => {
+      const aVal = (a as Record<string, unknown>)[sortKey] ?? 0;
+      const bVal = (b as Record<string, unknown>)[sortKey] ?? 0;
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDesc ? bVal - aVal : aVal - bVal;
+      }
+      return 0;
+    });
+    return data;
+  });
 
   // Update maxSkillValue when data changes
   $effect(() => {
-    maxSkillValue = healSkillBreakdownWindow.skillRows.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0);
+    maxSkillValue = healSkillBreakdownWindow.skillRows.reduce(
+      (max, p) => (p.totalDmg > max ? p.totalDmg : max),
+      0,
+    );
   });
 
   // Update settings references when settings change
@@ -38,9 +76,16 @@
     SETTINGS_SHORTEN_DPS = settings.state.live.general.shortenDps;
   });
 
-  // Get visible columns based on settings - use same structure as DPS but for healing data
+  // Get visible columns based on settings and column order
   let visibleSkillColumns = $derived.by(() => {
-    return historyDpsSkillColumns.filter(col => settings.state.live.heal.skillBreakdown[col.key]);
+    const visible = historyDpsSkillColumns.filter(
+      (col) => settings.state.live.heal.skillBreakdown[col.key],
+    );
+    return visible.sort((a, b) => {
+      const aIdx = columnOrder.indexOf(a.key);
+      const bIdx = columnOrder.indexOf(b.key);
+      return aIdx - bIdx;
+    });
   });
 
   let isDestroyed = false;
@@ -49,7 +94,10 @@
     if (isDestroyed) return;
     try {
       // Subscribe and get initial data
-      const result = await commands.subscribePlayerSkills(parseInt(playerUid), "heal");
+      const result = await commands.subscribePlayerSkills(
+        parseInt(playerUid),
+        "heal",
+      );
       if (isDestroyed) return;
       if (result.status === "ok") {
         healSkillBreakdownWindow = result.data;
@@ -58,13 +106,15 @@
       }
 
       // Set up websocket listener for updates
-      const unlistenFn = await onHealSkillsUpdate((event: TauriEvent<SkillsUpdatePayload>) => {
-        if (isDestroyed) return;
-        // Only update if this is the correct player
-        if (event.payload.playerUid.toString() === playerUid) {
-          healSkillBreakdownWindow = event.payload.skillsWindow;
-        }
-      });
+      const unlistenFn = await onHealSkillsUpdate(
+        (event: TauriEvent<SkillsUpdatePayload>) => {
+          if (isDestroyed) return;
+          // Only update if this is the correct player
+          if (event.payload.playerUid.toString() === playerUid) {
+            healSkillBreakdownWindow = event.payload.skillsWindow;
+          }
+        },
+      );
 
       if (isDestroyed) {
         unlistenFn();
@@ -74,7 +124,7 @@
     } catch (error) {
       console.error("Failed to subscribe to player skills:", error);
     }
- }
+  }
 
   async function unsubscribePlayerSkills() {
     isDestroyed = true;
@@ -90,7 +140,7 @@
     } catch (error) {
       console.error("Failed to unsubscribe from player skills:", error);
     }
- }
+  }
 
   onMount(() => {
     isDestroyed = false;
@@ -108,46 +158,98 @@
   <table class="w-full border-collapse">
     {#if tableSettings.skillShowHeader}
       <thead class="z-1 sticky top-0">
-        <tr class="bg-popover/60" style="height: {tableSettings.skillHeaderHeight}px;">
-          <th class="px-2 py-1 text-left font-medium uppercase tracking-wider" style="font-size: {tableSettings.skillHeaderFontSize}px; color: {tableSettings.skillHeaderTextColor};">Skill</th>
+        <tr
+          class="bg-popover/60"
+          style="height: {tableSettings.skillHeaderHeight}px;"
+        >
+          <th
+            class="px-2 py-1 text-left font-medium uppercase tracking-wider"
+            style="font-size: {tableSettings.skillHeaderFontSize}px; color: {tableSettings.skillHeaderTextColor};"
+            >Skill</th
+          >
           {#each visibleSkillColumns as col (col.key)}
-            <th class="px-2 py-1 text-right font-medium uppercase tracking-wider" style="font-size: {tableSettings.skillHeaderFontSize}px; color: {tableSettings.skillHeaderTextColor};">{col.header}</th>
+            <th
+              class="px-2 py-1 text-right font-medium uppercase tracking-wider cursor-pointer select-none hover:bg-muted/40 transition-colors"
+              style="font-size: {tableSettings.skillHeaderFontSize}px; color: {tableSettings.skillHeaderTextColor};"
+              onclick={() => handleSort(col.key)}
+            >
+              <span class="inline-flex items-center gap-1 justify-end">
+                {col.header}
+                {#if sortKey === col.key}
+                  <span class="text-primary">{sortDesc ? "▼" : "▲"}</span>
+                {/if}
+              </span>
+            </th>
           {/each}
         </tr>
       </thead>
     {/if}
     <tbody>
-      {#each healSkillBreakdownWindow.skillRows as skill (skill.name)}
+      {#each sortedSkillRows as skill (skill.name)}
         {@const currPlayer = healSkillBreakdownWindow.currPlayer[0]}
         {#if currPlayer}
-          {@const className = currPlayer.name.includes("You") ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? currPlayer.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? currPlayer.className : ""}
+          {@const className = currPlayer.name.includes("You")
+            ? SETTINGS_YOUR_NAME !== "Hide Your Name"
+              ? currPlayer.className
+              : ""
+            : SETTINGS_OTHERS_NAME !== "Hide Others' Name"
+              ? currPlayer.className
+              : ""}
           <tr
             class="relative hover:bg-muted/60 transition-colors bg-background/40"
             style="height: {tableSettings.skillRowHeight}px; font-size: {tableSettings.skillFontSize}px;"
           >
-            <td class="px-2 py-1 relative z-10" style="color: {customThemeColors.tableTextColor};">
+            <td
+              class="px-2 py-1 relative z-10"
+              style="color: {customThemeColors.tableTextColor};"
+            >
               <div class="flex items-center gap-1 h-full">
                 <span class="truncate">{skill.name}</span>
               </div>
             </td>
             {#each visibleSkillColumns as col (col.key)}
-              <td class="px-2 py-1 text-right relative z-10" style="color: {customThemeColors.tableTextColor};">
-                {#if col.key === 'totalDmg'}
+              <td
+                class="px-2 py-1 text-right relative z-10"
+                style="color: {customThemeColors.tableTextColor};"
+              >
+                {#if col.key === "totalDmg"}
                   {#if SETTINGS_SHORTEN_DPS}
-                    <AbbreviatedNumber num={skill.totalDmg} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
+                    <AbbreviatedNumber
+                      num={skill.totalDmg}
+                      suffixFontSize={tableSettings.skillAbbreviatedFontSize}
+                      suffixColor={customThemeColors.tableAbbreviatedColor}
+                    />
                   {:else}
                     {col.format(skill[col.key] ?? 0)}
                   {/if}
-                {:else if col.key === 'dmgPct'}
-                  <PercentFormat val={skill.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
-                {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
-                  <PercentFormat val={skill[col.key]} suffixFontSize={tableSettings.skillAbbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
+                {:else if col.key === "dmgPct"}
+                  <PercentFormat
+                    val={skill.dmgPct}
+                    fractionDigits={0}
+                    suffixFontSize={tableSettings.skillAbbreviatedFontSize}
+                    suffixColor={customThemeColors.tableAbbreviatedColor}
+                  />
+                {:else if col.key === "critRate" || col.key === "critDmgRate" || col.key === "luckyRate" || col.key === "luckyDmgRate"}
+                  <PercentFormat
+                    val={skill[col.key]}
+                    suffixFontSize={tableSettings.skillAbbreviatedFontSize}
+                    suffixColor={customThemeColors.tableAbbreviatedColor}
+                  />
                 {:else}
                   {col.format(skill[col.key] ?? 0)}
                 {/if}
               </td>
             {/each}
-            <TableRowGlow isSkill={true} className={className} classSpecName={currPlayer.classSpecName} percentage={SETTINGS.live.general.state.relativeToTopHealSkill ? maxSkillValue > 0 ? (skill.totalDmg / maxSkillValue) * 100 : 0 : skill.dmgPct} />
+            <TableRowGlow
+              isSkill={true}
+              {className}
+              classSpecName={currPlayer.classSpecName}
+              percentage={SETTINGS.live.general.state.relativeToTopHealSkill
+                ? maxSkillValue > 0
+                  ? (skill.totalDmg / maxSkillValue) * 100
+                  : 0
+                : skill.dmgPct}
+            />
           </tr>
         {/if}
       {/each}
