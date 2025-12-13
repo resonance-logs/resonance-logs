@@ -76,6 +76,8 @@ pub enum StateEvent {
     SyncContainerData(blueprotobuf::SyncContainerData),
     /// A sync container dirty data event.
     SyncContainerDirtyData(blueprotobuf::SyncContainerDirtyData),
+    /// A sync dungeon dirty data event.
+    SyncDungeonDirtyData(blueprotobuf::SyncDungeonDirtyData),
     /// A sync server time event.
     SyncServerTime(blueprotobuf::SyncServerTime),
     /// A sync to me delta info event.
@@ -409,6 +411,9 @@ impl AppStateManager {
             StateEvent::SyncContainerDirtyData(data) => {
                 self.process_sync_container_dirty_data(&mut state, data)
                     .await;
+            }
+            StateEvent::SyncDungeonDirtyData(data) => {
+                self.process_sync_dungeon_dirty_data(&mut state, data).await;
             }
             StateEvent::SyncServerTime(_data) => {
                 // todo: this is skipped, not sure what info it has
@@ -846,6 +851,18 @@ impl AppStateManager {
             .is_none()
         {
             warn!("Error processing SyncContainerDirtyData.. ignoring.");
+        }
+    }
+
+    async fn process_sync_dungeon_dirty_data(
+        &self,
+        state: &mut AppState,
+        sync_dungeon_dirty_data: blueprotobuf::SyncDungeonDirtyData,
+    ) {
+        use crate::live::opcodes_process::process_sync_dungeon_dirty_data;
+        if process_sync_dungeon_dirty_data(&mut state.encounter, sync_dungeon_dirty_data).is_none()
+        {
+            warn!("Error processing SyncDungeonDirtyData.. ignoring.");
         }
     }
 

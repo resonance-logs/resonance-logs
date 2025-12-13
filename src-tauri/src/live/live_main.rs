@@ -90,6 +90,15 @@ pub async fn start(app_handle: AppHandle) {
                         }
                     }
                 }
+                packets::opcodes::Pkt::SyncDungeonDirtyData => {
+                    match blueprotobuf::SyncDungeonDirtyData::decode(Bytes::from(data)) {
+                        Ok(v) => Some(StateEvent::SyncDungeonDirtyData(v)),
+                        Err(e) => {
+                            warn!("Error decoding SyncDungeonDirtyData.. ignoring: {e}");
+                            None
+                        }
+                    }
+                }
                 packets::opcodes::Pkt::SyncServerTime => {
                     match blueprotobuf::SyncServerTime::decode(Bytes::from(data)) {
                         Ok(v) => Some(StateEvent::SyncServerTime(v)),
