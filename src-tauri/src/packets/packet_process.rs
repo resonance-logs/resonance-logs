@@ -1,12 +1,13 @@
 use crate::packets;
 use crate::packets::opcodes::FragmentType;
 use crate::packets::parser;
+use crate::packets::packet_event::PacketEvent;
 use crate::packets::utils::BinaryReader;
 use log::debug;
 
 pub fn process_packet(
     mut packets_reader: BinaryReader,
-    packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
+    packet_sender: tokio::sync::mpsc::Sender<PacketEvent>,
 ) {
     let mut _debug_ctr = 0;
     while packets_reader.remaining() > 0 {
@@ -50,8 +51,11 @@ pub fn process_packet(
                 if let Some((method_id, payload)) =
                     parser::parse_notify_fragment(&mut reader, is_zstd_compressed != 0)
                 {
-                    if let Err(err) = packet_sender.blocking_send((method_id, payload)) {
-                        debug!("Failed to send packet: {err}");
+                    if let Err(err) = packet_sender.try_send(PacketEvent::Notify {
+                        op: method_id,
+                        data: payload,
+                    }) {
+                        debug!("Failed to send packet (try_send): {err}");
                     }
                 } else {
                     // parse_notify_fragment logged details
@@ -59,7 +63,7 @@ pub fn process_packet(
                 }
             }
             FragmentType::FrameDown => {
-                let _server_sequence_id = match reader.read_u32() {
+                let server_sequence_id = match reader.read_u32() {
                     Ok(sid) => sid,
                     Err(_e) => {
                         // debug!("FrameDown: failed to read_u32 server_sequence_id: {e}");
@@ -72,18 +76,34 @@ pub fn process_packet(
                 }
 
                 let nested_packet = reader.read_remaining();
-                if is_zstd_compressed != 0 {
+
+                let nested_bytes = if is_zstd_compressed != 0 {
                     match zstd::decode_all(nested_packet) {
-                        Ok(tcp_fragment_decompressed) => {
-                            packets_reader = BinaryReader::from(tcp_fragment_decompressed);
-                        }
+                        Ok(v) => v,
                         Err(_e) => {
                             // debug!("FrameDown: zstd decompression failed");
                             continue;
                         }
                     }
                 } else {
-                    packets_reader = BinaryReader::from(Vec::from(nested_packet));
+                    Vec::from(nested_packet)
+                };
+
+                // FrameDown can contain either:
+                // 1) a nested framed packet stream (combat/notify), or
+                // 2) a protobuf-ish stream used by market replies.
+                if crate::packets::market_decode::looks_like_framed_packet_stream(&nested_bytes) {
+                    packets_reader = BinaryReader::from(nested_bytes);
+                    continue;
+                }
+
+                if let Some(batch) = crate::packets::market_decode::decode_exchange_notice_detail(
+                    &nested_bytes,
+                    server_sequence_id,
+                ) {
+                    if let Err(err) = packet_sender.try_send(PacketEvent::MarketListings(batch)) {
+                        debug!("Failed to send market listings (try_send): {err}");
+                    }
                 }
             }
             _ => {
@@ -169,13 +189,14 @@ pub fn process_packet(
 #[cfg(test)]
 mod tests {
     use crate::packets::opcodes::Pkt;
+    use crate::packets::packet_event::PacketEvent;
     use crate::packets::packet_process::process_packet;
     use crate::packets::utils::BinaryReader;
 
     #[tokio::test]
     async fn test_add() {
         use std::fs;
-        let (packet_sender, _) = tokio::sync::mpsc::channel::<(Pkt, Vec<u8>)>(1);
+        let (packet_sender, _) = tokio::sync::mpsc::channel::<PacketEvent>(1);
         let filename = "src/packets/test_add_packet.json";
         let v: Vec<u8> = serde_json::from_str(
             &fs::read_to_string(filename).expect(&format!("Failed to open {filename}")),

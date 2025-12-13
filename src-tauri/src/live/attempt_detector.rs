@@ -34,7 +34,7 @@ impl Default for AttemptConfig {
             split_cooldown_ms: 2000,
             // We disable death-based wipe detection by default since player death tracking
             // is unreliable; prefer HP rollback detection.
-            enable_wipe_detection: true,
+            enable_wipe_detection: false,
             enable_hp_rollback_detection: true,
         }
     }

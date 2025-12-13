@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package marketproto;
+
+// Minimal schemas for market decoding.
+//
+// We deliberately keep these messages small and self-contained:
+// - Only the fields used by resonance-logs are defined.
+// - Unknown/extra fields from the live payload are safely skipped.
+
+message ItemLite {
+  int64 uuid = 1;
+  int32 config_id = 2;
+  int64 count = 3;
+}
+
+message ExchangePriceItemData {
+  int32 price = 1;
+  int32 num = 2;
+  ItemLite item_info = 3;
+  string guid = 4;
+  int64 notice_time = 5;
+}
+
+enum EErrorCode {
+  ERR_SUCCESS = 0;
+  ERR_NO_RECORD = 101;
+}
+
+message ExchangeNoticeDetailReply {
+  repeated ExchangePriceItemData items = 2;
+  int32 total_page = 3;
+  int32 cur_page = 4;
+  int64 min_price = 5;
+  EErrorCode err_code = 6;
+}
+
+// Wire-compatible with `serv_world.World.ExchangeNoticeDetail_Ret`.
+message ExchangeNoticeDetailRet {
+  ExchangeNoticeDetailReply ret = 1;
+}

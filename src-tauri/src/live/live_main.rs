@@ -1,5 +1,6 @@
 use crate::live::state::{AppStateManager, StateEvent};
 use crate::packets;
+use crate::packets::packet_event::PacketEvent;
 use blueprotobuf_lib::blueprotobuf;
 use bytes::Bytes;
 use log::{debug, info, trace, warn};
@@ -167,10 +168,19 @@ pub async fn start(app_handle: AppHandle) {
         };
 
         match packet_result {
-            Ok(Some((op, data))) => {
-                // Process the first packet immediately (low-latency path)
-                if let Some(event) = decode_event(op, data) {
-                    state_manager.handle_event(event).await;
+            Ok(Some(evt)) => {
+                // Process the first event immediately (low-latency path)
+                match evt {
+                    PacketEvent::Notify { op, data } => {
+                        if let Some(event) = decode_event(op, data) {
+                            state_manager.handle_event(event).await;
+                        }
+                    }
+                    PacketEvent::MarketListings(batch) => {
+                        state_manager
+                            .handle_event(StateEvent::MarketListings(batch))
+                            .await;
+                    }
                 }
 
                 // Drain additional queued packets quickly but with a strict time budget
@@ -188,7 +198,7 @@ pub async fn start(app_handle: AppHandle) {
                     }
 
                     match rx.try_recv() {
-                        Ok((op, data)) => {
+                        Ok(PacketEvent::Notify { op, data }) => {
                             if let Some(event) = decode_event(op, data) {
                                 let is_server_change = matches!(event, StateEvent::ServerChange);
                                 state_manager.handle_event(event).await;
@@ -199,6 +209,12 @@ pub async fn start(app_handle: AppHandle) {
                             } else {
                                 drained += 1;
                             }
+                        }
+                        Ok(PacketEvent::MarketListings(batch)) => {
+                            state_manager
+                                .handle_event(StateEvent::MarketListings(batch))
+                                .await;
+                            drained += 1;
                         }
                         Err(tokio::sync::mpsc::error::TryRecvError::Empty) => break,
                         Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {

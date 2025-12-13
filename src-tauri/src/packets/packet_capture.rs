@@ -1,6 +1,7 @@
 use crate::packets;
 use crate::packets::npcap::NpcapCapture;
 use crate::packets::opcodes::Pkt;
+use crate::packets::packet_event::PacketEvent;
 use crate::packets::packet_process::process_packet;
 use crate::packets::reassembler::Reassembler;
 use crate::packets::utils::{BinaryReader, Server, TCPReassembler, tcp_sequence_before};
@@ -132,11 +133,10 @@ impl PacketSource for NpcapSource {
 
 pub fn start_capture(
     method: CaptureMethod,
-) -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
+) -> tokio::sync::mpsc::Receiver<PacketEvent> {
     // Use a larger bounded channel to prevent producer backpressure from stalling
     // headroom for bursts without risking unbounded memory growth.
-    let (packet_sender, packet_receiver) =
-        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(20);
+    let (packet_sender, packet_receiver) = tokio::sync::mpsc::channel::<PacketEvent>(20);
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
 
@@ -169,7 +169,7 @@ pub fn start_capture(
 
 #[allow(clippy::too_many_lines)]
 fn read_packets(
-    packet_sender: &tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
+    packet_sender: &tokio::sync::mpsc::Sender<PacketEvent>,
     restart_receiver: &mut watch::Receiver<bool>,
     method: CaptureMethod,
 ) {
@@ -298,10 +298,12 @@ fn read_packets(
                                                     &mut reassembler,
                                                     Some(seq_end),
                                                 );
-                                                if let Err(err) = packet_sender.blocking_send((
-                                                    Pkt::ServerChangeInfo,
-                                                    Vec::new(),
-                                                )) {
+                                                if let Err(err) = packet_sender.blocking_send(
+                                                    PacketEvent::Notify {
+                                                        op: Pkt::ServerChangeInfo,
+                                                        data: Vec::new(),
+                                                    },
+                                                ) {
                                                     debug!("Failed to send packet: {err}");
                                                 }
                                             }
@@ -341,9 +343,10 @@ fn read_packets(
                     let payload_len = u32::try_from(tcp_payload.len()).unwrap_or(u32::MAX);
                     let seq_end = tcp_packet.sequence_number().wrapping_add(payload_len);
                     reset_stream(&mut tcp_reassembler, &mut reassembler, Some(seq_end));
-                    if let Err(err) =
-                        packet_sender.blocking_send((Pkt::ServerChangeInfo, Vec::new()))
-                    {
+                    if let Err(err) = packet_sender.blocking_send(PacketEvent::Notify {
+                        op: Pkt::ServerChangeInfo,
+                        data: Vec::new(),
+                    }) {
                         debug!("Failed to send packet: {err}");
                     }
                 }
