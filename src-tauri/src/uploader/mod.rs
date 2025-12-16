@@ -13,7 +13,7 @@ use tokio::sync::{Notify, RwLock};
 use tokio::time::{Duration, interval};
 
 use crate::database::schema as sch;
-use crate::database::{establish_connection, now_ms};
+use crate::database::{ensure_migrations_on_conn, establish_connection, now_ms};
 use diesel::prelude::*;
 
 static CANCEL_FLAG: AtomicBool = AtomicBool::new(false);
@@ -544,6 +544,7 @@ fn mark_encounters_uploaded(
 
 fn pending_encounter_count() -> Result<i64, String> {
     let mut conn = establish_connection().map_err(|e| e.to_string())?;
+    ensure_migrations_on_conn(&mut conn)?;
     count_ended_encounters(&mut conn)
 }
 

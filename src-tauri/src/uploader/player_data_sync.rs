@@ -10,7 +10,7 @@ use tokio::sync::{Notify, RwLock};
 use tokio::time::{Duration, interval};
 
 use crate::database::schema as sch;
-use crate::database::{establish_connection, now_ms};
+use crate::database::{ensure_migrations_on_conn, establish_connection, now_ms};
 use diesel::prelude::*;
 
 use super::{get_module_sync_settings_path, read_module_sync_settings_blocking};
@@ -227,6 +227,7 @@ fn load_all_player_data(
 /// Count player data entries
 fn count_player_data() -> Result<i64, String> {
     let mut conn = establish_connection().map_err(|e| e.to_string())?;
+    ensure_migrations_on_conn(&mut conn)?;
 
     use sch::detailed_playerdata::dsl as dpd;
     dpd::detailed_playerdata
@@ -323,6 +324,7 @@ pub async fn perform_player_data_sync(
 
     let db_open_started = Instant::now();
     let mut conn = establish_connection().map_err(|e| e.to_string())?;
+    ensure_migrations_on_conn(&mut conn)?;
     log::debug!(
         target: "app::sync",
         "player data sync opened DB elapsed_ms={}",

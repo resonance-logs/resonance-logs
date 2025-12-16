@@ -3,6 +3,7 @@ pub mod models;
 pub mod schema;
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use diesel::prelude::*;
@@ -31,6 +32,23 @@ static DB_SENDER: Lazy<Mutex<Option<Sender<DbTask>>>> = Lazy::new(|| Mutex::new(
 
 /// Serializes DB initialization within the current process.
 static DB_INIT_MUTEX: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
+
+/// Serializes schema migrations within the current process.
+///
+/// Diesel's `run_pending_migrations` writes to the migrations table and can hold write locks.
+/// If multiple threads invoke it concurrently (common during app startup when multiple Tauri
+/// commands fire), SQLite will often return `database is locked`.
+static DB_MIGRATIONS_MUTEX: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
+
+/// Tracks whether migrations have been applied successfully in this process.
+///
+/// We intentionally do not cache failures permanently: transient SQLITE_BUSY/locked conditions
+/// (e.g. antivirus scans, startup races) should be retryable later.
+static DB_MIGRATIONS_APPLIED: AtomicBool = AtomicBool::new(false);
+
+/// If DB initialization failed during startup (e.g. locked DB during migrations), we attempt
+/// a best-effort background re-init when producers first try to enqueue tasks.
+static DB_BACKGROUND_INIT_STARTED: AtomicBool = AtomicBool::new(false);
 
 // Bounded channel capacity for DB task queue. Prevents unbounded memory
 // growth when producers outpace the writer thread.
@@ -102,7 +120,8 @@ pub fn establish_connection() -> Result<SqliteConnection, diesel::ConnectionErro
 // Applies SQLite PRAGMAs that improve reliability and concurrency.
 fn apply_sqlite_pragmas(conn: &mut SqliteConnection) {
     // Use a busy timeout so transient locks don't immediately fail writes/migrations.
-    let _ = diesel::sql_query("PRAGMA busy_timeout=5000;").execute(conn);
+    // Keep this comfortably above our migration retry window to reduce spurious failures.
+    let _ = diesel::sql_query("PRAGMA busy_timeout=30000;").execute(conn);
     // WAL improves concurrent read/write behavior.
     let _ = diesel::sql_query("PRAGMA journal_mode=WAL;").execute(conn);
     // Reasonable durability/perf balance for app telemetry/logs.
@@ -185,14 +204,15 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
         BATCH_MAX_WAIT_MS
     );
 
-    // Run migrations once
+    // Run migrations once (serialized across threads within this process)
     {
         let mut conn = pool.get().map_err(|e| DbInitError::Pool(e.to_string()))?;
         let mig_started = Instant::now();
         // Apply PRAGMAs before migrations since they affect lock handling.
         apply_sqlite_pragmas(&mut conn);
 
-        let applied = run_migrations_with_retry(&mut conn, Duration::from_secs(20)).map_err(|e| {
+        let applied = ensure_migrations_on_conn_with_retry(&mut conn, Duration::from_secs(60))
+            .map_err(|e| {
             let err_msg = format!("DB migration error: {}", e);
             log::error!(target: "app::db", "{}", err_msg);
             DbInitError::Migration(e)
@@ -380,6 +400,33 @@ fn run_migrations(conn: &mut SqliteConnection) -> Result<usize, String> {
     conn.run_pending_migrations(MIGRATIONS)
         .map(|applied| applied.len())
         .map_err(|e| e.to_string())
+}
+
+/// Ensures pending migrations are applied exactly once per process.
+pub fn ensure_migrations_on_conn(conn: &mut SqliteConnection) -> Result<usize, String> {
+    ensure_migrations_on_conn_with_retry(conn, Duration::from_secs(60))
+}
+
+fn ensure_migrations_on_conn_with_retry(
+    conn: &mut SqliteConnection,
+    max_total_wait: Duration,
+) -> Result<usize, String> {
+    if DB_MIGRATIONS_APPLIED.load(Ordering::Acquire) {
+        return Ok(0);
+    }
+
+    let _guard = DB_MIGRATIONS_MUTEX.lock();
+
+    if DB_MIGRATIONS_APPLIED.load(Ordering::Acquire) {
+        return Ok(0);
+    }
+
+    // Re-apply pragmas on the caller's connection before migrating.
+    apply_sqlite_pragmas(conn);
+
+    let applied = run_migrations_with_retry(conn, max_total_wait)?;
+    DB_MIGRATIONS_APPLIED.store(true, Ordering::Release);
+    Ok(applied)
 }
 
 // Runs pending database migrations with retries when SQLite is temporarily busy.
@@ -571,7 +618,28 @@ pub fn enqueue(task: DbTask) {
             }
         }
     } else {
-        // Use an atomic flag to prevent spamming the log
+        // If init failed during startup due to a transient lock, kick off a background init.
+        // We intentionally don't block the producer thread here.
+        if !DB_BACKGROUND_INIT_STARTED.swap(true, Ordering::Relaxed) {
+            std::thread::spawn(|| {
+                let started = Instant::now();
+                match init_and_spawn_writer() {
+                    Ok(()) => log::info!(
+                        target: "app::db",
+                        "db_background_init_succeeded elapsed_ms={}",
+                        started.elapsed().as_millis()
+                    ),
+                    Err(e) => log::warn!(
+                        target: "app::db",
+                        "db_background_init_failed elapsed_ms={} err={}",
+                        started.elapsed().as_millis(),
+                        e
+                    ),
+                }
+            });
+        }
+
+        // Use an atomic flag to prevent spamming the log.
         static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
         if !WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
             log::warn!(
