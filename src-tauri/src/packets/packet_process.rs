@@ -1,9 +1,9 @@
 use crate::packets;
 use crate::packets::opcodes::FragmentType;
-use crate::packets::parser;
 use crate::packets::packet_event::PacketEvent;
+use crate::packets::parser;
 use crate::packets::utils::BinaryReader;
-use log::debug;
+use log::{debug, info};
 
 pub fn process_packet(
     mut packets_reader: BinaryReader,
@@ -63,25 +63,31 @@ pub fn process_packet(
                 }
             }
             FragmentType::FrameDown => {
+                debug!(target: "app::market", "FrameDown packet received (compressed={})", is_zstd_compressed != 0);
                 let server_sequence_id = match reader.read_u32() {
                     Ok(sid) => sid,
                     Err(_e) => {
-                        // debug!("FrameDown: failed to read_u32 server_sequence_id: {e}");
+                        debug!(target: "app::market", "FrameDown: failed to read server_sequence_id");
                         continue;
                     }
                 };
+                debug!(target: "app::market", "FrameDown server_sequence_id={}", server_sequence_id);
                 if reader.remaining() == 0 {
-                    // debug!("FrameDown: reader.remaining() == 0");
+                    debug!(target: "app::market", "FrameDown: no payload remaining");
                     break;
                 }
 
                 let nested_packet = reader.read_remaining();
+                debug!(target: "app::market", "FrameDown nested_packet len={}", nested_packet.len());
 
                 let nested_bytes = if is_zstd_compressed != 0 {
                     match zstd::decode_all(nested_packet) {
-                        Ok(v) => v,
-                        Err(_e) => {
-                            // debug!("FrameDown: zstd decompression failed");
+                        Ok(v) => {
+                            debug!(target: "app::market", "FrameDown: zstd decompressed {} -> {} bytes", nested_packet.len(), v.len());
+                            v
+                        }
+                        Err(e) => {
+                            debug!(target: "app::market", "FrameDown: zstd decompression failed: {}", e);
                             continue;
                         }
                     }
@@ -92,17 +98,29 @@ pub fn process_packet(
                 // FrameDown can contain either:
                 // 1) a nested framed packet stream (combat/notify), or
                 // 2) a protobuf-ish stream used by market replies.
-                if crate::packets::market_decode::looks_like_framed_packet_stream(&nested_bytes) {
-                    packets_reader = BinaryReader::from(nested_bytes);
-                    continue;
-                }
-
+                //
+                // Try market decode first.
+                debug!(target: "app::market", "FrameDown: attempting market decode on {} bytes", nested_bytes.len());
                 if let Some(batch) = crate::packets::market_decode::decode_exchange_notice_detail(
                     &nested_bytes,
                     server_sequence_id,
                 ) {
+                    info!(target: "app::market", "FrameDown: market decode SUCCESS, {} listings", batch.listings.len());
                     if let Err(err) = packet_sender.try_send(PacketEvent::MarketListings(batch)) {
                         debug!("Failed to send market listings (try_send): {err}");
+                    }
+                    // Don't continue - we successfully decoded market data
+                } else {
+                    debug!(target: "app::market", "FrameDown: market decode returned None");
+                    // Market decode failed, check if this might be nested framed packets
+                    let looks_framed =
+                        crate::packets::market_decode::looks_like_framed_packet_stream(
+                            &nested_bytes,
+                        );
+                    debug!(target: "app::market", "FrameDown: looks_like_framed_packet_stream={}", looks_framed);
+                    if looks_framed {
+                        packets_reader = BinaryReader::from(nested_bytes);
+                        continue;
                     }
                 }
             }
@@ -188,7 +206,7 @@ pub fn process_packet(
 // todo: remove this test
 #[cfg(test)]
 mod tests {
-    use crate::packets::opcodes::Pkt;
+    use crate::packets::opcodes::Pkt as _Pkt;
     use crate::packets::packet_event::PacketEvent;
     use crate::packets::packet_process::process_packet;
     use crate::packets::utils::BinaryReader;
