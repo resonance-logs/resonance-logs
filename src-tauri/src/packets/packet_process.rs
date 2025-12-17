@@ -95,6 +95,26 @@ pub fn process_packet(
                     Vec::from(nested_packet)
                 };
 
+                // Quick visibility for debugging: market-like payloads typically contain
+                // multiple 0x0A length-delimited fields early in the buffer.
+                // (Keep this lightweight to avoid spamming.)
+                if cfg!(debug_assertions) {
+                    let preview_len = nested_bytes.len().min(2048);
+                    let count_0a = nested_bytes[..preview_len]
+                        .iter()
+                        .filter(|&&b| b == 0x0A)
+                        .count();
+                    if count_0a >= 3 {
+                        println!(
+                            "[Market] FrameDown candidate: server_seq={} nested_len={} 0x0A(first{}B)={}",
+                            server_sequence_id,
+                            nested_bytes.len(),
+                            preview_len,
+                            count_0a
+                        );
+                    }
+                }
+
                 // FrameDown can contain either:
                 // 1) a nested framed packet stream (combat/notify), or
                 // 2) a protobuf-ish stream used by market replies.
@@ -206,7 +226,6 @@ pub fn process_packet(
 // todo: remove this test
 #[cfg(test)]
 mod tests {
-    use crate::packets::opcodes::Pkt as _Pkt;
     use crate::packets::packet_event::PacketEvent;
     use crate::packets::packet_process::process_packet;
     use crate::packets::utils::BinaryReader;

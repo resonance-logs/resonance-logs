@@ -2,11 +2,7 @@ syntax = "proto3";
 
 package marketproto;
 
-// Minimal schemas for market decoding.
-//
-// We deliberately keep these messages small and self-contained:
-// - Only the fields used by resonance-logs are defined.
-// - Unknown/extra fields from the live payload are safely skipped.
+// schemas for market decoding.
 
 message ItemLite {
   int64 uuid = 1;
@@ -20,6 +16,15 @@ message ExchangePriceItemData {
   ItemLite item_info = 3;
   string guid = 4;
   int64 notice_time = 5;
+}
+
+// High-level item listing entries used by ExchangeNotice/ExchangeList.
+// Matches `zproto.ExchangeItemInfo`.
+message ExchangeItemInfo {
+  uint32 config_id = 1;
+  uint32 num = 2;
+  uint32 min_price = 3;
+  bool is_care = 4;
 }
 
 enum EErrorCode {
@@ -38,4 +43,75 @@ message ExchangeNoticeDetailReply {
 // Wire-compatible with `serv_world.World.ExchangeNoticeDetail_Ret`.
 message ExchangeNoticeDetailRet {
   ExchangeNoticeDetailReply ret = 1;
+}
+
+// Wire-compatible with `serv_world.World.ExchangeNotice_Ret`.
+message ExchangeNoticeReply {
+  repeated ExchangeItemInfo items = 2;
+  EErrorCode err_code = 3;
+}
+
+message ExchangeNoticeRet {
+  ExchangeNoticeReply ret = 1;
+}
+
+// Wire-compatible with `serv_world.World.ExchangeList_Ret`.
+// ExchangeListReply is wire-identical to ExchangeNoticeReply.
+message ExchangeListReply {
+  repeated ExchangeItemInfo items = 2;
+  EErrorCode err_code = 3;
+}
+
+message ExchangeListRet {
+  ExchangeListReply ret = 1;
+}
+
+// Wire-compatible with `serv_world.World.ExchangeCareList_Ret`.
+// ExchangeCareListReply is also wire-identical to ExchangeNoticeReply.
+message ExchangeCareListReply {
+  repeated ExchangeItemInfo items = 2;
+  EErrorCode err_code = 3;
+}
+
+message ExchangeCareListRet {
+  ExchangeCareListReply ret = 1;
+}
+
+// Wire-compatible with `serv_world.World.ExchangeNoticePreBuy_Ret`.
+message ExchangeNoticePreBuyReply {
+  repeated ExchangePriceItemData items = 2;
+  EErrorCode err_code = 3;
+}
+
+message ExchangeNoticePreBuyRet {
+  ExchangeNoticePreBuyReply ret = 1;
+}
+
+// Wire-compatible with `serv_world.World.ExchangeSaleData_Ret`.
+message ExchangeSaleDataItemData {
+  string guid = 1;
+  int32 num = 2;
+  int32 rate = 3;
+  int64 end_time = 4;
+}
+
+message ExchangeSaleDataReply {
+  repeated ExchangeSaleDataItemData items = 2;
+  uint32 min_rate = 3;
+  EErrorCode err_code = 4;
+}
+
+message ExchangeSaleDataRet {
+  ExchangeSaleDataReply ret = 1;
+}
+
+// Wire-compatible with `serv_world.World.ExchangeLowestPrice_Ret`.
+message ExchangeLowestPriceReply {
+  int32 config_id = 1;
+  int64 lowest_price = 2;
+  EErrorCode err_code = 3;
+}
+
+message ExchangeLowestPriceRet {
+  ExchangeLowestPriceReply ret = 1;
 }
