@@ -1,12 +1,13 @@
 use crate::packets;
 use crate::packets::opcodes::FragmentType;
+use crate::packets::packet_event::PacketEvent;
 use crate::packets::parser;
 use crate::packets::utils::BinaryReader;
-use log::debug;
+use log::{debug, info};
 
 pub fn process_packet(
     mut packets_reader: BinaryReader,
-    packet_sender: tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
+    packet_sender: tokio::sync::mpsc::Sender<PacketEvent>,
 ) {
     let mut _debug_ctr = 0;
     while packets_reader.remaining() > 0 {
@@ -50,8 +51,11 @@ pub fn process_packet(
                 if let Some((method_id, payload)) =
                     parser::parse_notify_fragment(&mut reader, is_zstd_compressed != 0)
                 {
-                    if let Err(err) = packet_sender.blocking_send((method_id, payload)) {
-                        debug!("Failed to send packet: {err}");
+                    if let Err(err) = packet_sender.try_send(PacketEvent::Notify {
+                        op: method_id,
+                        data: payload,
+                    }) {
+                        debug!("Failed to send packet (try_send): {err}");
                     }
                 } else {
                     // parse_notify_fragment logged details
@@ -59,31 +63,85 @@ pub fn process_packet(
                 }
             }
             FragmentType::FrameDown => {
-                let _server_sequence_id = match reader.read_u32() {
+                debug!(target: "app::market", "FrameDown packet received (compressed={})", is_zstd_compressed != 0);
+                let server_sequence_id = match reader.read_u32() {
                     Ok(sid) => sid,
                     Err(_e) => {
-                        // debug!("FrameDown: failed to read_u32 server_sequence_id: {e}");
+                        debug!(target: "app::market", "FrameDown: failed to read server_sequence_id");
                         continue;
                     }
                 };
+                debug!(target: "app::market", "FrameDown server_sequence_id={}", server_sequence_id);
                 if reader.remaining() == 0 {
-                    // debug!("FrameDown: reader.remaining() == 0");
+                    debug!(target: "app::market", "FrameDown: no payload remaining");
                     break;
                 }
 
                 let nested_packet = reader.read_remaining();
-                if is_zstd_compressed != 0 {
+                debug!(target: "app::market", "FrameDown nested_packet len={}", nested_packet.len());
+
+                let nested_bytes = if is_zstd_compressed != 0 {
                     match zstd::decode_all(nested_packet) {
-                        Ok(tcp_fragment_decompressed) => {
-                            packets_reader = BinaryReader::from(tcp_fragment_decompressed);
+                        Ok(v) => {
+                            debug!(target: "app::market", "FrameDown: zstd decompressed {} -> {} bytes", nested_packet.len(), v.len());
+                            v
                         }
-                        Err(_e) => {
-                            // debug!("FrameDown: zstd decompression failed");
+                        Err(e) => {
+                            debug!(target: "app::market", "FrameDown: zstd decompression failed: {}", e);
                             continue;
                         }
                     }
                 } else {
-                    packets_reader = BinaryReader::from(Vec::from(nested_packet));
+                    Vec::from(nested_packet)
+                };
+
+                // Quick visibility for debugging: market-like payloads typically contain
+                // multiple 0x0A length-delimited fields early in the buffer.
+                // (Keep this lightweight to avoid spamming.)
+                if cfg!(debug_assertions) {
+                    let preview_len = nested_bytes.len().min(2048);
+                    let count_0a = nested_bytes[..preview_len]
+                        .iter()
+                        .filter(|&&b| b == 0x0A)
+                        .count();
+                    if count_0a >= 3 {
+                        println!(
+                            "[Market] FrameDown candidate: server_seq={} nested_len={} 0x0A(first{}B)={}",
+                            server_sequence_id,
+                            nested_bytes.len(),
+                            preview_len,
+                            count_0a
+                        );
+                    }
+                }
+
+                // FrameDown can contain either:
+                // 1) a nested framed packet stream (combat/notify), or
+                // 2) a protobuf-ish stream used by market replies.
+                //
+                // Try market decode first.
+                debug!(target: "app::market", "FrameDown: attempting market decode on {} bytes", nested_bytes.len());
+                if let Some(batch) = crate::packets::market_decode::decode_exchange_notice_detail(
+                    &nested_bytes,
+                    server_sequence_id,
+                ) {
+                    info!(target: "app::market", "FrameDown: market decode SUCCESS, {} listings", batch.listings.len());
+                    if let Err(err) = packet_sender.try_send(PacketEvent::MarketListings(batch)) {
+                        debug!("Failed to send market listings (try_send): {err}");
+                    }
+                    // Don't continue - we successfully decoded market data
+                } else {
+                    debug!(target: "app::market", "FrameDown: market decode returned None");
+                    // Market decode failed, check if this might be nested framed packets
+                    let looks_framed =
+                        crate::packets::market_decode::looks_like_framed_packet_stream(
+                            &nested_bytes,
+                        );
+                    debug!(target: "app::market", "FrameDown: looks_like_framed_packet_stream={}", looks_framed);
+                    if looks_framed {
+                        packets_reader = BinaryReader::from(nested_bytes);
+                        continue;
+                    }
                 }
             }
             _ => {
@@ -168,14 +226,14 @@ pub fn process_packet(
 // todo: remove this test
 #[cfg(test)]
 mod tests {
-    use crate::packets::opcodes::Pkt;
+    use crate::packets::packet_event::PacketEvent;
     use crate::packets::packet_process::process_packet;
     use crate::packets::utils::BinaryReader;
 
     #[tokio::test]
     async fn test_add() {
         use std::fs;
-        let (packet_sender, _) = tokio::sync::mpsc::channel::<(Pkt, Vec<u8>)>(1);
+        let (packet_sender, _) = tokio::sync::mpsc::channel::<PacketEvent>(1);
         let filename = "src/packets/test_add_packet.json";
         let v: Vec<u8> = serde_json::from_str(
             &fs::read_to_string(filename).expect(&format!("Failed to open {filename}")),

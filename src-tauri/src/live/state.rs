@@ -5,6 +5,7 @@ use crate::live::dungeon_log::{self, DungeonLogRuntime, SegmentType, SharedDunge
 use crate::live::event_manager::{EventManager, MetricType};
 use crate::live::opcodes_models::Encounter;
 use crate::live::player_names::PlayerNames;
+use crate::packets::market::MarketListingsBatch;
 use blueprotobuf_lib::blueprotobuf;
 use log::{info, trace, warn};
 use serde::Serialize;
@@ -76,6 +77,8 @@ pub enum StateEvent {
     SyncContainerData(blueprotobuf::SyncContainerData),
     /// A sync container dirty data event.
     SyncContainerDirtyData(blueprotobuf::SyncContainerDirtyData),
+    /// A sync dungeon dirty data event.
+    SyncDungeonDirtyData(blueprotobuf::SyncDungeonDirtyData),
     /// A sync server time event.
     SyncServerTime(blueprotobuf::SyncServerTime),
     /// A sync to me delta info event.
@@ -93,6 +96,9 @@ pub enum StateEvent {
         /// Whether this was a manual reset by the user (true) vs automatic (false).
         is_manual: bool,
     },
+
+    /// Market listings update.
+    MarketListings(MarketListingsBatch),
 }
 
 /// Clamp ongoing buff events to the encounter end and persist them.
@@ -185,6 +191,9 @@ pub struct AppState {
     pub attempt_config: AttemptConfig,
     /// Event update rate in milliseconds (default: 200ms). Controls how often events are emitted to frontend.
     pub event_update_rate_ms: u64,
+
+    /// Most recently observed market listings batch.
+    pub last_market_listings: Option<MarketListingsBatch>,
 }
 
 impl AppState {
@@ -206,6 +215,7 @@ impl AppState {
             dungeon_segments_enabled: false,
             attempt_config: AttemptConfig::default(),
             event_update_rate_ms: 200,
+            last_market_listings: None,
         }
     }
 
@@ -410,6 +420,9 @@ impl AppStateManager {
                 self.process_sync_container_dirty_data(&mut state, data)
                     .await;
             }
+            StateEvent::SyncDungeonDirtyData(data) => {
+                self.process_sync_dungeon_dirty_data(&mut state, data).await;
+            }
             StateEvent::SyncServerTime(_data) => {
                 // todo: this is skipped, not sure what info it has
             }
@@ -434,6 +447,24 @@ impl AppStateManager {
             }
             StateEvent::ResetEncounter { is_manual } => {
                 self.reset_encounter(&mut state, is_manual).await;
+            }
+
+            StateEvent::MarketListings(batch) => {
+                state.last_market_listings = Some(batch.clone());
+                if let Some(app_handle) = state.event_manager.get_app_handle() {
+                    // Fire-and-forget update to the UI.
+                    safe_emit(&app_handle, "market-listings-update", batch.clone());
+                }
+                // Spawn background task to upload market data to server
+                let batch_for_upload = batch.clone();
+                let app_handle_for_upload = state.app_handle.clone();
+                tokio::spawn(async move {
+                    crate::uploader::market_uploader::upload_market_listings(
+                        app_handle_for_upload,
+                        &batch_for_upload,
+                    )
+                    .await;
+                });
             }
         }
     }
@@ -846,6 +877,18 @@ impl AppStateManager {
             .is_none()
         {
             warn!("Error processing SyncContainerDirtyData.. ignoring.");
+        }
+    }
+
+    async fn process_sync_dungeon_dirty_data(
+        &self,
+        state: &mut AppState,
+        sync_dungeon_dirty_data: blueprotobuf::SyncDungeonDirtyData,
+    ) {
+        use crate::live::opcodes_process::process_sync_dungeon_dirty_data;
+        if process_sync_dungeon_dirty_data(&mut state.encounter, sync_dungeon_dirty_data).is_none()
+        {
+            warn!("Error processing SyncDungeonDirtyData.. ignoring.");
         }
     }
 
