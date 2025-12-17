@@ -453,8 +453,18 @@ impl AppStateManager {
                 state.last_market_listings = Some(batch.clone());
                 if let Some(app_handle) = state.event_manager.get_app_handle() {
                     // Fire-and-forget update to the UI.
-                    safe_emit(&app_handle, "market-listings-update", batch);
+                    safe_emit(&app_handle, "market-listings-update", batch.clone());
                 }
+                // Spawn background task to upload market data to server
+                let batch_for_upload = batch.clone();
+                let app_handle_for_upload = state.app_handle.clone();
+                tokio::spawn(async move {
+                    crate::uploader::market_uploader::upload_market_listings(
+                        app_handle_for_upload,
+                        &batch_for_upload,
+                    )
+                    .await;
+                });
             }
         }
     }
