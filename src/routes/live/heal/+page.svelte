@@ -9,12 +9,42 @@
   import PercentFormat from "$lib/components/percent-format.svelte";
   import getDisplayName from "$lib/name-display";
 
-  // Create reactive data reference to avoid recreating table on every render
-  let healData = $state(getHealPlayers().playerRows);
+  // Create reactive data reference
+  let rawHealData = $state(getHealPlayers().playerRows);
 
   // Update data when store changes
   $effect(() => {
-    healData = getHealPlayers().playerRows;
+    rawHealData = getHealPlayers().playerRows;
+  });
+
+  // Sorting settings
+  let sortKey = $derived(SETTINGS.live.sorting.healPlayers.state.sortKey);
+  let sortDesc = $derived(SETTINGS.live.sorting.healPlayers.state.sortDesc);
+  let columnOrder = $derived(SETTINGS.live.columnOrder.healPlayers.state.order);
+
+  // Handle column header click for sorting
+  function handleSort(key: string) {
+    if (SETTINGS.live.sorting.healPlayers.state.sortKey === key) {
+      SETTINGS.live.sorting.healPlayers.state.sortDesc =
+        !SETTINGS.live.sorting.healPlayers.state.sortDesc;
+    } else {
+      SETTINGS.live.sorting.healPlayers.state.sortKey = key;
+      SETTINGS.live.sorting.healPlayers.state.sortDesc = true;
+    }
+  }
+
+  // Sorted player data based on settings
+  let healData = $derived.by(() => {
+    const data = [...rawHealData];
+    data.sort((a, b) => {
+      const aVal = (a as Record<string, unknown>)[sortKey] ?? 0;
+      const bVal = (b as Record<string, unknown>)[sortKey] ?? 0;
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDesc ? bVal - aVal : aVal - bVal;
+      }
+      return 0;
+    });
+    return data;
   });
 
   // Optimize derived calculations to avoid recalculation on every render
@@ -25,12 +55,17 @@
 
   // Table customization settings
   let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
-  let customThemeColors = $derived(SETTINGS.accessibility.state.customThemeColors);
+  let customThemeColors = $derived(
+    SETTINGS.accessibility.state.customThemeColors,
+  );
 
   // Update maxHeal when data changes
   $effect(() => {
     const players = getHealPlayers().playerRows;
-    maxHeal = players.reduce((max, p) => (p.totalDmg > max ? p.totalDmg : max), 0);
+    maxHeal = players.reduce(
+      (max, p) => (p.totalDmg > max ? p.totalDmg : max),
+      0,
+    );
   });
 
   // Update settings references when settings change
@@ -40,23 +75,47 @@
     SETTINGS_SHORTEN_DPS = settings.state.live.general.shortenDps;
   });
 
-  // Get visible columns based on settings
+  // Get visible columns based on settings and column order
   let visiblePlayerColumns = $derived.by(() => {
-    return liveHealPlayerColumns.filter(col => settings.state.live.heal.players[col.key]);
+    const visible = liveHealPlayerColumns.filter(
+      (col) => settings.state.live.heal.players[col.key],
+    );
+    return visible.sort((a, b) => {
+      const aIdx = columnOrder.indexOf(a.key);
+      const bIdx = columnOrder.indexOf(b.key);
+      return aIdx - bIdx;
+    });
   });
-
-  
-
 </script>
 
-<div class="relative flex flex-col gap-2 overflow-hidden rounded-lg ring-1 ring-border/60 bg-card/30">
+<div
+  class="relative flex flex-col gap-2 overflow-hidden rounded-lg ring-1 ring-border/60 bg-card/30"
+>
   <table class="w-full border-collapse overflow-hidden">
     {#if tableSettings.showTableHeader}
       <thead>
-        <tr class="bg-popover/60" style="height: {tableSettings.tableHeaderHeight}px;">
-          <th class="px-3 py-1 text-left font-medium uppercase tracking-wide" style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};">Player</th>
+        <tr
+          class="bg-popover/60"
+          style="height: {tableSettings.tableHeaderHeight}px;"
+        >
+          <th
+            class="px-3 py-1 text-left font-medium uppercase tracking-wide"
+            style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};"
+            >Player</th
+          >
           {#each visiblePlayerColumns as col (col.key)}
-            <th class="px-3 py-1 text-right font-medium uppercase tracking-wide" style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};">{col.header}</th>
+            <th
+              class="px-3 py-1 text-right font-medium uppercase tracking-wide cursor-pointer select-none hover:bg-muted/40 transition-colors"
+              style="font-size: {tableSettings.tableHeaderFontSize}px; color: {tableSettings.tableHeaderTextColor};"
+              onclick={() => handleSort(col.key)}
+            >
+              <span class="inline-flex items-center gap-1 justify-end">
+                {col.header}
+                {#if sortKey === col.key}
+                  <span class="text-primary">{sortDesc ? "▼" : "▲"}</span>
+                {/if}
+              </span>
+            </th>
           {/each}
         </tr>
       </thead>
@@ -69,13 +128,19 @@
             uid: player.uid,
             name: player.name,
             className: player.className,
-            classSpecName: player.classSpecName
+            classSpecName: player.classSpecName,
           },
           showYourNameSetting: SETTINGS_YOUR_NAME,
           showOthersNameSetting: SETTINGS_OTHERS_NAME,
-          isLocalPlayer
+          isLocalPlayer,
         })}
-        {@const className = isLocalPlayer ? (SETTINGS_YOUR_NAME !== "Hide Your Name" ? player.className : "") : SETTINGS_OTHERS_NAME !== "Hide Others' Name" ? player.className : ""}
+        {@const className = isLocalPlayer
+          ? SETTINGS_YOUR_NAME !== "Hide Your Name"
+            ? player.className
+            : ""
+          : SETTINGS_OTHERS_NAME !== "Hide Others' Name"
+            ? player.className
+            : ""}
         <tr
           class="relative bg-background/40 hover:bg-muted/60 transition-colors cursor-pointer group"
           style="height: {tableSettings.playerRowHeight}px; font-size: {tableSettings.playerFontSize}px;"
@@ -88,36 +153,79 @@
                 class="object-contain"
                 src={getClassIcon(className)}
                 alt="Class icon"
-                {@attach tooltip(() => `${player.className}${player.classSpecName ? ' - ' + player.classSpecName : ''}`)}
+                {@attach tooltip(
+                  () =>
+                    `${player.className}${player.classSpecName ? " - " + player.classSpecName : ""}`,
+                )}
               />
               {#if player.abilityScore > 0}
                 {#if SETTINGS.live.general.state.shortenAbilityScore}
-                  <span class="tabular-nums" style="color: {customThemeColors.tableTextColor};"><AbbreviatedNumber num={player.abilityScore} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} /></span>
+                  <span
+                    class="tabular-nums"
+                    style="color: {customThemeColors.tableTextColor};"
+                    ><AbbreviatedNumber
+                      num={player.abilityScore}
+                      suffixFontSize={tableSettings.abbreviatedFontSize}
+                      suffixColor={customThemeColors.tableAbbreviatedColor}
+                    /></span
+                  >
                 {:else}
-                  <span class="tabular-nums" style="color: {customThemeColors.tableTextColor};">{player.abilityScore}</span>
+                  <span
+                    class="tabular-nums"
+                    style="color: {customThemeColors.tableTextColor};"
+                    >{player.abilityScore}</span
+                  >
                 {/if}
               {/if}
-              <span class="truncate font-medium" style="color: {customThemeColors.tableTextColor};">{displayName || `#${player.uid}`}</span>
+              <span
+                class="truncate font-medium"
+                style="color: {customThemeColors.tableTextColor};"
+                >{displayName || `#${player.uid}`}</span
+              >
             </div>
           </td>
           {#each visiblePlayerColumns as col (col.key)}
-            <td class="px-3 py-1 text-right relative z-10 tabular-nums font-medium" style="color: {customThemeColors.tableTextColor};">
-              {#if col.key === 'totalDmg'}
-                    {#if SETTINGS_SHORTEN_DPS}
-                      <AbbreviatedNumber num={player.totalDmg} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
-                    {:else}
-                      {player.totalDmg.toLocaleString()}
-                    {/if}
-              {:else if col.key === 'dmgPct'}
-                <PercentFormat val={player.dmgPct} fractionDigits={0} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
-              {:else if col.key === 'critRate' || col.key === 'critDmgRate' || col.key === 'luckyRate' || col.key === 'luckyDmgRate'}
-                <PercentFormat val={player[col.key]} suffixFontSize={tableSettings.abbreviatedFontSize} suffixColor={customThemeColors.tableAbbreviatedColor} />
+            <td
+              class="px-3 py-1 text-right relative z-10 tabular-nums font-medium"
+              style="color: {customThemeColors.tableTextColor};"
+            >
+              {#if col.key === "totalDmg"}
+                {#if SETTINGS_SHORTEN_DPS}
+                  <AbbreviatedNumber
+                    num={player.totalDmg}
+                    suffixFontSize={tableSettings.abbreviatedFontSize}
+                    suffixColor={customThemeColors.tableAbbreviatedColor}
+                  />
+                {:else}
+                  {player.totalDmg.toLocaleString()}
+                {/if}
+              {:else if col.key === "dmgPct"}
+                <PercentFormat
+                  val={player.dmgPct}
+                  fractionDigits={0}
+                  suffixFontSize={tableSettings.abbreviatedFontSize}
+                  suffixColor={customThemeColors.tableAbbreviatedColor}
+                />
+              {:else if col.key === "critRate" || col.key === "critDmgRate" || col.key === "luckyRate" || col.key === "luckyDmgRate"}
+                <PercentFormat
+                  val={player[col.key]}
+                  suffixFontSize={tableSettings.abbreviatedFontSize}
+                  suffixColor={customThemeColors.tableAbbreviatedColor}
+                />
               {:else}
                 {col.format(player[col.key] ?? 0)}
               {/if}
             </td>
           {/each}
-          <TableRowGlow className={className} classSpecName={player.classSpecName} percentage={SETTINGS.live.general.state.relativeToTopHealPlayer ? maxHeal > 0 ? (player.totalDmg / maxHeal) * 100 : 0 : player.dmgPct} />
+          <TableRowGlow
+            {className}
+            classSpecName={player.classSpecName}
+            percentage={SETTINGS.live.general.state.relativeToTopHealPlayer
+              ? maxHeal > 0
+                ? (player.totalDmg / maxHeal) * 100
+                : 0
+              : player.dmgPct}
+          />
         </tr>
       {/each}
     </tbody>

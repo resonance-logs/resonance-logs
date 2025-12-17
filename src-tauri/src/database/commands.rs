@@ -1,5 +1,4 @@
 use diesel::prelude::*;
-use diesel_migrations::MigrationHarness;
 use serde::{Deserialize, Serialize};
 
 use crate::database::models as m;
@@ -439,9 +438,9 @@ fn get_conn() -> Result<diesel::sqlite::SqliteConnection, String> {
     let path = default_db_path();
     ensure_parent_dir(&path).map_err(|e| e.to_string())?;
     let mut conn = crate::database::establish_connection().map_err(|e| e.to_string())?;
-    // Run any pending migrations in case the writer initialization was skipped or failed.
-    conn.run_pending_migrations(crate::database::MIGRATIONS)
-        .map_err(|e| e.to_string())?;
+    // Ensure migrations are applied, but serialize migration execution to avoid
+    // `database is locked` errors when multiple commands are invoked concurrently.
+    crate::database::ensure_migrations_on_conn(&mut conn).map_err(|e| e.to_string())?;
     Ok(conn)
 }
 
@@ -2212,7 +2211,7 @@ pub fn get_encounter_player_skills(
 pub fn get_encounter_segments(encounter_id: i32) -> Result<Vec<m::DungeonSegmentRow>, String> {
     use sch::dungeon_segments::dsl as ds;
 
-    let mut conn = crate::database::establish_connection().map_err(|e| e.to_string())?;
+    let mut conn = get_conn()?;
 
     let segments = ds::dungeon_segments
         .filter(ds::encounter_id.eq(encounter_id))

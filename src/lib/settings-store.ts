@@ -58,6 +58,24 @@ export const DEFAULT_HISTORY_HEAL_STATS = {
   hitsPerMinute: false,
 };
 
+// Default column order for live tables (keys from column-data.ts)
+export const DEFAULT_DPS_PLAYER_COLUMN_ORDER = ['totalDmg', 'dps', 'tdps', 'bossDmg', 'bossDps', 'dmgPct', 'critRate', 'critDmgRate', 'luckyRate', 'luckyDmgRate', 'hits', 'hitsPerMinute'];
+export const DEFAULT_DPS_SKILL_COLUMN_ORDER = ['totalDmg', 'dps', 'dmgPct', 'critRate', 'critDmgRate', 'luckyRate', 'luckyDmgRate', 'hits', 'hitsPerMinute'];
+export const DEFAULT_HEAL_PLAYER_COLUMN_ORDER = ['totalDmg', 'dps', 'dmgPct', 'critRate', 'critDmgRate', 'luckyRate', 'luckyDmgRate', 'hits', 'hitsPerMinute'];
+export const DEFAULT_HEAL_SKILL_COLUMN_ORDER = ['totalDmg', 'dps', 'dmgPct', 'critRate', 'critDmgRate', 'luckyRate', 'luckyDmgRate', 'hits', 'hitsPerMinute'];
+export const DEFAULT_TANKED_PLAYER_COLUMN_ORDER = ['totalDmg', 'dps', 'dmgPct', 'critRate', 'critDmgRate', 'luckyRate', 'luckyDmgRate', 'hits', 'hitsPerMinute'];
+export const DEFAULT_TANKED_SKILL_COLUMN_ORDER = ['totalDmg', 'dps', 'dmgPct', 'critRate', 'critDmgRate', 'luckyRate', 'luckyDmgRate', 'hits', 'hitsPerMinute'];
+
+// Default sort settings for live tables
+export const DEFAULT_LIVE_SORT_SETTINGS = {
+  dpsPlayers: { sortKey: 'totalDmg', sortDesc: true },
+  dpsSkills: { sortKey: 'totalDmg', sortDesc: true },
+  healPlayers: { sortKey: 'totalDmg', sortDesc: true },
+  healSkills: { sortKey: 'totalDmg', sortDesc: true },
+  tankedPlayers: { sortKey: 'totalDmg', sortDesc: true },
+  tankedSkills: { sortKey: 'totalDmg', sortDesc: true },
+};
+
 export type ShortcutSettingId = keyof typeof DEFAULT_SETTINGS.shortcuts;
 
 const DEFAULT_GENERAL_SETTINGS = {
@@ -419,6 +437,24 @@ export const SETTINGS = {
       DEFAULT_SETTINGS.live.headerCustomization,
       RUNE_STORE_OPTIONS
     ),
+    // Column order settings
+    columnOrder: {
+      dpsPlayers: new RuneStore('liveDpsPlayersColumnOrder', { order: DEFAULT_DPS_PLAYER_COLUMN_ORDER }, RUNE_STORE_OPTIONS),
+      dpsSkills: new RuneStore('liveDpsSkillsColumnOrder', { order: DEFAULT_DPS_SKILL_COLUMN_ORDER }, RUNE_STORE_OPTIONS),
+      healPlayers: new RuneStore('liveHealPlayersColumnOrder', { order: DEFAULT_HEAL_PLAYER_COLUMN_ORDER }, RUNE_STORE_OPTIONS),
+      healSkills: new RuneStore('liveHealSkillsColumnOrder', { order: DEFAULT_HEAL_SKILL_COLUMN_ORDER }, RUNE_STORE_OPTIONS),
+      tankedPlayers: new RuneStore('liveTankedPlayersColumnOrder', { order: DEFAULT_TANKED_PLAYER_COLUMN_ORDER }, RUNE_STORE_OPTIONS),
+      tankedSkills: new RuneStore('liveTankedSkillsColumnOrder', { order: DEFAULT_TANKED_SKILL_COLUMN_ORDER }, RUNE_STORE_OPTIONS),
+    },
+    // Sort settings
+    sorting: {
+      dpsPlayers: new RuneStore('liveDpsPlayersSorting', DEFAULT_LIVE_SORT_SETTINGS.dpsPlayers, RUNE_STORE_OPTIONS),
+      dpsSkills: new RuneStore('liveDpsSkillsSorting', DEFAULT_LIVE_SORT_SETTINGS.dpsSkills, RUNE_STORE_OPTIONS),
+      healPlayers: new RuneStore('liveHealPlayersSorting', DEFAULT_LIVE_SORT_SETTINGS.healPlayers, RUNE_STORE_OPTIONS),
+      healSkills: new RuneStore('liveHealSkillsSorting', DEFAULT_LIVE_SORT_SETTINGS.healSkills, RUNE_STORE_OPTIONS),
+      tankedPlayers: new RuneStore('liveTankedPlayersSorting', DEFAULT_LIVE_SORT_SETTINGS.tankedPlayers, RUNE_STORE_OPTIONS),
+      tankedSkills: new RuneStore('liveTankedSkillsSorting', DEFAULT_LIVE_SORT_SETTINGS.tankedSkills, RUNE_STORE_OPTIONS),
+    },
   },
   history: {
     general: new RuneStore(
@@ -494,6 +530,22 @@ export const settings = {
       },
       tableCustomization: SETTINGS.live.tableCustomization.state,
       headerCustomization: SETTINGS.live.headerCustomization.state,
+      columnOrder: {
+        dpsPlayers: SETTINGS.live.columnOrder.dpsPlayers.state,
+        dpsSkills: SETTINGS.live.columnOrder.dpsSkills.state,
+        healPlayers: SETTINGS.live.columnOrder.healPlayers.state,
+        healSkills: SETTINGS.live.columnOrder.healSkills.state,
+        tankedPlayers: SETTINGS.live.columnOrder.tankedPlayers.state,
+        tankedSkills: SETTINGS.live.columnOrder.tankedSkills.state,
+      },
+      sorting: {
+        dpsPlayers: SETTINGS.live.sorting.dpsPlayers.state,
+        dpsSkills: SETTINGS.live.sorting.dpsSkills.state,
+        healPlayers: SETTINGS.live.sorting.healPlayers.state,
+        healSkills: SETTINGS.live.sorting.healSkills.state,
+        tankedPlayers: SETTINGS.live.sorting.tankedPlayers.state,
+        tankedSkills: SETTINGS.live.sorting.tankedSkills.state,
+      },
     },
     appVersion: SETTINGS.appVersion.state,
     history: {

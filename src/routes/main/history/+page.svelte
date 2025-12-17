@@ -24,6 +24,79 @@
 	let totalCount = $state(0);
 	let isRefreshing = $state(false);
 
+	// Multi-select state
+	let selectedIds = $state<Set<number>>(new Set());
+	let showDeleteModal = $state(false);
+	let isDeleting = $state(false);
+
+	// Derived: check if all visible items are selected
+	const allSelected = $derived(
+		encounters.length > 0 &&
+			encounters.every((enc) => selectedIds.has(enc.id)),
+	);
+	const someSelected = $derived(selectedIds.size > 0);
+
+	function toggleSelectAll() {
+		if (allSelected) {
+			// Deselect all visible
+			const visibleIds = new Set(encounters.map((e) => e.id));
+			selectedIds = new Set(
+				[...selectedIds].filter((id) => !visibleIds.has(id)),
+			);
+		} else {
+			// Select all visible
+			selectedIds = new Set([
+				...selectedIds,
+				...encounters.map((e) => e.id),
+			]);
+		}
+	}
+
+	function toggleSelect(id: number, event: MouseEvent) {
+		event.stopPropagation();
+		const newSet = new Set(selectedIds);
+		if (newSet.has(id)) {
+			newSet.delete(id);
+		} else {
+			newSet.add(id);
+		}
+		selectedIds = newSet;
+	}
+
+	function clearSelection() {
+		selectedIds = new Set();
+	}
+
+	function openDeleteModal() {
+		showDeleteModal = true;
+	}
+
+	function closeDeleteModal() {
+		showDeleteModal = false;
+	}
+
+	async function confirmDeleteSelected() {
+		if (selectedIds.size === 0) return;
+		isDeleting = true;
+		try {
+			const idsToDelete = [...selectedIds];
+			const res = await commands.deleteEncounters(idsToDelete);
+			if (res.status === "ok") {
+				selectedIds = new Set();
+				showDeleteModal = false;
+				// Reload encounters
+				await loadEncounters(page);
+			} else {
+				errorMsg = `Failed to delete: ${res.error}`;
+			}
+		} catch (e) {
+			console.error("Delete error", e);
+			errorMsg = String(e);
+		} finally {
+			isDeleting = false;
+		}
+	}
+
 	// Unified search (boss, player and encounter names)
 	let availableBossNames = $state<string[]>([]);
 	let availableEncounterNames = $state<string[]>([]);
@@ -275,7 +348,6 @@
 	async function onView(enc: EncounterSummaryDto) {
 		goto(`/main/history/${enc.id}`);
 	}
-
 </script>
 
 <div class="">
@@ -524,9 +596,58 @@
 			</button>
 		</div>
 
-		<table class="w-full border-collapse" style="min-width: 740px;">
+		<table class="w-full border-collapse" style="min-width: 780px;">
 			<thead>
 				<tr class="bg-popover/60">
+					<th
+						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-10"
+					>
+						<button
+							onclick={toggleSelectAll}
+							class="flex items-center justify-center w-5 h-5 rounded border transition-colors {allSelected
+								? 'bg-primary border-primary'
+								: someSelected &&
+									  encounters.some((e) =>
+											selectedIds.has(e.id),
+									  )
+									? 'bg-primary/50 border-primary'
+									: 'border-border hover:border-primary/50'}"
+							aria-label={allSelected
+								? "Deselect all"
+								: "Select all"}
+							title={allSelected ? "Deselect all" : "Select all"}
+						>
+							{#if allSelected}
+								<svg
+									class="w-3 h-3 text-primary-foreground"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="3"
+										d="M5 13l4 4L19 7"
+									/>
+								</svg>
+							{:else if encounters.some( (e) => selectedIds.has(e.id), )}
+								<svg
+									class="w-3 h-3 text-primary-foreground"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="3"
+										d="M18 12H6"
+									/>
+								</svg>
+							{/if}
+						</button>
+					</th>
 					<th
 						class="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground w-10"
 						>ID</th
@@ -552,15 +673,46 @@
 			<tbody class="bg-background/40">
 				{#each encounters as enc (enc.id)}
 					<tr
-						class="border-t border-border/40 hover:bg-muted/60 transition-colors cursor-pointer"
+						class="border-t border-border/40 hover:bg-muted/60 transition-colors cursor-pointer {selectedIds.has(
+							enc.id,
+						)
+							? 'bg-primary/5'
+							: ''}"
 						onclick={() => onView(enc)}
 					>
 						<td class="px-3 py-2 text-sm text-muted-foreground">
+							<button
+								onclick={(e) => toggleSelect(enc.id, e)}
+								class="flex items-center justify-center w-5 h-5 rounded border transition-colors {selectedIds.has(
+									enc.id,
+								)
+									? 'bg-primary border-primary'
+									: 'border-border hover:border-primary/50'}"
+								aria-label={selectedIds.has(enc.id)
+									? "Deselect"
+									: "Select"}
+							>
+								{#if selectedIds.has(enc.id)}
+									<svg
+										class="w-3 h-3 text-primary-foreground"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="3"
+											d="M5 13l4 4L19 7"
+										/>
+									</svg>
+								{/if}
+							</button>
+						</td>
+						<td class="px-3 py-2 text-sm text-muted-foreground">
 							{enc.id}
 						</td>
-						<td
-							class="px-3 py-2 text-sm text-muted-foreground"
-						>
+						<td class="px-3 py-2 text-sm text-muted-foreground">
 							<div class="space-y-1">
 								<div>
 									{#if enc.sceneName}
@@ -641,13 +793,10 @@
 								>
 							{/if}
 						</td>
-						<td
-							class="px-3 py-2 text-sm text-muted-foreground"
+						<td class="px-3 py-2 text-sm text-muted-foreground"
 							>{fmtDuration(enc.startedAtMs, enc.endedAtMs)}</td
 						>
-						<td
-							class="px-3 py-2 text-sm text-muted-foreground"
-						>
+						<td class="px-3 py-2 text-sm text-muted-foreground">
 							<div class="leading-snug">
 								<div>{fmtDate(enc.startedAtMs)}</div>
 								<div
@@ -772,3 +921,156 @@
 		</div>
 	</div>
 </div>
+
+<!-- Floating Action Bar for Multi-select -->
+{#if someSelected}
+	<div
+		class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 duration-200"
+	>
+		<div
+			class="flex items-center gap-4 px-5 py-3 rounded-xl border border-border bg-popover/95 backdrop-blur-sm shadow-xl"
+		>
+			<div class="flex items-center gap-2 text-sm">
+				<span class="text-primary font-semibold"
+					>{selectedIds.size}</span
+				>
+				<span class="text-muted-foreground"
+					>log{selectedIds.size !== 1 ? "s" : ""} selected</span
+				>
+			</div>
+
+			<div class="w-px h-5 bg-border"></div>
+
+			<div class="flex items-center gap-2">
+				<button
+					onclick={clearSelection}
+					class="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+				>
+					Clear
+				</button>
+				<button
+					onclick={openDeleteModal}
+					class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+				>
+					<svg
+						class="w-4 h-4"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+						/>
+					</svg>
+					Delete
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Delete Confirmation Modal -->
+{#if showDeleteModal}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="delete-modal-title"
+	>
+		<!-- Backdrop -->
+		<button
+			class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+			onclick={closeDeleteModal}
+			aria-label="Close modal"
+		></button>
+
+		<!-- Modal Content -->
+		<div
+			class="relative z-10 w-full max-w-md mx-4 p-6 rounded-xl border border-border bg-popover shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+		>
+			<div class="flex items-center gap-3 mb-4">
+				<div
+					class="flex items-center justify-center w-10 h-10 rounded-full bg-destructive/10"
+				>
+					<svg
+						class="w-5 h-5 text-destructive"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+						/>
+					</svg>
+				</div>
+				<div>
+					<h3
+						id="delete-modal-title"
+						class="text-lg font-semibold text-foreground"
+					>
+						Delete {selectedIds.size} Log{selectedIds.size !== 1
+							? "s"
+							: ""}
+					</h3>
+					<p class="text-sm text-muted-foreground">
+						This action cannot be undone
+					</p>
+				</div>
+			</div>
+
+			<p class="text-sm text-muted-foreground mb-6">
+				Are you sure you want to permanently delete {selectedIds.size ===
+				1
+					? "this encounter"
+					: "these encounters"}? All associated data including player
+				stats, skill stats, and death events will be removed.
+			</p>
+
+			<div class="flex justify-end gap-3">
+				<button
+					onclick={closeDeleteModal}
+					disabled={isDeleting}
+					class="px-4 py-2 text-sm rounded-md border border-border bg-popover text-foreground hover:bg-muted/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={confirmDeleteSelected}
+					disabled={isDeleting}
+					class="flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					{#if isDeleting}
+						<svg
+							class="animate-spin w-4 h-4"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<circle
+								class="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								stroke-width="4"
+							></circle>
+							<path
+								class="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+							></path>
+						</svg>
+						Deleting...
+					{:else}
+						Delete
+					{/if}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}

@@ -9,6 +9,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::database::establish_connection;
+use crate::database::ensure_migrations_on_conn;
 use crate::database::schema::app_config;
 use diesel::prelude::*;
 
@@ -66,6 +67,12 @@ pub async fn track_update(app_handle: tauri::AppHandle) {
                 return None;
             }
         };
+
+        // Make sure the schema exists before touching app_config.
+        if let Err(e) = ensure_migrations_on_conn(&mut conn) {
+            warn!("tracking: failed to run migrations: {}", e);
+            return None;
+        }
 
         let client_id = get_config_value(&mut conn, KEY_CLIENT_ID)
             .unwrap_or_else(|| Uuid::new_v4().to_string());

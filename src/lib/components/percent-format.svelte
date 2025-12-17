@@ -9,20 +9,24 @@
     suffixColor,
   }: {
     val: string | number;
-    fractionDigits?: number;
-    suffixFontSize?: number;
-    suffixColor?: string;
+    fractionDigits?: number | undefined;
+    suffixFontSize?: number | undefined;
+    suffixColor?: string | undefined;
   } = $props();
 
   let suffixStyle = $derived(
     [
-      suffixFontSize ? `font-size: ${suffixFontSize}px` : '',
-      suffixColor ? `color: ${suffixColor}` : ''
-    ].filter(Boolean).join('; ')
+      suffixFontSize ? `font-size: ${suffixFontSize}px` : "",
+      suffixColor ? `color: ${suffixColor}` : "",
+    ]
+      .filter(Boolean)
+      .join("; "),
   );
 </script>
 
 <span class="whitespace-nowrap inline-flex items-baseline gap-1">
   {typeof val === "number" ? val.toFixed(fractionDigits) : val}
-  <span class="text-tiny text-muted-foreground" style={suffixStyle || undefined}>%</span>
+  <span class="text-tiny text-muted-foreground" style={suffixStyle || undefined}
+    >%</span
+  >
 </span>

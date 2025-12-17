@@ -51,6 +51,7 @@
   function toggleSection(section: keyof typeof expandedSections) {
     expandedSections[section] = !expandedSections[section];
   }
+  // Drag state for column reordering (unused - keeping for potential future use)
 </script>
 
 <Tabs.Content value={SETTINGS_CATEGORY}>
@@ -197,16 +198,62 @@
       </button>
       {#if expandedSections.dpsPlayers}
         <div class="px-4 pb-3 space-y-1">
-          {#each liveDpsPlayerColumns as col (col.key)}
-            <SettingsSwitch
-              bind:checked={
-                SETTINGS.live.dps.players.state[
-                  col.key as keyof typeof SETTINGS.live.dps.players.state
-                ]
-              }
-              label={col.label}
-              description={col.description}
-            />
+          <p class="text-xs text-muted-foreground mb-2">
+            Use arrows to reorder. Toggle visibility with switches.
+          </p>
+          {#each SETTINGS.live.columnOrder.dpsPlayers.state.order as colKey, idx (colKey)}
+            {@const col = liveDpsPlayerColumns.find((c) => c.key === colKey)}
+            {#if col}
+              <div
+                class="flex items-center gap-2 px-2 py-1 rounded bg-muted/20 border border-border/30"
+              >
+                <div class="flex flex-col">
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx === 0}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.dpsPlayers.state.order,
+                      ];
+                      const prev = arr[idx - 1];
+                      const curr = arr[idx];
+                      if (prev !== undefined && curr !== undefined) {
+                        arr.splice(idx - 1, 2, curr, prev);
+                        SETTINGS.live.columnOrder.dpsPlayers.state.order = arr;
+                      }
+                    }}>▲</button
+                  >
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx ===
+                      SETTINGS.live.columnOrder.dpsPlayers.state.order.length -
+                        1}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.dpsPlayers.state.order,
+                      ];
+                      const curr = arr[idx];
+                      const next = arr[idx + 1];
+                      if (curr !== undefined && next !== undefined) {
+                        arr.splice(idx, 2, next, curr);
+                        SETTINGS.live.columnOrder.dpsPlayers.state.order = arr;
+                      }
+                    }}>▼</button
+                  >
+                </div>
+                <SettingsSwitch
+                  bind:checked={
+                    SETTINGS.live.dps.players.state[
+                      col.key as keyof typeof SETTINGS.live.dps.players.state
+                    ]
+                  }
+                  label={col.label}
+                  description={col.description}
+                />
+              </div>
+            {/if}
           {/each}
         </div>
       {/if}
@@ -232,16 +279,62 @@
       </button>
       {#if expandedSections.dpsSkills}
         <div class="px-4 pb-3 space-y-1">
-          {#each liveDpsSkillColumns as col (col.key)}
-            <SettingsSwitch
-              bind:checked={
-                SETTINGS.live.dps.skillBreakdown.state[
-                  col.key as keyof typeof SETTINGS.live.dps.skillBreakdown.state
-                ]
-              }
-              label={col.label}
-              description={col.description}
-            />
+          <p class="text-xs text-muted-foreground mb-2">
+            Use arrows to reorder. Toggle visibility with switches.
+          </p>
+          {#each SETTINGS.live.columnOrder.dpsSkills.state.order as colKey, idx (colKey)}
+            {@const col = liveDpsSkillColumns.find((c) => c.key === colKey)}
+            {#if col}
+              <div
+                class="flex items-center gap-2 px-2 py-1 rounded bg-muted/20 border border-border/30"
+              >
+                <div class="flex flex-col">
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx === 0}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.dpsSkills.state.order,
+                      ];
+                      const prev = arr[idx - 1];
+                      const curr = arr[idx];
+                      if (prev !== undefined && curr !== undefined) {
+                        arr.splice(idx - 1, 2, curr, prev);
+                        SETTINGS.live.columnOrder.dpsSkills.state.order = arr;
+                      }
+                    }}>▲</button
+                  >
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx ===
+                      SETTINGS.live.columnOrder.dpsSkills.state.order.length -
+                        1}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.dpsSkills.state.order,
+                      ];
+                      const curr = arr[idx];
+                      const next = arr[idx + 1];
+                      if (curr !== undefined && next !== undefined) {
+                        arr.splice(idx, 2, next, curr);
+                        SETTINGS.live.columnOrder.dpsSkills.state.order = arr;
+                      }
+                    }}>▼</button
+                  >
+                </div>
+                <SettingsSwitch
+                  bind:checked={
+                    SETTINGS.live.dps.skillBreakdown.state[
+                      col.key as keyof typeof SETTINGS.live.dps.skillBreakdown.state
+                    ]
+                  }
+                  label={col.label}
+                  description={col.description}
+                />
+              </div>
+            {/if}
           {/each}
         </div>
       {/if}
@@ -267,16 +360,62 @@
       </button>
       {#if expandedSections.healPlayers}
         <div class="px-4 pb-3 space-y-1">
-          {#each liveHealPlayerColumns as col (col.key)}
-            <SettingsSwitch
-              bind:checked={
-                SETTINGS.live.heal.players.state[
-                  col.key as keyof typeof SETTINGS.live.heal.players.state
-                ]
-              }
-              label={col.label}
-              description={col.description}
-            />
+          <p class="text-xs text-muted-foreground mb-2">
+            Use arrows to reorder. Toggle visibility with switches.
+          </p>
+          {#each SETTINGS.live.columnOrder.healPlayers.state.order as colKey, idx (colKey)}
+            {@const col = liveHealPlayerColumns.find((c) => c.key === colKey)}
+            {#if col}
+              <div
+                class="flex items-center gap-2 px-2 py-1 rounded bg-muted/20 border border-border/30"
+              >
+                <div class="flex flex-col">
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx === 0}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.healPlayers.state.order,
+                      ];
+                      const prev = arr[idx - 1];
+                      const curr = arr[idx];
+                      if (prev !== undefined && curr !== undefined) {
+                        arr.splice(idx - 1, 2, curr, prev);
+                        SETTINGS.live.columnOrder.healPlayers.state.order = arr;
+                      }
+                    }}>▲</button
+                  >
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx ===
+                      SETTINGS.live.columnOrder.healPlayers.state.order.length -
+                        1}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.healPlayers.state.order,
+                      ];
+                      const curr = arr[idx];
+                      const next = arr[idx + 1];
+                      if (curr !== undefined && next !== undefined) {
+                        arr.splice(idx, 2, next, curr);
+                        SETTINGS.live.columnOrder.healPlayers.state.order = arr;
+                      }
+                    }}>▼</button
+                  >
+                </div>
+                <SettingsSwitch
+                  bind:checked={
+                    SETTINGS.live.heal.players.state[
+                      col.key as keyof typeof SETTINGS.live.heal.players.state
+                    ]
+                  }
+                  label={col.label}
+                  description={col.description}
+                />
+              </div>
+            {/if}
           {/each}
         </div>
       {/if}
@@ -302,16 +441,62 @@
       </button>
       {#if expandedSections.healSkills}
         <div class="px-4 pb-3 space-y-1">
-          {#each liveHealSkillColumns as col (col.key)}
-            <SettingsSwitch
-              bind:checked={
-                SETTINGS.live.heal.skillBreakdown.state[
-                  col.key as keyof typeof SETTINGS.live.heal.skillBreakdown.state
-                ]
-              }
-              label={col.label}
-              description={col.description}
-            />
+          <p class="text-xs text-muted-foreground mb-2">
+            Use arrows to reorder. Toggle visibility with switches.
+          </p>
+          {#each SETTINGS.live.columnOrder.healSkills.state.order as colKey, idx (colKey)}
+            {@const col = liveHealSkillColumns.find((c) => c.key === colKey)}
+            {#if col}
+              <div
+                class="flex items-center gap-2 px-2 py-1 rounded bg-muted/20 border border-border/30"
+              >
+                <div class="flex flex-col">
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx === 0}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.healSkills.state.order,
+                      ];
+                      const prev = arr[idx - 1];
+                      const curr = arr[idx];
+                      if (prev !== undefined && curr !== undefined) {
+                        arr.splice(idx - 1, 2, curr, prev);
+                        SETTINGS.live.columnOrder.healSkills.state.order = arr;
+                      }
+                    }}>▲</button
+                  >
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx ===
+                      SETTINGS.live.columnOrder.healSkills.state.order.length -
+                        1}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.healSkills.state.order,
+                      ];
+                      const curr = arr[idx];
+                      const next = arr[idx + 1];
+                      if (curr !== undefined && next !== undefined) {
+                        arr.splice(idx, 2, next, curr);
+                        SETTINGS.live.columnOrder.healSkills.state.order = arr;
+                      }
+                    }}>▼</button
+                  >
+                </div>
+                <SettingsSwitch
+                  bind:checked={
+                    SETTINGS.live.heal.skillBreakdown.state[
+                      col.key as keyof typeof SETTINGS.live.heal.skillBreakdown.state
+                    ]
+                  }
+                  label={col.label}
+                  description={col.description}
+                />
+              </div>
+            {/if}
           {/each}
         </div>
       {/if}
@@ -337,16 +522,65 @@
       </button>
       {#if expandedSections.tankedPlayers}
         <div class="px-4 pb-3 space-y-1">
-          {#each liveTankedPlayerColumns as col (col.key)}
-            <SettingsSwitch
-              bind:checked={
-                SETTINGS.live.tanked.players.state[
-                  col.key as keyof typeof SETTINGS.live.tanked.players.state
-                ]
-              }
-              label={col.label}
-              description={col.description}
-            />
+          <p class="text-xs text-muted-foreground mb-2">
+            Use arrows to reorder. Toggle visibility with switches.
+          </p>
+          {#each SETTINGS.live.columnOrder.tankedPlayers.state.order as colKey, idx (colKey)}
+            {@const col = liveTankedPlayerColumns.find((c) => c.key === colKey)}
+            {#if col}
+              <div
+                class="flex items-center gap-2 px-2 py-1 rounded bg-muted/20 border border-border/30"
+              >
+                <div class="flex flex-col">
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx === 0}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.tankedPlayers.state.order,
+                      ];
+                      const prev = arr[idx - 1];
+                      const curr = arr[idx];
+                      if (prev !== undefined && curr !== undefined) {
+                        arr.splice(idx - 1, 2, curr, prev);
+                        SETTINGS.live.columnOrder.tankedPlayers.state.order =
+                          arr;
+                      }
+                    }}>▲</button
+                  >
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx ===
+                      SETTINGS.live.columnOrder.tankedPlayers.state.order
+                        .length -
+                        1}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.tankedPlayers.state.order,
+                      ];
+                      const curr = arr[idx];
+                      const next = arr[idx + 1];
+                      if (curr !== undefined && next !== undefined) {
+                        arr.splice(idx, 2, next, curr);
+                        SETTINGS.live.columnOrder.tankedPlayers.state.order =
+                          arr;
+                      }
+                    }}>▼</button
+                  >
+                </div>
+                <SettingsSwitch
+                  bind:checked={
+                    SETTINGS.live.tanked.players.state[
+                      col.key as keyof typeof SETTINGS.live.tanked.players.state
+                    ]
+                  }
+                  label={col.label}
+                  description={col.description}
+                />
+              </div>
+            {/if}
           {/each}
         </div>
       {/if}
@@ -372,16 +606,65 @@
       </button>
       {#if expandedSections.tankedSkills}
         <div class="px-4 pb-3 space-y-1">
-          {#each liveTankedSkillColumns as col (col.key)}
-            <SettingsSwitch
-              bind:checked={
-                SETTINGS.live.tanked.skills.state[
-                  col.key as keyof typeof SETTINGS.live.tanked.skills.state
-                ]
-              }
-              label={col.label}
-              description={col.description}
-            />
+          <p class="text-xs text-muted-foreground mb-2">
+            Use arrows to reorder. Toggle visibility with switches.
+          </p>
+          {#each SETTINGS.live.columnOrder.tankedSkills.state.order as colKey, idx (colKey)}
+            {@const col = liveTankedSkillColumns.find((c) => c.key === colKey)}
+            {#if col}
+              <div
+                class="flex items-center gap-2 px-2 py-1 rounded bg-muted/20 border border-border/30"
+              >
+                <div class="flex flex-col">
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx === 0}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.tankedSkills.state.order,
+                      ];
+                      const prev = arr[idx - 1];
+                      const curr = arr[idx];
+                      if (prev !== undefined && curr !== undefined) {
+                        arr.splice(idx - 1, 2, curr, prev);
+                        SETTINGS.live.columnOrder.tankedSkills.state.order =
+                          arr;
+                      }
+                    }}>▲</button
+                  >
+                  <button
+                    type="button"
+                    class="text-xs px-1 hover:bg-muted/50 rounded disabled:opacity-30"
+                    disabled={idx ===
+                      SETTINGS.live.columnOrder.tankedSkills.state.order
+                        .length -
+                        1}
+                    onclick={() => {
+                      const arr = [
+                        ...SETTINGS.live.columnOrder.tankedSkills.state.order,
+                      ];
+                      const curr = arr[idx];
+                      const next = arr[idx + 1];
+                      if (curr !== undefined && next !== undefined) {
+                        arr.splice(idx, 2, next, curr);
+                        SETTINGS.live.columnOrder.tankedSkills.state.order =
+                          arr;
+                      }
+                    }}>▼</button
+                  >
+                </div>
+                <SettingsSwitch
+                  bind:checked={
+                    SETTINGS.live.tanked.skills.state[
+                      col.key as keyof typeof SETTINGS.live.tanked.skills.state
+                    ]
+                  }
+                  label={col.label}
+                  description={col.description}
+                />
+              </div>
+            {/if}
           {/each}
         </div>
       {/if}

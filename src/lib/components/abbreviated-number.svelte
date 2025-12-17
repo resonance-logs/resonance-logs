@@ -8,8 +8,8 @@
     suffixColor,
   }: {
     num: number;
-    suffixFontSize?: number;
-    suffixColor?: string;
+    suffixFontSize?: number | undefined;
+    suffixColor?: string | undefined;
   } = $props();
 
   function abbreviateNumberSplit(n: number): [string, string] {
@@ -25,12 +25,20 @@
 
   let suffixStyle = $derived(
     [
-      suffixFontSize ? `font-size: ${suffixFontSize}px` : '',
-      suffixColor ? `color: ${suffixColor}` : ''
-    ].filter(Boolean).join('; ')
+      suffixFontSize ? `font-size: ${suffixFontSize}px` : "",
+      suffixColor ? `color: ${suffixColor}` : "",
+    ]
+      .filter(Boolean)
+      .join("; "),
   );
 </script>
 
-<span title={fullNumberString} class="whitespace-nowrap inline-flex items-baseline gap-0.5">
-  {abbreviatedNumberTuple[0]}<span class="text-tiny text-muted-foreground" style={suffixStyle || undefined}>{abbreviatedNumberTuple[1]}</span>
+<span
+  title={fullNumberString}
+  class="whitespace-nowrap inline-flex items-baseline gap-0.5"
+>
+  {abbreviatedNumberTuple[0]}<span
+    class="text-tiny text-muted-foreground"
+    style={suffixStyle || undefined}>{abbreviatedNumberTuple[1]}</span
+  >
 </span>

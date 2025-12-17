@@ -127,6 +127,12 @@ pub fn run() {
             stop_windivert();
             remove_windivert();
 
+            // Initialize database and background writer early to avoid startup races where
+            // multiple background tasks/commands trigger migrations concurrently.
+            if let Err(e) = crate::database::init_and_spawn_writer() {
+                warn!(target: "app::db", "Failed to initialize database: {}", e);
+            }
+
             // Check app updates
             // https://v2.tauri.app/plugin/updater/#checking-for-updates
             // Only run updater checks on Windows builds (automatic apply)
@@ -198,11 +204,6 @@ pub fn run() {
                 // Call the previously installed panic hook (prints to stderr etc)
                 default_hook(info);
             }));
-
-            // Initialize database and background writer
-            if let Err(e) = crate::database::init_and_spawn_writer() {
-                warn!(target: "app::db", "Failed to initialize database: {}", e);
-            }
 
             // Setup tray icon
             setup_tray(&app_handle).expect("failed to setup tray");
