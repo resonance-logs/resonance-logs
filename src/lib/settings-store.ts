@@ -304,6 +304,7 @@ const DEFAULT_SETTINGS = {
     baseUrl: "https://api.bpsr.app/api/v1",
     autoSyncIntervalMinutes: 0,
     autoUpload: true,
+    marketUpload: true,
   },
   live: {
     general: { ...DEFAULT_GENERAL_SETTINGS },
