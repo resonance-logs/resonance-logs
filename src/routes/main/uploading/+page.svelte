@@ -532,6 +532,20 @@
           />
           <span>Auto-upload logs</span>
         </label>
+
+        <label
+          class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer select-none transition-colors"
+          title="Controls background uploading of market listings. Requires an API key to actually send anything."
+        >
+          <input
+            type="checkbox"
+            class="h-4 w-4 rounded border-border bg-popover text-primary focus:ring-primary"
+            checked={SETTINGS.moduleSync.state.marketUpload ?? true}
+            onchange={(e) =>
+              (SETTINGS.moduleSync.state.marketUpload = e.currentTarget.checked)}
+          />
+          <span>Upload market data</span>
+        </label>
       </div>
     </div>
 

@@ -82,7 +82,7 @@ pub fn get_item_name(item_id: i32) -> Option<&'static str> {
     get_item_name_map().get(&item_id).map(|s| s.as_str())
 }
 
-/// Check if market uploading is enabled (API key exists in settings).
+/// Check if market uploading is enabled (toggle on + API key exists in settings).
 /// This is a blocking operation - call from blocking context or spawn_blocking.
 fn has_api_key(app: &AppHandle) -> bool {
     let Some(settings_path) = get_module_sync_settings_path(app) else {
@@ -93,7 +93,7 @@ fn has_api_key(app: &AppHandle) -> bool {
         return false;
     };
 
-    !settings.api_key.trim().is_empty()
+    settings.market_upload && !settings.api_key.trim().is_empty()
 }
 
 /// Upload a batch of market listings to the server.
@@ -109,7 +109,7 @@ pub async fn upload_market_listings(app: AppHandle, batch: &MarketListingsBatch)
         .unwrap_or(false);
 
     if !has_key {
-        debug!("[Market Uploader] Skipping upload - no API key set");
+        debug!("[Market Uploader] Skipping upload - disabled or no API key set");
         return;
     }
 

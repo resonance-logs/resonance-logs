@@ -125,6 +125,8 @@ pub(crate) struct ModuleSyncSettings {
     pub enabled: bool,
     #[serde(default = "default_auto_upload")]
     pub auto_upload: bool,
+    #[serde(default = "default_market_upload")]
+    pub market_upload: bool,
     #[serde(default)]
     pub api_key: String,
     #[serde(default)]
@@ -132,6 +134,10 @@ pub(crate) struct ModuleSyncSettings {
 }
 
 fn default_auto_upload() -> bool {
+    true
+}
+
+fn default_market_upload() -> bool {
     true
 }
 
