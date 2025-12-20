@@ -326,15 +326,32 @@
   }
 
   function viewPlayerSkills(playerUid: number, type = "dps") {
-    goto(`/main/history/${encounterId}?charId=${playerUid}&skillType=${type}`);
+
+    const sp = new URLSearchParams($page.url.searchParams);
+    sp.set("charId", String(playerUid));
+    sp.set("skillType", type);
+    goto(`/main/history/${encounterId}?${sp.toString()}`);
   }
 
   function backToEncounter() {
-    goto(`/main/history/${encounterId}`);
+
+    const sp = new URLSearchParams($page.url.searchParams);
+    sp.delete("charId");
+    sp.delete("skillType");
+    const qs = sp.toString();
+    goto(`/main/history/${encounterId}${qs ? `?${qs}` : ""}`);
   }
 
   function backToHistory() {
-    goto("/main/history");
+
+    // Return to the history list while preserving pagination state.
+    const sp = new URLSearchParams();
+    const listPage = $page.url.searchParams.get("page");
+    const listPageSize = $page.url.searchParams.get("pageSize");
+    if (listPage !== null) sp.set("page", listPage);
+    if (listPageSize !== null) sp.set("pageSize", listPageSize);
+    const qs = sp.toString();
+    goto(`/main/history${qs ? `?${qs}` : ""}`);
   }
 
   // Segments are now read-only in the UI; selection is disabled
@@ -367,7 +384,7 @@
     try {
       await commands.deleteEncounter(encounter.id);
       // Navigate back to history after deletion
-      goto("/main/history");
+      backToHistory();
     } catch (e) {
       console.error("Failed to delete encounter", e);
       alert("Failed to delete encounter: " + e);

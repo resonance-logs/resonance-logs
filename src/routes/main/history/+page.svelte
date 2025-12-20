@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
+	import { page as pageStore } from "$app/stores";
 	import { commands } from "$lib/bindings";
 	import type {
 		EncounterSummaryDto,
@@ -8,7 +9,6 @@
 	} from "$lib/bindings";
 	import { getClassIcon, tooltip, CLASS_MAP } from "$lib/utils.svelte";
 	import UnifiedSearch from "$lib/components/unified-search.svelte";
-	import FilterChips from "$lib/components/filter-chips.svelte";
 
 	const classOptions = Object.entries(CLASS_MAP).map(([id, name]) => ({
 		id: Number(id),
@@ -23,6 +23,22 @@
 	let page = $state(0); // 0-indexed, page 0 = newest
 	let totalCount = $state(0);
 	let isRefreshing = $state(false);
+
+	function parseNonNegativeInt(raw: string | null, fallback: number) {
+		if (raw === null) return fallback;
+		const n = Number.parseInt(raw, 10);
+		return Number.isFinite(n) && n >= 0 ? n : fallback;
+	}
+
+	function buildHistorySearchParams(next: {
+		page: number;
+		pageSize: number;
+	}) {
+		const sp = new URLSearchParams();
+		sp.set("page", String(next.page));
+		sp.set("pageSize", String(next.pageSize));
+		return sp;
+	}
 
 	// Multi-select state
 	let selectedIds = $state<Set<number>>(new Set());
@@ -111,8 +127,8 @@
 	let selectedClassIds = $state<number[]>([]);
 	let showClassDropdown = $state(false);
 	let showFavoritesOnly = $state(false);
-	let classDropdownRef: HTMLDivElement | null = null;
-	let classButtonRef: HTMLButtonElement | null = null;
+	let classDropdownRef = $state<HTMLDivElement | null>(null);
+	let classButtonRef = $state<HTMLButtonElement | null>(null);
 
 	function getClassName(classId: number | null): string {
 		if (!classId) return "";
@@ -187,6 +203,14 @@
 				totalCount = res.data.totalCount ?? 0;
 				errorMsg = null;
 				page = p;
+
+				// Persist pagination in the URL so browser back/forward restores it.
+				const sp = buildHistorySearchParams({ page: p, pageSize });
+				await goto(`/main/history?${sp.toString()}`, {
+					replaceState: true,
+					keepFocus: true,
+					noScroll: true,
+				});
 			} else {
 				throw new Error(String(res.error));
 			}
@@ -227,10 +251,6 @@
 		loadEncounters(0);
 	}
 
-	function clearAllBossFilters() {
-		selectedBosses = [];
-		loadEncounters(0);
-	}
 
 	function removePlayerNameFilter(playerName: string) {
 		selectedPlayerNames = selectedPlayerNames.filter(
@@ -239,20 +259,12 @@
 		loadEncounters(0);
 	}
 
-	function clearAllPlayerNameFilters() {
-		selectedPlayerNames = [];
-		loadEncounters(0);
-	}
 
 	function removeEncounterFilter(sceneName: string) {
 		selectedEncounters = selectedEncounters.filter((n) => n !== sceneName);
 		loadEncounters(0);
 	}
 
-	function clearAllEncounterFilters() {
-		selectedEncounters = [];
-		loadEncounters(0);
-	}
 
 	function toggleClassFilter(classId: number, checked: boolean) {
 		if (checked) {
@@ -295,7 +307,18 @@
 	onMount(() => {
 		loadBossNames();
 		loadSceneNames();
-		loadEncounters(0);
+
+		// Restore pagination from query params (e.g. /main/history?page=4&pageSize=10)
+		const initialPage = parseNonNegativeInt(
+			$pageStore.url.searchParams.get("page"),
+			0,
+		);
+		const initialPageSize = parseNonNegativeInt(
+			$pageStore.url.searchParams.get("pageSize"),
+			pageSize,
+		);
+		pageSize = initialPageSize;
+		loadEncounters(initialPage);
 
 		function handleDocumentClick(event: MouseEvent) {
 			const target = event.target as HTMLElement;
@@ -348,7 +371,9 @@
 	}
 
 	async function onView(enc: EncounterSummaryDto) {
-		goto(`/main/history/${enc.id}`);
+		// Carry the current pagination state into the detail URL so the
+		// in-app "back" button can return you to the same page.
+		goto(`/main/history/${enc.id}${$pageStore.url.search}`);
 	}
 </script>
 
