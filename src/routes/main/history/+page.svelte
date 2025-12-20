@@ -174,8 +174,7 @@
 			const filterPayload: EncounterFiltersDto = {
 				bossNames: selectedBosses.length > 0 ? selectedBosses : null,
 				playerName: null,
-				encounterNames:
-					selectedEncounters.length > 0 ? selectedEncounters : null,
+				encounterNames: null,
 				playerNames:
 					selectedPlayerNames.length > 0 ? selectedPlayerNames : null,
 				classIds: selectedClassIds.length > 0 ? selectedClassIds : null,
@@ -186,7 +185,6 @@
 
 			const hasFilters =
 				filterPayload.bossNames !== null ||
-				filterPayload.encounterNames !== null ||
 				filterPayload.playerNames !== null ||
 				filterPayload.classIds !== null ||
 				filterPayload.isFavorite !== null;
@@ -583,7 +581,7 @@
 						<span class="text-muted-foreground/70">E:</span>
 						{encounter}
 						<button
-							onclick={() => removeEncounterFilter(encounter)}
+							onclick={() => removeBossFilter(encounter)}
 							class="text-muted-foreground/70 hover:text-destructive transition-colors"
 							aria-label={`Remove ${encounter} filter`}
 						>
