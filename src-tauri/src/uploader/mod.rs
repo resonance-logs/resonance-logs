@@ -1,4 +1,3 @@
-pub mod market_uploader;
 pub mod player_data_sync;
 
 use serde::{Deserialize, Serialize};

@@ -1,6 +1,6 @@
+use crate::packets;
 use crate::packets::npcap::NpcapCapture;
 use crate::packets::opcodes::Pkt;
-use crate::packets::packet_event::PacketEvent;
 use crate::packets::packet_process::process_packet;
 use crate::packets::reassembler::Reassembler;
 use crate::packets::utils::{BinaryReader, Server, TCPReassembler, tcp_sequence_before};
@@ -132,10 +132,11 @@ impl PacketSource for NpcapSource {
 
 pub fn start_capture(
     method: CaptureMethod,
-) -> tokio::sync::mpsc::Receiver<PacketEvent> {
+) -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
     // Use a larger bounded channel to prevent producer backpressure from stalling
     // headroom for bursts without risking unbounded memory growth.
-    let (packet_sender, packet_receiver) = tokio::sync::mpsc::channel::<PacketEvent>(20);
+    let (packet_sender, packet_receiver) =
+        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(20);
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
 
@@ -168,7 +169,7 @@ pub fn start_capture(
 
 #[allow(clippy::too_many_lines)]
 fn read_packets(
-    packet_sender: &tokio::sync::mpsc::Sender<PacketEvent>,
+    packet_sender: &tokio::sync::mpsc::Sender<(packets::opcodes::Pkt, Vec<u8>)>,
     restart_receiver: &mut watch::Receiver<bool>,
     method: CaptureMethod,
 ) {
@@ -197,16 +198,9 @@ fn read_packets(
         },
     };
 
-    // NOTE: `Server` here is a directional 4-tuple (src/dst ip+port), not a role.
-    // After detection we consider both this tuple and its reverse as belonging
-    // to the same TCP connection, but we must keep separate reassembly state per
-    // direction because TCP sequence numbers are independent.
     let mut known_server: Option<Server> = None; // nothing at start
-
-    let mut tcp_reassembler_forward: TCPReassembler = TCPReassembler::new();
-    let mut reassembler_forward = Reassembler::new();
-    let mut tcp_reassembler_reverse: TCPReassembler = TCPReassembler::new();
-    let mut reassembler_reverse = Reassembler::new();
+    let mut tcp_reassembler: TCPReassembler = TCPReassembler::new();
+    let mut reassembler = Reassembler::new();
 
     loop {
         let packet_data = match source.next_packet() {
@@ -244,19 +238,8 @@ fn read_packets(
         //     tcp_packet.payload(),
         // );
 
-        // 1. Try to identify game server via small packets.
-        //
-        // Once detected, accept packets in BOTH directions of this connection.
-        // (We keep two reassemblers to avoid mixing sequence spaces.)
-        let matches_known = known_server
-            .map(|known| curr_server == known || curr_server == known.reversed())
-            .unwrap_or(false);
-
-        if known_server.is_some() && !matches_known {
-            continue;
-        }
-
-        if known_server.is_none() {
+        // 1. Try to identify game server via small packets
+        if known_server != Some(curr_server) {
             let tcp_payload = tcp_packet.payload();
             let mut tcp_payload_reader = BinaryReader::from(tcp_payload.to_vec());
             if tcp_payload_reader.remaining() >= 10 {
@@ -311,21 +294,14 @@ fn read_packets(
                                                     .sequence_number()
                                                     .wrapping_add(payload_len);
                                                 reset_stream(
-                                                    &mut tcp_reassembler_forward,
-                                                    &mut reassembler_forward,
+                                                    &mut tcp_reassembler,
+                                                    &mut reassembler,
                                                     Some(seq_end),
                                                 );
-                                                reset_stream(
-                                                    &mut tcp_reassembler_reverse,
-                                                    &mut reassembler_reverse,
-                                                    None,
-                                                );
-                                                if let Err(err) = packet_sender.blocking_send(
-                                                    PacketEvent::Notify {
-                                                        op: Pkt::ServerChangeInfo,
-                                                        data: Vec::new(),
-                                                    },
-                                                ) {
+                                                if let Err(err) = packet_sender.blocking_send((
+                                                    Pkt::ServerChangeInfo,
+                                                    Vec::new(),
+                                                )) {
                                                     debug!("Failed to send packet: {err}");
                                                 }
                                             }
@@ -364,38 +340,16 @@ fn read_packets(
                     known_server = Some(curr_server);
                     let payload_len = u32::try_from(tcp_payload.len()).unwrap_or(u32::MAX);
                     let seq_end = tcp_packet.sequence_number().wrapping_add(payload_len);
-                    reset_stream(
-                        &mut tcp_reassembler_forward,
-                        &mut reassembler_forward,
-                        Some(seq_end),
-                    );
-                    reset_stream(
-                        &mut tcp_reassembler_reverse,
-                        &mut reassembler_reverse,
-                        None,
-                    );
-                    if let Err(err) = packet_sender.blocking_send(PacketEvent::Notify {
-                        op: Pkt::ServerChangeInfo,
-                        data: Vec::new(),
-                    }) {
+                    reset_stream(&mut tcp_reassembler, &mut reassembler, Some(seq_end));
+                    if let Err(err) =
+                        packet_sender.blocking_send((Pkt::ServerChangeInfo, Vec::new()))
+                    {
                         debug!("Failed to send packet: {err}");
                     }
                 }
             }
             continue;
         }
-
-        // We have a known connection and this packet matches it.
-        // Route into the direction-specific reassembly state.
-        let is_forward = known_server
-            .map(|known| curr_server == known)
-            .unwrap_or(false);
-
-        let (tcp_reassembler, reassembler) = if is_forward {
-            (&mut tcp_reassembler_forward, &mut reassembler_forward)
-        } else {
-            (&mut tcp_reassembler_reverse, &mut reassembler_reverse)
-        };
 
         let sequence_number = tcp_packet.sequence_number();
         let payload = tcp_packet.payload();
@@ -407,8 +361,8 @@ fn read_packets(
                 "SYN observed for {curr_server}; resetting TCP reassembler state"
             );
             reset_stream(
-                tcp_reassembler,
-                reassembler,
+                &mut tcp_reassembler,
+                &mut reassembler,
                 Some(sequence_number.wrapping_add(1)),
             );
             if payload_len == 0 {
@@ -423,7 +377,7 @@ fn read_packets(
 
         if payload_len == 0 {
             if defer_reset {
-                reset_stream(tcp_reassembler, reassembler, None);
+                reset_stream(&mut tcp_reassembler, &mut reassembler, None);
             }
             continue;
         }
@@ -438,8 +392,8 @@ fn read_packets(
                         got {sequence_number} (backwards {backwards} bytes). Resetting stream"
                     );
                     reset_stream(
-                        tcp_reassembler,
-                        reassembler,
+                        &mut tcp_reassembler,
+                        &mut reassembler,
                         Some(sequence_number),
                     );
                 }
@@ -455,7 +409,7 @@ fn read_packets(
         }
 
         if defer_reset {
-            reset_stream(tcp_reassembler, reassembler, None);
+            reset_stream(&mut tcp_reassembler, &mut reassembler, None);
         }
         if *restart_receiver.borrow() {
             break;

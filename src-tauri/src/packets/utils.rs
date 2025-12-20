@@ -1,4 +1,4 @@
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read};
 use std::{fmt, io};
@@ -18,19 +18,6 @@ impl Server {
             src_port,
             dst_addr,
             dst_port,
-        }
-    }
-
-    /// Return the same 4-tuple with source/destination swapped.
-    ///
-    /// This is useful when we want to treat a TCP connection as bidirectional
-    /// but still keep per-direction reassembly state (sequence numbers differ).
-    pub fn reversed(&self) -> Self {
-        Self {
-            src_addr: self.dst_addr,
-            src_port: self.dst_port,
-            dst_addr: self.src_addr,
-            dst_port: self.src_port,
         }
     }
 }
