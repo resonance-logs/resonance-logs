@@ -664,7 +664,7 @@ pub mod class {
     pub fn get_class_spec_from_skill_id(skill_id: i32) -> ClassSpec {
         match skill_id {
             1714 | 1734 => ClassSpec::Iaido,
-            44701 | 179906 => ClassSpec::Moonstrike,
+            1715 | 1733 | 1742 => ClassSpec::Moonstrike,
 
             120901 | 120902 => ClassSpec::Icicle,
             1241 => ClassSpec::Frostbeam,
