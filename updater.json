@@ -1,15 +1,15 @@
 {
-  "version": "0.19.0",
-  "notes": "## Logs\r\n\r\n\r\n- 2 fixes applied for history page saving, let me know if still happening\r\n- History page remembers what page you left off on now\r\n- Fixed Moonstriker and Iaido detection - Thanks @TedOhBear for the PR\r\n- Added market data uploading. Note: this only is used if you have an API key set.\r\n- The market uploading toggle is under the Uploading tab if you wish to disable it.\r\n",
-  "pub_date": "2025-12-20T20:32:51.862Z",
+  "version": "0.19.1",
+  "notes": "## Logs\r\n\r\n- Fixed the no data/networking bug.\r\n- Disabled market data parsing for now\r\n",
+  "pub_date": "2025-12-21T00:05:35.629Z",
   "platforms": {
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2JlSUswZTFKM0VQeVRGQVNUT0NDYlloSGVpbE1UdzVRb29RYlFGN0U0Zm5sbjlpYTRWME9va1MwL2FnRzJzMmNPYUplSGJRbGorVGlnaVVybmgvM3dvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2MjYyNzY1CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOS4wX3g2NC1zZXR1cC5leGUKY0NHdVBwWEpyeG9FMlRPclRhSEw4RC82OWdxZXVXUnFFMm1xUVQvRnVPRlp2MkkzZWJVelYvajN3S0crWGlhZDZlN1B5aEQ1K1dKbGcxdmVtSVNEREE9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.19.0/resonance-logs_0.19.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dadU40NitVMWk5UHh5WDRQT2x0cmtJL3hxZC9FcGpmUUlFeENnNFVMTDNoMEwvenRnUlg2cWxsNGdmeE1wQzc4SG04MmdGRVJrOU5VTktYV1Q4ZmdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2Mjc1NTIzCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOS4xX3g2NC1zZXR1cC5leGUKYzN4QUhVajE5QTdUYU9NLzRPV2hVQ0JvdW1FblZDNldIMDI0NTcrSkRPQW5ZZEwvMzhYUnl6alBmN05ETU5nRWkrMWQvNTlRNXJJNVMweTRHVjhXQ1E9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.19.1/resonance-logs_0.19.1_x64-setup.exe"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS2JlSUswZTFKM0VQeVRGQVNUT0NDYlloSGVpbE1UdzVRb29RYlFGN0U0Zm5sbjlpYTRWME9va1MwL2FnRzJzMmNPYUplSGJRbGorVGlnaVVybmgvM3dvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2MjYyNzY1CWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOS4wX3g2NC1zZXR1cC5leGUKY0NHdVBwWEpyeG9FMlRPclRhSEw4RC82OWdxZXVXUnFFMm1xUVQvRnVPRlp2MkkzZWJVelYvajN3S0crWGlhZDZlN1B5aEQ1K1dKbGcxdmVtSVNEREE9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.19.0/resonance-logs_0.19.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dadU40NitVMWk5UHh5WDRQT2x0cmtJL3hxZC9FcGpmUUlFeENnNFVMTDNoMEwvenRnUlg2cWxsNGdmeE1wQzc4SG04MmdGRVJrOU5VTktYV1Q4ZmdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2Mjc1NTIzCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOS4xX3g2NC1zZXR1cC5leGUKYzN4QUhVajE5QTdUYU9NLzRPV2hVQ0JvdW1FblZDNldIMDI0NTcrSkRPQW5ZZEwvMzhYUnl6alBmN05ETU5nRWkrMWQvNTlRNXJJNVMweTRHVjhXQ1E9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.19.1/resonance-logs_0.19.1_x64-setup.exe"
     }
   }
 }
