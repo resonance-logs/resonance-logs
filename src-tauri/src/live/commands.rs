@@ -1,12 +1,42 @@
 use crate::WINDOW_LIVE_LABEL;
 use crate::live::dungeon_log::{self, DungeonLogRuntime};
 use crate::live::state::{AppStateManager, StateEvent};
-use log::info;
-use tauri::Manager;
+use crate::live::state::{collect_player_active_times, finalize_and_save_buffs};
+use crate::database::{DbTask, enqueue, now_ms};
+use log::{info, trace, warn};
+use serde::Serialize;
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use window_vibrancy::{apply_blur, clear_blur};
 // request_restart is not needed in this module at present
 use crate::live::event_manager; // for generate_skills_window_*
+
+
+fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload: S) -> bool {
+    // First check if the live window exists and is valid
+    let live_window = app_handle.get_webview_window(crate::WINDOW_LIVE_LABEL);
+    let main_window = app_handle.get_webview_window(crate::WINDOW_MAIN_LABEL);
+
+    // If no windows are available, skip emitting
+    if live_window.is_none() && main_window.is_none() {
+        trace!("Skipping emit for '{}': no windows available", event);
+        return false;
+    }
+
+    match app_handle.emit(event, payload) {
+        Ok(_) => true,
+        Err(e) => {
+            let error_str = format!("{:?}", e);
+            if error_str.contains("0x8007139F") || error_str.contains("not in the correct state") {
+                // Expected when windows are minimized/hidden - don't spam logs
+                trace!("WebView2 not ready for '{}' (window may be minimized/hidden)", event);
+            } else {
+                warn!("Failed to emit '{}': {}", event, e);
+            }
+            false
+        }
+    }
+}
 
 /// Prettifies a player's name.
 ///
@@ -376,16 +406,67 @@ pub async fn copy_sync_container_data(
 pub async fn reset_encounter(
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<(), String> {
+
     let state_manager = state_manager.inner().clone();
-    tauri::async_runtime::spawn(async move {
-        // Use the centralized state event handler so that the EndEncounter DB task
-        // is enqueued and all side-effects (emit events, clear subscriptions) are
-        // handled consistently.
-        state_manager
-            .handle_event(StateEvent::ResetEncounter { is_manual: true })
-            .await;
-        info!("encounter reset via command");
-    });
+
+    // Perform the reset under the lock, but collect payloads to emit afterward.
+    let (app_handle_opt, should_emit, was_paused, cleared_header) = state_manager
+        .with_state_mut(|state| {
+            // legacy code, kept for maybe future use
+            if state.dungeon_segments_enabled {
+                dungeon_log::persist_segments(&state.dungeon_log, true);
+            }
+
+            // Save buff data before ending the encounter
+            finalize_and_save_buffs(&mut state.encounter, now_ms());
+
+            // End any active encounter in DB. Drain any detected dead boss names for persistence.
+            let defeated = state.event_manager.take_dead_bosses();
+            enqueue(DbTask::EndEncounter {
+                ended_at_ms: now_ms(),
+                defeated_bosses: if defeated.is_empty() { None } else { Some(defeated) },
+                is_manually_reset: true,
+                player_active_times: collect_player_active_times(&state.encounter),
+            });
+
+            // Reset live combat state
+            state.encounter.reset_combat_state();
+            state.skill_subscriptions.clear();
+            state.low_hp_bosses.clear();
+
+            let should_emit = state.event_manager.should_emit_events();
+            let app_handle_opt = state.event_manager.get_app_handle();
+            let was_paused = state.encounter.is_encounter_paused;
+
+            let cleared_header = crate::live::commands_models::HeaderInfo {
+                total_dps: 0.0,
+                total_dmg: 0,
+                elapsed_ms: 0,
+                fight_start_timestamp_ms: 0,
+                bosses: vec![],
+                scene_id: state.encounter.current_scene_id,
+                scene_name: state.encounter.current_scene_name.clone(),
+                current_segment_type: None,
+                current_segment_name: None,
+            };
+
+            (app_handle_opt, should_emit, was_paused, cleared_header)
+        })
+        .await;
+
+    // Emit events after the lock is released.
+    if should_emit {
+        if let Some(app_handle) = app_handle_opt {
+            let _ = safe_emit(&app_handle, "reset-encounter", "");
+            let payload = crate::live::event_manager::EncounterUpdatePayload {
+                header_info: cleared_header,
+                is_paused: was_paused,
+            };
+            let _ = safe_emit(&app_handle, "encounter-update", payload);
+        }
+    }
+
+    info!("encounter reset via command");
     Ok(())
 }
 
@@ -432,16 +513,15 @@ pub async fn toggle_pause_encounter(
 pub async fn reset_player_metrics(
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<(), String> {
-    use crate::live::commands_models::HeaderInfo;
+    // no emitting events while holding the AppState write lock.
+    let state_manager = state_manager.inner().clone();
 
-    state_manager
+    let (app_handle_opt, should_emit, active_segment_name, cleared_header, is_paused) = state_manager
         .with_state_mut(|state| {
             // Store the original fight start time before reset
             let original_fight_start_ms = state.encounter.time_fight_start_ms;
 
-            // Reset combat state (player metrics)
-            // Grab current active segment name (if any) so it can be included in the
-            // emitted event payload for frontend to display a toast text notification.
+            // more segments legacy code
             let active_segment_name = dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
                 log.segments
                     .iter()
@@ -449,38 +529,55 @@ pub async fn reset_player_metrics(
                     .find(|s| s.ended_at_ms.is_none())
                     .and_then(|s| s.boss_name.clone())
             });
+
+            // Reset combat state (player metrics only)
             state.encounter.reset_combat_state();
             state.skill_subscriptions.clear();
 
             // Restore the original fight start time to preserve total encounter duration
             state.encounter.time_fight_start_ms = original_fight_start_ms;
 
-            // Emit reset event to clear frontend stores
-            if state.event_manager.should_emit_events() {
-                // Emit a player-metrics-only reset event for the current segment.
-                // resets with full encounter resets (e.g., server change/Scene change).
-                state
-                    .event_manager
-                    .emit_player_metrics_reset(active_segment_name);
+            let should_emit = state.event_manager.should_emit_events();
+            let app_handle_opt = state.event_manager.get_app_handle();
+            let is_paused = state.encounter.is_encounter_paused;
 
-                // Emit an encounter update with cleared player data but preserve encounter context
-                let cleared_header = HeaderInfo {
-                    total_dps: 0.0,
-                    total_dmg: 0,
-                    elapsed_ms: 0,
-                    fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
-                    bosses: vec![],
-                    scene_id: state.encounter.current_scene_id,
-                    scene_name: state.encounter.current_scene_name.clone(),
-                    current_segment_type: None,
-                    current_segment_name: None,
-                };
-                state
-                    .event_manager
-                    .emit_encounter_update(cleared_header, state.encounter.is_encounter_paused);
-            }
+            // Emit an encounter update with cleared player data but preserve encounter context
+            let cleared_header = crate::live::commands_models::HeaderInfo {
+                total_dps: 0.0,
+                total_dmg: 0,
+                elapsed_ms: 0,
+                fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
+                bosses: vec![],
+                scene_id: state.encounter.current_scene_id,
+                scene_name: state.encounter.current_scene_name.clone(),
+                current_segment_type: None,
+                current_segment_name: None,
+            };
+
+            (
+                app_handle_opt,
+                should_emit,
+                active_segment_name,
+                cleared_header,
+                is_paused,
+            )
         })
         .await;
+
+    if should_emit {
+        if let Some(app_handle) = app_handle_opt {
+            let payload = crate::live::event_manager::PlayerMetricsResetPayload {
+                segment_name: active_segment_name,
+            };
+            let _ = safe_emit(&app_handle, "reset-player-metrics", payload);
+
+            let payload = crate::live::event_manager::EncounterUpdatePayload {
+                header_info: cleared_header,
+                is_paused,
+            };
+            let _ = safe_emit(&app_handle, "encounter-update", payload);
+        }
+    }
 
     info!("Player metrics reset for segment transition");
     Ok(())

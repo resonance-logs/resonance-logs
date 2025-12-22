@@ -49,7 +49,7 @@ fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload:
     }
 }
 
-fn collect_player_active_times(encounter: &Encounter) -> Vec<(i64, i64)> {
+pub(crate) fn collect_player_active_times(encounter: &Encounter) -> Vec<(i64, i64)> {
     encounter
         .entity_uid_to_entity
         .iter()
@@ -98,7 +98,7 @@ pub enum StateEvent {
 /// Clamp ongoing buff events to the encounter end and persist them.
 /// Buffs are stored in absolute timestamps; we clamp to fight start (if known)
 /// and to the encounter end to avoid runaway durations across resets.
-fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i64) {
+pub(crate) fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i64) {
     let mut buff_events = encounter.buff_events.write();
 
     // Drop any buffs that don't meet our validity rules before clamping/persisting.
