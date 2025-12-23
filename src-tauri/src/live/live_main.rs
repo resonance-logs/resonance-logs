@@ -245,12 +245,12 @@ fn get_capture_method(app: &AppHandle) -> packets::packet_capture::CaptureMethod
     let filename_candidates = ["packetCapture.json", "packetCapture.bin", "packetCapture"];
     let mut dir_candidates = Vec::new();
     if let Some(dir) = app.path().app_data_dir().ok() {
-        dir_candidates.push(dir.clone());
         dir_candidates.push(dir.join("stores"));
+        dir_candidates.push(dir.clone());
     }
     if let Some(dir) = app.path().app_local_data_dir().ok() {
-        dir_candidates.push(dir.clone());
         dir_candidates.push(dir.join("stores"));
+        dir_candidates.push(dir.clone());
     }
 
     for dir in dir_candidates.into_iter() {
