@@ -1,6 +1,9 @@
-# Changelog v0.19.1
+
+# Changelog v0.19.2
 
 ## Logs
 
-- Fixed the no data/networking bug.
-- Disabled market data parsing for now
+
+- Fix for bug when manually resetting
+- Network tab selection should now remember what capture method was chosen previously
+- Fixed the class spec display on history page
