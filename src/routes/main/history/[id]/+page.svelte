@@ -49,6 +49,15 @@
   let isDeleting = $state(false);
   let showDeleteModal = $state(false);
 
+  // (SkillsWindow.currPlayer[0].classSpecName) only when the user has enabled Name - Spec display.
+  let isSpecLoading = $state(false);
+  let specsLoadedForEncounterId = $state<number | null>(null);
+  let needsSpecNames = $derived.by(() => {
+    const your = settings.state.history.general.showYourName;
+    const others = settings.state.history.general.showOthersName;
+    return String(your).includes("Spec") || String(others).includes("Spec");
+  });
+
   // Tab state for encounter view
   let activeTab = $state<"damage" | "tanked" | "healing" | "buffs">("damage");
   let buffs = $state<EncounterEntityBuffsDto[]>([]);
@@ -202,6 +211,9 @@
   async function loadEncounter() {
     if (!encounterId) return;
 
+    // Reset spec cache for this encounter load.
+    specsLoadedForEncounterId = null;
+
     // Load encounter details
     const encounterRes = await commands.getEncounterById(encounterId);
     console.log("encounter res", encounterRes);
@@ -267,6 +279,7 @@
         name: a.name ?? String(a.actorId),
         isLocalPlayer: a.isLocalPlayer ?? false,
         className,
+        classSpecName: "",
         classDisplay: className || "Unknown Class",
         abilityScore: a.abilityScore || 0,
         totalDmg: dmgValue,
@@ -303,6 +316,65 @@
     });
   }
 
+  function preferredSkillTypeForSpec(p: any): "dps" | "heal" | "tanked" {
+    const heal = Number(p.healDealt ?? 0);
+    const dmg = Number(p.totalDmg ?? 0);
+    const tanked = Number(p.damageTaken ?? 0);
+    if (heal > 0) return "heal";
+    if (dmg <= 0 && tanked > 0) return "tanked";
+    return "dps";
+  }
+
+  async function fetchSpecName(
+    encId: number,
+    uid: number,
+    preferred: "dps" | "heal" | "tanked",
+  ): Promise<string> {
+    const attempts: ("dps" | "heal" | "tanked")[] = Array.from(
+      new Set([preferred, "dps", "heal", "tanked"]),
+    );
+
+    for (const t of attempts) {
+      const res = await commands.getEncounterPlayerSkills(encId, uid, t);
+      if (res.status !== "ok") continue;
+      const spec = res.data.currPlayer?.[0]?.classSpecName ?? "";
+      if (spec) return spec;
+    }
+    return "";
+  }
+
+  async function populatePlayerSpecsIfNeeded() {
+    if (!encounterId || !encounter) return;
+    if (!needsSpecNames) return;
+    if (isSpecLoading) return;
+    if (specsLoadedForEncounterId === encounterId) return;
+    if (!players || players.length === 0) return;
+
+    isSpecLoading = true;
+    try {
+      const updates = await Promise.all(
+        players.map(async (p) => {
+          if (p.classSpecName) return [p.uid, p.classSpecName] as const;
+          const preferred = preferredSkillTypeForSpec(p);
+          const spec = await fetchSpecName(encounterId, p.uid, preferred);
+          return [p.uid, spec] as const;
+        }),
+      );
+
+      const specByUid = new Map<number, string>(updates);
+      players = players.map((p) => ({
+        ...p,
+        classSpecName: specByUid.get(p.uid) ?? p.classSpecName ?? "",
+      }));
+      specsLoadedForEncounterId = encounterId;
+    } catch (e) {
+      console.error("Failed to populate class spec names for history view:", e);
+      // Leave specsLoadedForEncounterId unset so we can retry.
+    } finally {
+      isSpecLoading = false;
+    }
+  }
+
   async function loadPlayerSkills() {
     if (!encounterId || !charId) {
       skillsWindow = null;
@@ -319,7 +391,16 @@
     if (res.status === "ok") {
       console.log("skills", res);
       skillsWindow = res.data;
-      selectedPlayer = players.find((p) => p.uid === playerUid);
+      const found = players.find((p) => p.uid === playerUid);
+      const specFromCurr = res.data.currPlayer?.[0]?.classSpecName ?? "";
+      if (found && specFromCurr) {
+        selectedPlayer = { ...found, classSpecName: specFromCurr };
+        players = players.map((p) =>
+          p.uid === playerUid ? { ...p, classSpecName: specFromCurr } : p,
+        );
+      } else {
+        selectedPlayer = found;
+      }
     } else {
       error = String(res.error);
     }
@@ -406,6 +487,19 @@
 
   $effect(() => {
     loadEncounter();
+  });
+
+  // If Name - Spec is enabled in Past Encounters settings, load missing spec names.
+  $effect(() => {
+    // reactive deps:
+    encounterId;
+    encounter;
+    charId;
+    needsSpecNames;
+    players.length;
+    if (!charId) {
+      populatePlayerSpecsIfNeeded();
+    }
   });
 
   $effect(() => {

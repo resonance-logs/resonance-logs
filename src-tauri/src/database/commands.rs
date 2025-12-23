@@ -1923,6 +1923,32 @@ pub fn get_encounter_player_skills(
     use sch::heal_skill_stats::dsl as hss;
     use std::collections::HashMap;
 
+    // Note: `actor_encounter_stats.class_spec` is stored as the numeric discriminant of
+    // `crate::live::opcodes_models::class::ClassSpec` (see live opcode processing).
+    // For historical reads we convert that integer back into a display string.
+    fn class_spec_from_discriminant(value: i32) -> crate::live::opcodes_models::class::ClassSpec {
+        use crate::live::opcodes_models::class::ClassSpec;
+        match value {
+            1 => ClassSpec::Iaido,
+            2 => ClassSpec::Moonstrike,
+            3 => ClassSpec::Icicle,
+            4 => ClassSpec::Frostbeam,
+            5 => ClassSpec::Vanguard,
+            6 => ClassSpec::Skyward,
+            7 => ClassSpec::Smite,
+            8 => ClassSpec::Lifebind,
+            9 => ClassSpec::Earthfort,
+            10 => ClassSpec::Block,
+            11 => ClassSpec::Wildpack,
+            12 => ClassSpec::Falconry,
+            13 => ClassSpec::Recovery,
+            14 => ClassSpec::Shield,
+            15 => ClassSpec::Dissonance,
+            16 => ClassSpec::Concerto,
+            _ => ClassSpec::Unknown,
+        }
+    }
+
     // Get encounter timings
     let encounter_row: (
         i32,
@@ -1953,7 +1979,7 @@ pub fn get_encounter_player_skills(
         _ => 1.0,
     };
 
-    // Get actor totals from actor_encounter_stats
+    // Get actor totals and metadata from actor_encounter_stats
     let actor_row_opt = s::actor_encounter_stats
         .filter(s::encounter_id.eq(encounter_id))
         .filter(s::actor_id.eq(actor_id))
@@ -1963,33 +1989,52 @@ pub fn get_encounter_player_skills(
             s::hits_dealt,
             s::crit_hits_dealt,
             s::lucky_hits_dealt,
+            s::name,
+            s::class_id,
+            s::class_spec,
+            s::ability_score,
         ))
-        .first::<(i64, i64, i64, i64, i64)>(&mut conn)
+        .first::<(
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            Option<String>,
+            Option<i32>,
+            Option<i32>,
+            Option<i32>,
+        )>(&mut conn)
         .optional()
         .map_err(|e| e.to_string())?;
 
-    let (actor_total_dmg, actor_total_heal, actor_hits, actor_crit_hits, actor_lucky_hits) =
-        actor_row_opt.unwrap_or((0, 0, 0, 0, 0));
+    let (
+        actor_total_dmg,
+        actor_total_heal,
+        actor_hits,
+        actor_crit_hits,
+        actor_lucky_hits,
+        actor_name_opt,
+        actor_class_id_opt,
+        actor_class_spec_opt,
+        actor_ability_score_opt,
+    ) = actor_row_opt.unwrap_or((0, 0, 0, 0, 0, None, None, None, None));
 
     // Build curr_player PlayerRow (use minimal fields similar to live PlayerRow)
-    // Attempt to get name and ability_score from entities
-    use sch::entities::dsl as en;
-    let (name_opt, ability_score_opt) = en::entities
-        .filter(en::entity_id.eq(actor_id))
-        .select((en::name.nullable(), en::ability_score.nullable()))
-        .first::<(Option<String>, Option<i32>)>(&mut conn)
-        .optional()
-        .map_err(|e| e.to_string())?
-        .unwrap_or((None, None));
-
-    let player_name = name_opt.unwrap_or_else(|| String::from(""));
+    let player_name = actor_name_opt.unwrap_or_default();
+    let class_id = actor_class_id_opt.unwrap_or(0);
+    let class_name = crate::live::opcodes_models::class::get_class_name(class_id);
+    let class_spec_name = actor_class_spec_opt
+        .map(class_spec_from_discriminant)
+        .map(crate::live::opcodes_models::class::get_class_spec)
+        .unwrap_or_default();
 
     let curr_player = lc::PlayerRow {
         uid: actor_id as u128,
         name: player_name.clone(),
-        class_name: String::from(""),
-        class_spec_name: String::from(""),
-        ability_score: ability_score_opt.unwrap_or(0) as u128,
+        class_name,
+        class_spec_name,
+        ability_score: actor_ability_score_opt.unwrap_or(0) as u128,
         total_dmg: actor_total_dmg as u128,
         dps: if duration_secs > 0.0 {
             (actor_total_dmg as f64) / duration_secs
@@ -2040,7 +2085,7 @@ pub fn get_encounter_player_skills(
     // Aggregate skills depending on skill_type
     let mut skill_rows: Vec<lc::SkillRow> = Vec::new();
 
-    if (skill_type == "dps" || skill_type == "tanked") {
+    if skill_type == "dps" || skill_type == "tanked" {
         let stats = dss::damage_skill_stats
             .filter(dss::encounter_id.eq(encounter_id))
             .filter(dss::attacker_id.eq(actor_id))
