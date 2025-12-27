@@ -1,15 +1,15 @@
 {
-  "version": "0.19.1",
-  "notes": "## Logs\r\n\r\n- Fixed the no data/networking bug.\r\n- Disabled market data parsing for now\r\n",
-  "pub_date": "2025-12-21T00:05:35.629Z",
+  "version": "0.19.2",
+  "notes": "## Logs\r\n\r\n\r\n- Fix for bug when manually resetting\r\n- Network tab selection should now remember what capture method was chosen previously\r\n- Fixed the class spec display on history page\r\n",
+  "pub_date": "2025-12-27T02:58:54.393Z",
   "platforms": {
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dadU40NitVMWk5UHh5WDRQT2x0cmtJL3hxZC9FcGpmUUlFeENnNFVMTDNoMEwvenRnUlg2cWxsNGdmeE1wQzc4SG04MmdGRVJrOU5VTktYV1Q4ZmdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2Mjc1NTIzCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOS4xX3g2NC1zZXR1cC5leGUKYzN4QUhVajE5QTdUYU9NLzRPV2hVQ0JvdW1FblZDNldIMDI0NTcrSkRPQW5ZZEwvMzhYUnl6alBmN05ETU5nRWkrMWQvNTlRNXJJNVMweTRHVjhXQ1E9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.19.1/resonance-logs_0.19.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1UybHZuM3BUNlA1YTdURVVvZzQ3MWJLVk5qQW41aXVQNjNZVUNrejZNdXdKTlJkUkNXd0h2b2ROZVNKVHE2bmJCenhldVNITGIyWFF4dXRHOVlwc0FjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2ODA0MzIyCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOS4yX3g2NC1zZXR1cC5leGUKS1NDK1NzdkR1VG1LT2NYemFPUXFPSkdRVTV5NHJJM3pNbkJzNzVlb0NqSHBqbnRvampZM2VTWURLSTZTbXBPNWk3TEcrY1BsL0MzRUljR0I1NnMzQlE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.19.2/resonance-logs_0.19.2_x64-setup.exe"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1dadU40NitVMWk5UHh5WDRQT2x0cmtJL3hxZC9FcGpmUUlFeENnNFVMTDNoMEwvenRnUlg2cWxsNGdmeE1wQzc4SG04MmdGRVJrOU5VTktYV1Q4ZmdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2Mjc1NTIzCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOS4xX3g2NC1zZXR1cC5leGUKYzN4QUhVajE5QTdUYU9NLzRPV2hVQ0JvdW1FblZDNldIMDI0NTcrSkRPQW5ZZEwvMzhYUnl6alBmN05ETU5nRWkrMWQvNTlRNXJJNVMweTRHVjhXQ1E9PQo=",
-      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.19.1/resonance-logs_0.19.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSOE1zVHk2d0FNS1UybHZuM3BUNlA1YTdURVVvZzQ3MWJLVk5qQW41aXVQNjNZVUNrejZNdXdKTlJkUkNXd0h2b2ROZVNKVHE2bmJCenhldVNITGIyWFF4dXRHOVlwc0FjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY2ODA0MzIyCWZpbGU6cmVzb25hbmNlLWxvZ3NfMC4xOS4yX3g2NC1zZXR1cC5leGUKS1NDK1NzdkR1VG1LT2NYemFPUXFPSkdRVTV5NHJJM3pNbkJzNzVlb0NqSHBqbnRvampZM2VTWURLSTZTbXBPNWk3TEcrY1BsL0MzRUljR0I1NnMzQlE9PQo=",
+      "url": "https://github.com/resonance-logs/resonance-logs/releases/download/v0.19.2/resonance-logs_0.19.2_x64-setup.exe"
     }
   }
 }
