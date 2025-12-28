@@ -3,7 +3,7 @@ use crate::live::attempt_detector::AttemptConfig;
 use crate::live::buff_names;
 use crate::live::dungeon_log::{self, DungeonLogRuntime, SegmentType, SharedDungeonLog};
 use crate::live::event_manager::{EventManager, MetricType};
-use crate::live::opcodes_models::Encounter;
+use crate::live::opcodes_models::{BuffEvent, Encounter};
 use crate::live::player_names::PlayerNames;
 use blueprotobuf_lib::blueprotobuf;
 use log::{info, trace, warn};
@@ -142,16 +142,23 @@ pub(crate) fn finalize_and_save_buffs(encounter: &mut Encounter, ended_at_ms: i6
         }
     }
 
-    let buffs: Vec<(i64, i32, String)> = buff_events
+    // Move heavy work (serialization) outside the write lock to keep the lock duration short.
+    // First, clone the data we need while holding the lock.
+    let buffs_to_save: Vec<(i64, i32, Vec<BuffEvent>)> = buff_events
         .iter()
-        .filter_map(|((entity_id, buff_id), events)| {
-            if !buff_names::is_valid(*buff_id) {
-                return None;
-            }
+        .map(|((entity_id, buff_id), events)| (*entity_id, *buff_id, events.clone()))
+        .collect();
 
-            serde_json::to_string(events)
+    // Release the lock
+    drop(buff_events);
+
+    // Now perform the serialization and enqueue the DB task without holding any locks.
+    let buffs: Vec<(i64, i32, String)> = buffs_to_save
+        .into_iter()
+        .filter_map(|(entity_id, buff_id, events)| {
+            serde_json::to_string(&events)
                 .ok()
-                .map(|json| (*entity_id, *buff_id, json))
+                .map(|json| (entity_id, buff_id, json))
         })
         .collect();
 

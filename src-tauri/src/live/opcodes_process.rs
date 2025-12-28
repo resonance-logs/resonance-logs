@@ -506,18 +506,34 @@ pub fn process_aoi_sync_delta(
                 let key = (target_uid, buff_id);
                 let events = buff_events_guard.entry(key).or_insert_with(Vec::new);
 
-                // Close any ongoing buff instance before recording the new one
-                if let Some(ongoing) = events
-                    .iter_mut()
-                    .filter(|event| event.end > start) //this is inefficient...
-                    .max_by_key(|event| event.start)
-                {
-                    let adjusted_duration = start.saturating_sub(ongoing.start);
-                    ongoing.end = start;
-                    ongoing.duration = adjusted_duration.min(i32::MAX as i64) as i32;
+                // Check if we already have this exact buff instance (same start time).
+                let mut found = false;
+                // Check in reverse since the latest buff is most likely to be updated.
+                for existing in events.iter_mut().rev().take(5) {
+                    if (existing.start - start).abs() < 5 {
+                        existing.end = end;
+                        existing.duration = duration;
+                        existing.stack_count = stack_count;
+                        found = true;
+                        break;
+                    }
                 }
 
-                // Always record the new buff event
+                if found {
+                    continue;
+                }
+
+                // This is a new buff instance. Close any ongoing one that this new instance replaces.
+                // Buffs are mostly appended in chronological order so we check the last one.
+                if let Some(last) = events.last_mut() {
+                    if last.end > start {
+                        let adjusted_duration = start.saturating_sub(last.start);
+                        last.end = start;
+                        last.duration = adjusted_duration.min(i32::MAX as i64) as i32;
+                    }
+                }
+
+                // Record the new buff event
                 events.push(BuffEvent {
                     start,
                     end,
