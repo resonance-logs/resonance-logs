@@ -10,7 +10,17 @@
    */
   import { onMount } from "svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { onPlayersUpdate, onResetEncounter, onEncounterUpdate, onBossDeath, onSceneChange, onPauseEncounter, onDungeonLogUpdate, onResetPlayerMetrics, resetPlayerMetrics } from "$lib/api";
+  import {
+    onPlayersUpdate,
+    onResetEncounter,
+    onEncounterUpdate,
+    onBossDeath,
+    onSceneChange,
+    onPauseEncounter,
+    onDungeonLogUpdate,
+    onResetPlayerMetrics,
+    resetPlayerMetrics,
+  } from "$lib/api";
   import { writable } from "svelte/store";
   import { beforeNavigate, afterNavigate } from "$app/navigation";
 
@@ -20,7 +30,16 @@
   // Store for scroll positions
   const scrollPositions = writable<Record<string, number>>({});
 
-  import { setDpsPlayers, setHealPlayers, setTankedPlayers, clearMeterData, cleanupStores, setLiveDungeonLog, clearLiveDungeonLog, injectDummyData } from "$lib/stores/live-meter-store.svelte";
+  import {
+    setDpsPlayers,
+    setHealPlayers,
+    setTankedPlayers,
+    clearMeterData,
+    cleanupStores,
+    setLiveDungeonLog,
+    clearLiveDungeonLog,
+    injectDummyData,
+  } from "$lib/stores/live-meter-store.svelte";
   import HeaderCustom from "./header-custom.svelte";
 
   import NotificationToast from "./notification-toast.svelte";
@@ -33,7 +52,7 @@
   let unlisten: (() => void) | null = null;
 
   // Track the current active segment type for fake reset on segment switches
-  let lastActiveSegmentType: 'boss' | 'trash' | null = null;
+  let lastActiveSegmentType: "boss" | "trash" | null = null;
   // Prevent concurrent setupEventListeners runs which can attach duplicate listeners
   let listenersSetupInProgress = false;
   let lastEventTime = Date.now();
@@ -85,10 +104,15 @@
       // Set up reset encounter listener
       const resetUnlisten = await onResetEncounter(() => {
         if (isDestroyed) return;
+        lastEventTime = Date.now();
+        hadAnyEvent = true;
         clearMeterData();
         clearLiveDungeonLog();
         lastActiveSegmentType = null; // Reset segment tracking
-        notificationToast?.showToast('notice', 'Server change detected, resetting log');
+        notificationToast?.showToast(
+          "notice",
+          "Server change detected, resetting log",
+        );
       });
 
       if (isDestroyed) {
@@ -106,21 +130,20 @@
 
         // Check for active segment and detect segment type changes
         const dungeonLog = event.payload;
-        const activeSegment = dungeonLog.segments.find(s => !s.endedAtMs);
+        const activeSegment = dungeonLog.segments.find((s) => !s.endedAtMs);
         const currentSegmentType = activeSegment?.segmentType ?? null;
 
         // If segment type changed (trash -> boss or boss -> trash), perform fake reset
-        if (currentSegmentType !== null &&
-            lastActiveSegmentType !== null &&
-            currentSegmentType !== lastActiveSegmentType) {
-
+        if (
+          currentSegmentType !== null &&
+          lastActiveSegmentType !== null &&
+          currentSegmentType !== lastActiveSegmentType
+        ) {
           // Call backend to reset player metrics (this will clear stores and emit reset event)
           // Fire and forget - we don't need to wait for the result
-          resetPlayerMetrics().catch(e => {
-            console.error('Failed to reset player metrics:', e);
+          resetPlayerMetrics().catch((e) => {
+            console.error("Failed to reset player metrics:", e);
           });
-
-
         }
 
         // Update last segment type
@@ -151,11 +174,15 @@
         // only show a toast if the pause state actually changed AND we've started receiving combat data
         // Note: do NOT show a toast on the initial listener attach (lastPauseState === null)
         // to avoid spurious "Encounter resumed" messages when reattaching listeners
-        if (elapsedMs > 0 && lastPauseState !== null && lastPauseState !== newPaused) {
+        if (
+          elapsedMs > 0 &&
+          lastPauseState !== null &&
+          lastPauseState !== newPaused
+        ) {
           if (newPaused) {
-            notificationToast?.showToast('notice', 'Encounter paused');
+            notificationToast?.showToast("notice", "Encounter paused");
           } else {
-            notificationToast?.showToast('notice', 'Encounter resumed');
+            notificationToast?.showToast("notice", "Encounter resumed");
           }
         }
         lastPauseState = newPaused;
@@ -176,7 +203,10 @@
         // Treat boss death as a keep-alive
         lastEventTime = Date.now();
         hadAnyEvent = true;
-        notificationToast?.showToast('notice', `${event.payload.bossName} defeated!`);
+        notificationToast?.showToast(
+          "notice",
+          `${event.payload.bossName} defeated!`,
+        );
       });
 
       if (isDestroyed) {
@@ -239,7 +269,10 @@
         clearMeterData();
         // If the backend provided a segment name, show it; otherwise simple 'New Segment'
         const segName = event.payload?.segmentName ?? null;
-        notificationToast?.showToast('notice', segName ? `New Segment: ${segName}` : 'New Segment');
+        notificationToast?.showToast(
+          "notice",
+          segName ? `New Segment: ${segName}` : "New Segment",
+        );
       });
 
       if (isDestroyed) {
@@ -257,14 +290,30 @@
 
       // Combine all unlisten functions
       unlisten = () => {
-        try { playersUnlisten(); } catch {}
-        try { resetUnlisten(); } catch {}
-        try { encounterUnlisten(); } catch {}
-        try { bossDeathUnlisten(); } catch {}
-        try { sceneChangeUnlisten(); } catch {}
-        try { pauseUnlisten(); } catch {}
-        try { dungeonLogUnlisten(); } catch {}
-        try { resetPlayerMetricsUnlisten(); } catch {}
+        try {
+          playersUnlisten();
+        } catch {}
+        try {
+          resetUnlisten();
+        } catch {}
+        try {
+          encounterUnlisten();
+        } catch {}
+        try {
+          bossDeathUnlisten();
+        } catch {}
+        try {
+          sceneChangeUnlisten();
+        } catch {}
+        try {
+          pauseUnlisten();
+        } catch {}
+        try {
+          dungeonLogUnlisten();
+        } catch {}
+        try {
+          resetPlayerMetricsUnlisten();
+        } catch {}
       };
 
       console.log("Event listeners set up for live meter data");
@@ -306,9 +355,9 @@
   // Save scroll position before navigating away
   beforeNavigate(({ from }) => {
     if (mainElement && from?.url.pathname) {
-      scrollPositions.update(positions => ({
+      scrollPositions.update((positions) => ({
         ...positions,
-        [from.url.pathname]: mainElement!.scrollTop
+        [from.url.pathname]: mainElement!.scrollTop,
       }));
     }
   });
@@ -333,68 +382,61 @@
     setupEventListeners();
     startReconnectCheck();
 
-    // When the window regains focus or visibility, proactively recheck listeners
-    const onFocus = () => {
-      if (isDestroyed) return;
-      // Attempt a lightweight refresh of listeners to recover from any suspended state
-      if (!isReconnecting) {
-        if (unlisten) {
-          unlisten();
-          unlisten = null;
-        }
-        reconnectDelay = 1000;
-        setupEventListeners();
-      }
-    };
-    window.addEventListener("focus", onFocus);
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") onFocus();
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
     return () => {
       isDestroyed = true;
       if (reconnectInterval) clearInterval(reconnectInterval);
       if (unlisten) unlisten();
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
       cleanupStores();
     };
   });
 
   // Reactive background image effect
   $effect(() => {
-    if (typeof document === 'undefined') return;
-    
+    if (typeof document === "undefined") return;
+
     const bgImageEnabled = SETTINGS.accessibility.state.backgroundImageEnabled;
     const bgImage = SETTINGS.accessibility.state.backgroundImage;
-    const bgMode = SETTINGS.accessibility.state.backgroundImageMode || 'cover';
-    const bgContainColor = SETTINGS.accessibility.state.backgroundImageContainColor || 'rgba(0, 0, 0, 1)';
+    const bgMode = SETTINGS.accessibility.state.backgroundImageMode || "cover";
+    const bgContainColor =
+      SETTINGS.accessibility.state.backgroundImageContainColor ||
+      "rgba(0, 0, 0, 1)";
 
     if (bgImageEnabled && bgImage) {
       document.body.style.backgroundImage = `url('${bgImage}')`;
       document.body.style.backgroundSize = bgMode;
-      document.body.style.backgroundPosition = 'center';
-      document.body.style.backgroundRepeat = 'no-repeat';
-      if (bgMode === 'contain') {
-        document.body.style.setProperty('background-color', bgContainColor, 'important');
+      document.body.style.backgroundPosition = "center";
+      document.body.style.backgroundRepeat = "no-repeat";
+      if (bgMode === "contain") {
+        document.body.style.setProperty(
+          "background-color",
+          bgContainColor,
+          "important",
+        );
       } else {
-        document.body.style.setProperty('background-color', 'transparent', 'important');
+        document.body.style.setProperty(
+          "background-color",
+          "transparent",
+          "important",
+        );
       }
     } else {
       // Just clear the background image, keep body transparent
-      document.body.style.backgroundImage = '';
-      document.body.style.backgroundSize = '';
-      document.body.style.backgroundPosition = '';
-      document.body.style.backgroundRepeat = '';
-      document.body.style.setProperty('background-color', 'transparent', 'important');
+      document.body.style.backgroundImage = "";
+      document.body.style.backgroundSize = "";
+      document.body.style.backgroundPosition = "";
+      document.body.style.backgroundRepeat = "";
+      document.body.style.setProperty(
+        "background-color",
+        "transparent",
+        "important",
+      );
     }
   });
 
   // Reactive custom fonts effect
   $effect(() => {
-    if (typeof document === 'undefined') return;
-    
+    if (typeof document === "undefined") return;
+
     const sansEnabled = SETTINGS.accessibility.state.customFontSansEnabled;
     const sansName = SETTINGS.accessibility.state.customFontSansName;
     const sansUrl = SETTINGS.accessibility.state.customFontSansUrl;
@@ -403,19 +445,28 @@
       // Check if font is already registered
       if (!document.fonts.check(`12px "${sansName}"`)) {
         const fontFace = new FontFace(sansName, `url(${sansUrl})`);
-        fontFace.load().then((loadedFace) => {
-          document.fonts.add(loadedFace);
-        }).catch(() => {});
+        fontFace
+          .load()
+          .then((loadedFace) => {
+            document.fonts.add(loadedFace);
+          })
+          .catch(() => {});
       }
-      document.documentElement.style.setProperty('--font-sans', `"${sansName}", sans-serif`);
+      document.documentElement.style.setProperty(
+        "--font-sans",
+        `"${sansName}", sans-serif`,
+      );
     } else {
-      document.documentElement.style.setProperty('--font-sans', '"Inter Variable", sans-serif');
+      document.documentElement.style.setProperty(
+        "--font-sans",
+        '"Inter Variable", sans-serif',
+      );
     }
   });
 
   $effect(() => {
-    if (typeof document === 'undefined') return;
-    
+    if (typeof document === "undefined") return;
+
     const monoEnabled = SETTINGS.accessibility.state.customFontMonoEnabled;
     const monoName = SETTINGS.accessibility.state.customFontMonoName;
     const monoUrl = SETTINGS.accessibility.state.customFontMonoUrl;
@@ -424,13 +475,22 @@
       // Check if font is already registered
       if (!document.fonts.check(`12px "${monoName}"`)) {
         const fontFace = new FontFace(monoName, `url(${monoUrl})`);
-        fontFace.load().then((loadedFace) => {
-          document.fonts.add(loadedFace);
-        }).catch(() => {});
+        fontFace
+          .load()
+          .then((loadedFace) => {
+            document.fonts.add(loadedFace);
+          })
+          .catch(() => {});
       }
-      document.documentElement.style.setProperty('--font-mono', `"${monoName}", monospace`);
+      document.documentElement.style.setProperty(
+        "--font-mono",
+        `"${monoName}", monospace`,
+      );
     } else {
-      document.documentElement.style.setProperty('--font-mono', '"Geist Mono Variable", monospace');
+      document.documentElement.style.setProperty(
+        "--font-mono",
+        '"Geist Mono Variable", monospace',
+      );
     }
   });
 
@@ -439,24 +499,23 @@
     if (SETTINGS.live.general.state.useDummyData) {
       injectDummyData();
     } else {
-      cleanupStores()
+      cleanupStores();
     }
   });
-
 </script>
 
 <!-- flex flex-col min-h-screen → makes the page stretch full height and stack header, body, and footer. -->
 <!-- flex-1 on <main> → makes the body expand to fill leftover space, pushing the footer down. -->
-  <div 
-    class="flex h-screen flex-col bg-background-live text-[13px] text-foreground rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]" 
-    style="padding: {SETTINGS.live.headerCustomization.state.windowPadding}px"
-    data-tauri-drag-region
-  >
-    <HeaderCustom />
-    <main
+<div
+  class="flex h-screen flex-col bg-background-live text-[13px] text-foreground rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]"
+  style="padding: {SETTINGS.live.headerCustomization.state.windowPadding}px"
+  data-tauri-drag-region
+>
+  <HeaderCustom />
+  <main
     bind:this={mainElement}
     class="flex-1 overflow-y-auto gap-4 rounded-lg bg-card/20"
-    >
+  >
     {@render children()}
   </main>
   <!-- Footer removed; navigation and version moved into Header -->
