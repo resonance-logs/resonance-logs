@@ -52,13 +52,17 @@ pub fn tcp_sequence_after(a: u32, b: u32) -> bool {
 pub struct TCPReassembler {
     cache: BTreeMap<u32, Vec<u8>>, // sequence -> payload
     next_seq: Option<u32>,         // next expected sequence
+    buffered_bytes: usize,         // Total bytes currently in the cache
 }
+
+const MAX_TCP_CACHE_SIZE: usize = 5 * 1024 * 1024; // 5MB limit
 
 impl TCPReassembler {
     pub fn new() -> Self {
         Self {
             cache: BTreeMap::new(),
             next_seq: None,
+            buffered_bytes: 0,
         }
     }
 
@@ -94,19 +98,39 @@ impl TCPReassembler {
         match self.cache.get_mut(&start_seq) {
             Some(existing) => {
                 if data.len() > existing.len() {
+                    self.buffered_bytes -= existing.len();
                     existing.clear();
                     existing.extend_from_slice(data);
+                    self.buffered_bytes += existing.len();
                 }
             }
             None => {
                 self.cache.insert(start_seq, data.to_vec());
+                self.buffered_bytes += data.len();
             }
         }
 
-        let mut cursor = expected;
+        // Gap Skipping / Buffer Limit Enforcement
+        if self.buffered_bytes > MAX_TCP_CACHE_SIZE {
+            // If the buffer is too full, it implies we have a large gap we are waiting for.
+            // We should give up on the missing data and jump to the earliest available packet.
+            if let Some((&first_cached_seq, _)) = self.cache.iter().next() {
+                log::warn!(
+                    "TCPReassembler buffer exceeded limit ({} bytes). Skipping gap from {:?} to {}",
+                    self.buffered_bytes,
+                    self.next_seq,
+                    first_cached_seq
+                );
+                // Advance expectation to the first thing we actually have
+                self.next_seq = Some(first_cached_seq);
+            }
+        }
+
+        let mut cursor = self.next_seq.unwrap();
         let mut output: Vec<u8> = Vec::new();
 
         while let Some(mut segment) = self.cache.remove(&cursor) {
+            self.buffered_bytes -= segment.len();
             cursor = cursor.wrapping_add(segment.len() as u32);
             if output.is_empty() {
                 output = std::mem::take(&mut segment);
@@ -125,6 +149,7 @@ impl TCPReassembler {
 
     pub fn reset(&mut self, next_seq: Option<u32>) {
         self.cache.clear();
+        self.buffered_bytes = 0;
         self.next_seq = next_seq;
     }
 

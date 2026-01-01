@@ -1,7 +1,7 @@
 
-# Changelog v0.19.3
+# Changelog v0.19.4-beta (debug)
 
 ## Logs
 
 
-- Additional hotfix for bug when manually resetting
+- hotfix 3 for bug when manually resetting

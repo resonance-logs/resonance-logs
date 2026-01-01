@@ -155,7 +155,15 @@ pub fn start_capture(
         let _capture_guard = capture_span.enter();
         loop {
             read_packets(&packet_sender, &mut restart_receiver, method.clone());
-            // Wait for restart signal
+            
+            // Check if this was a requested restart or a crash/exit
+            if !*restart_receiver.borrow() {
+                warn!("Packet capture exited unexpectedly. Restarting in 1s...");
+                std::thread::sleep(std::time::Duration::from_secs(1));
+                continue;
+            }
+
+            // Wait for restart signal if it was requested
             while !*restart_receiver.borrow() {
                 std::thread::sleep(std::time::Duration::from_millis(100));
             }
