@@ -3,6 +3,7 @@ use crate::packets::opcodes::FragmentType;
 use crate::packets::parser;
 use crate::packets::utils::BinaryReader;
 use log::debug;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub fn process_packet(
     mut packets_reader: BinaryReader,
@@ -50,8 +51,14 @@ pub fn process_packet(
                 if let Some((method_id, payload)) =
                     parser::parse_notify_fragment(&mut reader, is_zstd_compressed != 0)
                 {
-                    if let Err(err) = packet_sender.blocking_send((method_id, payload)) {
-                        debug!("Failed to send packet: {err}");
+                    if let Err(err) = packet_sender.try_send((method_id, payload)) {
+                        static WARNED: AtomicBool = AtomicBool::new(false);
+                        if !WARNED.swap(true, Ordering::Relaxed) {
+                            debug!(
+                                "Packet channel saturated; dropping packets (suppressing further warnings). err={}",
+                                err
+                            );
+                        }
                     }
                 } else {
                     // parse_notify_fragment logged details

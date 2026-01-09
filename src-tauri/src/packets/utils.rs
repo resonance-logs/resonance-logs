@@ -112,18 +112,16 @@ impl TCPReassembler {
 
         // Gap Skipping / Buffer Limit Enforcement
         if self.buffered_bytes > MAX_TCP_CACHE_SIZE {
-            // If the buffer is too full, it implies we have a large gap we are waiting for.
-            // We should give up on the missing data and jump to the earliest available packet.
-            if let Some((&first_cached_seq, _)) = self.cache.iter().next() {
-                log::warn!(
-                    "TCPReassembler buffer exceeded limit ({} bytes). Skipping gap from {:?} to {}",
-                    self.buffered_bytes,
-                    self.next_seq,
-                    first_cached_seq
-                );
-                // Advance expectation to the first thing we actually have
-                self.next_seq = Some(first_cached_seq);
-            }
+            log::warn!(
+                "TCPReassembler buffer exceeded limit ({} bytes). Dropping cached segments and resyncing at {}",
+                self.buffered_bytes,
+                start_seq
+            );
+
+            self.cache.clear();
+            self.buffered_bytes = 0;
+            self.next_seq = Some(start_seq.wrapping_add(data.len() as u32));
+            return Some(data.to_vec());
         }
 
         let mut cursor = self.next_seq.unwrap();
@@ -278,5 +276,33 @@ mod tests {
             reassembler.insert_segment(42, b"xyz"),
             Some(b"xyz".to_vec())
         );
+    }
+
+    #[test]
+    fn overflow_drops_cache_and_resyncs() {
+        // Build up >5MiB of buffered out-of-order data to trigger overflow.
+        // Use moderately sized segments so the test doesn't allocate a single giant Vec.
+        const CHUNK: usize = 1024 * 1024; // 1 MiB
+
+        let mut r = TCPReassembler::new();
+        // Establish an expected sequence that we will not satisfy.
+        assert!(r.insert_segment(10, b"a").is_some());
+        let expected = r.next_sequence().unwrap();
+
+        // Insert out-of-order chunks far ahead so they accumulate in cache.
+        // The final insert should trigger overflow and return its payload immediately.
+        let mut last_seq: u32 = expected.wrapping_add(10_000);
+        for i in 0..6 {
+            let payload = vec![i as u8; CHUNK];
+            let out = r.insert_segment(last_seq, &payload);
+            if i < 5 {
+                assert!(out.is_none());
+            } else {
+                assert_eq!(out.as_ref().map(|v| v.len()), Some(CHUNK));
+                assert_eq!(out.unwrap(), payload);
+                assert_eq!(r.next_sequence(), Some(last_seq.wrapping_add(CHUNK as u32)));
+            }
+            last_seq = last_seq.wrapping_add((CHUNK as u32).wrapping_add(123));
+        }
     }
 }

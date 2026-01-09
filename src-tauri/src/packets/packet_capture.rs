@@ -113,7 +113,10 @@ impl NpcapSource {
             other => {
                 static LOGGED_DLT: OnceLock<i32> = OnceLock::new();
                 if LOGGED_DLT.set(other).is_ok() {
-                    warn!("Unsupported Npcap datalink type {}, dropping packets", other);
+                    warn!(
+                        "Unsupported Npcap datalink type {}, dropping packets",
+                        other
+                    );
                 }
                 None
             }
@@ -133,10 +136,9 @@ impl PacketSource for NpcapSource {
 pub fn start_capture(
     method: CaptureMethod,
 ) -> tokio::sync::mpsc::Receiver<(packets::opcodes::Pkt, Vec<u8>)> {
-    // Use a larger bounded channel to prevent producer backpressure from stalling
-    // headroom for bursts without risking unbounded memory growth.
+    const PACKET_CHANNEL_CAPACITY: usize = 64;
     let (packet_sender, packet_receiver) =
-        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(20);
+        tokio::sync::mpsc::channel::<(packets::opcodes::Pkt, Vec<u8>)>(PACKET_CHANNEL_CAPACITY);
     let (restart_sender, mut restart_receiver) = watch::channel(false);
     RESTART_SENDER.set(restart_sender.clone()).ok();
 
@@ -151,11 +153,12 @@ pub fn start_capture(
 
     // Use std::thread::spawn to avoid blocking the async runtime with WinDivert recv
     std::thread::spawn(move || {
-        let capture_span = tracing::info_span!(target: "app::capture", "capture_thread", method = ?method);
+        let capture_span =
+            tracing::info_span!(target: "app::capture", "capture_thread", method = ?method);
         let _capture_guard = capture_span.enter();
         loop {
             read_packets(&packet_sender, &mut restart_receiver, method.clone());
-            
+
             // Check if this was a requested restart or a crash/exit
             if !*restart_receiver.borrow() {
                 warn!("Packet capture exited unexpectedly. Restarting in 1s...");
@@ -181,7 +184,8 @@ fn read_packets(
     restart_receiver: &mut watch::Receiver<bool>,
     method: CaptureMethod,
 ) {
-    let read_span = tracing::info_span!(target: "app::capture", "capture_read_loop", method = ?method);
+    let read_span =
+        tracing::info_span!(target: "app::capture", "capture_read_loop", method = ?method);
     let _read_guard = read_span.enter();
 
     let mut source: Box<dyn PacketSource> = match method {
@@ -306,11 +310,12 @@ fn read_packets(
                                                     &mut reassembler,
                                                     Some(seq_end),
                                                 );
-                                                if let Err(err) = packet_sender.blocking_send((
-                                                    Pkt::ServerChangeInfo,
-                                                    Vec::new(),
-                                                )) {
-                                                    debug!("Failed to send packet: {err}");
+                                                if let Err(err) = packet_sender
+                                                    .try_send((Pkt::ServerChangeInfo, Vec::new()))
+                                                {
+                                                    debug!(
+                                                        "Failed to send packet (dropping): {err}"
+                                                    );
                                                 }
                                             }
                                         }
@@ -349,10 +354,8 @@ fn read_packets(
                     let payload_len = u32::try_from(tcp_payload.len()).unwrap_or(u32::MAX);
                     let seq_end = tcp_packet.sequence_number().wrapping_add(payload_len);
                     reset_stream(&mut tcp_reassembler, &mut reassembler, Some(seq_end));
-                    if let Err(err) =
-                        packet_sender.blocking_send((Pkt::ServerChangeInfo, Vec::new()))
-                    {
-                        debug!("Failed to send packet: {err}");
+                    if let Err(err) = packet_sender.try_send((Pkt::ServerChangeInfo, Vec::new())) {
+                        debug!("Failed to send packet (dropping): {err}");
                     }
                 }
             }

@@ -1,8 +1,8 @@
 use crate::WINDOW_LIVE_LABEL;
+use crate::database::{DbTask, enqueue, now_ms};
 use crate::live::dungeon_log::{self, DungeonLogRuntime};
 use crate::live::state::{AppStateManager, StateEvent};
 use crate::live::state::{collect_player_active_times, finalize_and_save_buffs};
-use crate::database::{DbTask, enqueue, now_ms};
 use log::{info, trace, warn};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
@@ -10,7 +10,6 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use window_vibrancy::{apply_blur, clear_blur};
 // request_restart is not needed in this module at present
 use crate::live::event_manager; // for generate_skills_window_*
-
 
 fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload: S) -> bool {
     // First check if the live window exists and is valid
@@ -29,7 +28,10 @@ fn safe_emit<S: Serialize + Clone>(app_handle: &AppHandle, event: &str, payload:
             let error_str = format!("{:?}", e);
             if error_str.contains("0x8007139F") || error_str.contains("not in the correct state") {
                 // Expected when windows are minimized/hidden - don't spam logs
-                trace!("WebView2 not ready for '{}' (window may be minimized/hidden)", event);
+                trace!(
+                    "WebView2 not ready for '{}' (window may be minimized/hidden)",
+                    event
+                );
             } else {
                 warn!("Failed to emit '{}': {}", event, e);
             }
@@ -406,7 +408,6 @@ pub async fn copy_sync_container_data(
 pub async fn reset_encounter(
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<(), String> {
-
     let state_manager = state_manager.inner().clone();
 
     // Perform the reset under the lock, but collect payloads to emit afterward.
@@ -424,7 +425,11 @@ pub async fn reset_encounter(
             let defeated = state.event_manager.take_dead_bosses();
             enqueue(DbTask::EndEncounter {
                 ended_at_ms: now_ms(),
-                defeated_bosses: if defeated.is_empty() { None } else { Some(defeated) },
+                defeated_bosses: if defeated.is_empty() {
+                    None
+                } else {
+                    Some(defeated)
+                },
                 is_manually_reset: true,
                 player_active_times: collect_player_active_times(&state.encounter),
             });
@@ -465,6 +470,8 @@ pub async fn reset_encounter(
             let _ = safe_emit(&app_handle, "encounter-update", payload);
         }
     }
+
+    crate::packets::packet_capture::request_restart();
 
     info!("encounter reset via command");
     Ok(())
@@ -516,53 +523,55 @@ pub async fn reset_player_metrics(
     // no emitting events while holding the AppState write lock.
     let state_manager = state_manager.inner().clone();
 
-    let (app_handle_opt, should_emit, active_segment_name, cleared_header, is_paused) = state_manager
-        .with_state_mut(|state| {
-            // Store the original fight start time before reset
-            let original_fight_start_ms = state.encounter.time_fight_start_ms;
+    let (app_handle_opt, should_emit, active_segment_name, cleared_header, is_paused) =
+        state_manager
+            .with_state_mut(|state| {
+                // Store the original fight start time before reset
+                let original_fight_start_ms = state.encounter.time_fight_start_ms;
 
-            // more segments legacy code
-            let active_segment_name = dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
-                log.segments
-                    .iter()
-                    .rev()
-                    .find(|s| s.ended_at_ms.is_none())
-                    .and_then(|s| s.boss_name.clone())
-            });
+                // more segments legacy code
+                let active_segment_name =
+                    dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
+                        log.segments
+                            .iter()
+                            .rev()
+                            .find(|s| s.ended_at_ms.is_none())
+                            .and_then(|s| s.boss_name.clone())
+                    });
 
-            // Reset combat state (player metrics only)
-            state.encounter.reset_combat_state();
-            state.skill_subscriptions.clear();
+                // Reset combat state (player metrics only)
+                state.encounter.reset_combat_state();
+                state.skill_subscriptions.clear();
 
-            // Restore the original fight start time to preserve total encounter duration
-            state.encounter.time_fight_start_ms = original_fight_start_ms;
+                // Restore the original fight start time to preserve total encounter duration
+                state.encounter.time_fight_start_ms = original_fight_start_ms;
 
-            let should_emit = state.event_manager.should_emit_events();
-            let app_handle_opt = state.event_manager.get_app_handle();
-            let is_paused = state.encounter.is_encounter_paused;
+                let should_emit = state.event_manager.should_emit_events();
+                let app_handle_opt = state.event_manager.get_app_handle();
+                let is_paused = state.encounter.is_encounter_paused;
 
-            // Emit an encounter update with cleared player data but preserve encounter context
-            let cleared_header = crate::live::commands_models::HeaderInfo {
-                total_dps: 0.0,
-                total_dmg: 0,
-                elapsed_ms: 0,
-                fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
-                bosses: vec![],
-                scene_id: state.encounter.current_scene_id,
-                scene_name: state.encounter.current_scene_name.clone(),
-                current_segment_type: None,
-                current_segment_name: None,
-            };
+                // Emit an encounter update with cleared player data but preserve encounter context
+                let cleared_header = crate::live::commands_models::HeaderInfo {
+                    total_dps: 0.0,
+                    total_dmg: 0,
+                    elapsed_ms: 0,
+                    fight_start_timestamp_ms: state.encounter.time_fight_start_ms,
+                    bosses: vec![],
+                    scene_id: state.encounter.current_scene_id,
+                    scene_name: state.encounter.current_scene_name.clone(),
+                    current_segment_type: None,
+                    current_segment_name: None,
+                };
 
-            (
-                app_handle_opt,
-                should_emit,
-                active_segment_name,
-                cleared_header,
-                is_paused,
-            )
-        })
-        .await;
+                (
+                    app_handle_opt,
+                    should_emit,
+                    active_segment_name,
+                    cleared_header,
+                    is_paused,
+                )
+            })
+            .await;
 
     if should_emit {
         if let Some(app_handle) = app_handle_opt {

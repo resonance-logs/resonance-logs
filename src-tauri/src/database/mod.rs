@@ -12,6 +12,7 @@ use diesel::sqlite::SqliteConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
+use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::mpsc::{self, Sender};
 
 use crate::database::models as m;
@@ -190,10 +191,10 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
         .connection_customizer(Box::new(SqliteConnectionCustomizer))
         .build(manager)
         .map_err(|e| {
-        let err_msg = format!("DB pool build error: {}", e);
-        log::error!(target: "app::db", "{}", err_msg);
-        DbInitError::Pool(e.to_string())
-    })?;
+            let err_msg = format!("DB pool build error: {}", e);
+            log::error!(target: "app::db", "{}", err_msg);
+            DbInitError::Pool(e.to_string())
+        })?;
 
     log::info!(
         target: "app::db",
@@ -213,10 +214,10 @@ pub fn init_and_spawn_writer() -> Result<(), DbInitError> {
 
         let applied = ensure_migrations_on_conn_with_retry(&mut conn, Duration::from_secs(60))
             .map_err(|e| {
-            let err_msg = format!("DB migration error: {}", e);
-            log::error!(target: "app::db", "{}", err_msg);
-            DbInitError::Migration(e)
-        })?;
+                let err_msg = format!("DB migration error: {}", e);
+                log::error!(target: "app::db", "{}", err_msg);
+                DbInitError::Migration(e)
+            })?;
         log::info!(
             target: "app::db",
             "migrations_applied count={} elapsed_ms={}",
@@ -604,17 +605,67 @@ pub enum DbTask {
 ///
 /// * `task` - The `DbTask` to enqueue.
 pub fn enqueue(task: DbTask) {
-    // Fire-and-forget for normal cases, but don't silently drop critical tasks
-    // when the queue is saturated—block briefly to preserve encounter data.
+    // Try fast non-blocking send.
+    // If full: drop non-critical tasks for critical tasks,
+    // offload a blocking send to a limited background thread.
     let guard = DB_SENDER.lock();
     if let Some(tx) = guard.as_ref() {
-        if let Err(e) = tx.try_send(task.clone()) {
-            log::warn!(
-                "DB queue full or closed ({}); retrying with blocking_send to avoid data loss",
-                e
-            );
-            if let Err(send_err) = tx.blocking_send(task) {
-                log::error!("Failed to enqueue DB task after retry: {}", send_err);
+        match tx.try_send(task) {
+            Ok(()) => {}
+            Err(TrySendError::Full(task)) => {
+                // Atomic flag to avoid spamming in hot loops.
+                static WARNED: std::sync::atomic::AtomicBool =
+                    std::sync::atomic::AtomicBool::new(false);
+                if !WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+                    log::warn!(
+                        target: "app::db",
+                        "DB queue full; dropping non-critical tasks and offloading critical tasks (suppressing further warnings)"
+                    );
+                }
+
+                if is_critical_db_task(&task) {
+                    // Prevent spawning unbounded threads if the DB is wedged.
+                    static INFLIGHT: std::sync::atomic::AtomicUsize =
+                        std::sync::atomic::AtomicUsize::new(0);
+                    const MAX_INFLIGHT: usize = 2;
+
+                    let prev = INFLIGHT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    if prev >= MAX_INFLIGHT {
+                        INFLIGHT.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+                        log::error!(
+                            target: "app::db",
+                            "DB queue full and too many critical enqueues inflight; dropping critical task: {:?}",
+                            task
+                        );
+                        return;
+                    }
+
+                    let tx = tx.clone();
+                    std::thread::spawn(move || {
+                        struct InflightGuard;
+                        impl Drop for InflightGuard {
+                            fn drop(&mut self) {
+                                INFLIGHT.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+                            }
+                        }
+                        let _guard = InflightGuard;
+                        if let Err(send_err) = tx.blocking_send(task) {
+                            log::error!(
+                                target: "app::db",
+                                "Failed to enqueue critical DB task via blocking_send: {}",
+                                send_err
+                            );
+                        }
+                    });
+                }
+                // Non-critical: drop on full.
+            }
+            Err(TrySendError::Closed(task)) => {
+                log::error!(
+                    target: "app::db",
+                    "DB queue closed; dropping task: {:?}",
+                    task
+                );
             }
         }
     } else {
@@ -648,6 +699,18 @@ pub fn enqueue(task: DbTask) {
             eprintln!("DB queue not initialized; dropping database task");
         }
     }
+}
+
+fn is_critical_db_task(task: &DbTask) -> bool {
+    matches!(
+        task,
+        DbTask::BeginEncounter { .. }
+            | DbTask::EndEncounter { .. }
+            | DbTask::BeginAttempt { .. }
+            | DbTask::EndAttempt { .. }
+            | DbTask::InsertDungeonSegment { .. }
+            | DbTask::SaveBuffs { .. }
+    )
 }
 
 fn finalize_encounter(
